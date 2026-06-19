@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../widgets/premium_card.dart';
-import '../../../../core/theme/app_dimens.dart';
+import '../../../core/theme/app_dimens.dart';
 
 class AttendanceActionCard extends StatelessWidget {
   final VoidCallback onTap;

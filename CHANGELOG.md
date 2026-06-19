@@ -2,6 +2,30 @@
 
 All notable changes to PSG MCA Placement Prep App will be documented in this file.
 
+## [4.0.0] - 2026-06-19
+
+### 🎉 Major Release - The Dynamic Overhaul
+
+#### ✨ New Features
+- **Dynamic Batch System**: Replaced the static 123-student whitelist. Students are now automatically assigned to a batch based on their roll numbers. Auto-manages active seniors and junior batches.
+- **Dynamic Permissions (RBAC)**: Replaced rigid roles with granular permission flags (`manage_members`, `publish_tasks`, `moderate_placement_log`).
+- **Placement Logs**: A collaborative knowledge-sharing hub. Seniors can log company visits, package bands, eligibility criteria, and their personal round-by-round experiences.
+- **Daily Five Engine**: A fast, engaging 5-question daily quiz with streaks, freeze tokens, and light anti-cheat mechanisms.
+- **AI Mentor**: Integrated OpenRouter AI fallback-chain for providing on-the-fly explanations for wrong Daily Five answers, and simulating mock interviews.
+- **Readiness Score Engine**: A comprehensive metric blending Placement Class Attendance, LeetCode Momentum, Daily Five accuracy, and Task completion to calculate real-time readiness.
+
+#### 🏗️ Architecture & Refactoring
+- **Separation of Attendance**: "Official Academic Attendance" (eCampus) and "Placement Class Attendance" are now strictly separated systems.
+- **Cleaned Up Static Artifacts**: Removed thousands of lines of obsolete mock data, dummy scripts, and legacy SQL onboarding files.
+- **Dependency Upgrades**: Upgraded core architecture to handle multiple Providers safely without memory leaks.
+
+#### 🐛 Bug Fixes
+- Fixed massive `../../../` relative import path bugs across the entire `ui/` directory.
+- Fixed `AppRouter` missing imports that caused compilation failures.
+- Fixed PostgreSQL constraint crashes when submitting Placement Log records with missing `batch_id` foreign keys.
+
+---
+
 ## [2.2.9] - 2026-03-04
 
 ### 🔒 Security
@@ -15,26 +39,16 @@ All notable changes to PSG MCA Placement Prep App will be documented in this fil
 ### 📁 Database
 - **NEW**: `database/15_fix_security_definer_views.sql` — Security patch for database views
 - Updated all view definitions to include `WITH (security_invoker = true)`
-- No breaking changes — all existing queries continue to work
 
-### 📚 Documentation
-- Added `database/SECURITY_FIX.md` — Complete security fix documentation
-- Added `database/QUICK_FIX_GUIDE.md` — 5-minute deployment guide
-- Added `database/SECURITY_FIX_SUMMARY.md` — Executive summary
-- Added `database/DEPLOYMENT_CHECKLIST.md` — Environment tracking checklist
-- Updated `database/README.md` with security patch instructions
-
-### ✅ Verification
-- Flutter app requires NO code changes
-- All 54 Flutter analyze warnings/errors resolved (0 issues found)
-- Production-ready with zero breaking changes
+---
 
 ## [2.2.1] - 2026-02-05
 
 ### 🔧 Fixes
 - Fixed Android keystore compatibility issues ("Tag number over 30 not supported")
 - Updated keystore to PKCS12 format with 2048-bit RSA keys for Android build tools compatibility
-- Ensured proper keystore format for GitHub Actions releases
+
+---
 
 ## [2.1.0] - 2026-02-05
 
@@ -42,36 +56,16 @@ All notable changes to PSG MCA Placement Prep App will be documented in this fil
 
 #### ✨ New Features
 - **iOS PWA Installation Guide**: Professional step-by-step guide for iOS users to install as Progressive Web App
-- **Smart Platform Detection**: Auto-detects iOS Safari and shows installation guide only when needed
 - **Firebase Hosting Deployment**: Fully automated deployment pipeline with GitHub Actions
 - **Android APK Signing**: Production-ready signed APKs for direct distribution
 
 #### 🏗️ Infrastructure
 - Cleaned up duplicate GitHub Actions workflows
 - Optimized Firebase deployment with proper Flutter setup
-- Added proper keystore management for Android releases
-- Automated deployment on every push to main branch
-- Live deployment: [https://psgmxians.web.app](https://psgmxians.web.app)
 
 #### 🐛 Bug Fixes
 - Removed unused imports and dead code
 - Fixed null safety issues in update service
-- Cleaned up unused methods and fields
-- Optimized codebase for production
-
-#### 📚 Documentation
-- Added comprehensive author attribution
-- Updated README with proper GitHub links
-- Created CODEOWNERS file for maintainability
-- Added detailed setup guides for contributors
-- Included deployment documentation
-
-#### 🎨 Code Quality
-- Passed all Dart analysis checks
-- Removed unused declarations
-- Optimized imports and dependencies
-- Enhanced code documentation
-- Clean architecture ready for open source contributions
 
 ---
 
@@ -82,56 +76,14 @@ All notable changes to PSG MCA Placement Prep App will be documented in this fil
 #### ✨ Features
 - Complete OTP-based authentication system with password setup
 - LeetCode stats integration with real-time leaderboard
-- Team-based attendance marking system (all 123 students from whitelist)
+- Team-based attendance marking system
 - Announcement system with auto-expiry functionality
 - Birthday notifications
-- Role-based access control (Student, Team Leader, Coordinator, Placement Rep)
-- Modern Material 3 UI with dark mode support
-- Progress indicators for LeetCode API fetching
 
 #### 🔧 Fixed Issues
-- OTP flow now requires password before account creation (single-step form)
-- Birthday notification permission errors on Android 12+ (inexact alarms)
-- LeetCode API progress indicators with real-time status
-- Leaderboard UI overflow (48px) resolved
-- Attendance system fetches from whitelist (all students available)
-- All opacity assertion errors fixed
-
-#### 🏗️ Architecture
-- Provider-based state management
-- Supabase backend with PostgreSQL
-- RESTful API integration for LeetCode stats
-- Row-Level Security (RLS) policies
-- Whitelist as source of truth for student roster
-
-#### 📱 Platform Support
-- ✅ Android (API 21+)
-- ✅ iOS (iOS 12.0+)
-
----
-- Server-side attendance lock enforcement
-- Audit logging for admin actions
-
-### Known Limitations
-- Requires Firebase Free plan or higher
-- Offline mode has limited functionality
-- Maximum 123 concurrent users (seeded)
-
----
-
-## Future Releases
-
-### [1.1.0] - Planned
-- Admin dashboard improvements
-- Enhanced reporting features
-- Batch operations for team management
-- Push notifications support
-
-### [1.2.0] - Planned
-- Dark mode theme optimization
-- Localization support
-- Web platform support
-- Advanced analytics
+- OTP flow now requires password before account creation
+- Leaderboard UI overflow resolved
+- Attendance system fetches from whitelist
 
 ---
 

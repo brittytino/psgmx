@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../../providers/announcement_provider.dart';
-import '../../../../providers/user_provider.dart';
-import '../../../../core/theme/app_dimens.dart';
+import '../../../providers/announcement_provider.dart';
+import '../../../providers/user_provider.dart';
+import '../../../core/theme/app_dimens.dart';
 
 class CreateAnnouncementDialog extends StatefulWidget {
   const CreateAnnouncementDialog({super.key});

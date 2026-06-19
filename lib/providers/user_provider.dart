@@ -1,11 +1,17 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/app_user.dart';
+import '../models/batch.dart';
+import '../models/user_permission.dart';
 import '../services/auth_service.dart';
+import '../services/batch_service.dart';
 import '../services/notification_service.dart';
+import '../services/permission_service.dart';
 
 class UserProvider with ChangeNotifier {
   final AuthService _authService;
+  late final BatchService _batchService;
+  late final PermissionService _permissionService;
   AppUser? _currentUser;
   bool _isLoading = true;
   bool _initComplete = false;
@@ -15,6 +21,8 @@ class UserProvider with ChangeNotifier {
 
   UserProvider({required AuthService authService})
       : _authService = authService {
+    _batchService = BatchService(Supabase.instance.client);
+    _permissionService = PermissionService(Supabase.instance.client);
     _init();
   }
 
@@ -24,6 +32,10 @@ class UserProvider with ChangeNotifier {
 
   bool get isSimulating => _simulatedRole != null;
   UserRole? get simulatedRole => _simulatedRole;
+
+  /// Returns true if the current user holds [permission].
+  bool hasPermission(UserPermission permission) =>
+      _currentUser?.hasPermission(permission) ?? false;
 
   AuthService get authService => _authService;
 
@@ -65,7 +77,7 @@ class UserProvider with ChangeNotifier {
     try {
       final supabaseUser = _authService.currentUser;
       if (supabaseUser != null) {
-        _currentUser = await _authService.getUserProfile(supabaseUser.id);
+        _currentUser = await _loadFullProfile(supabaseUser.id);
         if (_currentUser != null) {
           _scheduleBirthdayNotificationIfNeeded();
         }
@@ -87,11 +99,11 @@ class UserProvider with ChangeNotifier {
       (AuthState authState) async {
         debugPrint('[UserProvider] Auth state changed: ${authState.event}');
         final supabaseUser = authState.session?.user;
-        
+
         if (supabaseUser != null) {
           debugPrint('[UserProvider] User logged in: ${supabaseUser.email}');
           try {
-            _currentUser = await _authService.getUserProfile(supabaseUser.id);
+            _currentUser = await _loadFullProfile(supabaseUser.id);
             if (_currentUser != null) {
               debugPrint('[UserProvider] ✅ Profile loaded: ${_currentUser!.name}');
               _scheduleBirthdayNotificationIfNeeded();
@@ -113,6 +125,39 @@ class UserProvider with ChangeNotifier {
         debugPrint('[UserProvider] Auth stream error: $e');
       },
     );
+  }
+
+  /// Loads the full user profile including batch assignment and permission flags.
+  ///
+  /// If the user has no [batchId] yet (first login), parses the batch from
+  /// their roll number and assigns it automatically.
+  Future<AppUser?> _loadFullProfile(String userId) async {
+    AppUser? user = await _authService.getUserProfile(userId);
+    if (user == null) return null;
+
+    // Auto-assign batch on first login (batchId is null)
+    if (user.batchId == null && user.regNo.isNotEmpty) {
+      try {
+        final batch = await _batchService.batchFromRollNumber(user.regNo);
+        if (batch != null) {
+          await _batchService.assignUserToBatch(userId, batch.id);
+          user = user.copyWith(batchId: batch.id);
+          debugPrint('[UserProvider] Auto-assigned to batch ${batch.batchCode}');
+        }
+      } catch (e) {
+        debugPrint('[UserProvider] Batch auto-assign error: $e');
+      }
+    }
+
+    // Load permission flags
+    try {
+      final permissions = await _permissionService.fetchUserPermissions(userId);
+      user = user.copyWith(permissionFlags: permissions);
+    } catch (e) {
+      debugPrint('[UserProvider] Permission load error: $e');
+    }
+
+    return user;
   }
 
   /// Request OTP

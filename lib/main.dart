@@ -24,6 +24,9 @@ import 'providers/attendance_provider.dart';
 import 'providers/navigation_provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/ecampus_provider.dart';
+import 'providers/daily_five_provider.dart';
+import 'providers/placement_log_provider.dart';
+import 'providers/batch_provider.dart';
 import 'services/auth_service.dart';
 import 'services/supabase_service.dart';
 import 'services/supabase_db_service.dart';
@@ -50,6 +53,14 @@ void main() async {
   };
 
   try {
+    debugPrint('[APP] Validating environment configuration...');
+    if (!SupabaseConfig.isConfigured) {
+      throw Exception(
+        'Missing required environment variables.\n'
+        'Run the app with: flutter run --dart-define-from-file=.env.flutter\n'
+        'Copy .env.example to .env.flutter and fill in your values.',
+      );
+    }
     debugPrint('[APP] Initializing Supabase...');
     await Supabase.initialize(
       url: SupabaseConfig.supabaseUrl,
@@ -117,6 +128,16 @@ class PsgMxApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => EcampusProvider(),
+        ),
+        // ── v4 Providers ──────────────────────────────────────────────────
+        ChangeNotifierProvider(
+          create: (_) => DailyFiveProvider(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => PlacementLogProvider(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => BatchProvider(),
         ),
       ],
       child: const PsgMxAppInner(),

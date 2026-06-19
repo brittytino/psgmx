@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../providers/user_provider.dart';
 import '../../providers/ecampus_provider.dart';
 import '../../models/app_user.dart';
+import '../../models/user_permission.dart';
 import '../../core/theme/app_dimens.dart';
 import '../../services/notification_service.dart';
 import '../widgets/premium_card.dart';
@@ -159,6 +161,86 @@ class ProfileScreen extends StatelessWidget {
                    const SizedBox(height: AppSpacing.xl),
                 ],
 
+                // Admin Tools (Dynamic based on permissions)
+                if (user.hasPermission(UserPermission.manageMembers) || user.hasPermission(UserPermission.configureTeams)) ...[
+                  const _SectionLabel(label: "ADMIN TOOLS"),
+                  PremiumCard(
+                    padding: EdgeInsets.zero,
+                    child: Column(
+                      children: [
+                        if (user.hasPermission(UserPermission.manageMembers)) ...[
+                          ListTile(
+                            leading: const Icon(Icons.admin_panel_settings_outlined),
+                            title: const Text("Member Permissions"),
+                            trailing: const Icon(Icons.chevron_right, size: 18),
+                            onTap: () => context.push('/admin/permissions'),
+                          ),
+                          if (user.hasPermission(UserPermission.configureTeams))
+                            Divider(height: 1, indent: 56, color: Theme.of(context).dividerColor.withValues(alpha: 0.5)),
+                        ],
+                        if (user.hasPermission(UserPermission.publishTasks)) ...[
+                          ListTile(
+                            leading: const Icon(Icons.quiz_outlined),
+                            title: const Text("Question Bank"),
+                            trailing: const Icon(Icons.chevron_right, size: 18),
+                            onTap: () => context.push('/admin/question-bank'),
+                          ),
+                          Divider(height: 1, indent: 56, color: Theme.of(context).dividerColor.withValues(alpha: 0.5)),
+                        ],
+                        if (user.hasPermission(UserPermission.configureTeams))
+                          ListTile(
+                            leading: const Icon(Icons.group_work_outlined),
+                            title: const Text("Team Management"),
+                            trailing: const Icon(Icons.chevron_right, size: 18),
+                            onTap: () => context.push('/admin/teams'),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                ],
+
+                // Placement Prep
+                const _SectionLabel(label: "PLACEMENT PREP"),
+                PremiumCard(
+                  padding: EdgeInsets.zero,
+                  child: Column(
+                    children: [
+                      ListTile(
+                        leading: const Icon(Icons.local_fire_department_outlined, color: Colors.orange),
+                        title: const Text("Daily Five Quiz"),
+                        subtitle: const Text("Keep your streak alive"),
+                        trailing: const Icon(Icons.chevron_right, size: 18),
+                        onTap: () => context.push('/daily-five'),
+                      ),
+                      Divider(height: 1, indent: 56, color: Theme.of(context).dividerColor.withValues(alpha: 0.5)),
+                      ListTile(
+                        leading: const Icon(Icons.event_available_outlined),
+                        title: const Text("Placement Sessions"),
+                        subtitle: const Text("Schedules & Attendance"),
+                        trailing: const Icon(Icons.chevron_right, size: 18),
+                        onTap: () => context.push('/placement-sessions'),
+                      ),
+                      Divider(height: 1, indent: 56, color: Theme.of(context).dividerColor.withValues(alpha: 0.5)),
+                      ListTile(
+                        leading: const Icon(Icons.business_center_outlined),
+                        title: const Text("Placement Log"),
+                        subtitle: const Text("Interview Experiences"),
+                        trailing: const Icon(Icons.chevron_right, size: 18),
+                        onTap: () => context.push('/placement-log'),
+                      ),
+                      Divider(height: 1, indent: 56, color: Theme.of(context).dividerColor.withValues(alpha: 0.5)),
+                      ListTile(
+                        leading: const Icon(Icons.psychology_outlined, color: Colors.purple),
+                        title: const Text("AI Mentor"),
+                        subtitle: const Text("Mock Interviews & Resume Review"),
+                        trailing: const Icon(Icons.chevron_right, size: 18),
+                        onTap: () => context.push('/ai-mentor'),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xl),
 
                 // Personal Details
                 const _SectionLabel(label: "PERSONAL DETAILS"),

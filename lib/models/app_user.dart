@@ -1,3 +1,5 @@
+import 'user_permission.dart';
+
 enum UserRole { student, teamLeader, coordinator, placementRep }
 
 class UserRoles {
@@ -61,7 +63,19 @@ class AppUser {
   final DateTime createdAt;
   final DateTime updatedAt;
 
-  // New Fields
+  // ── v4: Batch system + dynamic permissions ────────────────────────────────
+  /// UUID FK to the `batches` table row this student belongs to.
+  final String? batchId;
+
+  /// UI-facing role label (e.g. "Placement Rep", "Coordinator", "Team Leader",
+  /// "Student"). Cosmetic only — actual access is controlled by [permissionFlags].
+  final String roleLabel;
+
+  /// Set of capability flags fetched from `user_permissions`.
+  /// Use [hasPermission] for clean guard checks in the UI.
+  final Set<UserPermission> permissionFlags;
+
+  // ── Existing fields ───────────────────────────────────────────────────────
   final String? leetcodeUsername;
   final DateTime? dob;
   final bool birthdayNotificationsEnabled;
@@ -87,6 +101,9 @@ class AppUser {
     required this.roles,
     DateTime? createdAt,
     DateTime? updatedAt,
+    this.batchId,
+    this.roleLabel = 'Student',
+    Set<UserPermission>? permissionFlags,
     this.leetcodeUsername,
     this.dob,
     this.birthdayNotificationsEnabled = true,
@@ -95,8 +112,13 @@ class AppUser {
     this.attendanceAlertsEnabled = true,
     this.announcementsEnabled = true,
     this.ecampusPasswordSet = false,
-  })  : createdAt = createdAt ?? DateTime.now(),
+  })  : permissionFlags = permissionFlags ?? const {},
+        createdAt = createdAt ?? DateTime.now(),
         updatedAt = updatedAt ?? DateTime.now();
+
+  /// Returns true if this user holds the given permission flag.
+  bool hasPermission(UserPermission permission) =>
+      permissionFlags.contains(permission);
 
   // Convenience getters
   bool get isStudent => roles.isStudent;
@@ -113,6 +135,19 @@ class AppUser {
         ? UserRoles.fromJson(rolesData)
         : const UserRoles();
 
+    // Parse permission flags if they were joined into the response
+    final Set<UserPermission> permissions = {};
+    final rawPerms = data['permissions'];
+    if (rawPerms is List) {
+      for (final p in rawPerms) {
+        final key = p is Map ? p['permission_key'] as String? : p as String?;
+        if (key != null) {
+          final perm = UserPermissionExtension.fromDbKey(key);
+          if (perm != null) permissions.add(perm);
+        }
+      }
+    }
+
     return AppUser(
       uid: data['id'] ?? '',
       email: data['email'] ?? '',
@@ -121,6 +156,9 @@ class AppUser {
       teamId: data['team_id'],
       batch: data['batch'] ?? 'G1',
       roles: roles,
+      batchId: data['batch_id'] as String?,
+      roleLabel: data['role_label'] as String? ?? 'Student',
+      permissionFlags: permissions,
       createdAt: data['created_at'] != null
           ? DateTime.parse(data['created_at'])
           : null,
@@ -154,6 +192,8 @@ class AppUser {
       'team_id': teamId,
       'batch': batch,
       'roles': roles.toJson(),
+      'batch_id': batchId,
+      'role_label': roleLabel,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
       'leetcode_username': leetcodeUsername,
@@ -170,6 +210,9 @@ class AppUser {
   AppUser copyWith({
     String? name,
     UserRoles? roles,
+    String? batchId,
+    String? roleLabel,
+    Set<UserPermission>? permissionFlags,
     String? leetcodeUsername,
     DateTime? dob,
     bool? birthdayNotificationsEnabled,
@@ -188,6 +231,9 @@ class AppUser {
       teamId: teamId ?? this.teamId,
       batch: batch,
       roles: roles ?? this.roles,
+      batchId: batchId ?? this.batchId,
+      roleLabel: roleLabel ?? this.roleLabel,
+      permissionFlags: permissionFlags ?? this.permissionFlags,
       createdAt: createdAt,
       updatedAt: DateTime.now(),
       leetcodeUsername: leetcodeUsername ?? this.leetcodeUsername,

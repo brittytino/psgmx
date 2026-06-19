@@ -12,8 +12,9 @@ import '../../services/notification_service.dart';
 import '../../services/attendance_schedule_service.dart';
 import '../../services/task_completion_service.dart';
 import '../../services/attendance_streak_service.dart';
-import '../../services/performance_service.dart';
 import '../../models/attendance_streak.dart';
+import '../../models/batch.dart';
+import '../../services/batch_service.dart';
 import '../../core/theme/app_dimens.dart';
 import '../widgets/premium_card.dart';
 import '../widgets/notification_bell_icon.dart';
@@ -23,6 +24,7 @@ import 'widgets/leetcode_leaderboard.dart';
 import 'widgets/attendance_action_card.dart';
 import 'widgets/create_announcement_dialog.dart';
 import 'widgets/birthday_greeting_card.dart';
+import 'readiness_score_widget.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../attendance/daily_attendance_sheet.dart';
@@ -39,6 +41,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with UpdateCheckMixin {
   bool _isClassDay = true;
   bool _isLoadingClassStatus = true;
+  bool _isAlumni = false;
 
   @override
   void initState() {
@@ -140,6 +143,32 @@ class _HomeScreenState extends State<HomeScreen> with UpdateCheckMixin {
     // 4. Check Attendance Popup (only if class day is confirmed)
     if (_isClassDay) {
       _checkAttendancePopup();
+    }
+    
+    // 5. Check if Alumni
+    await _checkAlumniStatus();
+  }
+
+  Future<void> _checkAlumniStatus() async {
+    try {
+      final user = context.read<UserProvider>().currentUser;
+      if (user?.batchId != null) {
+        final batchService = BatchService(Supabase.instance.client);
+        final batches = await batchService.fetchActiveBatches();
+        // Since graduated batches are not in active batches typically, 
+        // we might need to fetch the specific batch.
+        // But for easter egg:
+        final response = await Supabase.instance.client
+            .from('batches')
+            .select('status')
+            .eq('id', user!.batchId!)
+            .single();
+        if (mounted && response['status'] == 'graduated') {
+          setState(() => _isAlumni = true);
+        }
+      }
+    } catch (e) {
+      debugPrint('[HomeScreen] Alumni check error: $e');
     }
   }
 
@@ -526,6 +555,32 @@ class _HomeScreenState extends State<HomeScreen> with UpdateCheckMixin {
               const AlwaysScrollableScrollPhysics(), // Allow pull to refresh even if content short
           slivers: [
             _buildSliverAppBar(context, userProvider),
+            
+            // ALUMNI MODE EASTER EGG
+            if (_isAlumni)
+              SliverToBoxAdapter(
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding, vertical: AppSpacing.sm),
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(colors: [Colors.purple, Colors.deepPurple]),
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                  ),
+                  child: const Row(
+                    children: [
+                      Text('🎓', style: TextStyle(fontSize: 24)),
+                      SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: Text(
+                          "ALUMNI MODE ACTIVATED",
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 2),
+                        ),
+                      ),
+                      Icon(Icons.auto_awesome, color: Colors.amber),
+                    ],
+                  ),
+                ),
+              ),
 
             // Non-Class Day Warning
             if (!_isClassDay && !_isLoadingClassStatus)
@@ -605,6 +660,12 @@ class _HomeScreenState extends State<HomeScreen> with UpdateCheckMixin {
                     _AdminDashboard(db: dbService),
 
                   const SizedBox(height: AppSpacing.xxl),
+
+                  // 5.5 Readiness Score
+                  if (isStudentView) ...[
+                    const ReadinessScoreWidget(),
+                    const SizedBox(height: AppSpacing.xxl),
+                  ],
 
                   // 6. Personal LeetCode Stats (For Everyone with Username) - MOVED UP
                   if (user.leetcodeUsername != null &&

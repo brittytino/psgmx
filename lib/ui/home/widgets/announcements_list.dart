@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../../providers/announcement_provider.dart';
-import '../../../../providers/user_provider.dart';
+import '../../../providers/announcement_provider.dart';
+import '../../../providers/user_provider.dart';
 import '../../widgets/premium_card.dart';
-import '../../../../core/theme/app_dimens.dart';
+import '../../../core/theme/app_dimens.dart';
 
 class AnnouncementsList extends StatelessWidget {
   const AnnouncementsList({super.key});
