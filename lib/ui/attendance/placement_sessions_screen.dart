@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 import '../../models/placement_session.dart';
 import '../../models/user_permission.dart';
+import '../../models/app_user.dart';
 import '../../providers/user_provider.dart';
 import '../../services/placement_session_service.dart';
 import '../../core/theme/app_dimens.dart';
@@ -342,7 +343,7 @@ class _AttendanceMarkerSheetState extends State<_AttendanceMarkerSheet> {
                 subtitle: Text(student.regNo),
                 trailing: Switch(
                   value: isPresent,
-                  activeColor: Colors.green,
+                  activeThumbColor: Colors.green,
                   onChanged: (val) {
                     setState(() {
                       _attendanceState[student.uid] = val ? PlacementAttendanceStatus.present : PlacementAttendanceStatus.absent;

@@ -80,7 +80,7 @@ class BatchProvider with ChangeNotifier {
   Future<void> loadTeamMembers(String teamId) async {
     try {
       final team = await _service.fetchTeamWithMembers(teamId);
-      _teamMembers = team.members ?? [];
+      _teamMembers = team.members;
       notifyListeners();
     } catch (e) {
       _error = e.toString();

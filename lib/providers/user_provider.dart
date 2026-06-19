@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/app_user.dart';
-import '../models/batch.dart';
 import '../models/user_permission.dart';
 import '../services/auth_service.dart';
 import '../services/batch_service.dart';
@@ -152,7 +151,7 @@ class UserProvider with ChangeNotifier {
     // Load permission flags
     try {
       final permissions = await _permissionService.fetchUserPermissions(userId);
-      user = user.copyWith(permissionFlags: permissions);
+      user = user?.copyWith(permissionFlags: permissions);
     } catch (e) {
       debugPrint('[UserProvider] Permission load error: $e');
     }

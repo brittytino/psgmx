@@ -21,6 +21,9 @@ enum UserPermission {
   /// Can publish daily tasks (LeetCode + core subject) and manage question bank.
   publishTasks,
 
+  /// Can publish general announcements.
+  publishAnnouncements,
+
   /// Can create and edit company records in the Placement Log.
   manageCompanyRecords,
 
@@ -29,6 +32,9 @@ enum UserPermission {
 
   /// Can read batch-wide analytics, leaderboards, and attendance summaries.
   viewBatchAnalytics,
+
+  /// Can view and interact with the AI mentor.
+  viewAiMentor,
 }
 
 extension UserPermissionExtension on UserPermission {
@@ -45,12 +51,16 @@ extension UserPermissionExtension on UserPermission {
         return 'mark_placement_attendance';
       case UserPermission.publishTasks:
         return 'publish_tasks';
+      case UserPermission.publishAnnouncements:
+        return 'publish_announcements';
       case UserPermission.manageCompanyRecords:
         return 'manage_company_records';
       case UserPermission.moderatePlacementLog:
         return 'moderate_placement_log';
       case UserPermission.viewBatchAnalytics:
         return 'view_batch_analytics';
+      case UserPermission.viewAiMentor:
+        return 'view_ai_mentor';
     }
   }
 
@@ -74,12 +84,16 @@ extension UserPermissionExtension on UserPermission {
         return 'Mark Placement Attendance';
       case UserPermission.publishTasks:
         return 'Publish Tasks';
+      case UserPermission.publishAnnouncements:
+        return 'Publish Announcements';
       case UserPermission.manageCompanyRecords:
         return 'Manage Company Records';
       case UserPermission.moderatePlacementLog:
         return 'Moderate Placement Log';
       case UserPermission.viewBatchAnalytics:
         return 'View Batch Analytics';
+      case UserPermission.viewAiMentor:
+        return 'View AI Mentor';
     }
   }
 }
@@ -94,9 +108,12 @@ const Set<UserPermission> kPlacementRepPermissions = {
   UserPermission.manageCompanyRecords,
   UserPermission.moderatePlacementLog,
   UserPermission.viewBatchAnalytics,
+  UserPermission.publishAnnouncements,
+  UserPermission.viewAiMentor,
 };
 
 /// Default permissions for a Team Leader (only attendance marking by default).
 const Set<UserPermission> kTeamLeaderPermissions = {
   UserPermission.markPlacementAttendance,
+  UserPermission.viewAiMentor,
 };

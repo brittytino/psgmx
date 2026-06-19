@@ -248,7 +248,7 @@ class _QuestionEditorSheetState extends State<_QuestionEditorSheet> {
               children: [
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    value: _topic,
+                    initialValue: _topic,
                     decoration: const InputDecoration(labelText: 'Topic', border: OutlineInputBorder()),
                     items: const [
                       DropdownMenuItem(value: 'dsa', child: Text('DSA')),
@@ -264,7 +264,7 @@ class _QuestionEditorSheetState extends State<_QuestionEditorSheet> {
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    value: _difficulty,
+                    initialValue: _difficulty,
                     decoration: const InputDecoration(labelText: 'Difficulty', border: OutlineInputBorder()),
                     items: const [
                       DropdownMenuItem(value: 'easy', child: Text('Easy')),
@@ -294,9 +294,12 @@ class _QuestionEditorSheetState extends State<_QuestionEditorSheet> {
                 padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                 child: Row(
                   children: [
+                    // ignore: deprecated_member_use
                     Radio<int>(
                       value: i,
+                      // ignore: deprecated_member_use
                       groupValue: _correctIdx,
+                      // ignore: deprecated_member_use
                       onChanged: (v) => setState(() => _correctIdx = v!),
                     ),
                     Expanded(

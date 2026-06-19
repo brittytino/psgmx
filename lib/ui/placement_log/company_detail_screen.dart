@@ -47,10 +47,9 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
             companyId: widget.company.id,
           );
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Error: $e')));
-      }
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Error: $e')));
     }
   }
 
@@ -295,7 +294,7 @@ class _AddLogSheetState extends State<_AddLogSheet> {
               children: [
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    value: _outcome,
+                    initialValue: _outcome,
                     decoration: const InputDecoration(
                         labelText: 'Outcome', border: OutlineInputBorder()),
                     items: const [

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
-import '../../models/company.dart';
 import '../../models/user_permission.dart';
 import '../../providers/user_provider.dart';
 import '../../providers/placement_log_provider.dart';

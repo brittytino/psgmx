@@ -52,7 +52,7 @@ class AiMentorService {
     required String userMessage,
     int maxTokens = 300,
   }) async {
-    final apiKey = SupabaseConfig.openRouterApiKey;
+    const apiKey = SupabaseConfig.openRouterApiKey;
     if (apiKey.isEmpty) {
       debugPrint('[AiMentor] No OpenRouter API key — skipping AI call');
       return null;
@@ -169,7 +169,7 @@ class AiMentorService {
 
     final greeting = name != null ? 'Hey $name! ' : 'Hey! ';
     final userMessage =
-        '${greeting}My weakest topic this week is "$weakTopic" (${weakPct}% accuracy). '
+        '${greeting}My weakest topic this week is "$weakTopic" ($weakPct% accuracy). '
         'My current streak is $currentStreak days. Give me a quick tip.';
 
     final aiResponse = await _callOpenRouter(

@@ -595,29 +595,25 @@ class _BulkUploadScreenState extends State<BulkUploadScreen> {
 
   Future<void> _pickFile() async {
     try {
-      final result = await FilePicker.platform.pickFiles(
+      final file = await FilePicker.pickFile(
         type: FileType.custom,
         allowedExtensions: ['xlsx', 'xls'],
-        allowMultiple: false,
-        withData: true, // Important: Get file bytes
       );
 
-      if (result != null && result.files.isNotEmpty) {
-        final file = result.files.first;
-        
-        // Check if bytes are available
-        if (file.bytes == null) {
+      if (file != null) {
+        try {
+          final bytes = await file.readAsBytes();
+          setState(() {
+            _selectedFile = file;
+            _fileBytes = bytes;
+            _errorMessage = null;
+          });
+        } catch (e) {
           setState(() {
             _errorMessage = 'Could not read file data. Please try again.';
           });
           return;
         }
-
-        setState(() {
-          _selectedFile = file;
-          _fileBytes = file.bytes;
-          _errorMessage = null;
-        });
       }
     } catch (e) {
       setState(() {

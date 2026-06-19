@@ -457,7 +457,7 @@ class _NotificationCard extends StatelessWidget {
     }
   }
 
-  IconData _getTypeIcon(model.NotificationType type) {
+  FaIconData _getTypeIcon(model.NotificationType type) {
     switch (type) {
       case model.NotificationType.alert:
         return FontAwesomeIcons.bell;

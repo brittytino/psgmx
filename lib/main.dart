@@ -64,7 +64,7 @@ void main() async {
     debugPrint('[APP] Initializing Supabase...');
     await Supabase.initialize(
       url: SupabaseConfig.supabaseUrl,
-      anonKey: SupabaseConfig.supabaseAnonKey,
+      publishableKey: SupabaseConfig.supabaseAnonKey,
     );
     debugPrint('[APP] Supabase initialized successfully');
 

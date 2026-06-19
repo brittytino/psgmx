@@ -90,6 +90,8 @@ class PlacementLogEntry {
   final String experienceText;
   final bool isModerated;
   final String? moderatedBy;
+  final String? outcome;
+  final bool? isAnonymous;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -101,6 +103,8 @@ class PlacementLogEntry {
     required this.experienceText,
     this.isModerated = false,
     this.moderatedBy,
+    this.outcome,
+    this.isAnonymous,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -114,6 +118,8 @@ class PlacementLogEntry {
       experienceText: data['experience_text'] as String,
       isModerated: data['is_moderated'] as bool? ?? false,
       moderatedBy: data['moderated_by'] as String?,
+      outcome: data['outcome'] as String?,
+      isAnonymous: data['is_anonymous'] as bool?,
       createdAt: DateTime.parse(data['created_at'] as String),
       updatedAt: DateTime.parse(data['updated_at'] as String),
     );
@@ -127,6 +133,8 @@ class PlacementLogEntry {
         'experience_text': experienceText,
         'is_moderated': isModerated,
         'moderated_by': moderatedBy,
+        'outcome': outcome,
+        'is_anonymous': isAnonymous,
         'created_at': createdAt.toIso8601String(),
         'updated_at': updatedAt.toIso8601String(),
       };

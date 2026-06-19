@@ -139,7 +139,7 @@ class NotificationService extends ChangeNotifier {
         InitializationSettings(android: androidSettings, iOS: iosSettings);
 
     await _notifications.initialize(
-      settings,
+      settings: settings,
       onDidReceiveNotificationResponse: (details) {
         debugPrint('[Notification] Tapped: ${details.payload}');
         if (details.payload != null) {
@@ -259,10 +259,10 @@ class NotificationService extends ChangeNotifier {
         NotificationDetails(android: androidDetails, iOS: iosDetails);
 
     await _notifications.show(
-      notification.id.hashCode,
-      notification.title,
-      notification.message,
-      details,
+      id: notification.id.hashCode,
+      title: notification.title,
+      body: notification.message,
+      notificationDetails: details,
       payload: notification.id,
     );
   }
@@ -500,10 +500,10 @@ class NotificationService extends ChangeNotifier {
         const iosDetails = DarwinNotificationDetails();
         
         await _notifications.show(
-          DateTime.now().millisecondsSinceEpoch % 100000,
-          '📢 $title',
-          message,
-          NotificationDetails(android: androidDetails, iOS: iosDetails),
+          id: DateTime.now().millisecondsSinceEpoch % 100000,
+          title: '📢 $title',
+          body: message,
+          notificationDetails: NotificationDetails(android: androidDetails, iOS: iosDetails),
         );
       }
 
@@ -547,10 +547,10 @@ class NotificationService extends ChangeNotifier {
         final notifId = 600 + (birthdayPersonName.hashCode.abs() % 399);
 
         await _notifications.show(
-          notifId,
-          title,
-          body,
-          const NotificationDetails(
+          id: notifId,
+          title: title,
+          body: body,
+          notificationDetails: const NotificationDetails(
             android: AndroidNotificationDetails(
               'psgmx_birthday',
               'Birthday Notifications',
@@ -707,7 +707,7 @@ class NotificationService extends ChangeNotifier {
       return;
     }
     
-    await _notifications.cancel(300 + teamId.hashCode % 100);
+    await _notifications.cancel(id: 300 + teamId.hashCode % 100);
   }
 
   /// Schedule LeetCode reminders
@@ -735,8 +735,8 @@ class NotificationService extends ChangeNotifier {
 
   Future<void> cancelLeetCodeReminders() async {
     if (kIsWeb) return;
-    await _notifications.cancel(100);
-    await _notifications.cancel(101);
+    await _notifications.cancel(id: 100);
+    await _notifications.cancel(id: 101);
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -748,7 +748,7 @@ class NotificationService extends ChangeNotifier {
   Future<void> cancelCaExamNotifications() async {
     if (kIsWeb) return;
     for (int i = 500; i <= 598; i++) {
-      await _notifications.cancel(i);
+      await _notifications.cancel(id: i);
     }
     debugPrint('[CaExam] All scheduled CA exam notifications cancelled');
   }
@@ -853,11 +853,11 @@ class NotificationService extends ChangeNotifier {
     if (examDay.isAfter(now)) {
       // Schedule for 7:30 AM on the exam day.
       await _notifications.zonedSchedule(
-        id,
-        title,
-        body,
-        examDay,
-        notifDetails,
+        id: id,
+        title: title,
+        body: body,
+        scheduledDate: examDay,
+        notificationDetails: notifDetails,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         payload: payload,
       );
@@ -867,7 +867,7 @@ class NotificationService extends ChangeNotifier {
         examDate.month == now.month &&
         examDate.day == now.day) {
       // Exam is today and it's already past 7:30 AM — fire immediately.
-      await _notifications.show(id, title, body, notifDetails, payload: payload);
+      await _notifications.show(id: id, title: title, body: body, notificationDetails: notifDetails, payload: payload);
       debugPrint('[CaExam] Fired immediate notification #$id for $courseName (exam is today)');
     }
     // Past exams → do nothing.
@@ -955,11 +955,11 @@ class NotificationService extends ChangeNotifier {
 
     try {
       await _notifications.zonedSchedule(
-        200,
-        '🎂 Happy Birthday, $firstName!',
-        'Wishing you a fantastic year ahead filled with success and happiness! 🎉',
-        birthdayDate,
-        const NotificationDetails(
+        id: 200,
+        title: '🎂 Happy Birthday, $firstName!',
+        body: 'Wishing you a fantastic year ahead filled with success and happiness! 🎉',
+        scheduledDate: birthdayDate,
+        notificationDetails: const NotificationDetails(
           android: AndroidNotificationDetails(
             'psgmx_birthday',
             'Birthday Notifications',
@@ -986,7 +986,7 @@ class NotificationService extends ChangeNotifier {
 
   Future<void> cancelBirthdayNotification() async {
     if (kIsWeb) return;
-    await _notifications.cancel(200);
+    await _notifications.cancel(id: 200);
   }
 
   Future<void> _scheduleDaily({
@@ -1007,11 +1007,11 @@ class NotificationService extends ChangeNotifier {
     }
 
     await _notifications.zonedSchedule(
-      id,
-      title,
-      body,
-      scheduledDate,
-      NotificationDetails(
+      id: id,
+      title: title,
+      body: body,
+      scheduledDate: scheduledDate,
+      notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
           channel,
           channel == 'psgmx_attendance'
@@ -1049,11 +1049,11 @@ class NotificationService extends ChangeNotifier {
     }
 
     await _notifications.zonedSchedule(
-      id,
-      title,
-      body,
-      date,
-      const NotificationDetails(
+      id: id,
+      title: title,
+      body: body,
+      scheduledDate: date,
+      notificationDetails: const NotificationDetails(
         android: AndroidNotificationDetails(
           'psgmx_leetcode',
           'LeetCode Reminders',
@@ -1219,7 +1219,7 @@ class NotificationService extends ChangeNotifier {
 
     final details =
         NotificationDetails(android: androidDetails, iOS: iosDetails);
-    await _notifications.show(id, title, body, details, payload: payload);
+    await _notifications.show(id: id, title: title, body: body, notificationDetails: details, payload: payload);
   }
 
   String _getNotificationTypeName(NotificationType type) {
@@ -1346,7 +1346,7 @@ class NotificationService extends ChangeNotifier {
 
   /// Cancel task deadline reminder
   Future<void> cancelTaskDeadlineReminder() async {
-    await _notifications.cancel(400);
+    await _notifications.cancel(id: 400);
   }
 
   /// Send immediate task reminder (called if task not completed)

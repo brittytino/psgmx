@@ -3,6 +3,7 @@
 /// KEY DESIGN: [DailyFiveSession] is intentionally ephemeral — it is never
 /// written to the database. Only [DailyFiveStreak] is persisted centrally.
 /// This is a deliberate product decision per Agent.md Section 6.
+library;
 
 // ── Question ──────────────────────────────────────────────────────────────────
 

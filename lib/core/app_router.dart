@@ -14,7 +14,7 @@ import '../ui/placement_log/placement_log_screen.dart';
 import '../ui/placement_log/company_detail_screen.dart';
 import '../ui/ai_mentor/ai_mentor_screen.dart';
 import '../ui/notifications/notifications_screen.dart';
-import '../models/placement_log.dart';
+
 import '../models/company.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();

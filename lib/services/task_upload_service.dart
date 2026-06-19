@@ -131,7 +131,7 @@ class TaskUploadService {
   Future<List<TaskUploadSheet>> _parseCsvFile(Uint8List fileBytes) async {
     try {
       final csvString = String.fromCharCodes(fileBytes);
-      final rows = const CsvToListConverter().convert(csvString);
+      final rows = Csv().decode(csvString);
 
       if (rows.isEmpty) {
         throw Exception('CSV file is empty');

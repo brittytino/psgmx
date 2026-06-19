@@ -13,8 +13,6 @@ import '../../services/attendance_schedule_service.dart';
 import '../../services/task_completion_service.dart';
 import '../../services/attendance_streak_service.dart';
 import '../../models/attendance_streak.dart';
-import '../../models/batch.dart';
-import '../../services/batch_service.dart';
 import '../../core/theme/app_dimens.dart';
 import '../widgets/premium_card.dart';
 import '../widgets/notification_bell_icon.dart';
@@ -51,24 +49,10 @@ class _HomeScreenState extends State<HomeScreen> with UpdateCheckMixin {
       _refreshAll();
       NotificationService().init(); // Ensure notification init
       NotificationService().requestPermissions();
-      _checkWeeklyTopPerformer(); // C1: Weekly top performer check
       _setupDailyReminders(); // Setup all scheduled reminders
     });
   }
 
-  /// C1: Check and announce weekly top performer (Mondays only)
-  Future<void> _checkWeeklyTopPerformer() async {
-    try {
-      final performanceService = PerformanceService();
-      final shouldAnnounce = await performanceService.shouldAnnounceWeeklyTopPerformer();
-      if (shouldAnnounce) {
-        await performanceService.announceWeeklyTopPerformer();
-      }
-    } catch (e) {
-      // Silent fail - not critical
-      debugPrint('[HomeScreen] Error checking weekly top performer: $e');
-    }
-  }
 
   /// Setup all daily scheduled reminders
   Future<void> _setupDailyReminders() async {
@@ -153,8 +137,6 @@ class _HomeScreenState extends State<HomeScreen> with UpdateCheckMixin {
     try {
       final user = context.read<UserProvider>().currentUser;
       if (user?.batchId != null) {
-        final batchService = BatchService(Supabase.instance.client);
-        final batches = await batchService.fetchActiveBatches();
         // Since graduated batches are not in active batches typically, 
         // we might need to fetch the specific batch.
         // But for easter egg:
@@ -970,7 +952,7 @@ class _StudentDashboardState extends State<_StudentDashboard> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // C1: Weekly Top Performer Banner
-        const _WeeklyTopPerformerBanner(),
+
         const SizedBox(height: AppSpacing.md),
 
         // A1: Today's Task Status
@@ -1344,102 +1326,6 @@ class _SectionHeader extends StatelessWidget {
             child: Text(action),
           ),
       ],
-    );
-  }
-}
-
-// ========================================
-// C1: WEEKLY TOP PERFORMER BANNER
-// ========================================
-class _WeeklyTopPerformerBanner extends StatelessWidget {
-  const _WeeklyTopPerformerBanner();
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<WeeklyTopPerformer?>(
-      future: PerformanceService().getWeeklyTopPerformer(),
-      builder: (context, snapshot) {
-        // Don't show anything if loading or no data
-        if (!snapshot.hasData || snapshot.data == null) {
-          return const SizedBox.shrink();
-        }
-
-        final performer = snapshot.data!;
-
-        // Don't show if no weekly score
-        if (performer.weeklyScore == 0) {
-          return const SizedBox.shrink();
-        }
-
-        return Container(
-          margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Colors.amber.shade300,
-                Colors.orange.shade400,
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.amber.withValues(alpha: 0.3),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              const Text('🏆', style: TextStyle(fontSize: 28)),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Weekly Champion',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 12,
-                      ),
-                    ),
-                    Text(
-                      performer.name,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  '${performer.weeklyScore} solved',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 }

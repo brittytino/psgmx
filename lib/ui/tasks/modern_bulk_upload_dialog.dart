@@ -207,7 +207,7 @@ class _ModernBulkUploadDialogState extends State<ModernBulkUploadDialog> {
       final templateBytes = uploadService.generateExcelTemplate();
 
       // Save template
-      final String? path = await FilePicker.platform.saveFile(
+      final String? path = await FilePicker.saveFile(
         dialogTitle: 'Save Excel Template',
         fileName: 'PSGMX_Task_Upload_Template.xlsx',
         bytes: templateBytes,
@@ -299,10 +299,7 @@ class _ModernBulkUploadDialogState extends State<ModernBulkUploadDialog> {
       final uploadService = TaskUploadService();
 
       // Get file bytes from PlatformFile
-      final fileBytes = _selectedFile!.bytes;
-      if (fileBytes == null) {
-        throw Exception('Could not read file data');
-      }
+      final fileBytes = await _selectedFile!.readAsBytes();
 
       // Parse file
       final sheets = await uploadService.parseUploadFile(
@@ -561,15 +558,13 @@ class _FilePickerArea extends StatelessWidget {
 
   Future<void> _pickFile(BuildContext context) async {
     try {
-      final result = await FilePicker.platform.pickFiles(
+      final file = await FilePicker.pickFile(
         type: FileType.custom,
         allowedExtensions: ['xlsx', 'xls'],
-        allowMultiple: false,
-        withData: true,
       );
 
-      if (result != null && result.files.isNotEmpty) {
-        onFilePicked(result.files.first);
+      if (file != null) {
+        onFilePicked(file);
       }
     } catch (e) {
       if (context.mounted) {

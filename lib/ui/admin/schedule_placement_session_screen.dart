@@ -28,7 +28,7 @@ class _SchedulePlacementSessionScreenState extends State<SchedulePlacementSessio
   TimeOfDay _selectedTime = const TimeOfDay(hour: 17, minute: 0); // 5 PM
   
   List<Team> _availableTeams = [];
-  Set<String> _selectedTeamIds = {};
+  final Set<String> _selectedTeamIds = {};
   bool _isBatchWide = true;
   
   bool _isLoadingTeams = true;
@@ -223,8 +223,11 @@ class _SchedulePlacementSessionScreenState extends State<SchedulePlacementSessio
                       selected: isSelected,
                       onSelected: (val) {
                         setState(() {
-                          if (val) _selectedTeamIds.add(team.id);
-                          else _selectedTeamIds.remove(team.id);
+                          if (val) {
+                            _selectedTeamIds.add(team.id);
+                          } else {
+                            _selectedTeamIds.remove(team.id);
+                          }
                         });
                       },
                     );
