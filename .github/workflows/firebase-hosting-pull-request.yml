@@ -23,11 +23,20 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
       
+      - name: Generate Environment File
+        run: |
+          cat > .env.flutter <<EOF
+          SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+          ECAMPUS_API_URL=${{ secrets.ECAMPUS_API_URL }}
+          ECAMPUS_API_SECRET=${{ secrets.ECAMPUS_API_SECRET }}
+          EXTERNAL_PLATFORM_API_KEY=${{ secrets.EXTERNAL_PLATFORM_API_KEY }}
+          OPENROUTER_API_KEY=${{ secrets.OPENROUTER_API_KEY }}
+          EOF
+
       - name: Build Web
         run: |
-          flutter build web --release \
-            --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
-            --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+          flutter build web --release --dart-define-from-file=.env.flutter
       
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:

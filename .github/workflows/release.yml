@@ -70,12 +70,21 @@ jobs:
           keytool -list -keystore android/app/upload-keystore.jks \
             -storepass ${{ secrets.KEYSTORE_PASSWORD }}
 
+      - name: Generate Environment File
+        run: |
+          cat > .env.flutter <<EOF
+          SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+          ECAMPUS_API_URL=${{ secrets.ECAMPUS_API_URL }}
+          ECAMPUS_API_SECRET=${{ secrets.ECAMPUS_API_SECRET }}
+          EXTERNAL_PLATFORM_API_KEY=${{ secrets.EXTERNAL_PLATFORM_API_KEY }}
+          OPENROUTER_API_KEY=${{ secrets.OPENROUTER_API_KEY }}
+          EOF
+
       - name: Build Signed APK
         timeout-minutes: 60
         run: |
-          flutter build apk --release \
-            --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
-            --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+          flutter build apk --release --dart-define-from-file=.env.flutter
 
       - name: Rename APK
         run: |
