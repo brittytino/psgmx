@@ -252,7 +252,7 @@ class AttendanceProvider extends ChangeNotifier {
           roles: const UserRoles(),
         ),
       );
-      final studentTeamId = student.teamId ?? teamId ?? 'ALL';
+//      final studentTeamId = student.teamId ?? teamId ?? 'ALL';
 
       String? resolvedUserId;
       if (uuidRegex.hasMatch(studentIdOrEmail)) {

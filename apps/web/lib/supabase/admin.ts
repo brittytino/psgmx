@@ -11,8 +11,8 @@ import type { Database } from '@/../../supabase/types/database.types'
 //   - Edge Functions
 
 export const supabaseAdmin = createClient<Database>(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  process.env.NEXT_PUBLIC_SUPABASE_URL || "http://localhost",
+  process.env.SUPABASE_SERVICE_ROLE_KEY || "dummy",
   {
     auth: {
       autoRefreshToken: false,

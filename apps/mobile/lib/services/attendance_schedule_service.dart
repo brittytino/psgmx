@@ -78,7 +78,7 @@ class AttendanceScheduleService {
   }) async {
     try {
       final dateString = date.toIso8601String().split('T')[0];
-      final now = DateTime.now().toIso8601String();
+//      final now = DateTime.now().toIso8601String();
 
       final response = await _supabase
           .from('placement_sessions')
