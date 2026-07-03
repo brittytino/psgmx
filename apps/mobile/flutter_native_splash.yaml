@@ -1,0 +1,21 @@
+flutter_native_splash:
+  # Use solid color background for instant display
+  color: "#000000"
+  color_dark: "#000000"
+  image: "assets/images/splash_with_text.png"
+  
+  # Android 12+ - minimal splash
+  android_12:
+    color: "#000000"
+    icon_background_color: "#000000"
+    color_dark: "#000000"
+    icon_background_color_dark: "#000000"
+    image: "assets/images/splash_with_text.png"
+  # Remove images for instant startup
+  fullscreen: false
+  
+  # iOS - minimal
+  ios_content_mode: center
+  
+  # Web (optional)
+  web: false

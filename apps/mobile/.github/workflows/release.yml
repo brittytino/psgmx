@@ -1,0 +1,158 @@
+name: Build and Release Android APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g., v2.2.0)'
+        required: false
+        default: 'latest'
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build_and_release:
+    name: Build and Release APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get version from pubspec
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //' | sed 's/+.*//')
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "TAG=v$VERSION" >> $GITHUB_OUTPUT
+          echo "Detected version: v$VERSION"
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Flutter Doctor
+        run: flutter doctor -v
+
+      - name: Install dependencies
+        run: |
+          flutter pub get
+          flutter precache --android
+
+      - name: Setup Keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/upload-keystore.jks
+          chmod 600 android/app/upload-keystore.jks
+
+          cat > android/key.properties <<EOF
+          storePassword=${{ secrets.KEYSTORE_PASSWORD }}
+          keyPassword=${{ secrets.KEY_PASSWORD }}
+          keyAlias=${{ secrets.KEY_ALIAS }}
+          storeFile=app/upload-keystore.jks
+          EOF
+
+      - name: Verify keystore
+        run: |
+          keytool -list -keystore android/app/upload-keystore.jks \
+            -storepass ${{ secrets.KEYSTORE_PASSWORD }}
+
+      - name: Generate Environment File
+        run: |
+          cat > .env.flutter <<EOF
+          SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+          ECAMPUS_API_URL=${{ secrets.ECAMPUS_API_URL }}
+          ECAMPUS_API_SECRET=${{ secrets.ECAMPUS_API_SECRET }}
+          EXTERNAL_PLATFORM_API_KEY=${{ secrets.EXTERNAL_PLATFORM_API_KEY }}
+          OPENROUTER_API_KEY=${{ secrets.OPENROUTER_API_KEY }}
+          EOF
+
+      - name: Build Signed APK
+        timeout-minutes: 60
+        run: |
+          flutter build apk --release --dart-define-from-file=.env.flutter
+
+      - name: Rename APK
+        run: |
+          mv build/app/outputs/flutter-apk/app-release.apk \
+             build/app/outputs/flutter-apk/PSGMX-${{ steps.version.outputs.TAG }}-android.apk
+
+      - name: Delete existing release if present
+        run: |
+          RELEASE_ID=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ steps.version.outputs.TAG }}" | \
+            jq -r '.id // empty')
+          if [ -n "$RELEASE_ID" ]; then
+            curl -s -X DELETE -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              "https://api.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID"
+            echo "Deleted existing release $RELEASE_ID for ${{ steps.version.outputs.TAG }}"
+          else
+            echo "No existing release found for ${{ steps.version.outputs.TAG }}"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.TAG }}
+          name: PSGMX ${{ steps.version.outputs.TAG }}
+          body: |
+            ## 🎉 PSGMX Release ${{ steps.version.outputs.TAG }}
+
+            ### 📥 Download
+            - **Android APK**: `PSGMX-${{ steps.version.outputs.TAG }}-android.apk`
+            
+            ### 🔥 What's New in this release
+            - ✅ See the changelog and commits for the full list of updates.
+
+            ### 📋 Installation
+            1. Download the APK file from assets below
+            2. Enable "Install from Unknown Sources" in Android settings
+            3. Install the APK
+            4. Enjoy the new features! 🚀
+
+            ### 📊 Technical Details
+            - Flutter Version: 3.27.2
+            - Build: Signed Release
+            - Min SDK: 21
+            - Target SDK: 34
+            
+            ### 📝 Database Update Required
+            Run this query on your Supabase database:
+            ```sql
+            UPDATE app_config SET 
+                latest_version = '${{ steps.version.outputs.VERSION }}', 
+                force_update = true,
+                update_message = 'A new PSGMX update is available. Please update to the latest version.',
+                github_release_url = 'https://github.com/brittytino/psgmx-flutter/releases/latest',
+                android_download_url = 'https://github.com/brittytino/psgmx-flutter/releases/download/${{ steps.version.outputs.TAG }}/PSGMX-${{ steps.version.outputs.TAG }}-android.apk'
+            WHERE id IS NOT NULL;
+            ```
+
+            ### 🌐 Web App
+            https://psgmxians.web.app
+            
+            ---
+            **Full Changelog**: https://github.com/${{ github.repository }}/commits/${{ steps.version.outputs.TAG }}
+          files: |
+            build/app/outputs/flutter-apk/PSGMX-${{ steps.version.outputs.TAG }}-android.apk
+          draft: false
+          prerelease: false
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

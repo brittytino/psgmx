@@ -1,0 +1,55 @@
+{
+  "name": "psgmx-web",
+  "version": "5.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "evaluate-mcq": "node -r ts-node/register scripts/evaluate-mcq.ts",
+    "init:psgmx": "node -r dotenv/config -e \"require('ts-node').register({project:'tsconfig.scripts.json'}); require('./scripts/init-psgmx.ts');\"",
+    "test:fri-insights": "node -r dotenv/config -e \"require('tsconfig-paths').register({baseUrl:require('path').resolve('.'),paths:{'@/*':['./*']}});require('ts-node').register({project:'tsconfig.scripts.json'});require('./scripts/test-fri-insights.ts');\"",
+    "test:source": "node tests/verify-source.js",
+    "test:api": "vitest run --reporter=verbose",
+    "test:e2e": "playwright test",
+    "test": "bash tests/run-all-tests.sh"
+  },
+  "mongodbMemoryServer": {
+    "mongodbVersion": "7.0.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "@google/generative-ai": "^0.24.1",
+    "@supabase/ssr": "^0.12.0",
+    "@supabase/supabase-js": "^2.110.0",
+    "dotenv": "^17.2.2",
+    "framer-motion": "^12.38.0",
+    "groq-sdk": "^1.1.1",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^2.5.2",
+    "lucide-react": "^0.577.0",
+    "next": "16.1.6",
+    "next-themes": "^0.4.6",
+    "openai": "^6.42.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "recharts": "^3.8.0",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.59.0",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitest/coverage-v8": "^4.1.2",
+    "eslint": "^9",
+    "eslint-config-next": "16.1.6",
+    "mongodb-memory-server": "^11.0.1",
+    "tailwindcss": "^4",
+    "ts-node": "^10.9.2",
+    "typescript": "5.9.3",
+    "vitest": "^4.1.2"
+  }
+}

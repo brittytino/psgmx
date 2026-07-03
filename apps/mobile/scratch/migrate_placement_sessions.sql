@@ -1,0 +1,8 @@
+ALTER TABLE placement_sessions
+ADD COLUMN IF NOT EXISTS session_type VARCHAR(50) DEFAULT 'Other',
+ADD COLUMN IF NOT EXISTS session_mode VARCHAR(20) DEFAULT 'Offline',
+ADD COLUMN IF NOT EXISTS duration_minutes INTEGER DEFAULT 60,
+ADD COLUMN IF NOT EXISTS location VARCHAR(255) DEFAULT 'TBA',
+ADD COLUMN IF NOT EXISTS is_locked BOOLEAN DEFAULT FALSE;
+
+-- Update the main schema file for future setups

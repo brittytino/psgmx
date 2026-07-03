@@ -1,0 +1,16 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/community-health",
+      "schedule": "0 0 * * 0"
+    },
+    {
+      "path": "/api/cron/yearly-transition",
+      "schedule": "0 0 1 6 *"
+    },
+    {
+      "path": "/api/cron/knowledge-review",
+      "schedule": "0 0 1 * *"
+    }
+  ]
+}

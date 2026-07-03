@@ -1,0 +1,163 @@
+@import "tailwindcss";
+
+:root {
+  /* Base Colors (Brand) */
+  --primary-purple: #6C3DFF;
+  --deep-violet: #4B22E8;
+  --electric-blue: #00F0FF;
+  --neon-pink: #FF0055;
+  --rich-black: #05050A;
+  --dark-gray: #12121A;
+  --medium-gray: #8F9BB3;
+  --light-gray: #E5E7EB;
+  --white: #FFFFFF;
+
+  /* LIGHT THEME (Default) */
+  --page-bg: #F8FAFC;
+  --text-main: #0F172A;
+  --text-secondary: #334155;
+  --text-muted: #64748B;
+  --border: #E2E8F0;
+  --card-bg: #FFFFFF;
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(255, 255, 255, 1);
+  --card-radius: 24px;
+  --btn-radius: 12px;
+  --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+  --primary-red-glow: 0 0 20px rgba(108, 61, 255, 0.2);
+
+  /* Legacy variable mappings */
+  --primary-red: var(--neon-pink);
+  --navy: var(--rich-black);
+}
+
+@theme inline {
+  --color-primary-purple: var(--primary-purple);
+  --color-deep-violet: var(--deep-violet);
+  --color-electric-blue: var(--electric-blue);
+  --color-neon-pink: var(--neon-pink);
+  --color-rich-black: var(--rich-black);
+  --color-dark-gray: var(--dark-gray);
+  --color-medium-gray: var(--medium-gray);
+  --color-light-gray: var(--light-gray);
+  --color-white: var(--white);
+
+  --color-page-bg: var(--page-bg);
+  --color-card-bg: var(--card-bg);
+  --color-text-main: var(--text-main);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-border-light: var(--border);
+  --font-sans: "Plus Jakarta Sans", sans-serif;
+}
+
+@layer base {
+  body {
+    background-color: var(--page-bg);
+    color: var(--text-secondary);
+    font-family: var(--font-sans);
+    font-weight: 500;
+    -webkit-font-smoothing: antialiased;
+    /* Ambient Glow adapted to theme */
+    background-image: 
+      radial-gradient(circle at 15% 50%, rgba(108, 61, 255, 0.05) 0%, transparent 25%),
+      radial-gradient(circle at 85% 30%, rgba(0, 240, 255, 0.03) 0%, transparent 25%);
+    background-attachment: fixed;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    color: var(--text-main);
+    font-weight: 900;
+    letter-spacing: -0.04em;
+    line-height: 1.1;
+  }
+}
+
+/* --- PSGMX Token Classes --- */
+.psgmx-glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--card-radius);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.psgmx-glass-panel {
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 16px;
+}
+
+.psgmx-title {
+  background: linear-gradient(to right, #FFFFFF, #8F9BB3);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+}
+
+.psgmx-subtitle {
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.25em;
+  color: var(--primary-purple);
+}
+
+.psgmx-btn-primary {
+  background: linear-gradient(135deg, var(--primary-purple), var(--deep-violet));
+  color: white;
+  border-radius: var(--btn-radius);
+  font-weight: 700;
+  box-shadow: 0 4px 20px rgba(108, 61, 255, 0.4);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  padding: 0.75rem 1.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.psgmx-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(108, 61, 255, 0.6);
+}
+
+/* Animations */
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-12px) rotate(1deg); }
+}
+.animate-float-slow {
+  animation: float-slow 6s ease-in-out infinite;
+}
+
+@keyframes neon-pulse {
+  0%, 100% { text-shadow: 0 0 10px rgba(0, 240, 255, 0.5), 0 0 20px rgba(0, 240, 255, 0.3); }
+  50% { text-shadow: 0 0 20px rgba(0, 240, 255, 0.8), 0 0 30px rgba(0, 240, 255, 0.5); }
+}
+.animate-neon-pulse {
+  animation: neon-pulse 3s infinite;
+}
+
+/* Custom Scrollbar for dark theme */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+.custom-scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.custom-scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
