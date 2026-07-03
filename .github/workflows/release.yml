@@ -20,6 +20,9 @@ jobs:
   build_and_release:
     name: Build and Release APK
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile
 
     steps:
       - name: Checkout code
@@ -64,11 +67,6 @@ jobs:
           keyAlias=${{ secrets.KEY_ALIAS }}
           storeFile=app/upload-keystore.jks
           EOF
-
-      - name: Verify keystore
-        run: |
-          keytool -list -keystore android/app/upload-keystore.jks \
-            -storepass ${{ secrets.KEYSTORE_PASSWORD }}
 
       - name: Generate Environment File
         run: |
@@ -116,41 +114,15 @@ jobs:
 
             ### 📥 Download
             - **Android APK**: `PSGMX-${{ steps.version.outputs.TAG }}-android.apk`
-            
+
             ### 🔥 What's New in this release
-            - ✅ See the changelog and commits for the full list of updates.
-
-            ### 📋 Installation
-            1. Download the APK file from assets below
-            2. Enable "Install from Unknown Sources" in Android settings
-            3. Install the APK
-            4. Enjoy the new features! 🚀
-
-            ### 📊 Technical Details
-            - Flutter Version: 3.27.2
-            - Build: Signed Release
-            - Min SDK: 21
-            - Target SDK: 34
-            
-            ### 📝 Database Update Required
-            Run this query on your Supabase database:
-            ```sql
-            UPDATE app_config SET 
-                latest_version = '${{ steps.version.outputs.VERSION }}', 
-                force_update = true,
-                update_message = 'A new PSGMX update is available. Please update to the latest version.',
-                github_release_url = 'https://github.com/brittytino/psgmx-flutter/releases/latest',
-                android_download_url = 'https://github.com/brittytino/psgmx-flutter/releases/download/${{ steps.version.outputs.TAG }}/PSGMX-${{ steps.version.outputs.TAG }}-android.apk'
-            WHERE id IS NOT NULL;
-            ```
+            - ✅ Built automatically from branch \`${{ github.ref_name }}\`
 
             ### 🌐 Web App
-            https://psgmxians.web.app
-            
-            ---
-            **Full Changelog**: https://github.com/${{ github.repository }}/commits/${{ steps.version.outputs.TAG }}
+            https://app.psgmx.tech
+
           files: |
-            build/app/outputs/flutter-apk/PSGMX-${{ steps.version.outputs.TAG }}-android.apk
+            apps/mobile/build/app/outputs/flutter-apk/PSGMX-${{ steps.version.outputs.TAG }}-android.apk
           draft: false
           prerelease: false
           make_latest: true
