@@ -16,12 +16,10 @@ export interface OrchestratorResponse {
 }
 
 const FALLBACK_CHAIN = [
-  { provider: 'google', model: 'gemini-2.5-pro' },
-  { provider: 'openrouter', model: 'anthropic/claude-3.5-sonnet' },
-  { provider: 'openrouter', model: 'openai/gpt-4o' },
-  { provider: 'google', model: 'gemini-2.5-flash' },
-  { provider: 'openrouter', model: 'deepseek/deepseek-r1' },
-  { provider: 'openrouter', model: 'qwen/qwen-max' }
+  { provider: 'google', model: 'gemini-1.5-flash' },
+  { provider: 'openrouter', model: 'meta-llama/llama-3-8b-instruct:free' },
+  { provider: 'openrouter', model: 'mistralai/mistral-7b-instruct:free' },
+  { provider: 'openrouter', model: 'google/gemma-7b-it:free' }
 ];
 
 // Initialize a circuit breaker for each model
