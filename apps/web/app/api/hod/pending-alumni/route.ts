@@ -1,7 +1,7 @@
 // ============================================================
 // GET /api/hod/pending-alumni
 // Lists users pending alumni approval (role='student', pending review).
-// Migrated: Previously used MongoDB UserAccount with status='pending'.
+// Migrated to Supabase.
 // Now uses Supabase users table.
 // ============================================================
 import { NextRequest, NextResponse } from 'next/server'

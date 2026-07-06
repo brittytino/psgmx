@@ -1,7 +1,7 @@
 // ============================================================
 // GET /api/insights
 // Dashboard insights: student count, readiness bands, leaderboard.
-// Migrated: Previously queried MongoDB UserEvent + UserAccount.
+// Migrated to Supabase.
 // Now queries Supabase readiness_scores + users tables.
 // ============================================================
 import { NextResponse } from 'next/server'

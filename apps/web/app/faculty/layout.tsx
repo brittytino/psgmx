@@ -76,31 +76,21 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [profileOpen, setProfileOpen] = React.useState(false);
   const [notificationsOpen, setNotificationsOpen] = React.useState(false);
-  const [isDarkMode, setIsDarkMode] = React.useState(false);
-
-  React.useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [isDarkMode]);
-
   const cardContent = getSidebarCardContent(pathname);
 
   return (
-    <div className="flex h-screen bg-[#F8F9FC] dark:bg-[#0F172A] text-[#1E293B] dark:text-[#F1F5F9] font-sans overflow-hidden transition-colors duration-300">
+    <div className="flex h-screen bg-[#F8F9FC]  text-[#1E293B]  font-sans overflow-hidden transition-colors duration-300">
       
       {/* Sidebar */}
-      <aside className="w-[280px] h-full bg-white dark:bg-[#1E293B] flex flex-col shrink-0 border-r border-[#E2E8F0] dark:border-[#334155] shadow-[4px_0_24px_rgba(0,0,0,0.02)] hidden lg:flex relative z-40 transition-colors duration-300">
+      <aside className="w-[280px] h-full bg-white  flex flex-col shrink-0 border-r border-[#E2E8F0]  shadow-[4px_0_24px_rgba(0,0,0,0.02)] hidden lg:flex relative z-40 transition-colors duration-300">
         
         {/* Logo */}
         <div className="h-[88px] flex items-center px-8 shrink-0">
           <div className="flex items-center gap-3">
             <img src="/logo.webp" alt="PSGMX Logo" className="w-10 h-10 object-contain drop-shadow-sm" />
             <div>
-              <h2 className="text-[17px] font-black tracking-tight text-[#1E293B] dark:text-white leading-tight">Faculty Portal</h2>
-              <p className="text-[10px] font-bold text-[#64748B] dark:text-[#94A3B8] uppercase tracking-wider">Department Mentor</p>
+              <h2 className="text-[17px] font-black tracking-tight text-[#1E293B]  leading-tight">Faculty Portal</h2>
+              <p className="text-[10px] font-bold text-[#64748B]  uppercase tracking-wider">Department Mentor</p>
             </div>
           </div>
         </div>
@@ -116,11 +106,11 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
                 className={`flex items-center justify-between px-4 py-3 rounded-[12px] transition-all duration-200 group ${
                   isActive 
                     ? 'bg-[#6C3DFF] text-white shadow-md shadow-[#6C3DFF]/20' 
-                    : 'text-[#475569] dark:text-[#94A3B8] hover:bg-[#F8F9FC] dark:hover:bg-[#334155] hover:text-[#1E293B] dark:hover:text-white font-semibold'
+                    : 'text-[#475569]  hover:bg-[#F8F9FC]  hover:text-[#1E293B]  font-semibold'
                 }`}
               >
                 <div className="flex items-center gap-3.5">
-                  <link.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-[#64748B] dark:text-[#94A3B8] group-hover:text-[#6C3DFF]'}`} />
+                  <link.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-[#64748B]  group-hover:text-[#6C3DFF]'}`} />
                   <span className={`text-[14px] ${isActive ? 'font-bold' : 'font-semibold'}`}>{link.name}</span>
                 </div>
                 {link.badge && (
@@ -137,12 +127,12 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
 
         {/* Dynamic Callout Card */}
         <div className="p-6 shrink-0">
-          <div className="bg-[#F8F6FF] dark:bg-[#2D2A4A] rounded-2xl p-5 relative overflow-hidden h-[180px] flex flex-col justify-between transition-colors duration-300">
+          <div className="bg-[#F8F6FF]  rounded-2xl p-5 relative overflow-hidden h-[180px] flex flex-col justify-between transition-colors duration-300">
             <div className="relative z-10">
-              <h4 className="text-[#6C3DFF] dark:text-[#A78BFA] font-bold text-[14px] leading-snug mb-1">{cardContent.title}</h4>
-              {cardContent.desc && <p className="text-[#64748B] dark:text-[#94A3B8] text-[11px] leading-relaxed pr-2">{cardContent.desc}</p>}
+              <h4 className="text-[#6C3DFF]  font-bold text-[14px] leading-snug mb-1">{cardContent.title}</h4>
+              {cardContent.desc && <p className="text-[#64748B]  text-[11px] leading-relaxed pr-2">{cardContent.desc}</p>}
             </div>
-            <div className="absolute -bottom-4 -right-4 w-32 h-32 bg-white/40 dark:bg-black/20 rounded-full blur-2xl"></div>
+            <div className="absolute -bottom-4 -right-4 w-32 h-32 bg-white/40  rounded-full blur-2xl"></div>
             <div className="relative z-10 mt-auto flex justify-center opacity-80">
               <cardContent.icon className="w-16 h-16 text-[#6C3DFF]/20" />
             </div>
@@ -209,31 +199,21 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
       <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
         
         {/* Top Header */}
-        <header className="h-[88px] bg-[#F8F9FC] dark:bg-[#0F172A] flex items-center justify-between px-8 shrink-0 relative z-30 transition-colors duration-300">
+        <header className="h-[88px] bg-[#F8F9FC]  flex items-center justify-between px-8 shrink-0 relative z-30 transition-colors duration-300">
           <div className="flex items-center gap-4">
-            <button onClick={() => setMobileMenuOpen(true)} className="w-10 h-10 flex lg:hidden items-center justify-center rounded-full bg-white dark:bg-[#1E293B] border border-[#E2E8F0] dark:border-[#334155] shadow-sm text-[#64748B] dark:text-[#94A3B8]">
+            <button onClick={() => setMobileMenuOpen(true)} className="w-10 h-10 flex lg:hidden items-center justify-center rounded-full bg-white  border border-[#E2E8F0]  shadow-sm text-[#64748B] ">
               <Menu className="w-5 h-5" />
             </button>
-            <div className="hidden md:flex items-center bg-white dark:bg-[#1E293B] border border-[#E2E8F0] dark:border-[#334155] rounded-full h-11 px-4 w-[360px] shadow-sm focus-within:border-[#6C3DFF] focus-within:ring-1 focus-within:ring-[#6C3DFF] transition-all">
+            <div className="hidden md:flex items-center bg-white  border border-[#E2E8F0]  rounded-full h-11 px-4 w-[360px] shadow-sm focus-within:border-[#6C3DFF] focus-within:ring-1 focus-within:ring-[#6C3DFF] transition-all">
               <Search className="w-4 h-4 text-[#94A3B8] mr-3" />
-              <input type="text" placeholder="Search anything..." className="bg-transparent border-none outline-none text-[14px] text-[#1E293B] dark:text-white placeholder-[#94A3B8] w-full" />
-              <div className="flex items-center gap-1 text-[#94A3B8] text-[12px] font-bold bg-[#F8F9FC] dark:bg-[#334155] px-2 py-1 rounded-md ml-2 shrink-0">
+              <input type="text" placeholder="Search anything..." className="bg-transparent border-none outline-none text-[14px] text-[#1E293B]  placeholder-[#94A3B8] w-full" />
+              <div className="flex items-center gap-1 text-[#94A3B8] text-[12px] font-bold bg-[#F8F9FC]  px-2 py-1 rounded-md ml-2 shrink-0">
                 <span>⌘</span><span>K</span>
               </div>
             </div>
           </div>
 
           <div className="flex items-center gap-6">
-            {/* Theme Toggle */}
-            <div className="flex items-center bg-white dark:bg-[#1E293B] border border-[#E2E8F0] dark:border-[#334155] rounded-full p-1 shadow-sm transition-colors duration-300">
-              <button onClick={() => setIsDarkMode(false)} className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${!isDarkMode ? 'bg-[#6C3DFF] text-white shadow-md' : 'text-[#94A3B8] hover:text-[#64748B]'}`}>
-                <Sun className="w-4 h-4" />
-              </button>
-              <button onClick={() => setIsDarkMode(true)} className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${isDarkMode ? 'bg-[#1E293B] text-white shadow-md' : 'text-[#94A3B8] hover:text-[#64748B]'}`}>
-                <Moon className="w-4 h-4" />
-              </button>
-            </div>
-
             {/* Notifications */}
             <div className="relative">
               <button onClick={() => setNotificationsOpen(!notificationsOpen)} className={`relative w-10 h-10 flex items-center justify-center rounded-full bg-white border border-[#E2E8F0] shadow-sm transition-colors ${notificationsOpen ? 'text-[#6C3DFF] border-[#6C3DFF]' : 'text-[#64748B] hover:text-[#1E293B]'}`}>

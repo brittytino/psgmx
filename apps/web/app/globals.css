@@ -1,34 +1,42 @@
 @import "tailwindcss";
 
 :root {
-  /* Base Colors (Brand) */
-  --primary-purple: #6C3DFF;
-  --deep-violet: #4B22E8;
-  --electric-blue: #00F0FF;
-  --neon-pink: #FF0055;
-  --rich-black: #05050A;
-  --dark-gray: #12121A;
-  --medium-gray: #8F9BB3;
-  --light-gray: #E5E7EB;
+  /* Flutter Cream Theme Base */
+  --page-bg: #FBF6EE; /* Paper Cream */
+  --surface: #FFFFFF;
+  --border: #EFE9E0; /* Subtle darker cream for borders */
+  --text-primary: #221F1A; /* Ink primary */
+  --text-muted: #9E9A92; /* Muted ink */
+  
+  /* Brand/Accent Colors */
+  --accent-coral: #FF6B4A;
+  --illus-terracotta: #E4572E;
+  --illus-sage: #8FB996;
+  --illus-gold: #E8B84B;
+
+  /* Legacy variable mappings to maintain compatibility */
+  --primary-purple: var(--accent-coral);
+  --deep-violet: var(--illus-terracotta);
+  --electric-blue: var(--illus-sage);
+  --neon-pink: var(--accent-coral);
+  --rich-black: var(--text-primary);
+  --dark-gray: var(--text-primary);
+  --medium-gray: var(--text-muted);
+  --light-gray: var(--border);
   --white: #FFFFFF;
 
-  /* LIGHT THEME (Default) */
-  --page-bg: #F8FAFC;
-  --text-main: #0F172A;
-  --text-secondary: #334155;
-  --text-muted: #64748B;
-  --border: #E2E8F0;
-  --card-bg: #FFFFFF;
-  --glass-bg: rgba(255, 255, 255, 0.85);
-  --glass-border: rgba(255, 255, 255, 1);
+  /* Theme mapping */
+  --text-main: var(--text-primary);
+  --text-secondary: var(--text-muted);
+  --card-bg: var(--surface);
+  
+  /* Component tokens */
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(239, 233, 224, 0.8);
   --card-radius: 24px;
   --btn-radius: 12px;
-  --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
-  --primary-red-glow: 0 0 20px rgba(108, 61, 255, 0.2);
-
-  /* Legacy variable mappings */
-  --primary-red: var(--neon-pink);
-  --navy: var(--rich-black);
+  --card-shadow: 0 8px 32px rgba(232, 184, 75, 0.05);
+  --primary-red-glow: 0 0 20px rgba(255, 107, 74, 0.2);
 }
 
 @theme inline {
@@ -58,10 +66,10 @@
     font-family: var(--font-sans);
     font-weight: 500;
     -webkit-font-smoothing: antialiased;
-    /* Ambient Glow adapted to theme */
+    /* Ambient Glow adapted to cream theme */
     background-image: 
-      radial-gradient(circle at 15% 50%, rgba(108, 61, 255, 0.05) 0%, transparent 25%),
-      radial-gradient(circle at 85% 30%, rgba(0, 240, 255, 0.03) 0%, transparent 25%);
+      radial-gradient(circle at 15% 50%, rgba(255, 107, 74, 0.05) 0%, transparent 25%),
+      radial-gradient(circle at 85% 30%, rgba(228, 87, 46, 0.03) 0%, transparent 25%);
     background-attachment: fixed;
   }
 
@@ -91,7 +99,7 @@
 }
 
 .psgmx-title {
-  background: linear-gradient(to right, #FFFFFF, #8F9BB3);
+  background: linear-gradient(to right, var(--text-primary), var(--illus-terracotta));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   font-weight: 900;

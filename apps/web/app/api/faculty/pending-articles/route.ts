@@ -1,6 +1,6 @@
 // ============================================================
 // GET/PUT /api/faculty/pending-articles
-// Migrated from MongoDB KnowledgeBrainArticle to Supabase.
+// Migrated to Supabase.
 // Faculty can fetch pending articles and approve/reject them.
 // ============================================================
 import { NextRequest, NextResponse } from 'next/server'

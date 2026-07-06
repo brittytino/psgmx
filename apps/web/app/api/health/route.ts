@@ -1,7 +1,7 @@
 // ============================================================
 // GET /api/health
 // System health check — Supabase ping + version info.
-// Migrated: Previously checked MongoDB connection.
+// Migrated to Supabase.
 // ============================================================
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'

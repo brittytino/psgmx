@@ -1,7 +1,7 @@
 // ============================================================
 // GET /api/metrics
 // Platform metrics for the HOD/faculty dashboard.
-// Migrated from MongoDB to Supabase.
+// Migrated to Supabase.
 // ============================================================
 import { NextRequest, NextResponse } from 'next/server'
 import { requireRole } from '@/lib/auth'

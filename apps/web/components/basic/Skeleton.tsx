@@ -7,7 +7,7 @@ interface SkeletonProps {
 }
 
 const Skeleton: React.FC<SkeletonProps> = ({ className = '', variant = 'rect', style }) => {
-  const baseClasses = 'animate-pulse bg-zinc-100 dark:bg-zinc-800';
+  const baseClasses = 'animate-pulse bg-zinc-100 ';
   
   const variantClasses = {
     rect: 'rounded-2xl',

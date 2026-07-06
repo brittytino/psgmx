@@ -1,6 +1,6 @@
 // ============================================================
 // GET /api/governance/stats
-// Migrated: Previously queried MongoDB. Now uses Supabase.
+// Migrated to Supabase.
 // TODO: Define what "governance" means in new schema.
 // Stubbed for now.
 // ============================================================

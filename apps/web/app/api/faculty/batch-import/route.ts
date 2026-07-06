@@ -1,7 +1,7 @@
 // ============================================================
 // GET/POST /api/faculty/batch-import
 // Faculty batch-imports student user accounts.
-// Migrated from MongoDB UserAccount to Supabase Auth + users table.
+// Migrated to Supabase.
 // ============================================================
 import { NextRequest, NextResponse } from 'next/server'
 import { requireRole } from '@/lib/auth'

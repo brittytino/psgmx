@@ -1,6 +1,6 @@
 // ============================================================
 // POST /api/auth/change-password
-// Migrated: Previously verified bcrypt hash from MongoDB.
+// Migrated to Supabase.
 // Now: Uses Supabase Auth updateUser() — no bcrypt needed.
 // Supabase Auth handles password verification and hashing.
 // ============================================================
