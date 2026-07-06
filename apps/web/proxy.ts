@@ -43,7 +43,7 @@ function getRequiredRoles(pathname: string): string[] | null {
   return null  // no guard → allow any authenticated user
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(

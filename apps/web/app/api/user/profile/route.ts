@@ -62,7 +62,7 @@ export async function PUT(req: NextRequest) {
 
     const { error } = await supabase
       .from('users')
-      // @ts-ignore
+      // @ts-expect-error type override
       .update(updateData as any)
       .eq('id', auth.id)
 

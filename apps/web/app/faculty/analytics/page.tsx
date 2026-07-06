@@ -232,7 +232,7 @@ export default function FacultyAnalyticsDashboard() {
               </div>
               <div className="flex-1 grid grid-cols-7 gap-1 h-[140px]">
                 {[...Array(49)].map((_, i) => {
-                  const r = Math.random();
+                  const r = Math.sin(i * 10) * 0.5 + 0.5; // Deterministic pseudo-random
                   const bg = r > 0.8 ? 'bg-[#6C3DFF]' : r > 0.6 ? 'bg-[#8B5CF6]' : r > 0.4 ? 'bg-[#A78BFA]' : r > 0.2 ? 'bg-[#C4B5FD]' : 'bg-[#EDE9FE]';
                   return <div key={i} className={`rounded-sm ${bg} hover:ring-1 hover:ring-[#1E293B] cursor-pointer transition-all`}></div>;
                 })}

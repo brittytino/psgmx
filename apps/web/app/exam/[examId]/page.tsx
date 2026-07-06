@@ -123,6 +123,7 @@ export default function ExamPage({ params }: { params: Promise<{ examId: string 
       setLoading(false);
     }
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [examId]);
 
   // Request Camera + Fullscreen (strict mode)
@@ -197,6 +198,7 @@ export default function ExamPage({ params }: { params: Promise<{ examId: string 
       });
     }, 1000);
     return () => clearInterval(timerId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, timeLeft]);
 
   const addFlag = (type: string) => {

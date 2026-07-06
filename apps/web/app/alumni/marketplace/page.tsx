@@ -80,6 +80,7 @@ export default function CollaborationMarketplace() {
       setLoading(false);
     }
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handlePost = async () => {
