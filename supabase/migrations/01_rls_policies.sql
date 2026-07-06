@@ -9,6 +9,48 @@
 -- Usage: (SELECT role FROM get_user_role(auth.uid())) = 'faculty'
 
 -- ──────────────────────────────────────────────────────────────
+-- HELPER: is_student_in_my_team
+-- Returns true if student_id is in the same team as team_leader_id.
+-- Used by placement_attendance and task_completions policies.
+-- ──────────────────────────────────────────────────────────────
+CREATE OR REPLACE FUNCTION is_student_in_my_team(
+  p_student_id     UUID,
+  p_team_leader_id UUID
+)
+RETURNS BOOLEAN
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM users s
+    JOIN users tl ON tl.id = p_team_leader_id
+    WHERE s.id = p_student_id
+      AND s.team_id = tl.team_id
+      AND s.team_id IS NOT NULL
+  );
+$$;
+
+-- ──────────────────────────────────────────────────────────────
+-- LEETCODE_USERNAME_WHITELIST — users read own; system writes via RPC
+-- ──────────────────────────────────────────────────────────────
+ALTER TABLE leetcode_username_whitelist ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY leetcode_whitelist_select_own ON leetcode_username_whitelist
+  FOR SELECT TO authenticated
+  USING (user_id = auth.uid()
+    OR (SELECT role FROM get_user_role(auth.uid())) IN ('faculty', 'hod'));
+
+-- Only via the update_leetcode_username_unified SECURITY DEFINER RPC
+CREATE POLICY leetcode_whitelist_insert_deny ON leetcode_username_whitelist
+  FOR INSERT TO authenticated
+  WITH CHECK (false);
+
+
+
+-- ──────────────────────────────────────────────────────────────
 -- BATCHES — readable by all authenticated users
 -- ──────────────────────────────────────────────────────────────
 ALTER TABLE batches ENABLE ROW LEVEL SECURITY;

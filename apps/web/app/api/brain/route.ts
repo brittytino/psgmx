@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
         company_name: company_name ?? null,
         approval_status: 'pending',
         source: 'web',
-      })
+      } as any)
       .select('id, title, approval_status')
       .single()
 

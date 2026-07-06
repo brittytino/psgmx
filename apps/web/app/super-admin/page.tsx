@@ -1,32 +1,29 @@
 import React from 'react';
 import { Database, BrainCircuit, Activity, Users } from 'lucide-react';
-import connectDB from '@/lib/mongodb';
-import UserAccount from '@/models/UserAccount';
-import KnowledgeBrainArticle from '@/models/KnowledgeBrainArticle';
-import FYPRepository from '@/models/FYPRepository';
+import { createClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
 
 export default async function SuperAdminDashboard() {
-  await connectDB();
-  
+  const supabase = await createClient();
+
   const [
-    totalFaculty,
-    totalStudents,
-    totalArticles,
-    totalFYPs
+    { count: totalFaculty },
+    { count: totalStudents },
+    { count: totalArticles },
+    { count: totalAlumni },
   ] = await Promise.all([
-    UserAccount.countDocuments({ role: 'faculty' }),
-    UserAccount.countDocuments({ role: 'student' }),
-    KnowledgeBrainArticle.countDocuments(),
-    FYPRepository.countDocuments()
+    supabase.from('users').select('id', { count: 'exact', head: true }).eq('role', 'faculty'),
+    supabase.from('users').select('id', { count: 'exact', head: true }).eq('role', 'student'),
+    supabase.from('knowledge_brain_articles').select('id', { count: 'exact', head: true }).eq('approval_status', 'approved'),
+    supabase.from('users').select('id', { count: 'exact', head: true }).eq('role', 'alumni'),
   ]);
 
   const stats = [
-    { label: 'Active Faculty', value: totalFaculty, icon: Users, color: 'text-blue-400', bg: 'bg-blue-400/10' },
-    { label: 'Active Students', value: totalStudents, icon: Users, color: 'text-purple-400', bg: 'bg-purple-400/10' },
-    { label: 'Knowledge Cores', value: totalArticles, icon: BrainCircuit, color: 'text-green-400', bg: 'bg-green-400/10' },
-    { label: 'FYP Repositories', value: totalFYPs, icon: Database, color: 'text-orange-400', bg: 'bg-orange-400/10' },
+    { label: 'Active Faculty', value: totalFaculty ?? 0, icon: Users, color: 'text-blue-400', bg: 'bg-blue-400/10' },
+    { label: 'Active Students', value: totalStudents ?? 0, icon: Users, color: 'text-purple-400', bg: 'bg-purple-400/10' },
+    { label: 'Knowledge Articles', value: totalArticles ?? 0, icon: BrainCircuit, color: 'text-green-400', bg: 'bg-green-400/10' },
+    { label: 'Alumni', value: totalAlumni ?? 0, icon: Database, color: 'text-orange-400', bg: 'bg-orange-400/10' },
   ];
 
   return (
@@ -62,8 +59,7 @@ export default async function SuperAdminDashboard() {
             <h2 className="text-lg font-bold text-white">Quick Actions</h2>
           </div>
           <div className="space-y-3">
-            <p className="text-sm text-text-muted">Use the sidebar to navigate to specific management modules. Faculty creation requires usernames of 3-5 characters.</p>
-            {/* We could add quick links here if desired */}
+            <p className="text-sm text-text-muted">Use the sidebar to navigate to specific management modules. All data is now powered by Supabase.</p>
           </div>
         </div>
       </div>

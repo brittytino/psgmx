@@ -10,6 +10,7 @@ import ImpersonationBanner from "@/components/auth/ImpersonationBanner";
 
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://psgmx.tech"),
   title: "PSGMX | Department OS",
   description: "The digital soul of the MCA department.",
   icons: {

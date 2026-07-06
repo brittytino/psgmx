@@ -1,6 +1,6 @@
 import { callGemini, isGeminiConfigured } from './gemini-client';
 import { callOpenRouter, isOpenRouterConfigured, AICallResult } from './openrouter-client';
-import AiInteractionLog from '@/models/AiInteractionLog';
+
 import { CircuitBreaker, CBState } from './circuit-breaker';
 
 export interface OrchestratorParams {
@@ -86,16 +86,7 @@ export async function orchestrateAI(params: OrchestratorParams): Promise<Orchest
           userToken
         }));
 
-        // Asynchronously log the interaction to MongoDB
-        AiInteractionLog.create({
-          userToken,
-          role,
-          query: prompt.substring(0, 500),
-          retrievedSources,
-          modelUsed: target.model,
-          response: result.text,
-          latencyMs
-        }).catch(err => console.error(JSON.stringify({ level: 'ERROR', event: 'MONGO_LOG_FAILED', error: err.message })));
+
 
         return {
           answer: result.text,

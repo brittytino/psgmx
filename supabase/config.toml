@@ -98,6 +98,10 @@ verify_jwt = true
 enabled = true
 verify_jwt = true
 
+[functions.generate-embedding]
+enabled = true
+verify_jwt = true   # called by Next.js with service role key
+
 [functions.batch-graduation]
 enabled = true
 verify_jwt = false  # called by CRON, not user-initiated

@@ -206,7 +206,7 @@ class TaskCompletionService {
           .select('id')
           .eq('role', 'student')
           .count(CountOption.exact);
-      final totalCount = countResponse.count ?? 0;
+      final totalCount = countResponse.count;
 
       // Count completed
       final completedResponse = await _supabase
@@ -244,10 +244,7 @@ class TaskCompletionService {
           .order('team_id')
           .order('roll_no');
 
-//      final Map<String, Map<String, dynamic>> usersByRollNo = {
-        for (var u in allStudentsResponse as List)
-          if (u['roll_no'] != null) u['roll_no'] as String: Map<String, dynamic>.from(u)
-      };
+
 
       // 3. Today's completions keyed by user_id
       final completionsResponse = await _supabase

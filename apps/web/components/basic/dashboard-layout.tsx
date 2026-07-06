@@ -46,6 +46,7 @@ export default function DashboardLayout({
   institutionName,
   campusPartnerName,
   sidebarExtras,
+  onBack,
 }: DashboardLayoutProps) {
   const router = useRouter();
   const [isCollapsed, setIsCollapsed] = React.useState(false);

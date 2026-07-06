@@ -124,6 +124,7 @@ export default function FacultyClientPage({ initialFaculties }: { initialFaculti
 
       {dialog && (
         <ConfirmationModal
+          isOpen={true}
           title={dialog.title}
           message={dialog.message}
           variant={dialog.variant}

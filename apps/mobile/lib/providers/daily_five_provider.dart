@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/daily_five.dart';
 import '../services/daily_five_service.dart';
-import '../services/readiness_score_service.dart';
+
 
 /// State management for the Daily Five quiz engine.
 ///
@@ -104,6 +104,9 @@ class DailyFiveProvider with ChangeNotifier {
   }
 
   /// Calls the RPC to update streak, then refreshes local streak state.
+  /// NOTE: The readiness score is automatically recomputed by a Supabase
+  /// database trigger that fires on daily_five_streaks UPDATE.
+  /// Do NOT call the Edge Function or RPC from here — the trigger handles it.
   Future<void> finalizeSession({required String userId}) async {
     if (_session == null) return;
     _isSubmitting = true;
@@ -115,10 +118,9 @@ class DailyFiveProvider with ChangeNotifier {
         accuracyRate: _session!.accuracyRate,
       );
       _streak = updatedStreak;
-
-      // Update Readiness Score
-      final readinessService = ReadinessScoreService(Supabase.instance.client);
-      await readinessService.computeAndStore(userId);
+      // The readiness score is updated automatically by:
+      //   trigger: trig_daily_five_streaks_readiness on daily_five_streaks
+      // No action needed here.
     } catch (e) {
       _error = 'Failed to submit: $e';
       debugPrint('[DailyFiveProvider] finalizeSession error: $e');

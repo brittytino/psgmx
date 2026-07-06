@@ -27,7 +27,8 @@ export async function POST(req: NextRequest) {
 
     const { error } = await supabase
       .from('users')
-      .update(updateData)
+      // @ts-ignore
+      .update(updateData as any)
       .eq('id', session.id)
 
     if (error) {

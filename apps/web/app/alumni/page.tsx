@@ -15,6 +15,7 @@ export default function AlumniDashboard() {
     readinessScore: 0,
     leetcodeScore: 0,
     longestStreak: 0,
+    kbContributions: 0,
   });
   
   const [mentorshipOpen, setMentorshipOpen] = useState(false);
@@ -32,11 +33,13 @@ export default function AlumniDashboard() {
       }
 
       // Check role
-      const { data: profile } = await supabase
+      const { data: profileData } = await supabase
         .from("users")
         .select("*")
         .eq("id", authData.user.id)
         .maybeSingle();
+      
+      const profile: any = profileData;
 
       if (!profile || profile.role !== "alumni") {
         alert("This dashboard is only available for alumni.");
@@ -68,10 +71,18 @@ export default function AlumniDashboard() {
           .eq('user_id', authData.user.id)
           .maybeSingle();
 
+      // Knowledge Brain contribution count
+      const { count: kbCount } = await supabase
+        .from('knowledge_brain_articles')
+        .select('id', { count: 'exact', head: true })
+        .eq('author_id', authData.user.id)
+        .eq('approval_status', 'approved');
+
       setStats({
-        readinessScore: scoreResp?.score || 0,
-        longestStreak: streakResp?.longest_streak || 0,
-        leetcodeScore: leetcodeResp?.batch_weighted_score || 0,
+        readinessScore: (scoreResp as any)?.score || 0,
+        longestStreak: (streakResp as any)?.longest_streak || 0,
+        leetcodeScore: (leetcodeResp as any)?.batch_weighted_score || 0,
+        kbContributions: kbCount ?? 0,
       });
 
       // Fetch Lineage
@@ -100,7 +111,8 @@ export default function AlumniDashboard() {
     const newValue = !mentorshipOpen;
     const { error } = await supabase
       .from("users")
-      .update({ mentorship_open: newValue })
+      // @ts-ignore
+      .update({ mentorship_open: newValue } as any)
       .eq("id", user.id);
       
     if (!error) {

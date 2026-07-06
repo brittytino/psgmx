@@ -63,11 +63,12 @@ export async function PUT(req: NextRequest) {
 
     const { error } = await supabase
       .from('knowledge_brain_articles')
+      // @ts-ignore
       .update({
         approval_status: newStatus,
         approved_by: faculty.id,
         approved_at: new Date().toISOString(),
-      })
+      } as any)
       .eq('id', articleId)
 
     if (error) throw error
@@ -80,15 +81,16 @@ export async function PUT(req: NextRequest) {
         .eq('id', articleId)
         .single()
 
-      if (article?.author_id) {
-        await supabase.from('notifications').insert({
-          user_id: article.author_id,
+      if ((article as any)?.author_id) {
+        await supabase.from('notifications')// @ts-ignore
+      .insert({
+          user_id: (article as any).author_id,
           type: 'article_approved',
           title: 'Your article was approved!',
-          body: `"${article.title}" has been approved and is now visible in the Knowledge Brain.`,
+          body: `"${(article as any).title}" has been approved and is now visible in the Knowledge Brain.`,
           reference_id: articleId,
           reference_type: 'knowledge_brain_article',
-        })
+        } as any)
       }
     }
 

@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
       at_risk: 0,
     }
 
-    for (const row of bandCounts ?? []) {
+    for (const row of (bandCounts as any[]) ?? []) {
       if (row.band && row.band in bands) {
         bands[row.band as string]++
       }

@@ -1,0 +1,83 @@
+name: Mobile APK Release
+
+on:
+  push:
+    tags:
+      - 'v*'          # e.g. v4.0.0, v4.1.0-beta
+
+permissions:
+  contents: write    # needed to create GitHub Releases
+
+jobs:
+  build-apk:
+    name: Build Flutter APK
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: apps/mobile
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17 (required by Flutter's Gradle)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.32.0'   # pin to stable version
+          channel: stable
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Create .env file from secrets
+        run: |
+          echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
+          echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
+
+      - name: Write google-services.json (if present)
+        if: ${{ secrets.GOOGLE_SERVICES_JSON != '' }}
+        run: echo '${{ secrets.GOOGLE_SERVICES_JSON }}' > android/app/google-services.json
+
+      - name: Build release APK
+        run: |
+          flutter build apk --release \
+            --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
+            --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+
+      - name: Rename APK with version tag
+        run: |
+          VERSION="${{ github.ref_name }}"
+          cp build/app/outputs/flutter-apk/app-release.apk \
+             build/app/outputs/flutter-apk/psgmx-${VERSION}.apk
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "PSGMX Mobile ${{ github.ref_name }}"
+          body: |
+            ## PSGMX Mobile App — ${{ github.ref_name }}
+
+            ### Download
+            Install the APK from the assets below on any Android device (Android 7.0+).
+
+            ### What's New
+            See [CHANGELOG](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
+
+            ### Installation
+            1. Download `psgmx-${{ github.ref_name }}.apk`
+            2. Enable **Install from unknown sources** in Android settings
+            3. Open the APK to install
+          files: |
+            apps/mobile/build/app/outputs/flutter-apk/psgmx-${{ github.ref_name }}.apk
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-beta') || contains(github.ref_name, '-rc') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

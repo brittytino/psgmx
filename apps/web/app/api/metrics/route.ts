@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
       .select('score')
 
     const avgScore = scoreStats && scoreStats.length > 0
-      ? scoreStats.reduce((sum, r) => sum + Number(r.score), 0) / scoreStats.length
+      ? (scoreStats as any[]).reduce((sum, r) => sum + Number(r.score), 0) / scoreStats.length
       : 0
 
     // Students with active streaks (current_streak > 0)

@@ -62,7 +62,8 @@ export async function PUT(req: NextRequest) {
 
     const { error } = await supabase
       .from('users')
-      .update(updateData)
+      // @ts-ignore
+      .update(updateData as any)
       .eq('id', auth.id)
 
     if (error) throw error

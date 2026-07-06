@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
       app_role: 'student',
       linkedin_url: linkedin_url || null,
       onboarding_complete: false,
-    })
+    } as any)
 
     if (insertErr) {
       console.error('Users insert error:', insertErr)

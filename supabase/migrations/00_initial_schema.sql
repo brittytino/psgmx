@@ -1,13 +1,14 @@
 -- ============================================================
--- PSGMX — 00_initial_schema.sql
+-- PSGMX — 00_initial_schema.sql  (v2 — full rebuild)
 -- Complete database schema for the PSGMX educational ecosystem.
--- Run order matters: parent tables must be created before child tables.
+-- Includes ALL columns used by both Flutter and Next.js apps.
+-- Run order matters: parent tables before child tables.
 -- ============================================================
 
 -- Extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "vector";
-CREATE EXTENSION IF NOT EXISTS "pg_net";  -- for HTTP calls from triggers to Edge Functions
+CREATE EXTENSION IF NOT EXISTS "pg_net";   -- HTTP calls from triggers → Edge Functions
 
 -- ============================================================
 -- SECTION 1: CORE IDENTITY TABLES
@@ -28,25 +29,40 @@ CREATE TABLE IF NOT EXISTS batches (
 -- Students and alumni are identified by roll_no.
 -- Faculty and HOD have NULL roll_no.
 CREATE TABLE IF NOT EXISTS users (
-  id                    UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  email                 TEXT NOT NULL UNIQUE,
-  full_name             TEXT NOT NULL,
-  roll_no               TEXT UNIQUE,             -- NULL for faculty/HOD
-  batch_id              UUID REFERENCES batches(id),  -- NULL for faculty/HOD
-  role                  TEXT NOT NULL DEFAULT 'student'
-                        CHECK (role IN ('student', 'alumni', 'faculty', 'hod')),
-  app_role              TEXT NOT NULL DEFAULT 'student'
-                        CHECK (app_role IN ('student', 'team_leader', 'coordinator', 'placement_rep')),
-                        -- app_role is only meaningful when role = 'student' or 'alumni'
-  team_id               UUID,                    -- FK added after teams table is created
-  avatar_url            TEXT,
-  linkedin_url          TEXT,
-  current_company       TEXT,                    -- filled in after graduation
-  current_role_title    TEXT,                    -- filled in after graduation
-  mentorship_open       BOOLEAN NOT NULL DEFAULT false,  -- alumni toggle
-  onboarding_complete   BOOLEAN NOT NULL DEFAULT false,
-  created_at            TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at            TIMESTAMPTZ NOT NULL DEFAULT now()
+  id                              UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  email                           TEXT NOT NULL UNIQUE,
+  full_name                       TEXT NOT NULL,
+  roll_no                         TEXT UNIQUE,             -- NULL for faculty/HOD
+  batch_id                        UUID REFERENCES batches(id),  -- NULL for faculty/HOD
+  role                            TEXT NOT NULL DEFAULT 'student'
+                                  CHECK (role IN ('student', 'alumni', 'faculty', 'hod')),
+  app_role                        TEXT NOT NULL DEFAULT 'student'
+                                  CHECK (app_role IN ('student', 'team_leader', 'coordinator', 'placement_rep')),
+  team_id                         UUID,                    -- FK added after teams table is created
+  avatar_url                      TEXT,
+  linkedin_url                    TEXT,
+  current_company                 TEXT,                    -- filled in after graduation
+  current_role_title              TEXT,                    -- filled in after graduation
+  mentorship_open                 BOOLEAN NOT NULL DEFAULT false,  -- alumni toggle
+  onboarding_complete             BOOLEAN NOT NULL DEFAULT false,
+
+  -- ── Extended profile fields (used by Flutter app) ──────────────────────────
+  gender                          TEXT CHECK (gender IN ('male', 'female', 'other', NULL)),
+  dob                             DATE,                    -- date of birth for birthday notifications
+  role_label                      TEXT NOT NULL DEFAULT 'Student',  -- UI-facing cosmetic label
+  leetcode_username               TEXT,                    -- stored here for quick profile access
+  ecampus_password                TEXT,                    -- encrypted eCampus portal password
+  ecampus_password_set            BOOLEAN NOT NULL DEFAULT false,
+
+  -- ── Notification preferences (Flutter per-user toggles) ────────────────────
+  birthday_notifications_enabled  BOOLEAN NOT NULL DEFAULT true,
+  leetcode_notifications_enabled  BOOLEAN NOT NULL DEFAULT true,
+  task_reminders_enabled          BOOLEAN NOT NULL DEFAULT true,
+  attendance_alerts_enabled       BOOLEAN NOT NULL DEFAULT true,
+  announcements_enabled           BOOLEAN NOT NULL DEFAULT true,
+
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 -- Teams within a batch. Created and managed by the Placement Rep.
@@ -59,11 +75,19 @@ CREATE TABLE IF NOT EXISTS teams (
 );
 
 -- Add FK back to users for team_id (circular reference resolved via ALTER TABLE)
-ALTER TABLE users ADD CONSTRAINT users_team_id_fkey
-  FOREIGN KEY (team_id) REFERENCES teams(id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.table_constraints
+    WHERE constraint_name = 'users_team_id_fkey' AND table_name = 'users'
+  ) THEN
+    ALTER TABLE users ADD CONSTRAINT users_team_id_fkey
+      FOREIGN KEY (team_id) REFERENCES teams(id);
+  END IF;
+END;
+$$;
 
 -- Granular permission flags per user.
--- Used to customize what a Coordinator or Team Leader can do beyond their base app_role.
 CREATE TABLE IF NOT EXISTS user_permissions (
   id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id      UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -83,7 +107,7 @@ CREATE TABLE IF NOT EXISTS lineage_map (
   id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   junior_user_id   UUID NOT NULL REFERENCES users(id),
   senior_user_id   UUID NOT NULL REFERENCES users(id),
-  roll_suffix      TEXT NOT NULL,            -- the shared numeric suffix e.g. '223'
+  roll_suffix      TEXT NOT NULL,            -- the shared numeric suffix e.g. 'MX223'
   UNIQUE(junior_user_id, senior_user_id)
 );
 
@@ -91,7 +115,6 @@ CREATE TABLE IF NOT EXISTS lineage_map (
 -- SECTION 2: PLACEMENT SESSION ATTENDANCE (Mobile App)
 -- ============================================================
 
--- Sessions scheduled by Placement Rep or Coordinators via Flutter app.
 CREATE TABLE IF NOT EXISTS placement_sessions (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   batch_id        UUID NOT NULL REFERENCES batches(id),
@@ -101,25 +124,22 @@ CREATE TABLE IF NOT EXISTS placement_sessions (
   topic           TEXT NOT NULL,
   target_scope    TEXT NOT NULL DEFAULT 'batch'
                   CHECK (target_scope IN ('batch', 'teams')),
-                  -- if 'teams', see placement_session_teams join table
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Which teams a session targets when target_scope = 'teams'
 CREATE TABLE IF NOT EXISTS placement_session_teams (
   session_id  UUID NOT NULL REFERENCES placement_sessions(id) ON DELETE CASCADE,
   team_id     UUID NOT NULL REFERENCES teams(id),
   PRIMARY KEY (session_id, team_id)
 );
 
--- Per-student attendance per session. Written by Team Leaders via Flutter app.
 CREATE TABLE IF NOT EXISTS placement_attendance (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   session_id  UUID NOT NULL REFERENCES placement_sessions(id),
   student_id  UUID NOT NULL REFERENCES users(id),
   status      TEXT NOT NULL DEFAULT 'absent'
               CHECK (status IN ('present', 'absent', 'excused')),
-  marked_by   UUID NOT NULL REFERENCES users(id),  -- the Team Leader
+  marked_by   UUID NOT NULL REFERENCES users(id),
   note        TEXT,
   marked_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE(session_id, student_id)
@@ -129,7 +149,6 @@ CREATE TABLE IF NOT EXISTS placement_attendance (
 -- SECTION 3: DAILY FIVE QUIZ (Mobile App)
 -- ============================================================
 
--- Central question bank. Written by admins/coordinators, read by Flutter app.
 CREATE TABLE IF NOT EXISTS question_bank (
   id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   question_text  TEXT NOT NULL,
@@ -148,8 +167,6 @@ CREATE TABLE IF NOT EXISTS question_bank (
   created_at     TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Per-student streak state. This is the ONLY daily-five data that persists.
--- Individual question responses are NEVER stored in this database.
 CREATE TABLE IF NOT EXISTS daily_five_streaks (
   user_id                    UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
   current_streak             INTEGER NOT NULL DEFAULT 0,
@@ -159,8 +176,6 @@ CREATE TABLE IF NOT EXISTS daily_five_streaks (
   last_completed_date        DATE,
   total_days_completed       INTEGER NOT NULL DEFAULT 0,
   running_accuracy_rate      NUMERIC(5,2) NOT NULL DEFAULT 0.00,
-  -- running_accuracy_rate = (total correct / total answered) * 100
-  -- Updated as a running calculation each time a session completes.
   total_questions_answered   INTEGER NOT NULL DEFAULT 0,
   total_questions_correct    INTEGER NOT NULL DEFAULT 0,
   updated_at                 TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -170,7 +185,6 @@ CREATE TABLE IF NOT EXISTS daily_five_streaks (
 -- SECTION 4: LEETCODE STATS (Mobile App)
 -- ============================================================
 
--- Synced from LeetCode public API by the Flutter app every 6 hours.
 CREATE TABLE IF NOT EXISTS leetcode_stats (
   user_id               UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
   username              TEXT,
@@ -178,24 +192,28 @@ CREATE TABLE IF NOT EXISTS leetcode_stats (
   easy_solved           INTEGER NOT NULL DEFAULT 0,
   medium_solved         INTEGER NOT NULL DEFAULT 0,
   hard_solved           INTEGER NOT NULL DEFAULT 0,
-  -- Batch-period solved counts (from batch start_date to now)
   batch_easy_solved     INTEGER NOT NULL DEFAULT 0,
   batch_medium_solved   INTEGER NOT NULL DEFAULT 0,
   batch_hard_solved     INTEGER NOT NULL DEFAULT 0,
-  -- Batch-period weighted score = easy*1 + medium*2 + hard*3
   batch_weighted_score  INTEGER NOT NULL DEFAULT 0,
-  -- Percentile within own batch (0-100), recomputed by Edge Function
   batch_percentile      NUMERIC(5,2) NOT NULL DEFAULT 0.00,
-  weekly_solved         INTEGER NOT NULL DEFAULT 0,  -- problems solved in last 7 days
+  weekly_solved         INTEGER NOT NULL DEFAULT 0,
   ranking               INTEGER,
   synced_at             TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- LeetCode username whitelist: one row per allowed username.
+-- Prevents duplicate username claims across users.
+CREATE TABLE IF NOT EXISTS leetcode_username_whitelist (
+  username   TEXT PRIMARY KEY,
+  user_id    UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  added_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 -- ============================================================
 -- SECTION 5: TASKS (Mobile App)
 -- ============================================================
 
--- Daily tasks published by Placement Rep or Coordinators.
 CREATE TABLE IF NOT EXISTS daily_tasks (
   id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   batch_id       UUID NOT NULL REFERENCES batches(id),
@@ -210,14 +228,13 @@ CREATE TABLE IF NOT EXISTS daily_tasks (
   UNIQUE(batch_id, task_date, task_type)
 );
 
--- Student task completion records.
 CREATE TABLE IF NOT EXISTS task_completions (
   id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   task_id      UUID NOT NULL REFERENCES daily_tasks(id),
   student_id   UUID NOT NULL REFERENCES users(id),
   completed    BOOLEAN NOT NULL DEFAULT false,
   completed_at TIMESTAMPTZ,
-  verified_by  UUID REFERENCES users(id),  -- Team Leader who verified
+  verified_by  UUID REFERENCES users(id),
   verified_at  TIMESTAMPTZ,
   UNIQUE(task_id, student_id)
 );
@@ -226,23 +243,20 @@ CREATE TABLE IF NOT EXISTS task_completions (
 -- SECTION 6: PLACEMENT LOG (Mobile App writes, Web reads)
 -- ============================================================
 
--- Company visit records. Created by Placement Rep via Flutter app.
 CREATE TABLE IF NOT EXISTS companies (
   id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   batch_id              UUID NOT NULL REFERENCES batches(id),
   company_name          TEXT NOT NULL,
   visit_date            DATE NOT NULL,
-  roles_offered         TEXT[],             -- array of role names
-  package_band_min      NUMERIC(10,2),      -- in LPA
-  package_band_max      NUMERIC(10,2),      -- in LPA
+  roles_offered         TEXT[],
+  package_band_min      NUMERIC(10,2),
+  package_band_max      NUMERIC(10,2),
   eligibility_criteria  TEXT,
-  rounds                TEXT[],             -- e.g. ['Online Test', 'Technical', 'HR']
+  rounds                TEXT[],
   logged_by             UUID NOT NULL REFERENCES users(id),
   created_at            TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Personal experience writeups by second-year students.
--- Flows into Knowledge Brain on Next.js after faculty approval.
 CREATE TABLE IF NOT EXISTS placement_log_entries (
   id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id        UUID NOT NULL REFERENCES companies(id),
@@ -252,26 +266,23 @@ CREATE TABLE IF NOT EXISTS placement_log_entries (
   is_anonymous      BOOLEAN NOT NULL DEFAULT false,
   approval_status   TEXT NOT NULL DEFAULT 'pending'
                     CHECK (approval_status IN ('pending', 'approved', 'rejected')),
-  approved_by       UUID REFERENCES users(id),  -- faculty member
+  approved_by       UUID REFERENCES users(id),
   approved_at       TIMESTAMPTZ,
-  kb_article_id     UUID,                       -- FK to knowledge_brain_articles once ingested
+  kb_article_id     UUID,                        -- FK added after knowledge_brain_articles
   created_at        TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 -- ============================================================
--- SECTION 7: READINESS SCORE (Computed by Edge Function)
+-- SECTION 7: READINESS SCORE
 -- ============================================================
 
--- Current score per student. Updated within 60 seconds of any contributing event.
 CREATE TABLE IF NOT EXISTS readiness_scores (
   user_id          UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-  score            NUMERIC(5,2) NOT NULL DEFAULT 0.00,   -- 0 to 100
-  -- Component scores (each 0 to their max)
-  daily_five_score NUMERIC(5,2) NOT NULL DEFAULT 0.00,  -- max 30
-  leetcode_score   NUMERIC(5,2) NOT NULL DEFAULT 0.00,  -- max 25
-  mock_exam_score  NUMERIC(5,2) NOT NULL DEFAULT 0.00,  -- max 35
-  session_score    NUMERIC(5,2) NOT NULL DEFAULT 0.00,  -- max 10
-  -- Band for quick filtering
+  score            NUMERIC(5,2) NOT NULL DEFAULT 0.00,
+  daily_five_score NUMERIC(5,2) NOT NULL DEFAULT 0.00,
+  leetcode_score   NUMERIC(5,2) NOT NULL DEFAULT 0.00,
+  mock_exam_score  NUMERIC(5,2) NOT NULL DEFAULT 0.00,
+  session_score    NUMERIC(5,2) NOT NULL DEFAULT 0.00,
   band             TEXT GENERATED ALWAYS AS (
     CASE
       WHEN score >= 80 THEN 'strong'
@@ -283,7 +294,6 @@ CREATE TABLE IF NOT EXISTS readiness_scores (
   computed_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Daily snapshots for trend analysis.
 CREATE TABLE IF NOT EXISTS readiness_score_history (
   id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id          UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -300,42 +310,49 @@ CREATE TABLE IF NOT EXISTS readiness_score_history (
 -- SECTION 8: KNOWLEDGE BRAIN (Web App writes, shared)
 -- ============================================================
 
--- Faculty-approved articles, guides, and interview experiences.
--- Some rows originate from placement_log_entries (source='flutter_placement_log').
--- Some are written directly on the web platform (source='web').
 CREATE TABLE IF NOT EXISTS knowledge_brain_articles (
   id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title                   TEXT NOT NULL,
   content                 TEXT NOT NULL,
-  summary                 TEXT,                  -- 2-3 sentence summary for AI context
+  summary                 TEXT,
   author_id               UUID REFERENCES users(id),
   source                  TEXT NOT NULL DEFAULT 'web'
                           CHECK (source IN ('web', 'flutter_placement_log')),
   placement_log_entry_id  UUID REFERENCES placement_log_entries(id),
   tags                    TEXT[],
-  company_name            TEXT,                  -- if interview-experience article
-  batch_year              TEXT,                  -- e.g. '25MX' for batch context
+  company_name            TEXT,
+  batch_year              TEXT,
   approval_status         TEXT NOT NULL DEFAULT 'pending'
                           CHECK (approval_status IN ('pending', 'approved', 'rejected')),
   approved_by             UUID REFERENCES users(id),
   approved_at             TIMESTAMPTZ,
   view_count              INTEGER NOT NULL DEFAULT 0,
+  -- Full-text search vector (auto-updated by trigger in 05_search_index.sql)
+  search_vector           tsvector,
   created_at              TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at              TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Add FK from placement_log_entries.kb_article_id to knowledge_brain_articles
-ALTER TABLE placement_log_entries ADD CONSTRAINT placement_log_entries_kb_article_id_fkey
-  FOREIGN KEY (kb_article_id) REFERENCES knowledge_brain_articles(id);
+-- Add FK from placement_log_entries.kb_article_id
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.table_constraints
+    WHERE constraint_name = 'placement_log_entries_kb_article_id_fkey'
+  ) THEN
+    ALTER TABLE placement_log_entries ADD CONSTRAINT placement_log_entries_kb_article_id_fkey
+      FOREIGN KEY (kb_article_id) REFERENCES knowledge_brain_articles(id);
+  END IF;
+END;
+$$;
 
--- pgvector embeddings for semantic search.
--- Requires: CREATE EXTENSION vector; (enabled above)
+-- pgvector embeddings for semantic search
 CREATE TABLE IF NOT EXISTS knowledge_embeddings (
   id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   article_id   UUID NOT NULL REFERENCES knowledge_brain_articles(id) ON DELETE CASCADE,
-  chunk_index  INTEGER NOT NULL DEFAULT 0,  -- for multi-chunk articles
+  chunk_index  INTEGER NOT NULL DEFAULT 0,
   chunk_text   TEXT NOT NULL,
-  embedding    vector(1536),                -- OpenAI text-embedding-3-small / gte-small dimension
+  embedding    vector(384),   -- gte-small output dimension is 384
   created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE(article_id, chunk_index)
 );
@@ -343,32 +360,32 @@ CREATE TABLE IF NOT EXISTS knowledge_embeddings (
 CREATE INDEX IF NOT EXISTS knowledge_embeddings_vector_idx
   ON knowledge_embeddings
   USING ivfflat (embedding vector_cosine_ops)
-  WITH (lists = 100);
+  WITH (lists = 50);
+
+CREATE INDEX IF NOT EXISTS knowledge_brain_articles_search_idx
+  ON knowledge_brain_articles
+  USING gin(search_vector);
 
 -- ============================================================
 -- SECTION 9: MOCK EXAMINATIONS (Web App)
 -- ============================================================
 
--- Exam definitions created by faculty on the web platform.
 CREATE TABLE IF NOT EXISTS mock_exams (
   id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title             TEXT NOT NULL,
   description       TEXT,
-  target_batch_id   UUID REFERENCES batches(id),  -- NULL = all active batches
+  target_batch_id   UUID REFERENCES batches(id),
   created_by        UUID NOT NULL REFERENCES users(id),
   scheduled_at      TIMESTAMPTZ NOT NULL,
   duration_minutes  INTEGER NOT NULL DEFAULT 60,
   total_marks       INTEGER NOT NULL DEFAULT 100,
   proctoring_level  TEXT NOT NULL DEFAULT 'standard'
                     CHECK (proctoring_level IN ('standard', 'strict')),
-                    -- standard: camera + tab detection
-                    -- strict:   camera + tab detection + fullscreen enforcement
   status            TEXT NOT NULL DEFAULT 'draft'
                     CHECK (status IN ('draft', 'published', 'active', 'completed')),
   created_at        TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Individual questions within a mock exam.
 CREATE TABLE IF NOT EXISTS mock_exam_questions (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   exam_id         UUID NOT NULL REFERENCES mock_exams(id) ON DELETE CASCADE,
@@ -379,33 +396,31 @@ CREATE TABLE IF NOT EXISTS mock_exam_questions (
   option_b        TEXT,
   option_c        TEXT,
   option_d        TEXT,
-  correct_option  TEXT,              -- for mcq
+  correct_option  TEXT,
   marks           INTEGER NOT NULL DEFAULT 1,
   order_index     INTEGER NOT NULL,
   UNIQUE(exam_id, order_index)
 );
 
--- Per-student results for each exam.
 CREATE TABLE IF NOT EXISTS mock_exam_results (
   id                   UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   exam_id              UUID NOT NULL REFERENCES mock_exams(id),
   student_id           UUID NOT NULL REFERENCES users(id),
-  score                NUMERIC(5,2) NOT NULL DEFAULT 0.00,  -- 0 to 100 (normalised %)
+  score                NUMERIC(5,2) NOT NULL DEFAULT 0.00,
   raw_marks            INTEGER NOT NULL DEFAULT 0,
   submitted_at         TIMESTAMPTZ NOT NULL DEFAULT now(),
   time_taken_seconds   INTEGER,
   proctoring_flags     JSONB NOT NULL DEFAULT '[]',
-  -- e.g. [{"type":"tab_switch","timestamp":"..."},{"type":"camera_loss","timestamp":"..."}]
   UNIQUE(exam_id, student_id)
 );
 
 -- ============================================================
--- SECTION 10: NOTIFICATIONS AND ANNOUNCEMENTS (Both Apps)
+-- SECTION 10: NOTIFICATIONS AND ANNOUNCEMENTS
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS announcements (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  batch_id    UUID REFERENCES batches(id),  -- NULL = all batches
+  batch_id    UUID REFERENCES batches(id),
   title       TEXT NOT NULL,
   body        TEXT NOT NULL,
   posted_by   UUID NOT NULL REFERENCES users(id),
@@ -417,14 +432,11 @@ CREATE TABLE IF NOT EXISTS notifications (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id         UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   type            TEXT NOT NULL,
-  -- Types: 'exam_scheduled', 'streak_nudge', 'announcement',
-  --        'session_reminder', 'session_marked', 'graduation',
-  --        'lineage_senior_active', 'article_approved'
   title           TEXT NOT NULL,
   body            TEXT NOT NULL,
   is_read         BOOLEAN NOT NULL DEFAULT false,
-  reference_id    UUID,               -- optional FK to related record
-  reference_type  TEXT,               -- e.g. 'mock_exam', 'placement_session'
+  reference_id    UUID,
+  reference_type  TEXT,
   created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -433,10 +445,9 @@ CREATE INDEX IF NOT EXISTS notifications_user_unread_idx
   WHERE is_read = false;
 
 -- ============================================================
--- SECTION 11: ALUMNI AND HOD (Web App)
+-- SECTION 11: ALUMNI AND HOD
 -- ============================================================
 
--- Collaboration marketplace posts by alumni or students.
 CREATE TABLE IF NOT EXISTS collaboration_posts (
   id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   posted_by    UUID NOT NULL REFERENCES users(id),
@@ -449,7 +460,6 @@ CREATE TABLE IF NOT EXISTS collaboration_posts (
   created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Lineage messages between alumni and their matched junior students.
 CREATE TABLE IF NOT EXISTS lineage_messages (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   sender_id     UUID NOT NULL REFERENCES users(id),
@@ -459,7 +469,6 @@ CREATE TABLE IF NOT EXISTS lineage_messages (
   sent_at       TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Audit log for all sensitive actions.
 CREATE TABLE IF NOT EXISTS audit_logs (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   actor_id      UUID REFERENCES users(id),
@@ -471,20 +480,22 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 );
 
 -- ============================================================
--- ADDITIONAL INDEXES for query performance
+-- PERFORMANCE INDEXES
 -- ============================================================
 
-CREATE INDEX IF NOT EXISTS users_batch_id_idx ON users(batch_id);
-CREATE INDEX IF NOT EXISTS users_roll_no_idx ON users(roll_no);
-CREATE INDEX IF NOT EXISTS users_role_idx ON users(role);
+CREATE INDEX IF NOT EXISTS users_batch_id_idx             ON users(batch_id);
+CREATE INDEX IF NOT EXISTS users_roll_no_idx              ON users(roll_no);
+CREATE INDEX IF NOT EXISTS users_role_idx                 ON users(role);
+CREATE INDEX IF NOT EXISTS users_app_role_idx             ON users(app_role);
 CREATE INDEX IF NOT EXISTS placement_attendance_student_idx ON placement_attendance(student_id);
 CREATE INDEX IF NOT EXISTS placement_attendance_session_idx ON placement_attendance(session_id);
-CREATE INDEX IF NOT EXISTS placement_sessions_batch_idx ON placement_sessions(batch_id);
-CREATE INDEX IF NOT EXISTS daily_tasks_batch_date_idx ON daily_tasks(batch_id, task_date);
-CREATE INDEX IF NOT EXISTS mock_exam_results_student_idx ON mock_exam_results(student_id);
-CREATE INDEX IF NOT EXISTS mock_exam_results_exam_idx ON mock_exam_results(exam_id);
-CREATE INDEX IF NOT EXISTS knowledge_brain_articles_approval_idx ON knowledge_brain_articles(approval_status);
-CREATE INDEX IF NOT EXISTS lineage_map_junior_idx ON lineage_map(junior_user_id);
-CREATE INDEX IF NOT EXISTS lineage_map_senior_idx ON lineage_map(senior_user_id);
-CREATE INDEX IF NOT EXISTS companies_batch_idx ON companies(batch_id);
-CREATE INDEX IF NOT EXISTS readiness_scores_score_idx ON readiness_scores(score DESC);
+CREATE INDEX IF NOT EXISTS placement_sessions_batch_idx   ON placement_sessions(batch_id);
+CREATE INDEX IF NOT EXISTS daily_tasks_batch_date_idx     ON daily_tasks(batch_id, task_date);
+CREATE INDEX IF NOT EXISTS mock_exam_results_student_idx  ON mock_exam_results(student_id);
+CREATE INDEX IF NOT EXISTS mock_exam_results_exam_idx     ON mock_exam_results(exam_id);
+CREATE INDEX IF NOT EXISTS knowledge_articles_approval_idx ON knowledge_brain_articles(approval_status);
+CREATE INDEX IF NOT EXISTS lineage_map_junior_idx         ON lineage_map(junior_user_id);
+CREATE INDEX IF NOT EXISTS lineage_map_senior_idx         ON lineage_map(senior_user_id);
+CREATE INDEX IF NOT EXISTS companies_batch_idx            ON companies(batch_id);
+CREATE INDEX IF NOT EXISTS readiness_scores_score_idx     ON readiness_scores(score DESC);
+CREATE INDEX IF NOT EXISTS leetcode_stats_batch_score_idx ON leetcode_stats(batch_weighted_score DESC);

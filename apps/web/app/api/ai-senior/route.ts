@@ -1,17 +1,90 @@
 // ============================================================
-// POST /api/ai-senior
-// AI Senior RAG chatbot — migrated to Supabase pgvector search.
-// Queries knowledge_embeddings for relevant context, then calls
-// the LLM via OpenRouter with the retrieved context.
+// POST /api/ai-senior/route.ts (v2)
+// AI Senior RAG chatbot.
+// Primary LLM: Gemini 2.5 Flash via @google/generative-ai
+// Fallback LLM: OpenRouter (claude-3-haiku) on Gemini failure
+// Final fallback: static message
 // ============================================================
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/auth'
 import { buildRAGContext, formatRAGContextForPrompt } from '@/lib/ai/rag'
+import { GoogleGenerativeAI } from '@google/generative-ai'
+
+const FALLBACK_MESSAGE =
+  "I couldn't find a specific answer in the knowledge base right now. " +
+  "Try searching the Knowledge Brain directly for more detailed information."
+
+async function callGemini(systemPrompt: string, contextText: string, query: string): Promise<string> {
+  const apiKey = process.env.GEMINI_API_KEY
+  if (!apiKey) throw new Error('GEMINI_API_KEY not configured')
+
+  const genAI  = new GoogleGenerativeAI(apiKey)
+  const model  = genAI.getGenerativeModel({
+    model: 'gemini-2.5-flash',
+    systemInstruction: systemPrompt,
+    generationConfig: {
+      maxOutputTokens: 800,
+      temperature:     0.3,
+    },
+  })
+
+  const prompt = `Knowledge Brain Context:\n${contextText}\n\nStudent Question: ${query}`
+
+  // 8-second timeout
+  const result = await Promise.race([
+    model.generateContent(prompt),
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Gemini timeout')), 8000)
+    ),
+  ])
+
+  const text = result.response.text()
+  if (!text) throw new Error('Empty response from Gemini')
+  return text
+}
+
+async function callOpenRouter(systemPrompt: string, contextText: string, query: string): Promise<string> {
+  const apiKey = process.env.OPENROUTER_API_KEY
+  if (!apiKey) throw new Error('OPENROUTER_API_KEY not configured')
+
+  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type':  'application/json',
+      'HTTP-Referer':  process.env.NEXT_PUBLIC_APP_URL ?? 'https://psgmx.tech',
+      'X-Title':       'PSGMX AI Senior',
+    },
+    body: JSON.stringify({
+      model:      'anthropic/claude-3-haiku',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        {
+          role:    'user',
+          content: `Knowledge Brain Context:\n${contextText}\n\nStudent Question: ${query}`,
+        },
+      ],
+      max_tokens:  800,
+      temperature: 0.3,
+    }),
+    signal: AbortSignal.timeout(10000),
+  })
+
+  if (!response.ok) {
+    const err = await response.text()
+    throw new Error(`OpenRouter error: ${err}`)
+  }
+
+  const data = await response.json()
+  const text = data.choices?.[0]?.message?.content
+  if (!text) throw new Error('Empty response from OpenRouter')
+  return text
+}
 
 export async function POST(req: NextRequest) {
   try {
     const session = await getUserFromRequest(req)
-    if (!session || !session.id) {
+    if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -21,58 +94,41 @@ export async function POST(req: NextRequest) {
     if (!query || typeof query !== 'string') {
       return NextResponse.json({ error: 'query is required' }, { status: 400 })
     }
-
     if (query.length > 500) {
       return NextResponse.json({ error: 'Query too long (max 500 characters)' }, { status: 400 })
     }
 
     // 1. Build RAG context from Knowledge Brain
-    const ragContext = await buildRAGContext(query, session.id)
+    const ragContext  = await buildRAGContext(query, session.id)
     const contextText = formatRAGContextForPrompt(ragContext)
 
-    // 2. Call LLM via OpenRouter
-    const openRouterKey = process.env.OPENROUTER_API_KEY
-    if (!openRouterKey) {
-      return NextResponse.json({ error: 'AI service not configured' }, { status: 503 })
+    // 2. Try Gemini 2.5 Flash as primary
+    let answer: string | null = null
+    let llmUsed = 'none'
+
+    try {
+      answer  = await callGemini(ragContext.systemPrompt, contextText, query)
+      llmUsed = 'gemini-2.5-flash'
+    } catch (geminiErr) {
+      console.warn('Gemini failed, trying OpenRouter fallback:', geminiErr)
+
+      // 3. Fallback to OpenRouter (claude-3-haiku)
+      try {
+        answer  = await callOpenRouter(ragContext.systemPrompt, contextText, query)
+        llmUsed = 'openrouter/claude-3-haiku'
+      } catch (orErr) {
+        console.error('OpenRouter also failed:', orErr)
+        // 4. Static fallback
+        answer  = FALLBACK_MESSAGE
+        llmUsed = 'static_fallback'
+      }
     }
-
-    const messages = [
-      { role: 'system', content: ragContext.systemPrompt },
-      {
-        role: 'user',
-        content: `Knowledge Brain Context:\n${contextText}\n\nStudent Question: ${query}`,
-      },
-    ]
-
-    const llmResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openRouterKey}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL ?? 'https://psgmx.tech',
-        'X-Title': 'PSGMX AI Senior',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-flash-1.5',  // Fast, cost-effective for educational use
-        messages,
-        max_tokens: 800,
-        temperature: 0.3,  // Low temperature for factual accuracy
-      }),
-    })
-
-    if (!llmResponse.ok) {
-      const err = await llmResponse.text()
-      console.error('OpenRouter error:', err)
-      return NextResponse.json({ error: 'AI service error' }, { status: 502 })
-    }
-
-    const llmData = await llmResponse.json()
-    const answer = llmData.choices?.[0]?.message?.content ?? 'I could not generate a response. Please try again.'
 
     return NextResponse.json({
-      success: true,
+      success:      true,
       answer,
-      sourcesCount: ragContext.articles.length,
+      llm_used:     llmUsed,
+      sources_count: ragContext.articles.length,
     })
 
   } catch (error) {

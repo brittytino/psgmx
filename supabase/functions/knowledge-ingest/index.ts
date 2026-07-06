@@ -1,15 +1,9 @@
 // ============================================================
-// PSGMX — supabase/functions/knowledge-ingest/index.ts
-// Deno Edge Function. Called by database trigger when
+// PSGMX — supabase/functions/knowledge-ingest/index.ts (v2)
+// Deno Edge Function. Called by DB trigger when
 // placement_log_entries.approval_status changes to 'approved'.
 //
-// Steps (per spec Section 5.3):
-// 1. Read the approved placement log entry
-// 2. Create a knowledge_brain_articles row (source='flutter_placement_log')
-// 3. Chunk experience_text at sentence boundaries (max 500 chars)
-// 4. Embed each chunk using Supabase AI (gte-small model, no API key needed)
-// 5. Insert embeddings into knowledge_embeddings
-// 6. Update placement_log_entries.kb_article_id
+// Uses Supabase native AI (gte-small, 384-dim) for embeddings.
 // ============================================================
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
@@ -32,10 +26,7 @@ function chunkText(text: string, maxChunkSize = 500): string[] {
     if (candidate.length <= maxChunkSize) {
       currentChunk = candidate
     } else {
-      if (currentChunk) {
-        chunks.push(currentChunk.trim())
-      }
-      // If a single sentence exceeds maxChunkSize, split it hard
+      if (currentChunk) chunks.push(currentChunk.trim())
       if (sentence.length > maxChunkSize) {
         for (let i = 0; i < sentence.length; i += maxChunkSize) {
           chunks.push(sentence.slice(i, i + maxChunkSize).trim())
@@ -47,10 +38,7 @@ function chunkText(text: string, maxChunkSize = 500): string[] {
     }
   }
 
-  if (currentChunk.trim()) {
-    chunks.push(currentChunk.trim())
-  }
-
+  if (currentChunk.trim()) chunks.push(currentChunk.trim())
   return chunks.filter(c => c.length > 0)
 }
 
@@ -74,9 +62,7 @@ Deno.serve(async (req: Request) => {
   const supabase = createClient(supabaseUrl, serviceRoleKey)
 
   try {
-    // ────────────────────────────────────────
     // Step 1: Read the approved placement log entry
-    // ────────────────────────────────────────
     const { data: entry, error: entryErr } = await supabase
       .from('placement_log_entries')
       .select(`
@@ -87,9 +73,10 @@ Deno.serve(async (req: Request) => {
         is_anonymous,
         approved_by,
         approved_at,
+        kb_article_id,
         company_id,
         companies ( company_name, batch_id ),
-        users ( full_name, batch_id )
+        users ( full_name )
       `)
       .eq('id', entryId)
       .eq('approval_status', 'approved')
@@ -111,22 +98,18 @@ Deno.serve(async (req: Request) => {
     }
 
     const company = Array.isArray(entry.companies) ? entry.companies[0] : entry.companies
-    const author = Array.isArray(entry.users) ? entry.users[0] : entry.users
+    const author  = Array.isArray(entry.users) ? entry.users[0] : entry.users
 
-    // ────────────────────────────────────────
     // Step 2: Create knowledge_brain_articles row
-    // ────────────────────────────────────────
     const articleTitle = entry.is_anonymous
       ? `Interview Experience: ${company?.company_name ?? 'Unknown Company'} — ${entry.round_name}`
       : `${author?.full_name ?? 'Anonymous'}'s Experience at ${company?.company_name ?? 'Unknown Company'} — ${entry.round_name}`
 
-    // Build a 2-3 sentence summary from the first 300 chars of experience_text
     const summaryText = entry.experience_text.slice(0, 300).trim()
     const summary = summaryText.length === entry.experience_text.length
       ? summaryText
       : `${summaryText}...`
 
-    // Get batch year from company's batch
     const { data: batch } = await supabase
       .from('batches')
       .select('batch_code')
@@ -136,18 +119,18 @@ Deno.serve(async (req: Request) => {
     const { data: article, error: articleErr } = await supabase
       .from('knowledge_brain_articles')
       .insert({
-        title: articleTitle,
-        content: entry.experience_text,
+        title:                 articleTitle,
+        content:               entry.experience_text,
         summary,
-        author_id: entry.is_anonymous ? null : entry.student_id,
-        source: 'flutter_placement_log',
+        author_id:             entry.is_anonymous ? null : entry.student_id,
+        source:                'flutter_placement_log',
         placement_log_entry_id: entryId,
-        tags: ['placement', 'interview-experience', company?.company_name?.toLowerCase().replace(/\s+/g, '-') ?? 'unknown'].filter(Boolean),
-        company_name: company?.company_name ?? null,
-        batch_year: batch?.batch_code ?? null,
-        approval_status: 'approved',
-        approved_by: entry.approved_by,
-        approved_at: entry.approved_at ?? new Date().toISOString(),
+        tags:                  ['placement', 'interview-experience', company?.company_name?.toLowerCase().replace(/\s+/g, '-') ?? 'unknown'].filter(Boolean),
+        company_name:          company?.company_name ?? null,
+        batch_year:            batch?.batch_code ?? null,
+        approval_status:       'approved',
+        approved_by:           entry.approved_by,
+        approved_at:           entry.approved_at ?? new Date().toISOString(),
       })
       .select('id')
       .single()
@@ -156,59 +139,48 @@ Deno.serve(async (req: Request) => {
       throw new Error(`Failed to create knowledge article: ${articleErr?.message}`)
     }
 
-    // ────────────────────────────────────────
     // Step 3: Chunk the experience_text
-    // ────────────────────────────────────────
     const chunks = chunkText(entry.experience_text, 500)
 
-    // ────────────────────────────────────────
-    // Step 4 + 5: Embed each chunk and insert into knowledge_embeddings
-    // Using Supabase's native gte-small model (no API key needed)
-    // ────────────────────────────────────────
+    // Step 4 + 5: Embed each chunk using Supabase native gte-small (384-dim, no API key needed)
     // @ts-ignore: Supabase.ai is available in Edge Function runtime
     const model = new Supabase.ai.Session('gte-small')
 
+    let embeddedCount = 0
     for (let i = 0; i < chunks.length; i++) {
-      const chunk = chunks[i]
+      try {
+        const output = await model.run(chunks[i], { mean_pool: true, normalize: true })
+        const embedding = Array.from(output as number[])
 
-      // Generate embedding
-      const output = await model.run(chunk, { mean_pool: true, normalize: true })
-      const embedding = Array.from(output as number[])
+        const { error: embErr } = await supabase
+          .from('knowledge_embeddings')
+          .insert({
+            article_id:  article.id,
+            chunk_index: i,
+            chunk_text:  chunks[i],
+            embedding,
+          })
 
-      // Insert embedding
-      const { error: embeddingErr } = await supabase
-        .from('knowledge_embeddings')
-        .insert({
-          article_id: article.id,
-          chunk_index: i,
-          chunk_text: chunk,
-          embedding,
-        })
-
-      if (embeddingErr) {
-        console.error(`Failed to insert embedding for chunk ${i}:`, embeddingErr)
-        // Continue with other chunks — don't fail the whole function
+        if (!embErr) embeddedCount++
+        else console.error(`Chunk ${i} embedding insert error:`, embErr)
+      } catch (embErr) {
+        console.error(`Chunk ${i} embedding generation error:`, embErr)
       }
     }
 
-    // ────────────────────────────────────────
     // Step 6: Update placement_log_entries.kb_article_id
-    // ────────────────────────────────────────
-    const { error: updateErr } = await supabase
+    await supabase
       .from('placement_log_entries')
       .update({ kb_article_id: article.id })
       .eq('id', entryId)
 
-    if (updateErr) {
-      console.error('Failed to update kb_article_id:', updateErr)
-    }
-
     return new Response(
       JSON.stringify({
-        success: true,
-        entry_id: entryId,
-        article_id: article.id,
-        chunks_embedded: chunks.length,
+        success:        true,
+        entry_id:       entryId,
+        article_id:     article.id,
+        chunks_total:   chunks.length,
+        chunks_embedded: embeddedCount,
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     )

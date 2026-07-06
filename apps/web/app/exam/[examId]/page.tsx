@@ -119,13 +119,13 @@ export default function ExamPage({ params }: { params: Promise<{ examId: string 
         setQuestions(shuffled);
       }
       
-      setTimeLeft(examData.duration_minutes * 60);
+      setTimeLeft((examData as any).duration_minutes * 60);
       setLoading(false);
     }
     loadData();
   }, [examId]);
 
-  // Request Camera
+  // Request Camera + Fullscreen (strict mode)
   useEffect(() => {
     let stream: MediaStream | null = null;
     if (!loading) {
@@ -138,18 +138,25 @@ export default function ExamPage({ params }: { params: Promise<{ examId: string 
             videoRef.current.srcObject = s;
           }
         })
-        .catch((e) => {
+        .catch(() => {
           setCameraActive(false);
           setCameraError("Camera access required for proctoring.");
           addFlag("camera_loss");
         });
+
+      // Enforce fullscreen for strict proctoring
+      if (exam?.proctoring_level === 'strict' && document.fullscreenEnabled) {
+        document.documentElement.requestFullscreen().catch(() => {
+          addFlag('fullscreen_denied');
+          setWarnings(w => [...w, 'Fullscreen required for this exam. Please allow fullscreen.']);
+        });
+      }
     }
     return () => {
-      if (stream) {
-        stream.getTracks().forEach(t => t.stop());
-      }
+      if (stream) stream.getTracks().forEach(t => t.stop());
+      if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
     };
-  }, [loading]);
+  }, [loading, exam?.proctoring_level]);
 
   // Tab switch detection
   useEffect(() => {
@@ -206,37 +213,40 @@ export default function ExamPage({ params }: { params: Promise<{ examId: string 
     
     const timeTaken = Math.floor((Date.now() - startTime.current) / 1000);
 
-    // Evaluate answers
-    let rawMarks = 0;
-    
-    // We fetch correct options now to prevent client side leaking
-    const { data: fullQuestions } = await supabase
-        .from("mock_exam_questions")
-        .select("id, correct_option, marks")
-        .eq("exam_id", examId);
+    try {
+      // Server-side evaluation via API route — correct_option NEVER exposed to browser
+      const res = await fetch('/api/student/exam/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          exam_id:             examId,
+          answers,
+          time_taken_seconds:  timeTaken,
+          proctoring_flags:    flags,
+        }),
+      });
 
-    if (fullQuestions) {
-      for (const q of fullQuestions) {
-        if (answers[q.id] && answers[q.id].toLowerCase() === q.correct_option?.toLowerCase()) {
-          rawMarks += q.marks;
+      const result = await res.json();
+
+      if (!res.ok) {
+        if (res.status === 409) {
+          alert('You have already submitted this exam.');
+        } else {
+          alert(`Submission failed: ${result.error ?? 'Unknown error'}`);
         }
+        return;
       }
+
+      // Exit fullscreen if active
+      if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+
+      router.push(`/exam/${examId}/result?score=${result.score}&marks=${result.raw_marks}&out_of=${result.out_of}`);
+    } catch (err) {
+      console.error('Exam submit error:', err);
+      alert('Network error. Please try again.');
+    } finally {
+      setSubmitting(false);
     }
-
-    const maxMarks = exam.total_marks || 100;
-    const normalizedScore = (rawMarks / maxMarks) * 100;
-
-    await supabase.from("mock_exam_results").insert({
-      exam_id: examId,
-      student_id: userId,
-      raw_marks: rawMarks,
-      score: normalizedScore,
-      time_taken_seconds: timeTaken,
-      proctoring_flags: flags
-    });
-
-    alert("Exam submitted successfully!");
-    router.push("/");
   };
 
   if (loading) {
