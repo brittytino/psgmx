@@ -42,12 +42,12 @@ export default function UnifiedLogin() {
       }
 
       if (data.mustChangePassword) {
-        sessionStorage.setItem('post_change_redirect', data.redirect || '/');
+        sessionStorage.setItem('post_change_redirect', data.redirect || '/student');
         router.push('/change-password');
         return;
       }
 
-      router.push(data.redirect || '/');
+      router.push(data.redirect || '/student');
     } catch {
       setError('Network error. Please try again.');
     } finally {
