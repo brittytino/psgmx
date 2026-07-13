@@ -93,7 +93,7 @@ export default function ConfirmationModal({
             <button
               onClick={onConfirm}
               className={`flex-1 rounded-2xl text-white py-4 text-xs font-black uppercase tracking-[0.15em] shadow-xl transition-all active:scale-[0.98] ${
-                variant === 'danger' ? 'bg-[#6C3DFF] hover:bg-rose-700 shadow-rose-100' :
+                variant === 'danger' ? 'bg-primary-purple hover:bg-rose-700 shadow-rose-100' :
                 variant === 'success' ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-100' :
                 'bg-blue-600 hover:bg-blue-700 shadow-blue-100'
               }`}

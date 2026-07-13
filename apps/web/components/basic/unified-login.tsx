@@ -56,7 +56,7 @@ export default function UnifiedLogin() {
   }
 
   return (
-    <div className="h-screen w-screen bg-[#F8F9FC] flex items-center justify-center overflow-hidden relative font-sans text-[#1E293B]">
+    <div className="h-screen w-screen bg-page-bg flex items-center justify-center overflow-hidden relative font-sans text-text-main">
       
       {/* Abstract Background Waves (Bottom Left) */}
       <div className="absolute bottom-0 left-0 w-[80%] h-[50%] pointer-events-none opacity-60 z-0">
@@ -85,14 +85,14 @@ export default function UnifiedLogin() {
             </div>
 
             {/* Title */}
-            <h1 className="text-5xl xl:text-[3.8rem] font-bold tracking-tight leading-[1.15] text-[#1E293B] mb-5">
+            <h1 className="text-5xl xl:text-[3.8rem] font-bold tracking-tight leading-[1.15] text-text-main mb-5">
               Your Department.<br />
               Your Legacy.<br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#6C3DFF] to-[#3B82F6]">Powered by Intelligence.</span>
             </h1>
 
             {/* Paragraph */}
-            <p className="text-[#64748B] text-[15px] xl:text-[17px] leading-relaxed max-w-[420px] mb-12">
+            <p className="text-text-muted text-[15px] xl:text-[17px] leading-relaxed max-w-[420px] mb-12">
               PSGMX is the unified digital ecosystem for the MCA Department — built for collaboration, knowledge sharing, and academic excellence.
             </p>
 
@@ -100,39 +100,39 @@ export default function UnifiedLogin() {
             <div className="grid grid-cols-2 gap-6">
               
               {/* Feature 1 */}
-              <div className="bg-white rounded-[1.25rem] p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-[#F1F5F9]">
-                <div className="w-10 h-10 rounded-full bg-[#F5F3FF] flex items-center justify-center mb-3">
-                  <BrainCircuit className="w-5 h-5 text-[#6C3DFF]" />
+              <div className="bg-white rounded-[1.25rem] p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-border-light">
+                <div className="w-10 h-10 rounded-full bg-page-bg flex items-center justify-center mb-3">
+                  <BrainCircuit className="w-5 h-5 text-primary-purple" />
                 </div>
-                <h3 className="font-bold text-[#1E293B] text-[14px] mb-1">AI Senior</h3>
-                <p className="text-xs text-[#64748B] leading-relaxed">Get instant, context-aware answers from your department's AI mentor.</p>
+                <h3 className="font-bold text-text-main text-[14px] mb-1">AI Senior</h3>
+                <p className="text-xs text-text-muted leading-relaxed">Get instant, context-aware answers from your department's AI mentor.</p>
               </div>
               
               {/* Feature 2 */}
-              <div className="bg-white rounded-[1.25rem] p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-[#F1F5F9]">
-                <div className="w-10 h-10 rounded-full bg-[#EFF6FF] flex items-center justify-center mb-3">
-                  <BookOpen className="w-5 h-5 text-[#3B82F6]" />
+              <div className="bg-white rounded-[1.25rem] p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-border-light">
+                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center mb-3">
+                  <BookOpen className="w-5 h-5 text-electric-blue" />
                 </div>
-                <h3 className="font-bold text-[#1E293B] text-[14px] mb-1">Knowledge Brain</h3>
-                <p className="text-xs text-[#64748B] leading-relaxed">Access curated guides, survival notes, and alumni experiences.</p>
+                <h3 className="font-bold text-text-main text-[14px] mb-1">Knowledge Brain</h3>
+                <p className="text-xs text-text-muted leading-relaxed">Access curated guides, survival notes, and alumni experiences.</p>
               </div>
 
               {/* Feature 3 */}
-              <div className="bg-white rounded-[1.25rem] p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-[#F1F5F9]">
+              <div className="bg-white rounded-[1.25rem] p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-border-light">
                 <div className="w-10 h-10 rounded-full bg-[#F0FDF4] flex items-center justify-center mb-3">
                   <LineChart className="w-5 h-5 text-[#10B981]" />
                 </div>
-                <h3 className="font-bold text-[#1E293B] text-[14px] mb-1">FYP Repository</h3>
-                <p className="text-xs text-[#64748B] leading-relaxed">Track, document, and learn from past year projects effortlessly.</p>
+                <h3 className="font-bold text-text-main text-[14px] mb-1">FYP Repository</h3>
+                <p className="text-xs text-text-muted leading-relaxed">Track, document, and learn from past year projects effortlessly.</p>
               </div>
 
               {/* Feature 4 */}
-              <div className="bg-white rounded-[1.25rem] p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-[#F1F5F9]">
+              <div className="bg-white rounded-[1.25rem] p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-border-light">
                 <div className="w-10 h-10 rounded-full bg-[#FFF7ED] flex items-center justify-center mb-3">
                   <Target className="w-5 h-5 text-[#F97316]" />
                 </div>
-                <h3 className="font-bold text-[#1E293B] text-[14px] mb-1">Recovery Hub</h3>
-                <p className="text-xs text-[#64748B] leading-relaxed">Special resources and mock exams to help you clear arrears.</p>
+                <h3 className="font-bold text-text-main text-[14px] mb-1">Recovery Hub</h3>
+                <p className="text-xs text-text-muted leading-relaxed">Special resources and mock exams to help you clear arrears.</p>
               </div>
 
             </div>
@@ -141,16 +141,16 @@ export default function UnifiedLogin() {
 
         {/* Right Section (Form Card) */}
         <div className="w-[45%] xl:w-[40%] h-full flex items-center justify-end z-20">
-          <div className="w-full max-w-[480px] bg-white rounded-3xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.06)] border border-[#F1F5F9] flex flex-col p-8 sm:p-10">
+          <div className="w-full max-w-[480px] bg-white rounded-3xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.06)] border border-border-light flex flex-col p-8 sm:p-10">
             
             {/* Header */}
             <div className="flex justify-center mb-5">
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#EFF6FF] text-[#2563EB] text-[11px] font-bold">
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white text-[#2563EB] text-[11px] font-bold">
                 <GraduationCap className="w-3.5 h-3.5" /> Welcome Back
               </div>
             </div>
-            <h2 className="text-[26px] font-bold tracking-tight text-[#1E293B] text-center mb-1.5">Sign in to PSGMX</h2>
-            <p className="text-[12px] text-[#64748B] text-center mb-8">Access your department ecosystem</p>
+            <h2 className="text-[26px] font-bold tracking-tight text-text-main text-center mb-1.5">Sign in to PSGMX</h2>
+            <p className="text-[12px] text-text-muted text-center mb-8">Access your department ecosystem</p>
 
             {/* Error */}
             {error && (
@@ -165,7 +165,7 @@ export default function UnifiedLogin() {
               
               {/* Identifier */}
               <div className="space-y-1.5">
-                <label className="block text-[10px] font-bold text-[#94A3B8] tracking-widest pl-1 uppercase">
+                <label className="block text-[10px] font-bold text-text-muted tracking-widest pl-1 uppercase">
                   Identifier
                 </label>
                 <div className="relative">
@@ -177,7 +177,7 @@ export default function UnifiedLogin() {
                     required
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="block w-full pl-11 pr-4 py-3.5 bg-white border border-[#E2E8F0] rounded-[10px] text-[14px] text-[#1E293B] placeholder-[#94A3B8] focus:border-[#6C3DFF] focus:ring-1 focus:ring-[#6C3DFF] focus:outline-none transition-colors"
+                    className="block w-full pl-11 pr-4 py-3.5 bg-white border border-border-light rounded-[10px] text-[14px] text-text-main placeholder-[#94A3B8] focus:border-primary-purple focus:ring-1 focus:ring-[#6C3DFF] focus:outline-none transition-colors"
                     placeholder="Email or Token (e.g. 25MX301)"
                     autoComplete="username"
                   />
@@ -186,7 +186,7 @@ export default function UnifiedLogin() {
 
               {/* Password */}
               <div className="space-y-1.5">
-                <label className="block text-[10px] font-bold text-[#94A3B8] tracking-widest pl-1 uppercase">
+                <label className="block text-[10px] font-bold text-text-muted tracking-widest pl-1 uppercase">
                   Access Key
                 </label>
                 <div className="relative">
@@ -198,14 +198,14 @@ export default function UnifiedLogin() {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="block w-full pl-11 pr-12 py-3.5 bg-white border border-[#E2E8F0] rounded-[10px] text-[14px] text-[#1E293B] placeholder-[#94A3B8] focus:border-[#6C3DFF] focus:ring-1 focus:ring-[#6C3DFF] focus:outline-none transition-colors"
+                    className="block w-full pl-11 pr-12 py-3.5 bg-white border border-border-light rounded-[10px] text-[14px] text-text-main placeholder-[#94A3B8] focus:border-primary-purple focus:ring-1 focus:ring-[#6C3DFF] focus:outline-none transition-colors"
                     placeholder="Enter your password"
                     autoComplete="current-password"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-[#CBD5E1] hover:text-[#94A3B8] transition-colors"
+                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-[#CBD5E1] hover:text-text-muted transition-colors"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -215,10 +215,10 @@ export default function UnifiedLogin() {
               {/* Options */}
               <div className="flex items-center justify-between pt-1 pb-1">
                 <label className="flex items-center gap-2 cursor-pointer group">
-                  <div className="w-4 h-4 rounded border border-[#E2E8F0] bg-white group-hover:border-[#6C3DFF] flex items-center justify-center transition-colors"></div>
-                  <span className="text-[12px] text-[#64748B] font-medium">Remember me</span>
+                  <div className="w-4 h-4 rounded border border-border-light bg-white group-hover:border-primary-purple flex items-center justify-center transition-colors"></div>
+                  <span className="text-[12px] text-text-muted font-medium">Remember me</span>
                 </label>
-                <button type="button" className="text-[12px] font-bold text-[#2563EB] hover:text-[#6C3DFF] transition-colors">
+                <button type="button" className="text-[12px] font-bold text-[#2563EB] hover:text-primary-purple transition-colors">
                   Forgot password?
                 </button>
               </div>
@@ -237,21 +237,21 @@ export default function UnifiedLogin() {
             {/* Divider */}
             <div className="relative my-7">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-[#F1F5F9]"></div>
+                <div className="w-full border-t border-border-light"></div>
               </div>
               <div className="relative flex justify-center text-xs">
-                <span className="px-3 bg-white text-[#94A3B8] font-bold uppercase tracking-widest text-[10px]">OR</span>
+                <span className="px-3 bg-white text-text-muted font-bold uppercase tracking-widest text-[10px]">OR</span>
               </div>
             </div>
 
             {/* Alumni Network Section */}
-            <button onClick={() => router.push('/join-alumni')} className="w-full group bg-[#F8F9FC] hover:bg-[#F1F5F9] border border-[#E2E8F0] rounded-[1rem] p-4 transition-colors flex items-center gap-4 text-left">
-              <div className="w-[38px] h-[38px] rounded-full bg-white border border-[#E2E8F0] flex items-center justify-center shrink-0 text-[#6C3DFF] shadow-sm">
+            <button onClick={() => router.push('/join-alumni')} className="w-full group bg-page-bg hover:bg-page-bg border border-border-light rounded-[1rem] p-4 transition-colors flex items-center gap-4 text-left">
+              <div className="w-[38px] h-[38px] rounded-full bg-white border border-border-light flex items-center justify-center shrink-0 text-primary-purple shadow-sm">
                 <Users className="w-[18px] h-[18px]" />
               </div>
               <div className="flex-1">
-                <h4 className="font-bold text-[#1E293B] text-[13px]">Join Alumni Network</h4>
-                <p className="text-[11px] text-[#64748B] mt-0.5 flex items-center gap-1">
+                <h4 className="font-bold text-text-main text-[13px]">Join Alumni Network</h4>
+                <p className="text-[11px] text-text-muted mt-0.5 flex items-center gap-1">
                   Are you an alumnus? <span className="text-[#2563EB] font-bold flex items-center">Join now <ArrowRight className="w-3 h-3 ml-0.5" /></span>
                 </p>
               </div>
@@ -260,7 +260,7 @@ export default function UnifiedLogin() {
             {/* Footer */}
             <div className="mt-7 pt-5 flex justify-center items-center gap-2">
               <ShieldCheck className="w-[16px] h-[16px] text-[#10B981]" />
-              <p className="text-[11px] font-bold text-[#64748B]">
+              <p className="text-[11px] font-bold text-text-muted">
                 Secure &bull; Private &bull; Department Verified
               </p>
             </div>

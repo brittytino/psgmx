@@ -48,9 +48,9 @@ export default function ChangePasswordClient() {
   let strengthColor = 'text-red-500';
   let barColor = 'bg-red-500 w-1/4';
   if (passedRulesCount === 2) { passwordStrength = 'Fair'; strengthColor = 'text-orange-500'; barColor = 'bg-orange-500 w-2/4'; }
-  if (passedRulesCount === 3) { passwordStrength = 'Good'; strengthColor = 'text-[#3B82F6]'; barColor = 'bg-[#3B82F6] w-3/4'; }
+  if (passedRulesCount === 3) { passwordStrength = 'Good'; strengthColor = 'text-electric-blue'; barColor = 'bg-electric-blue w-3/4'; }
   if (passedRulesCount === 4) { passwordStrength = 'Strong'; strengthColor = 'text-[#10B981]'; barColor = 'bg-[#10B981] w-full'; }
-  if (newPw.length === 0) { barColor = 'bg-[#E2E8F0] w-0'; }
+  if (newPw.length === 0) { barColor = 'bg-border-light w-0'; }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -82,15 +82,15 @@ export default function ChangePasswordClient() {
   if (success) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#F4F7FE] p-4 font-sans">
-        <div className="w-full max-w-md rounded-[2rem] border border-[#E2E8F0] bg-white p-10 text-center shadow-xl">
+        <div className="w-full max-w-md rounded-[2rem] border border-border-light bg-white p-10 text-center shadow-xl">
           <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-[#F0FDF4] text-[#16A34A]">
             <CheckCircle2 className="h-8 w-8" />
           </div>
-          <h2 className="mb-2 text-2xl font-bold text-[#1E293B]">Password Set Successfully</h2>
-          <p className="text-[#64748B] mb-6">
+          <h2 className="mb-2 text-2xl font-bold text-text-main">Password Set Successfully</h2>
+          <p className="text-text-muted mb-6">
             Your account is now secure. Redirecting you to your dashboard...
           </p>
-          <div className="flex justify-center items-center gap-2 text-sm font-bold text-[#6C3DFF]">
+          <div className="flex justify-center items-center gap-2 text-sm font-bold text-primary-purple">
             <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
           </div>
         </div>
@@ -99,7 +99,7 @@ export default function ChangePasswordClient() {
   }
 
   return (
-    <div className="h-screen w-screen bg-[#F8F9FC] flex items-center justify-center overflow-hidden relative font-sans text-[#1E293B]">
+    <div className="h-screen w-screen bg-page-bg flex items-center justify-center overflow-hidden relative font-sans text-text-main">
       
       {/* Abstract Background Waves (Bottom Left) */}
       <div className="absolute bottom-0 left-0 w-[80%] h-[50%] pointer-events-none opacity-60 z-0">
@@ -128,18 +128,18 @@ export default function ChangePasswordClient() {
             </div>
 
             {/* Badge */}
-            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#F5F3FF] text-[#6C3DFF] text-[11px] font-bold tracking-widest uppercase mb-6 border border-[#E5D4FF]">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-page-bg text-primary-purple text-[11px] font-bold tracking-widest uppercase mb-6 border border-[#E5D4FF]">
               <ShieldCheck className="w-3.5 h-3.5" /> Security Upgrade
             </div>
 
             {/* Title */}
-            <h1 className="text-5xl xl:text-[3.5rem] font-bold tracking-tight leading-[1.15] text-[#1E293B] mb-5">
+            <h1 className="text-5xl xl:text-[3.5rem] font-bold tracking-tight leading-[1.15] text-text-main mb-5">
               Secure Your<br />
               Account
             </h1>
 
             {/* Paragraph */}
-            <p className="text-[#64748B] text-[15px] xl:text-[17px] leading-relaxed max-w-[400px]">
+            <p className="text-text-muted text-[15px] xl:text-[17px] leading-relaxed max-w-[400px]">
               Create a strong password to protect your profile and continue your journey with PSGMX.
             </p>
             
@@ -147,7 +147,7 @@ export default function ChangePasswordClient() {
             <div className="w-full max-w-sm flex justify-center py-6 mt-4 relative">
               <div className="relative w-56 h-56 flex items-center justify-center">
                 {/* Glowing Base */}
-                <div className="absolute bottom-4 w-40 h-8 bg-[#6C3DFF]/20 rounded-full blur-md"></div>
+                <div className="absolute bottom-4 w-40 h-8 bg-primary-purple/20 rounded-full blur-md"></div>
                 {/* Orb */}
                 <div className="absolute inset-0 bg-gradient-to-tr from-[#6C3DFF]/20 to-[#3B82F6]/20 rounded-full blur-[40px]"></div>
                 {/* Shield Body */}
@@ -159,34 +159,34 @@ export default function ChangePasswordClient() {
           </div>
 
           {/* Bottom Features Row */}
-          <div className="flex gap-10 mt-auto bg-white/50 backdrop-blur-sm py-4 px-6 rounded-2xl border border-[#F1F5F9] w-max">
+          <div className="flex gap-10 mt-auto bg-white/50 backdrop-blur-sm py-4 px-6 rounded-2xl border border-border-light w-max">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[#F5F3FF] flex items-center justify-center shrink-0">
-                <ShieldCheck className="w-5 h-5 text-[#6C3DFF]" />
+              <div className="w-10 h-10 rounded-xl bg-page-bg flex items-center justify-center shrink-0">
+                <ShieldCheck className="w-5 h-5 text-primary-purple" />
               </div>
               <div>
-                <h4 className="font-bold text-[#1E293B] text-[13px]">Secure</h4>
-                <p className="text-[11px] text-[#64748B] max-w-[120px] leading-snug">Your data is encrypted and protected</p>
+                <h4 className="font-bold text-text-main text-[13px]">Secure</h4>
+                <p className="text-[11px] text-text-muted max-w-[120px] leading-snug">Your data is encrypted and protected</p>
               </div>
             </div>
             
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[#F5F3FF] flex items-center justify-center shrink-0">
-                <Lock className="w-5 h-5 text-[#6C3DFF]" />
+              <div className="w-10 h-10 rounded-xl bg-page-bg flex items-center justify-center shrink-0">
+                <Lock className="w-5 h-5 text-primary-purple" />
               </div>
               <div>
-                <h4 className="font-bold text-[#1E293B] text-[13px]">Private</h4>
-                <p className="text-[11px] text-[#64748B] max-w-[120px] leading-snug">We never share your information</p>
+                <h4 className="font-bold text-text-main text-[13px]">Private</h4>
+                <p className="text-[11px] text-text-muted max-w-[120px] leading-snug">We never share your information</p>
               </div>
             </div>
 
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[#F5F3FF] flex items-center justify-center shrink-0">
-                <UserCheck className="w-5 h-5 text-[#6C3DFF]" />
+              <div className="w-10 h-10 rounded-xl bg-page-bg flex items-center justify-center shrink-0">
+                <UserCheck className="w-5 h-5 text-primary-purple" />
               </div>
               <div>
-                <h4 className="font-bold text-[#1E293B] text-[13px]">Verified</h4>
-                <p className="text-[11px] text-[#64748B] max-w-[120px] leading-snug">Department verified platform</p>
+                <h4 className="font-bold text-text-main text-[13px]">Verified</h4>
+                <p className="text-[11px] text-text-muted max-w-[120px] leading-snug">Department verified platform</p>
               </div>
             </div>
           </div>
@@ -195,13 +195,13 @@ export default function ChangePasswordClient() {
 
         {/* Right Section (Form Card) */}
         <div className="w-[45%] xl:w-[40%] h-full flex items-center justify-end z-20">
-          <div className="w-full max-w-[500px] bg-white rounded-[2rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.06)] border border-[#F1F5F9] flex flex-col relative overflow-hidden">
+          <div className="w-full max-w-[500px] bg-white rounded-[2rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.06)] border border-border-light flex flex-col relative overflow-hidden">
             
             <div className="p-8 sm:p-10 flex-1">
               
               <div className="mb-8 relative z-10">
-                <h2 className="text-[28px] font-bold tracking-tight text-[#1E293B] mb-1.5">Set a New Password</h2>
-                <p className="text-[12px] text-[#64748B]">Your account requires a new password to ensure security.</p>
+                <h2 className="text-[28px] font-bold tracking-tight text-text-main mb-1.5">Set a New Password</h2>
+                <p className="text-[12px] text-text-muted">Your account requires a new password to ensure security.</p>
               </div>
 
               {error && (
@@ -215,7 +215,7 @@ export default function ChangePasswordClient() {
                 
                 {/* Temporary Password */}
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-[#6C3DFF] uppercase tracking-widest flex items-center gap-1.5">
+                  <label className="text-[10px] font-bold text-primary-purple uppercase tracking-widest flex items-center gap-1.5">
                     <Lock className="w-[14px] h-[14px]" /> Temporary Password
                   </label>
                   <div className="relative group">
@@ -223,7 +223,7 @@ export default function ChangePasswordClient() {
                       type={showCurrent ? 'text' : 'password'}
                       required
                       placeholder="Enter your temporary password"
-                      className="block w-full pl-11 pr-12 py-3.5 bg-white border border-[#E2E8F0] rounded-[10px] text-[14px] text-[#1E293B] placeholder-[#94A3B8] focus:border-[#6C3DFF] focus:ring-1 focus:ring-[#6C3DFF] focus:outline-none transition-colors"
+                      className="block w-full pl-11 pr-12 py-3.5 bg-white border border-border-light rounded-[10px] text-[14px] text-text-main placeholder-[#94A3B8] focus:border-primary-purple focus:ring-1 focus:ring-[#6C3DFF] focus:outline-none transition-colors"
                       value={currentPw}
                       onChange={(e) => setCurrentPw(e.target.value)}
                     />
@@ -233,7 +233,7 @@ export default function ChangePasswordClient() {
                     <button
                       type="button"
                       onClick={() => setShowCurrent(!showCurrent)}
-                      className="absolute inset-y-0 right-0 pr-4 flex items-center text-[#CBD5E1] hover:text-[#94A3B8] transition-colors"
+                      className="absolute inset-y-0 right-0 pr-4 flex items-center text-[#CBD5E1] hover:text-text-muted transition-colors"
                     >
                       {showCurrent ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -242,7 +242,7 @@ export default function ChangePasswordClient() {
 
                 {/* New Password */}
                 <div className="space-y-1.5 pt-1">
-                  <label className="text-[10px] font-bold text-[#6C3DFF] uppercase tracking-widest flex items-center gap-1.5">
+                  <label className="text-[10px] font-bold text-primary-purple uppercase tracking-widest flex items-center gap-1.5">
                     <Lock className="w-[14px] h-[14px]" /> New Password
                   </label>
                   <div className="relative group">
@@ -250,7 +250,7 @@ export default function ChangePasswordClient() {
                       type={showNew ? 'text' : 'password'}
                       required
                       placeholder="Create a new password"
-                      className="block w-full pl-11 pr-12 py-3.5 bg-white border border-[#E2E8F0] rounded-[10px] text-[14px] text-[#1E293B] placeholder-[#94A3B8] focus:border-[#6C3DFF] focus:ring-1 focus:ring-[#6C3DFF] focus:outline-none transition-colors"
+                      className="block w-full pl-11 pr-12 py-3.5 bg-white border border-border-light rounded-[10px] text-[14px] text-text-main placeholder-[#94A3B8] focus:border-primary-purple focus:ring-1 focus:ring-[#6C3DFF] focus:outline-none transition-colors"
                       value={newPw}
                       onChange={(e) => setNewPw(e.target.value)}
                     />
@@ -260,7 +260,7 @@ export default function ChangePasswordClient() {
                     <button
                       type="button"
                       onClick={() => setShowNew(!showNew)}
-                      className="absolute inset-y-0 right-0 pr-4 flex items-center text-[#CBD5E1] hover:text-[#94A3B8] transition-colors"
+                      className="absolute inset-y-0 right-0 pr-4 flex items-center text-[#CBD5E1] hover:text-text-muted transition-colors"
                     >
                       {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -268,22 +268,22 @@ export default function ChangePasswordClient() {
                   
                   {/* Strength Bar */}
                   <div className="pt-2">
-                    <div className="h-1.5 w-full bg-[#F1F5F9] rounded-full overflow-hidden">
+                    <div className="h-1.5 w-full bg-page-bg rounded-full overflow-hidden">
                       <div className={`h-full transition-all duration-300 ${barColor}`}></div>
                     </div>
-                    <p className="text-[11px] font-bold text-[#94A3B8] mt-2 flex gap-1">
+                    <p className="text-[11px] font-bold text-text-muted mt-2 flex gap-1">
                       Password strength: <span className={strengthColor}>{newPw.length > 0 ? passwordStrength : 'None'}</span>
                     </p>
                   </div>
 
                   {/* Rules Radio style */}
-                  <div className="flex flex-wrap gap-x-5 gap-y-2.5 mt-4 text-[10px] font-bold text-[#94A3B8]">
+                  <div className="flex flex-wrap gap-x-5 gap-y-2.5 mt-4 text-[10px] font-bold text-text-muted">
                     {rules.map(r => (
                       <div key={r.label} className="flex items-center gap-1.5">
-                        <div className={`w-3.5 h-3.5 rounded-full border-[1.5px] flex items-center justify-center transition-colors ${r.passed ? 'border-[#6C3DFF] bg-white' : 'border-[#CBD5E1] bg-transparent'}`}>
-                          {r.passed && <div className="w-1.5 h-1.5 rounded-full bg-[#6C3DFF]"></div>}
+                        <div className={`w-3.5 h-3.5 rounded-full border-[1.5px] flex items-center justify-center transition-colors ${r.passed ? 'border-primary-purple bg-white' : 'border-border-light bg-transparent'}`}>
+                          {r.passed && <div className="w-1.5 h-1.5 rounded-full bg-primary-purple"></div>}
                         </div>
-                        <span className={r.passed ? 'text-[#1E293B]' : ''}>{r.label}</span>
+                        <span className={r.passed ? 'text-text-main' : ''}>{r.label}</span>
                       </div>
                     ))}
                   </div>
@@ -291,7 +291,7 @@ export default function ChangePasswordClient() {
 
                 {/* Confirm Password */}
                 <div className="space-y-1.5 pt-3">
-                  <label className="text-[10px] font-bold text-[#6C3DFF] uppercase tracking-widest flex items-center gap-1.5">
+                  <label className="text-[10px] font-bold text-primary-purple uppercase tracking-widest flex items-center gap-1.5">
                     <Lock className="w-[14px] h-[14px]" /> Confirm New Password
                   </label>
                   <div className="relative group">
@@ -299,12 +299,12 @@ export default function ChangePasswordClient() {
                       type={showConfirm ? 'text' : 'password'}
                       required
                       placeholder="Confirm your new password"
-                      className={`block w-full pl-11 pr-12 py-3.5 bg-white border rounded-[10px] text-[14px] text-[#1E293B] placeholder-[#94A3B8] focus:outline-none transition-colors ${
+                      className={`block w-full pl-11 pr-12 py-3.5 bg-white border rounded-[10px] text-[14px] text-text-main placeholder-[#94A3B8] focus:outline-none transition-colors ${
                         confirmPw.length > 0
                           ? passwordsMatch
                             ? 'border-[#10B981] focus:ring-1 focus:ring-[#10B981]'
                             : 'border-red-300 focus:border-red-500 focus:ring-1 focus:ring-red-500'
-                          : 'border-[#E2E8F0] focus:border-[#6C3DFF] focus:ring-1 focus:ring-[#6C3DFF]'
+                          : 'border-border-light focus:border-primary-purple focus:ring-1 focus:ring-[#6C3DFF]'
                       }`}
                       value={confirmPw}
                       onChange={(e) => setConfirmPw(e.target.value)}
@@ -315,7 +315,7 @@ export default function ChangePasswordClient() {
                     <button
                       type="button"
                       onClick={() => setShowConfirm(!showConfirm)}
-                      className="absolute inset-y-0 right-0 pr-4 flex items-center text-[#CBD5E1] hover:text-[#94A3B8] transition-colors"
+                      className="absolute inset-y-0 right-0 pr-4 flex items-center text-[#CBD5E1] hover:text-text-muted transition-colors"
                     >
                       {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -338,11 +338,11 @@ export default function ChangePasswordClient() {
             </div>
             
             {/* Footer attached seamlessly with a light background */}
-            <div className="bg-[#F8F9FC] border-t border-[#F1F5F9] p-6 text-center">
-              <div className="flex justify-center items-center gap-1.5 text-[#3B82F6] font-bold text-[12px] mb-1">
+            <div className="bg-page-bg border-t border-border-light p-6 text-center">
+              <div className="flex justify-center items-center gap-1.5 text-electric-blue font-bold text-[12px] mb-1">
                 <ShieldCheck className="w-4 h-4" /> Your security is our priority
               </div>
-              <p className="text-[10px] font-bold text-[#94A3B8]">
+              <p className="text-[10px] font-bold text-text-muted">
                 PSGMX • Secure Platform for MCA Department
               </p>
             </div>

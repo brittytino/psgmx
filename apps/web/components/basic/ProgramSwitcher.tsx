@@ -15,7 +15,7 @@ export default function ProgramSwitcher({ isCollapsed = false }: { isCollapsed?:
           onClick={() => setProgram('FRI')}
           className={`px-3 py-1 rounded-md text-[10px] font-black transition-all ${
             program === 'FRI' 
-              ? 'bg-white text-[#6C3DFF] shadow-sm' 
+              ? 'bg-white text-primary-purple shadow-sm' 
               : 'text-zinc-500 hover:text-zinc-700'
           }`}
         >
@@ -25,7 +25,7 @@ export default function ProgramSwitcher({ isCollapsed = false }: { isCollapsed?:
           onClick={() => setProgram('PRI')}
           className={`px-3 py-1 rounded-md text-[10px] font-black transition-all ${
             program === 'PRI' 
-              ? 'bg-white text-[#6C3DFF] shadow-sm' 
+              ? 'bg-white text-primary-purple shadow-sm' 
               : 'text-zinc-500 hover:text-zinc-700'
           }`}
         >

@@ -92,7 +92,7 @@ export default function FirstLoginPage() {
                 <input
                   type="url"
                   placeholder="https://github.com/username"
-                  className="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-4 py-3 text-white placeholder-slate-500 focus:border-[#6C3DFF] focus:outline-none focus:ring-1 focus:ring-[#6C3DFF]"
+                  className="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-4 py-3 text-white placeholder-slate-500 focus:border-primary-purple focus:outline-none focus:ring-1 focus:ring-[#6C3DFF]"
                   value={formData.github}
                   onChange={(e) => setFormData({ ...formData, github: e.target.value })}
                 />
@@ -102,7 +102,7 @@ export default function FirstLoginPage() {
                 <input
                   type="url"
                   placeholder="https://linkedin.com/in/username"
-                  className="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-4 py-3 text-white placeholder-slate-500 focus:border-[#6C3DFF] focus:outline-none focus:ring-1 focus:ring-[#6C3DFF]"
+                  className="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-4 py-3 text-white placeholder-slate-500 focus:border-primary-purple focus:outline-none focus:ring-1 focus:ring-[#6C3DFF]"
                   value={formData.linkedin}
                   onChange={(e) => setFormData({ ...formData, linkedin: e.target.value })}
                 />
@@ -117,7 +117,7 @@ export default function FirstLoginPage() {
               <input
                 type="text"
                 placeholder="React, Node.js, Python, MongoDB"
-                className="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-4 py-3 text-white placeholder-slate-500 focus:border-[#6C3DFF] focus:outline-none focus:ring-1 focus:ring-[#6C3DFF]"
+                className="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-4 py-3 text-white placeholder-slate-500 focus:border-primary-purple focus:outline-none focus:ring-1 focus:ring-[#6C3DFF]"
                 value={formData.skills}
                 onChange={(e) => setFormData({ ...formData, skills: e.target.value })}
               />
@@ -127,7 +127,7 @@ export default function FirstLoginPage() {
               <input
                 type="text"
                 placeholder="e.g., Full Stack Development"
-                className="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-4 py-3 text-white placeholder-slate-500 focus:border-[#6C3DFF] focus:outline-none focus:ring-1 focus:ring-[#6C3DFF]"
+                className="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-4 py-3 text-white placeholder-slate-500 focus:border-primary-purple focus:outline-none focus:ring-1 focus:ring-[#6C3DFF]"
                 value={formData.interests}
                 onChange={(e) => setFormData({ ...formData, interests: e.target.value })}
               />
@@ -174,7 +174,7 @@ export default function FirstLoginPage() {
                         type="checkbox"
                         checked={formData.arrearSubjects.includes(subject)}
                         onChange={() => handleSubjectToggle(subject)}
-                        className="w-4 h-4 rounded border-slate-700 text-[#6C3DFF] focus:ring-[#6C3DFF] bg-slate-800/50 accent-[#6C3DFF]"
+                        className="w-4 h-4 rounded border-slate-700 text-primary-purple focus:ring-[#6C3DFF] bg-slate-800/50 accent-[#6C3DFF]"
                       />
                       <span className="text-sm text-slate-200">{subject}</span>
                     </label>
@@ -187,7 +187,7 @@ export default function FirstLoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-[#6C3DFF] px-4 py-4 font-bold text-white transition-colors hover:bg-[#5b30e5] focus:outline-none focus:ring-2 focus:ring-[#6C3DFF] focus:ring-offset-2 focus:ring-offset-slate-900 disabled:opacity-50"
+            className="w-full rounded-lg bg-primary-purple px-4 py-4 font-bold text-white transition-colors hover:bg-[#5b30e5] focus:outline-none focus:ring-2 focus:ring-[#6C3DFF] focus:ring-offset-2 focus:ring-offset-slate-900 disabled:opacity-50"
           >
             {loading ? 'Saving Profile...' : 'Complete Setup & Access Dashboard'}
           </button>

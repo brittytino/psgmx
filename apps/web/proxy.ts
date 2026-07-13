@@ -95,18 +95,24 @@ export async function proxy(request: NextRequest) {
     // Fetch user role from DB (one extra query per guarded request)
     const { data: profile } = await supabase
       .from('users')
-      .select('role')
+      .select('role_label')
       .eq('id', user.id)
       .single()
 
-    if (!profile || !requiredRoles.includes(profile.role)) {
+    const role = profile?.role_label?.toLowerCase() ?? 'student'
+
+    if (!profile || !requiredRoles.includes(role)) {
       // Redirect to appropriate portal based on actual role
       const redirectUrl = request.nextUrl.clone()
-      const role = profile?.role ?? 'student'
 
       if (role === 'faculty' || role === 'hod') redirectUrl.pathname = '/faculty'
       else if (role === 'alumni')               redirectUrl.pathname = '/alumni'
       else                                      redirectUrl.pathname = '/student'
+      
+      // Prevent infinite redirect loops if we are already on the target path
+      if (request.nextUrl.pathname === redirectUrl.pathname) {
+        return supabaseResponse
+      }
 
       return NextResponse.redirect(redirectUrl)
     }
