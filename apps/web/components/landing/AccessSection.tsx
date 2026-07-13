@@ -1,191 +1,257 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { Monitor, Smartphone, Download, ShieldCheck, Users, LineChart, Clock, Heart, ArrowRight, ChevronDown, Sparkles } from 'lucide-react';
+import {
+  Monitor, Smartphone, Download, ArrowRight, ChevronRight,
+  ShieldCheck, Users, Clock, Check, Globe
+} from 'lucide-react';
 
-export default function AccessSection() {
-  return (
-    <section id="access" className="py-24 px-6 md:px-12 lg:px-24 max-w-[1400px] mx-auto flex flex-col items-center relative">
-      
-      {/* Floating Mascot right side */}
-      <img src="/landing/mascot-hero.png" alt="Mascot" className="absolute top-0 right-10 w-32 h-32 object-contain hidden lg:block opacity-80" />
-
-      <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-transparent text-[#FF6B4A] font-bold text-[12px] mb-4 border border-[#FF6B4A]/20 shadow-sm w-max">
-        <Sparkles className="w-3.5 h-3.5" /> One System. Three Ways to Access.
-      </div>
-
-      <h2 className="text-[2.5rem] sm:text-[3rem] md:text-[4rem] lg:text-[4.5rem] font-black text-[#221F1A] tracking-tight mb-4 text-center leading-[1.05]">
-        Seamless Access. <br className="md:hidden" /> Absolute Control.
-      </h2>
-      <p className="text-[#716D64] text-base md:text-[1.1rem] mb-16 max-w-2xl text-center font-medium leading-relaxed px-4">
-        Engineered for flexibility across all devices. <br className="hidden md:block" />
-        Your data remains perfectly synchronized, empowering you to manage your placement journey <span className="text-[#FF6B4A] underline decoration-[#FF6B4A]/30 underline-offset-4 decoration-2">without interruption.</span>
-      </p>
-
-      {/* 3 Columns */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full mb-16">
-        
-        {/* Web Card */}
-        <div className="bg-[#FFFDFB] rounded-[32px] p-8 border border-[#EFE9E0] shadow-sm hover:shadow-lg transition-shadow flex flex-col items-center text-center relative overflow-hidden">
-          <div className="w-16 h-16 rounded-[18px] bg-white border border-[#EFE9E0] shadow-sm flex items-center justify-center text-[#FF6B4A] mb-8">
-            <Monitor className="w-8 h-8" />
+const platforms = [
+  {
+    id: 'web',
+    icon: <Monitor className="w-6 h-6" />,
+    iconColor: '#FF6B4A',
+    iconBg: 'bg-[#FFF0EA]',
+    name: 'PSGMX Web',
+    tag: 'For Desktop & Laptop',
+    tagColor: '#FF6B4A',
+    desc: 'The full-power desktop experience. Deep analytics, multi-panel views, and keyboard-first navigation for maximum productivity.',
+    cta: 'Open Web App',
+    ctaHref: '/app',
+    ctaStyle: 'bg-[#FF6B4A] text-white shadow-lg shadow-[#FF6B4A]/25 hover:bg-[#E4572E]',
+    note: 'Best experience on desktop',
+    highlights: ['Full feature access', 'Multi-panel layout', 'Keyboard shortcuts'],
+    visual: (
+      <div className="w-full bg-[#FBF6EE] rounded-2xl border border-[#EFE9E0] p-3 shadow-inner">
+        {/* Browser chrome */}
+        <div className="bg-white rounded-xl border border-[#EFE9E0] overflow-hidden shadow-sm">
+          <div className="flex items-center gap-1.5 px-3 py-2 border-b border-[#EFE9E0] bg-[#FAFAFA]">
+            <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
+            <div className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
+            <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
+            <div className="flex-1 mx-3 h-5 bg-[#F0EAE1] rounded-md flex items-center px-2">
+              <Globe className="w-2.5 h-2.5 text-[#9E9A92] mr-1" />
+              <div className="h-2 w-20 bg-[#E0D9CE] rounded-full" />
+            </div>
           </div>
-          <h3 className="text-[26px] font-black text-[#221F1A] mb-1 tracking-tight">PSGMX Web</h3>
-          <p className="text-[#FF6B4A] font-bold text-[15px] mb-4">For Desktop & Laptop</p>
-          <p className="text-[#9E9A92] text-[13px] md:text-[14px] font-medium mb-8 leading-relaxed px-2">
-            Leverage the robust suite of tools on desktop for deep focus and detailed analytics.
-          </p>
-          
-          <div className="w-full h-40 bg-[#FBF6EE] rounded-t-2xl border-x border-t border-[#EFE9E0] relative flex justify-center pt-6 px-6 mb-8">
-            <div className="w-full h-full bg-white rounded-t-xl border-x border-t border-[#EFE9E0] shadow-sm flex flex-col">
-              <div className="w-full h-4 border-b border-[#EFE9E0] flex items-center gap-1.5 px-3">
-                 <div className="w-2 h-2 rounded-full bg-red-400"></div>
-                 <div className="w-2 h-2 rounded-full bg-yellow-400"></div>
-                 <div className="w-2 h-2 rounded-full bg-green-400"></div>
-              </div>
-              <div className="flex-1 bg-[#FDFDFD] p-3 flex gap-3">
-                 <div className="w-[30%] h-full bg-[#FBF6EE] rounded-md"></div>
-                 <div className="w-[70%] h-full bg-[#FBF6EE] rounded-md flex flex-col gap-2">
-                    <div className="w-full h-4 bg-[#EFE9E0] rounded-sm"></div>
-                    <div className="w-full flex-1 bg-[#EFE9E0] rounded-sm opacity-50"></div>
-                 </div>
+          <div className="flex h-28">
+            <div className="w-1/4 border-r border-[#EFE9E0] bg-[#FAFAFA] p-2 flex flex-col gap-1.5">
+              {[1,2,3,4].map(i => <div key={i} className="h-4 bg-[#EFE9E0] rounded-md" style={{ opacity: i === 1 ? 1 : 0.5 }} />)}
+            </div>
+            <div className="flex-1 p-2.5 flex flex-col gap-2">
+              <div className="h-4 bg-[#FF6B4A]/15 rounded-md w-3/4" />
+              <div className="h-2.5 bg-[#EFE9E0] rounded-md" />
+              <div className="h-2.5 bg-[#EFE9E0] rounded-md w-5/6" />
+              <div className="flex gap-2 mt-1">
+                <div className="h-5 w-16 bg-[#FF6B4A] rounded-md" />
+                <div className="h-5 w-16 bg-[#EFE9E0] rounded-md" />
               </div>
             </div>
           </div>
-
-          <Link href="/app" className="w-full py-4 rounded-[16px] bg-[#FF6B4A] text-white font-bold flex items-center justify-center gap-2 hover:bg-[#E4572E] transition-all shadow-lg shadow-[#FF6B4A]/25 hover:-translate-y-1">
-            <Monitor className="w-5 h-5" /> Open Web App <ArrowRight className="w-5 h-5 ml-1" />
-          </Link>
-          <p className="text-[#9E9A92] text-[13px] font-bold mt-5">Best experience on desktop</p>
         </div>
-
-        {/* iPhone Card */}
-        <div className="bg-[#FFFDFB] rounded-[32px] p-8 border border-[#EFE9E0] shadow-sm hover:shadow-lg transition-shadow flex flex-col items-center text-center relative overflow-hidden">
-          <div className="w-16 h-16 rounded-[18px] bg-white border border-[#EFE9E0] shadow-sm flex items-center justify-center text-[#221F1A] mb-8">
-            <Smartphone className="w-8 h-8" />
-          </div>
-          <h3 className="text-[26px] font-black text-[#221F1A] mb-1 tracking-tight">PSGMX for iPhone</h3>
-          <p className="text-[#FF6B4A] font-bold text-[15px] mb-4">As a PWA</p>
-          <p className="text-[#9E9A92] text-[13px] md:text-[14px] font-medium mb-8 leading-relaxed px-2">
-            Access the platform natively via Safari for an app-like experience without the overhead.
-          </p>
-          
-          <div className="w-40 h-40 bg-white rounded-t-[2.5rem] border-[6px] border-[#221F1A] shadow-xl relative flex justify-center pt-2 px-2 mb-8 mx-auto">
-             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-14 h-4 bg-[#221F1A] rounded-b-[10px] z-10"></div>
-             <div className="w-full h-full bg-[#FBF6EE] rounded-t-[2rem] pt-8 px-3 flex flex-col items-center">
-                <div className="w-[60px] h-[60px] rounded-full border-4 border-[#FF6B4A] mx-auto mb-3 flex items-center justify-center text-[14px] text-[#FF6B4A] font-black bg-white">75%</div>
-                <div className="w-full h-3 bg-white rounded-sm mb-2 shadow-sm"></div>
-                <div className="w-full h-3 bg-white rounded-sm shadow-sm"></div>
-             </div>
-             
-             {/* PWA arrow visual */}
-             <div className="absolute right-[-40px] top-[40%] text-[#FF6B4A] hidden lg:flex flex-col items-center">
-                <svg width="40" height="20" viewBox="0 0 40 20" fill="none" className="rotate-[15deg]">
-                  <path d="M0 10C10 10 10 0 20 0C30 0 30 10 40 10" stroke="#FF6B4A" strokeWidth="2" strokeDasharray="4 4" />
-                  <path d="M40 10L35 5M40 10L35 15" stroke="#FF6B4A" strokeWidth="2" />
-                </svg>
-                <div className="w-10 h-10 bg-white rounded-xl shadow-md border border-[#EFE9E0] flex items-center justify-center mt-1">
-                   <img src="/logo.webp" alt="App Icon" className="w-6 h-6 object-contain" />
+      </div>
+    ),
+  },
+  {
+    id: 'iphone',
+    icon: <Smartphone className="w-6 h-6" />,
+    iconColor: '#221F1A',
+    iconBg: 'bg-[#F5F5F5]',
+    name: 'PSGMX for iPhone',
+    tag: 'Install as PWA',
+    tagColor: '#221F1A',
+    desc: 'Add PSGMX to your iPhone home screen from Safari for a full app-like experience. No App Store needed—always up to date.',
+    cta: 'Open in Safari',
+    ctaHref: '/app',
+    ctaStyle: 'bg-[#221F1A] text-white shadow-lg shadow-black/20 hover:bg-black',
+    note: 'Add to Home Screen from Safari',
+    highlights: ['PWA support', 'Offline mode', 'Push notifications'],
+    visual: (
+      <div className="flex justify-center">
+        <div className="relative w-28 h-52 bg-[#221F1A] rounded-[2.2rem] border-[3px] border-[#333] shadow-2xl overflow-hidden flex flex-col">
+          {/* Notch */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-16 h-4 bg-[#221F1A] rounded-b-2xl z-10" />
+          <div className="flex-1 bg-[#FBF6EE] mt-4 rounded-t-[1.8rem] p-2 flex flex-col gap-1.5 overflow-hidden">
+            <div className="h-3 bg-[#EFE9E0] rounded-md mt-1 w-3/4 mx-auto" />
+            <div className="flex-1 grid grid-cols-3 gap-1 mt-1">
+              {['FF6B4A','E8B84B','8FB996','6B8CFF','E87070','C47ED6'].map((c, i) => (
+                <div key={i} className="aspect-square rounded-xl flex items-center justify-center" style={{ background: `#${c}25` }}>
+                  <div className="w-3 h-3 rounded-md" style={{ background: `#${c}` }} />
                 </div>
-             </div>
-          </div>
-
-          <button className="w-full py-4 rounded-[16px] bg-white border-2 border-[#FF6B4A]/20 text-[#FF6B4A] font-bold flex items-center justify-center gap-2 hover:bg-[#FFF5F0] transition-all hover:-translate-y-1">
-            <Smartphone className="w-5 h-5" /> Open PWA <ArrowRight className="w-5 h-5 ml-1" />
-          </button>
-          <div className="flex items-center justify-center gap-1.5 text-[#9E9A92] text-[13px] font-bold mt-5 cursor-pointer hover:text-[#221F1A] bg-[#FBF6EE] px-4 py-1.5 rounded-full">
-             How to install as PWA? <ChevronDown className="w-4 h-4" />
+              ))}
+            </div>
+            <div className="mt-auto">
+              <div className="w-8 h-1 bg-[#221F1A] rounded-full mx-auto mb-1" />
+            </div>
           </div>
         </div>
-
-        {/* Android Card */}
-        <div className="bg-[#FFFDFB] rounded-[32px] p-8 border border-[#EFE9E0] shadow-sm hover:shadow-lg transition-shadow flex flex-col items-center text-center relative overflow-hidden">
-          <div className="w-16 h-16 rounded-[18px] bg-white border border-[#EFE9E0] shadow-sm flex items-center justify-center text-[#789B51] mb-8">
-            <Download className="w-8 h-8" />
+      </div>
+    ),
+  },
+  {
+    id: 'android',
+    icon: <Download className="w-6 h-6" />,
+    iconColor: '#5A8A2E',
+    iconBg: 'bg-[#EAF4E0]',
+    name: 'PSGMX for Android',
+    tag: 'Native APK',
+    tagColor: '#5A8A2E',
+    desc: 'Download the highly optimised Android application for a native, blazing-fast experience with hardware-level performance.',
+    cta: 'Download APK',
+    ctaHref: 'https://github.com/brittytino/psgmx/releases',
+    ctaStyle: 'bg-[#5A8A2E] text-white shadow-lg shadow-[#5A8A2E]/25 hover:bg-[#4A7225]',
+    note: 'Latest release from GitHub',
+    highlights: ['Native performance', 'Background sync', 'Offline support'],
+    visual: (
+      <div className="flex justify-center">
+        <div className="relative w-28 h-52 bg-[#221F1A] rounded-[2.2rem] border-[3px] border-[#333] shadow-2xl overflow-hidden flex flex-col">
+          <div className="flex-1 bg-[#FBF6EE] m-1 rounded-[1.8rem] flex flex-col items-center justify-center gap-3 p-3">
+            <div className="w-14 h-14 rounded-2xl bg-white shadow-md border border-[#EFE9E0] flex items-center justify-center">
+              <img src="/logo.webp" alt="PSGMX" className="w-10 h-10 object-contain" />
+            </div>
+            <div className="text-[8px] font-black text-[#221F1A] tracking-wide">PSGMX</div>
+            <div className="w-full">
+              <div className="h-1 bg-[#EFE9E0] rounded-full overflow-hidden">
+                <div className="h-full w-2/3 bg-[#5A8A2E] rounded-full animate-pulse" />
+              </div>
+              <div className="text-[7px] text-[#9E9A92] font-bold text-center mt-1">Installing...</div>
+            </div>
           </div>
-          <h3 className="text-[26px] font-black text-[#221F1A] mb-1 tracking-tight">PSGMX for Android</h3>
-          <p className="text-[#FF6B4A] font-bold text-[15px] mb-4">Download the App</p>
-          <p className="text-[#9E9A92] text-[13px] md:text-[14px] font-medium mb-8 leading-relaxed px-2">
-            Download the highly optimized Android application for seamless, on-the-go management.
+          <div className="flex justify-center py-2 gap-4">
+            <div className="w-4 h-4 rounded-full border-2 border-[#555]" />
+            <div className="w-4 h-4 rounded border-2 border-[#555]" />
+            <div className="w-4 h-4 border-t-2 border-l-2 border-r-2 border-[#555]" style={{ borderRadius: '0 0 50% 50%' }} />
+          </div>
+        </div>
+      </div>
+    ),
+  },
+];
+
+const trustItems = [
+  { icon: <ShieldCheck className="w-5 h-5" />, label: 'Secure & Trusted', sub: 'Row-level auth, zero data leaks', color: '#E8B84B' },
+  { icon: <Users className="w-5 h-5" />, label: '120+ Students', sub: 'Active on the platform', color: '#FF6B4A' },
+  { icon: <Clock className="w-5 h-5" />, label: '99% Uptime', sub: 'Always there when it counts', color: '#8FB996' },
+];
+
+export default function AccessSection() {
+  const [activePlatform, setActivePlatform] = useState(0);
+  const plat = platforms[activePlatform];
+
+  return (
+    <section id="access" className="py-24 relative overflow-hidden">
+      {/* Subtle bg */}
+      <div className="absolute inset-0 -z-10 bg-[#F5EFE6]/40 pointer-events-none" />
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#EFE9E0] to-transparent" />
+
+      <div className="max-w-[1400px] mx-auto px-6 md:px-10 lg:px-16">
+
+        {/* Header */}
+        <div className="text-center mb-16">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-[#EFE9E0] rounded-full text-[#FF6B4A] font-bold text-[11px] uppercase tracking-widest mb-6 shadow-sm">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#FF6B4A] animate-pulse" />
+            Three Ways to Access
+          </div>
+          <h2 className="text-[2.8rem] sm:text-[3.5rem] md:text-[4rem] font-black text-[#221F1A] tracking-[-0.03em] leading-[1.05] mb-5">
+            Seamless Access.<br />
+            <span className="text-[#FF6B4A]">Absolute Control.</span>
+          </h2>
+          <p className="text-[#716D64] text-[1.05rem] md:text-[1.1rem] font-medium leading-relaxed max-w-[520px] mx-auto">
+            Whether you're on desktop, iPhone, or Android—PSGMX is always at your fingertips, perfectly synced.
           </p>
-          
-          <div className="w-40 h-40 bg-white rounded-t-[2.5rem] border-[6px] border-[#221F1A] shadow-xl relative flex justify-center items-center mb-8 mx-auto">
-             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-14 h-4 bg-[#221F1A] rounded-b-[10px] z-10"></div>
-             <div className="w-full h-full bg-[#FBF6EE] rounded-t-[2rem] flex flex-col items-center justify-center">
-                <img src="/logo.webp" alt="App Logo" className="w-16 h-16 object-contain mb-4 drop-shadow-md" />
-                <div className="text-[11px] font-bold text-[#9E9A92] bg-[#EFE9E0] px-3 py-1 rounded-full">Installing...</div>
-             </div>
-          </div>
-
-          <Link href="https://github.com/brittytino/psgmx/releases" target="_blank" className="w-full py-4 rounded-[16px] bg-[#789B51] text-white font-bold flex items-center justify-center gap-2 hover:bg-[#638042] transition-all shadow-lg shadow-[#789B51]/25 hover:-translate-y-1">
-            <Download className="w-5 h-5" /> Download APK <ArrowRight className="w-5 h-5 ml-1" />
-          </Link>
-          <p className="text-[#9E9A92] text-[13px] font-bold mt-5">Latest release from GitHub</p>
         </div>
 
+        {/* Platform Selector */}
+        <div className="flex flex-wrap justify-center gap-2 mb-12">
+          {platforms.map((p, i) => (
+            <button
+              key={p.id}
+              onClick={() => setActivePlatform(i)}
+              className={`flex items-center gap-2.5 px-5 py-3 rounded-2xl border font-bold text-[14px] transition-all ${
+                activePlatform === i
+                  ? 'bg-white border-[#EFE9E0] shadow-md text-[#221F1A]'
+                  : 'bg-transparent border-[#EFE9E0] text-[#9E9A92] hover:bg-white/70 hover:text-[#221F1A]'
+              }`}
+            >
+              <span className={`w-7 h-7 rounded-xl flex items-center justify-center ${p.iconBg} transition-all`} style={{ color: p.iconColor }}>
+                {React.cloneElement(p.icon as React.ReactElement<{ className: string }>, { className: 'w-3.5 h-3.5' })}
+              </span>
+              {p.name}
+            </button>
+          ))}
+        </div>
+
+        {/* Active Platform Card */}
+        <div className="bg-white rounded-3xl border border-[#EFE9E0] shadow-xl overflow-hidden mb-10">
+          <div className="flex flex-col md:flex-row">
+            {/* Visual */}
+            <div className="md:w-[40%] bg-[#FBF6EE] p-10 flex items-center justify-center min-h-[280px]">
+              {plat.visual}
+            </div>
+
+            {/* Details */}
+            <div className="md:w-[60%] p-10 flex flex-col justify-center">
+              <div className="flex items-center gap-3 mb-6">
+                <div className={`w-12 h-12 rounded-2xl ${plat.iconBg} flex items-center justify-center`} style={{ color: plat.iconColor }}>
+                  {plat.icon}
+                </div>
+                <div>
+                  <div className="text-[11px] font-bold uppercase tracking-widest mb-0.5" style={{ color: plat.tagColor }}>
+                    {plat.tag}
+                  </div>
+                  <h3 className="text-[1.5rem] font-black text-[#221F1A] tracking-tight leading-none">
+                    {plat.name}
+                  </h3>
+                </div>
+              </div>
+
+              <p className="text-[#716D64] text-[15px] font-medium leading-relaxed mb-7">
+                {plat.desc}
+              </p>
+
+              <div className="flex flex-wrap gap-2 mb-8">
+                {plat.highlights.map((h, i) => (
+                  <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#FBF6EE] rounded-xl text-[#221F1A] text-[12px] font-bold border border-[#EFE9E0]">
+                    <Check className="w-3 h-3 text-[#8FB996]" />
+                    {h}
+                  </span>
+                ))}
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                <Link
+                  href={plat.ctaHref}
+                  target={plat.id === 'android' ? '_blank' : undefined}
+                  className={`inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl font-bold text-[15px] transition-all hover:-translate-y-0.5 group ${plat.ctaStyle}`}
+                >
+                  {plat.cta}
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                </Link>
+                <span className="text-[#9E9A92] text-[13px] font-medium flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-[#8FB996]" />
+                  {plat.note}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Trust Strip */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {trustItems.map((t, i) => (
+            <div key={i} className="bg-white rounded-2xl border border-[#EFE9E0] p-6 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0" style={{ background: t.color + '18', color: t.color }}>
+                {t.icon}
+              </div>
+              <div>
+                <div className="text-[#221F1A] font-bold text-[15px] leading-tight">{t.label}</div>
+                <div className="text-[#9E9A92] text-[12px] font-medium mt-0.5">{t.sub}</div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
-
-      {/* Stats Banner */}
-      <div className="w-full bg-white rounded-[24px] border border-[#EFE9E0] py-6 px-10 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden">
-        
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-white border border-[#EFE9E0] shadow-sm flex items-center justify-center text-[#E8B84B]">
-            <ShieldCheck className="w-6 h-6" />
-          </div>
-          <div className="text-left">
-            <h4 className="font-black text-[#221F1A] text-[15px] mb-0.5">Secure & Trusted</h4>
-            <p className="text-[#9E9A92] text-[12px] font-medium leading-tight">Your data is safe with us<br/>and always protected.</p>
-          </div>
-        </div>
-
-        <div className="hidden md:block w-px h-12 bg-[#EFE9E0]"></div>
-
-        <div className="flex items-center gap-4">
-          <div className="text-left">
-            <h4 className="font-black text-[#221F1A] text-[20px] mb-0.5 flex items-center gap-2">
-              <Users className="w-5 h-5 text-[#8FB996]" /> 120+
-            </h4>
-            <p className="text-[#9E9A92] text-[12px] font-medium leading-tight">Students already on<br/>board.</p>
-          </div>
-        </div>
-
-        <div className="hidden md:block w-px h-12 bg-[#EFE9E0]"></div>
-
-        <div className="flex items-center gap-4">
-          <div className="text-left">
-            <h4 className="font-black text-[#221F1A] text-[20px] mb-0.5 flex items-center gap-2">
-              <LineChart className="w-5 h-5 text-[#E8B84B]" /> 10K+
-            </h4>
-            <p className="text-[#9E9A92] text-[12px] font-medium leading-tight">Tasks completed<br/>together.</p>
-          </div>
-        </div>
-
-        <div className="hidden md:block w-px h-12 bg-[#EFE9E0]"></div>
-
-        <div className="flex items-center gap-4">
-          <div className="text-left">
-            <h4 className="font-black text-[#221F1A] text-[20px] mb-0.5 flex items-center gap-2">
-              <Clock className="w-5 h-5 text-[#E8B84B]" /> 99%
-            </h4>
-            <p className="text-[#9E9A92] text-[12px] font-medium leading-tight">Uptime. Always<br/>available when you need.</p>
-          </div>
-        </div>
-
-        <div className="hidden md:block w-px h-12 bg-[#EFE9E0]"></div>
-
-        <div className="flex items-center gap-4 w-full sm:w-auto">
-          <div className="w-12 h-12 rounded-xl bg-white border border-[#EFE9E0] shadow-sm flex items-center justify-center text-[#FF6B4A] shrink-0">
-            <Heart className="w-6 h-6" />
-          </div>
-          <div className="text-left">
-            <h4 className="font-black text-[#221F1A] text-[15px] mb-0.5">Built for PSG</h4>
-            <p className="text-[#9E9A92] text-[12px] font-medium leading-tight">Engineered for PSG Tech<br/>MCA excellence.</p>
-          </div>
-        </div>
-
-      </div>
-
     </section>
   );
 }

@@ -2,194 +2,194 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Heart, Star, Sparkles, Users, Trophy, LineChart, Target, ShieldCheck } from 'lucide-react';
+import {
+  Heart, Star, Users, Trophy, LineChart,
+  Target, ArrowRight, Sparkles, Quote
+} from 'lucide-react';
+
+const testimonials = [
+  {
+    quote: "The analytical insights completely transformed my approach to technical interviews. I went from feeling lost to confident in 3 weeks.",
+    name: 'Aravind S',
+    role: '1st Year MCA',
+    dept: 'Student',
+    rating: 5,
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80',
+    highlight: '85% readiness score achieved',
+    accentColor: '#FF6B4A',
+  },
+  {
+    quote: "Consolidating everything into one platform—tasks, announcements, attendance—has cut our coordinator workload by 60%.",
+    name: 'Keerthana M',
+    role: '2nd Year MCA',
+    dept: 'Placement Coordinator',
+    rating: 5,
+    avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80',
+    highlight: '60% less admin overhead',
+    accentColor: '#E8B84B',
+  },
+  {
+    quote: "Readiness metrics helped me pinpoint exactly which topics to focus on. I cleared three drives in one placement season.",
+    name: 'Harish R',
+    role: 'Alumni, Batch 2025',
+    dept: 'Software Engineer @ TCS',
+    rating: 5,
+    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80',
+    highlight: '3 offers in one season',
+    accentColor: '#8FB996',
+  },
+];
+
+const stats = [
+  { value: '120+', label: 'Students Onboarded', icon: <Users className="w-5 h-5" />, color: '#FF6B4A' },
+  { value: '10K+', label: 'Tasks Completed', icon: <Trophy className="w-5 h-5" />, color: '#E8B84B' },
+  { value: '99%', label: 'Engagement Rate', icon: <LineChart className="w-5 h-5" />, color: '#8FB996' },
+  { value: '100+', label: 'Placement Opportunities', icon: <Target className="w-5 h-5" />, color: '#6B8CFF' },
+];
 
 export default function TestimonialSection() {
-  const testimonials = [
-    {
-      quote: "The analytical insights provided by the platform completely transformed my approach to technical interviews.",
-      name: "Aravind S",
-      role: "1st Year MCA",
-      rating: 5,
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80"
-    },
-    {
-      quote: "Consolidating communications and tasks into a single ecosystem has significantly streamlined our department's workflow.",
-      name: "Keerthana M",
-      role: "2nd Year MCA",
-      rating: 5,
-      avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80"
-    },
-    {
-      quote: "The granular readiness metrics allowed me to identify and resolve critical knowledge gaps before company drives.",
-      name: "Harish R",
-      role: "Placement Coordinator",
-      rating: 5,
-      avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80"
-    }
-  ];
-
   return (
-    <section className="py-24 px-6 md:px-12 lg:px-24 max-w-[1400px] mx-auto flex flex-col relative overflow-hidden">
-      
-      {/* Top Testimonials Row */}
-      <div className="flex flex-col xl:flex-row w-full justify-between items-start gap-12 mb-10">
-        
-        {/* Left Side text */}
-        <div className="xl:w-[35%] w-full pt-4">
-          <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-white text-[#FF6B4A] font-bold text-[12px] mb-6 border border-[#EFE9E0] shadow-sm w-max">
-            <Heart className="w-3.5 h-3.5 fill-[#FF6B4A]" /> Proven Results. Tangible Impact.
+    <section id="testimonials" className="py-24 relative overflow-hidden">
+      {/* Top divider */}
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#EFE9E0] to-transparent" />
+
+      <div className="max-w-[1400px] mx-auto px-6 md:px-10 lg:px-16">
+
+        {/* ── SECTION HEADER ── */}
+        <div className="flex flex-col lg:flex-row items-start lg:items-end justify-between gap-8 mb-16">
+          <div>
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-[#EFE9E0] rounded-full text-[#FF6B4A] font-bold text-[11px] uppercase tracking-widest mb-6 shadow-sm">
+              <Heart className="w-3 h-3 fill-[#FF6B4A]" />
+              Proven Impact
+            </div>
+            <h2 className="text-[2.8rem] sm:text-[3.5rem] md:text-[4rem] font-black text-[#221F1A] tracking-[-0.03em] leading-[1.05]">
+              Empowering Students.<br />
+              Trusted by <span className="text-[#FF6B4A]">Institutions.</span>
+            </h2>
           </div>
-          <h2 className="text-[2.5rem] sm:text-[3rem] md:text-[4rem] font-black text-[#221F1A] tracking-tight leading-[1.05]">
-            Empowering Students. <br />
-            Trusted by <span className="text-[#FF6B4A]">Institutions.</span>
-          </h2>
-          <p className="text-[#716D64] text-base md:text-[1.1rem] mt-6 font-medium leading-relaxed max-w-[400px]">
-            From maintaining consistency to excelling in technical interviews, PSGMX equips MCA students with the tools to realize their career aspirations.
-          </p>
-          <div className="mt-8 flex items-center gap-4">
-             <div className="flex -space-x-3">
-                {[1,2,3,4,5].map(i => (
-                  <div key={i} className="w-12 h-12 rounded-full bg-gray-200 border-2 border-[#FBF6EE] overflow-hidden">
-                    <img src={`https://i.pravatar.cc/100?img=${i+10}`} alt="Student" className="w-full h-full object-cover" />
-                  </div>
-                ))}
-             </div>
-             <div>
-               <h4 className="font-black text-[#FF6B4A] text-lg leading-tight">120+</h4>
-               <p className="text-[12px] font-bold text-[#9E9A92] leading-tight">Students & growing</p>
-             </div>
+          <div className="flex items-center gap-4 shrink-0">
+            <div className="flex -space-x-3">
+              {[11,12,13,14,15].map(i => (
+                <img key={i} src={`https://i.pravatar.cc/100?img=${i}`} alt="" className="w-10 h-10 rounded-full border-2 border-white object-cover shadow-sm" />
+              ))}
+            </div>
+            <div>
+              <div className="font-black text-[#FF6B4A] text-[18px] leading-none">120+</div>
+              <div className="text-[#9E9A92] text-[12px] font-medium mt-0.5">Active students</div>
+            </div>
           </div>
         </div>
 
-        {/* Right Side Cards */}
-        <div className="xl:w-[65%] w-full grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* ── TESTIMONIAL CARDS ── */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
           {testimonials.map((t, idx) => (
-             <div key={idx} className="bg-white rounded-[32px] p-8 border border-[#EFE9E0] shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+            <div
+              key={idx}
+              className="bg-white rounded-3xl border border-[#EFE9E0] shadow-sm hover:shadow-xl transition-all hover:-translate-y-1 p-8 flex flex-col justify-between group"
+            >
+              <div>
+                {/* Top row */}
+                <div className="flex items-start justify-between mb-6">
+                  <div className="flex gap-1">
+                    {[...Array(t.rating)].map((_, i) => (
+                      <Star key={i} className="w-4 h-4 fill-[#FF6B4A] text-[#FF6B4A]" />
+                    ))}
+                  </div>
+                  <Quote className="w-8 h-8 text-[#EFE9E0] group-hover:text-[#FF6B4A]/20 transition-colors" />
+                </div>
+
+                {/* Quote */}
+                <p className="text-[#221F1A] font-medium leading-relaxed text-[15px] mb-6">
+                  &ldquo;{t.quote}&rdquo;
+                </p>
+
+                {/* Highlight chip */}
+                <div
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-bold mb-6"
+                  style={{ background: t.accentColor + '18', color: t.accentColor }}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: t.accentColor }} />
+                  {t.highlight}
+                </div>
+              </div>
+
+              {/* Author */}
+              <div className="flex items-center gap-3 border-t border-[#F0EAE1] pt-5">
+                <img
+                  src={t.avatar}
+                  alt={t.name}
+                  className="w-11 h-11 rounded-full object-cover shadow-sm"
+                />
                 <div>
-                   <div className="text-[#FF6B4A]/20 font-serif font-black text-6xl leading-none mb-2">"</div>
-                   <div className="flex items-center gap-1 mb-4">
-                     {[...Array(t.rating)].map((_, i) => <Star key={i} className="w-4 h-4 fill-[#FF6B4A] text-[#FF6B4A]" />)}
-                   </div>
-                   <p className="text-[#221F1A] font-medium leading-relaxed text-[15px] mb-10">{t.quote}</p>
+                  <div className="text-[#221F1A] font-bold text-[14px] leading-tight">{t.name}</div>
+                  <div className="text-[#9E9A92] text-[12px] font-medium">{t.role}</div>
+                  <div className="text-[11px] font-bold mt-0.5" style={{ color: t.accentColor }}>{t.dept}</div>
                 </div>
-                <div className="flex items-center gap-4">
-                   <div className="w-14 h-14 rounded-full overflow-hidden bg-gray-100">
-                     <img src={t.avatar} alt={t.name} className="w-full h-full object-cover" />
-                   </div>
-                   <div>
-                     <h4 className="font-bold text-[#221F1A] text-[15px] leading-tight">{t.name}</h4>
-                     <p className="text-[13px] font-medium text-[#9E9A92] leading-tight">{t.role}</p>
-                   </div>
-                </div>
-             </div>
+              </div>
+            </div>
           ))}
         </div>
-      </div>
 
-      {/* Stat Strip */}
-      <div className="w-full bg-transparent border-t border-b border-[#EFE9E0] py-8 mb-16 mt-8 flex flex-wrap items-center justify-between gap-6 px-4">
-        
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full border border-[#EFE9E0] bg-white flex items-center justify-center text-[#FF6B4A]">
-            <Users className="w-6 h-6" />
-          </div>
-          <div>
-            <h4 className="font-black text-[#221F1A] text-[18px] leading-none mb-1">120+</h4>
-            <p className="text-[#9E9A92] text-[12px] font-medium leading-tight">Students Onboarded</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full border border-[#EFE9E0] bg-white flex items-center justify-center text-[#E8B84B]">
-            <Trophy className="w-6 h-6" />
-          </div>
-          <div>
-            <h4 className="font-black text-[#221F1A] text-[18px] leading-none mb-1">10K+</h4>
-            <p className="text-[#9E9A92] text-[12px] font-medium leading-tight">Tasks Completed</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full border border-[#EFE9E0] bg-white flex items-center justify-center text-[#8FB996]">
-            <LineChart className="w-6 h-6" />
-          </div>
-          <div>
-            <h4 className="font-black text-[#221F1A] text-[18px] leading-none mb-1">99%</h4>
-            <p className="text-[#9E9A92] text-[12px] font-medium leading-tight">Engagement Rate</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full border border-[#EFE9E0] bg-white flex items-center justify-center text-[#FF6B4A]">
-            <Target className="w-6 h-6" />
-          </div>
-          <div>
-            <h4 className="font-black text-[#221F1A] text-[18px] leading-none mb-1">100+</h4>
-            <p className="text-[#9E9A92] text-[12px] font-medium leading-tight">Placement Opportunities</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full border border-[#EFE9E0] bg-white flex items-center justify-center text-[#E8B84B]">
-            <ShieldCheck className="w-6 h-6" />
-          </div>
-          <div>
-            <h4 className="font-black text-[#221F1A] text-[18px] leading-none mb-1">One Goal</h4>
-            <p className="text-[#9E9A92] text-[12px] font-medium leading-tight">Excellence Together</p>
-          </div>
-        </div>
-
-      </div>
-
-      {/* Final CTA Banner */}
-      <div className="w-full bg-[#FFFDFB] rounded-[24px] sm:rounded-[40px] border border-[#EFE9E0] shadow-sm relative flex flex-col md:flex-row items-center overflow-hidden">
-         
-         {/* Left Visuals */}
-         <div className="hidden md:flex w-full md:w-[40%] relative h-[300px] items-end justify-center z-10 pl-10 pt-10">
-            {/* Plant */}
-            <div className="absolute left-10 bottom-0 flex flex-col items-center">
-              <div className="w-12 h-20 bg-[#8FB996] rounded-t-full rounded-bl-full rotate-[-10deg] shadow-inner mb-[-15px]"></div>
-              <div className="w-16 h-12 bg-[#FBF6EE] border border-[#EFE9E0] rounded-b-xl shadow-sm"></div>
-            </div>
-            {/* Books & Mascot */}
-            <div className="absolute right-0 bottom-0 flex items-end">
-              <div className="flex flex-col gap-1 mr-[-20px] mb-4 rotate-[-5deg]">
-                <div className="w-24 h-4 bg-[#FF6B4A] rounded-sm shadow-sm"></div>
-                <div className="w-28 h-5 bg-[#FBF6EE] rounded-sm shadow-sm border border-[#EFE9E0]"></div>
-                <div className="w-26 h-6 bg-[#221F1A] rounded-sm shadow-sm"></div>
+        {/* ── STATS STRIP ── */}
+        <div className="bg-white rounded-3xl border border-[#EFE9E0] shadow-sm py-8 px-6 md:px-12 flex flex-wrap items-center justify-between gap-8 mb-16">
+          {stats.map((s, i) => (
+            <React.Fragment key={i}>
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0" style={{ background: s.color + '18', color: s.color }}>
+                  {s.icon}
+                </div>
+                <div>
+                  <div className="font-black text-[#221F1A] text-[22px] leading-none">{s.value}</div>
+                  <div className="text-[#9E9A92] text-[12px] font-medium mt-0.5">{s.label}</div>
+                </div>
               </div>
-              <img src="/landing/mascot-hero.png" alt="Mascot" className="w-[150px] lg:w-[200px] object-contain drop-shadow-2xl translate-x-10 translate-y-4 z-20" />
-            </div>
-         </div>
+              {i < stats.length - 1 && <div className="hidden md:block w-px h-12 bg-[#EFE9E0]" />}
+            </React.Fragment>
+          ))}
+        </div>
 
-         {/* Right Content */}
-         <div className="w-full md:w-[60%] p-8 sm:p-12 md:p-16 z-10 flex flex-col items-center md:items-start text-center md:text-left relative">
-            
-            <div className="absolute top-10 right-10 lg:right-20 text-[#E8B84B] opacity-50 transform rotate-[-10deg] font-serif italic text-xl lg:text-2xl hidden md:block">
-              We're with <br/> you every step! ❤️
-            </div>
+        {/* ── FINAL CTA BANNER ── */}
+        <div
+          id="about"
+          className="relative rounded-3xl overflow-hidden bg-[#221F1A] p-10 md:p-16 flex flex-col md:flex-row items-center justify-between gap-10"
+        >
+          {/* Background glow */}
+          <div className="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-[#FF6B4A]/20 blur-[100px] pointer-events-none" />
+          <div className="absolute -bottom-20 -left-20 w-80 h-80 rounded-full bg-[#E8B84B]/10 blur-[100px] pointer-events-none" />
 
-            <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-white text-[#FF6B4A] font-bold text-[12px] mb-4 border border-[#FF6B4A]/20 shadow-sm w-max mx-auto md:mx-0">
-              <Sparkles className="w-3.5 h-3.5" /> Commence Your Journey
+          {/* Decorative circles */}
+          <div className="absolute top-6 left-6 w-24 h-24 border border-white/5 rounded-full" />
+          <div className="absolute top-4 left-4 w-32 h-32 border border-white/5 rounded-full" />
+
+          <div className="relative z-10 text-center md:text-left">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 border border-white/10 rounded-full text-white/60 font-bold text-[11px] uppercase tracking-widest mb-6">
+              <Sparkles className="w-3 h-3" />
+              Commence Your Journey
             </div>
-            
-            <h2 className="text-[2rem] sm:text-[2.5rem] md:text-[3.5rem] font-black text-[#221F1A] tracking-tight mb-4 leading-[1.1]">
-              Take command of your <br className="hidden sm:block" /> <span className="text-[#FF6B4A]">career trajectory.</span>
+            <h2 className="text-[2.2rem] sm:text-[2.8rem] md:text-[3.5rem] font-black text-white tracking-[-0.03em] leading-[1.05] mb-4">
+              Take command of your<br />
+              <span className="text-[#FF6B4A]">career trajectory.</span>
             </h2>
-            <p className="text-[#716D64] text-base md:text-[1.1rem] font-medium leading-relaxed max-w-lg mb-8">
-              Join the PSGMX ecosystem and equip yourself with the industry-standard tools necessary to excel in your placements.
+            <p className="text-white/50 text-[15px] font-medium leading-relaxed max-w-[500px]">
+              Join the PSGMX ecosystem and equip yourself with industry-grade tools to excel in placements—built by students, for students.
             </p>
+          </div>
 
-            <Link href="/app" className="px-8 sm:px-10 py-4 rounded-xl bg-white border-2 border-[#EFE9E0] text-[#221F1A] font-bold flex items-center justify-center gap-2 hover:bg-[#FBF6EE] transition-colors shadow-sm w-full sm:w-auto">
-              Enter the ecosystem
+          <div className="relative z-10 flex flex-col items-center md:items-start gap-4 shrink-0">
+            <Link
+              href="/app"
+              className="flex items-center gap-2 px-8 py-4 rounded-2xl bg-[#FF6B4A] text-white font-bold text-[15px] hover:bg-[#E4572E] transition-all shadow-2xl shadow-[#FF6B4A]/30 hover:-translate-y-0.5 group"
+            >
+              Enter the Ecosystem
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </Link>
-         </div>
-         
-         <div className="absolute inset-0 w-[40%] bg-gradient-to-r from-[#FFFDFB] to-transparent z-0"></div>
-
+            <div className="flex items-center gap-2 text-white/40 text-[13px] font-medium">
+              <Heart className="w-3.5 h-3.5 fill-white/40" />
+              Made with love for PSG Tech MCA
+            </div>
+          </div>
+        </div>
       </div>
-
     </section>
   );
 }

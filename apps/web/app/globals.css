@@ -131,13 +131,46 @@
   box-shadow: 0 8px 30px rgba(108, 61, 255, 0.6);
 }
 
-/* Animations */
+/* ── Animations ── */
 @keyframes float-slow {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  50% { transform: translateY(-12px) rotate(1deg); }
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
 }
 .animate-float-slow {
-  animation: float-slow 6s ease-in-out infinite;
+  animation: float-slow 5s ease-in-out infinite;
+}
+
+@keyframes float-delayed {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+.animate-float-delayed {
+  animation: float-delayed 6s ease-in-out infinite;
+  animation-delay: 1.5s;
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+.animate-slide-up {
+  animation: slide-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.animate-fade-in {
+  animation: fade-in 0.5s ease both;
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1);    }
+}
+.animate-scale-in {
+  animation: scale-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @keyframes neon-pulse {
@@ -148,7 +181,14 @@
   animation: neon-pulse 3s infinite;
 }
 
-/* Custom Scrollbar for dark theme */
+/* Stagger helpers */
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.3s; }
+.stagger-4 { animation-delay: 0.4s; }
+.stagger-5 { animation-delay: 0.5s; }
+
+/* ── Scrollbar ── */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
 }
@@ -156,11 +196,11 @@
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.08);
   border-radius: 10px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.15);
 }
 .custom-scrollbar-hide::-webkit-scrollbar {
   display: none;
@@ -169,3 +209,11 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* ── Landing utility ── */
+.landing-section-divider {
+  height: 1px;
+  background: linear-gradient(to right, transparent, #EFE9E0, transparent);
+  margin: 0 auto;
+}
+
