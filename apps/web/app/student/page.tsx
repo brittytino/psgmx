@@ -28,9 +28,7 @@ export default function StudentDashboard() {
       .then(data => {
         if (data.success && data.profile) {
           setUserProfile(data.profile);
-          if (!data.profile.linkedin || !data.profile.skills || data.profile.skills.length === 0) {
-            router.push('/onboarding/first-login');
-          }
+          // Profile check successful - user is logged in
         }
       });
   }, [router]);

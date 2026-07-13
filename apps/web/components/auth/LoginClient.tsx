@@ -36,10 +36,10 @@ function LoginForm() {
         setError(data.error ?? 'Invalid identifier or password');
         return;
       }
-      
-      const finalRedirect = redirectTo ? redirectTo : (data.redirect || '/student');
-      router.push(finalRedirect);
-      router.refresh();
+      // If the URL tried to bounce us through /app, bypass it completely to avoid Next.js routing bugs
+      // Use hard navigation to bypass Next.js router bug and ensure cookies are picked up by the server
+      const finalRedirect = (redirectTo && redirectTo !== '/app') ? redirectTo : (data.redirect || '/student');
+      window.location.href = finalRedirect;
     } catch {
       setError('Network error. Please check your connection and try again.');
     } finally {

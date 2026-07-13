@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
 
     // Check reg_no not already registered
     const { data: existing } = await supabaseAdmin
-      .from('users') 
+      .from('users')
       .select('id')
       .eq('reg_no', cleanedRegNo)
       .maybeSingle()
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
     if (insertErr) {
       console.error('Users insert error:', insertErr)
       // Clean up auth user if profile insert failed
-      await supabaseAdmin.auth.admin.deleteUser(authUser.user.id).catch(() => {})
+      await supabaseAdmin.auth.admin.deleteUser(authUser.user.id).catch(() => { })
       return NextResponse.json(
         { error: 'Failed to create user profile', detail: insertErr.message },
         { status: 500 }
