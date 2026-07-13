@@ -1,7 +1,7 @@
 // ============================================================
 // POST /api/auth/login
 // Supabase Password-based authentication.
-// Supports Email OR Roll Number (Token) as identifier.
+// Supports Email OR Reg Number (Token) as identifier.
 // ============================================================
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
@@ -25,15 +25,16 @@ export async function POST(request: NextRequest) {
   const trimmedIdentifier = identifier.trim().toLowerCase()
   let loginEmail = trimmedIdentifier
 
-  // If it doesn't look like an email, assume it's a roll number (token)
+  // If it doesn't look like an email, assume it's a registration number (token)
   if (!trimmedIdentifier.includes('@')) {
     const { data: userData, error: userError } = await supabaseAdmin
       .from('users')
       .select('email')
-      .ilike('roll_no', trimmedIdentifier)
+      .ilike('reg_no', trimmedIdentifier)
       .single()
 
     if (userError || !userData?.email) {
+      console.log('User lookup error or not found:', userError?.message)
       return NextResponse.json({ error: 'Invalid identifier or password' }, { status: 401 })
     }
     loginEmail = userData.email
@@ -51,17 +52,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid identifier or password' }, { status: 401 })
   }
 
-  // Determine redirect based on role
+  // Determine redirect based on role label
   const { data: profile } = await supabaseAdmin
     .from('users')
-    .select('role')
+    .select('role_label, roles')
     .eq('id', data.user.id)
     .single()
 
-  const role = profile?.role || 'student'
+  const roleLabel = profile?.role_label?.toLowerCase() || 'student'
   let redirectUrl = '/student'
-  if (role === 'faculty' || role === 'hod') redirectUrl = '/faculty'
-  if (role === 'alumni') redirectUrl = '/alumni'
+  
+  if (roleLabel === 'faculty' || roleLabel === 'hod') redirectUrl = '/faculty'
+  if (roleLabel === 'alumni') redirectUrl = '/alumni'
+  // Could also check profile.roles.isCoordinator, etc.
 
   return NextResponse.json({
     success: true,

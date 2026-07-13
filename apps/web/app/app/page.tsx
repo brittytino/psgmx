@@ -1,7 +1,26 @@
 import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
+import { supabaseAdmin } from '@/lib/supabase/admin'
 
-// /app is a guarded route — middleware will redirect to /login if not authenticated.
-// If the user IS authenticated, middleware lets them through and we redirect to /student.
-export default function AppEntrypoint() {
+export default async function AppPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    redirect('/login')
+  }
+
+  // Get user role
+  const { data: profile } = await supabaseAdmin
+    .from('users')
+    .select('role_label')
+    .eq('id', user.id)
+    .single()
+
+  const roleLabel = profile?.role_label?.toLowerCase() || 'student'
+  
+  if (roleLabel === 'faculty' || roleLabel === 'hod') redirect('/faculty')
+  if (roleLabel === 'alumni') redirect('/alumni')
+  
   redirect('/student')
 }
