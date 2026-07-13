@@ -86,7 +86,7 @@ export default function JoinAlumniPage() {
           {/* Logo overlay on top left */}
           <div className="absolute top-10 left-10 flex items-center gap-2 z-10">
             <img src="/logo.webp" alt="PSGMX" className="w-8 h-8" />
-            <span className="font-bold text-[22px] tracking-tight text-[#1E293B]">PSGMX</span>
+            <span className="font-bold text-[22px] tracking-tight text-text-main">PSGMX</span>
           </div>
 
           <div className="w-full h-full flex items-center justify-center pt-20 px-6">

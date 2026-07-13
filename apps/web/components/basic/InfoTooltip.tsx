@@ -40,7 +40,7 @@ export default function InfoTooltip({ text, side = 'top' }: InfoTooltipProps) {
       role="button"
       aria-label="More information"
     >
-      <Info className="w-4 h-4 text-gray-400 hover:text-[#6C3DFF] transition-colors flex-shrink-0" />
+      <Info className="w-4 h-4 text-gray-400 hover:text-primary-purple transition-colors flex-shrink-0" />
 
       {visible && (
         <span

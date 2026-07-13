@@ -59,7 +59,7 @@ function LoginForm() {
           {/* Logo */}
           <div className="mb-10 flex items-center gap-2">
              <img src="/logo.webp" alt="PSGMX" className="w-8 h-8" />
-             <span className="font-bold text-[22px] tracking-tight text-[#1E293B]">PSGMX</span>
+             <span className="font-bold text-[22px] tracking-tight text-text-main">PSGMX</span>
           </div>
           
           {/* Text Content */}

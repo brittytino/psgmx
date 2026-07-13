@@ -19,23 +19,23 @@ export default function FacultyAnalyticsDashboard() {
   };
 
   const stats = timeframe === 'This Semester' ? [
-    { title: 'Active Students', value: '142', trend: '↑ 12% from last 30 days', color: '#6C3DFF', bg: 'bg-[#F5F3FF]', icon: GraduationCapIcon },
-    { title: 'Active Projects', value: '28', trend: '↑ 15% from last 30 days', color: '#3B82F6', bg: 'bg-[#EFF6FF]', icon: FolderOpen },
-    { title: 'Projects Completed', value: '23', trend: '↑ 18% from last 30 days', color: '#10B981', bg: 'bg-[#ECFDF5]', icon: CheckCircle2 },
-    { title: 'Avg. Progress', value: '68%', trend: '↑ 9% from last 30 days', color: '#F59E0B', bg: 'bg-[#FFFBEB]', icon: Star },
+    { title: 'Active Students', value: '142', trend: '↑ 12% from last 30 days', color: "var(--primary-purple)", bg: 'bg-page-bg', icon: GraduationCapIcon },
+    { title: 'Active Projects', value: '28', trend: '↑ 15% from last 30 days', color: "var(--primary-purple)", bg: 'bg-white', icon: FolderOpen },
+    { title: 'Projects Completed', value: '23', trend: '↑ 18% from last 30 days', color: "var(--electric-blue)", bg: 'bg-white', icon: CheckCircle2 },
+    { title: 'Avg. Progress', value: '68%', trend: '↑ 9% from last 30 days', color: "var(--illus-gold)", bg: 'bg-white', icon: Star },
   ] : [
-    { title: 'Active Students', value: '135', trend: '↑ 5% from previous', color: '#6C3DFF', bg: 'bg-[#F5F3FF]', icon: GraduationCapIcon },
-    { title: 'Active Projects', value: '35', trend: '↑ 8% from previous', color: '#3B82F6', bg: 'bg-[#EFF6FF]', icon: FolderOpen },
-    { title: 'Projects Completed', value: '32', trend: '↑ 10% from previous', color: '#10B981', bg: 'bg-[#ECFDF5]', icon: CheckCircle2 },
-    { title: 'Avg. Progress', value: '85%', trend: '↑ 15% from previous', color: '#F59E0B', bg: 'bg-[#FFFBEB]', icon: Star },
+    { title: 'Active Students', value: '135', trend: '↑ 5% from previous', color: "var(--primary-purple)", bg: 'bg-page-bg', icon: GraduationCapIcon },
+    { title: 'Active Projects', value: '35', trend: '↑ 8% from previous', color: "var(--primary-purple)", bg: 'bg-white', icon: FolderOpen },
+    { title: 'Projects Completed', value: '32', trend: '↑ 10% from previous', color: "var(--electric-blue)", bg: 'bg-white', icon: CheckCircle2 },
+    { title: 'Avg. Progress', value: '85%', trend: '↑ 15% from previous', color: "var(--illus-gold)", bg: 'bg-white', icon: Star },
   ];
 
   return (
     <div className="max-w-[1400px] mx-auto space-y-8 pb-8 relative">
       <AnimatePresence>
         {toastMessage && (
-          <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 50 }} className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-[#1E293B] text-white px-6 py-3 rounded-xl shadow-xl flex items-center gap-3">
-            <div className="w-2 h-2 rounded-full bg-[#10B981]"></div>
+          <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 50 }} className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-rich-black text-white px-6 py-3 rounded-xl shadow-xl flex items-center gap-3">
+            <div className="w-2 h-2 rounded-full bg-electric-blue"></div>
             <span className="text-[13px] font-bold">{toastMessage}</span>
           </motion.div>
         )}
@@ -47,7 +47,7 @@ export default function FacultyAnalyticsDashboard() {
           <motion.h1 
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-[26px] font-bold text-[#1E293B] tracking-tight mb-0.5"
+            className="text-[26px] font-bold text-text-main tracking-tight mb-0.5"
           >
             Analytics
           </motion.h1>
@@ -55,39 +55,39 @@ export default function FacultyAnalyticsDashboard() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.1 }}
-            className="text-[14px] text-[#64748B]"
+            className="text-[14px] text-text-muted"
           >
             Comprehensive insights into student progress, projects, and mentorship impact.
           </motion.p>
         </div>
         <div className="flex items-center gap-3 shrink-0 relative">
-          <div onClick={() => setShowDatePicker(!showDatePicker)} className="flex items-center gap-2 px-4 py-2.5 bg-white border border-[#E2E8F0] rounded-xl text-[13px] font-bold text-[#1E293B] cursor-pointer hover:bg-[#F8F9FC] shadow-sm transition-colors">
-            <Calendar className="w-4 h-4 text-[#94A3B8]" />
-            {new Date(dateRange.start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – {new Date(dateRange.end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} <ChevronDown className={`w-4 h-4 ml-1 transition-transform ${showDatePicker ? 'rotate-180 text-[#6C3DFF]' : 'text-[#94A3B8]'}`} />
+          <div onClick={() => setShowDatePicker(!showDatePicker)} className="flex items-center gap-2 px-4 py-2.5 bg-white border border-border-light rounded-xl text-[13px] font-bold text-text-main cursor-pointer hover:bg-page-bg shadow-sm transition-colors">
+            <Calendar className="w-4 h-4 text-text-muted" />
+            {new Date(dateRange.start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – {new Date(dateRange.end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} <ChevronDown className={`w-4 h-4 ml-1 transition-transform ${showDatePicker ? 'rotate-180 text-primary-purple' : 'text-text-muted'}`} />
           </div>
 
           <AnimatePresence>
             {showDatePicker && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setShowDatePicker(false)}></div>
-                <motion.div initial={{ opacity: 0, y: 10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.95 }} className="absolute right-0 top-14 bg-white border border-[#E2E8F0] shadow-xl rounded-2xl p-4 z-50 w-[280px]">
-                  <h4 className="text-[14px] font-bold text-[#1E293B] mb-3">Custom Date Range</h4>
+                <motion.div initial={{ opacity: 0, y: 10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.95 }} className="absolute right-0 top-14 bg-white border border-border-light shadow-xl rounded-2xl p-4 z-50 w-[280px]">
+                  <h4 className="text-[14px] font-bold text-text-main mb-3">Custom Date Range</h4>
                   <div className="space-y-3">
                     <div>
-                      <label className="text-[11px] font-bold text-[#94A3B8] uppercase block mb-1">Start Date</label>
-                      <input type="date" value={dateRange.start} onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))} className="w-full border border-[#E2E8F0] rounded-lg px-3 py-2 text-[13px] font-semibold text-[#1E293B] outline-none focus:border-[#6C3DFF]" />
+                      <label className="text-[11px] font-bold text-text-muted uppercase block mb-1">Start Date</label>
+                      <input type="date" value={dateRange.start} onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))} className="w-full border border-border-light rounded-lg px-3 py-2 text-[13px] font-semibold text-text-main outline-none focus:border-primary-purple" />
                     </div>
                     <div>
-                      <label className="text-[11px] font-bold text-[#94A3B8] uppercase block mb-1">End Date</label>
-                      <input type="date" value={dateRange.end} onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))} className="w-full border border-[#E2E8F0] rounded-lg px-3 py-2 text-[13px] font-semibold text-[#1E293B] outline-none focus:border-[#6C3DFF]" />
+                      <label className="text-[11px] font-bold text-text-muted uppercase block mb-1">End Date</label>
+                      <input type="date" value={dateRange.end} onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))} className="w-full border border-border-light rounded-lg px-3 py-2 text-[13px] font-semibold text-text-main outline-none focus:border-primary-purple" />
                     </div>
-                    <button onClick={() => setShowDatePicker(false)} className="w-full py-2 bg-[#6C3DFF] text-white text-[13px] font-bold rounded-lg mt-2">Apply</button>
+                    <button onClick={() => setShowDatePicker(false)} className="w-full py-2 bg-primary-purple text-white text-[13px] font-bold rounded-lg mt-2">Apply</button>
                   </div>
                 </motion.div>
               </>
             )}
           </AnimatePresence>
-          <button onClick={() => showToast('Exporting Analytics Report...')} className="flex items-center gap-2 px-4 py-2.5 bg-white border border-[#E2E8F0] text-[#1E293B] rounded-xl text-[13px] font-bold shadow-sm hover:bg-[#F8F9FC] transition-colors">
+          <button onClick={() => showToast('Exporting Analytics Report...')} className="flex items-center gap-2 px-4 py-2.5 bg-white border border-border-light text-text-main rounded-xl text-[13px] font-bold shadow-sm hover:bg-page-bg transition-colors">
             <Download className="w-4 h-4" /> Export Report
           </button>
         </div>
@@ -96,19 +96,19 @@ export default function FacultyAnalyticsDashboard() {
       {/* 4 Stat Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat, i) => (
-          <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 * i }} className="bg-white rounded-[20px] p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-[#F1F5F9] relative overflow-hidden flex flex-col justify-between h-[140px]">
+          <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 * i }} className="bg-white rounded-[20px] p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-border-light relative overflow-hidden flex flex-col justify-between h-[140px]">
             <div className="flex justify-between items-start">
               <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-full ${stat.bg} flex items-center justify-center`}>
                   <stat.icon className="w-5 h-5" style={{ color: stat.color }} />
                 </div>
-                <p className="text-[12px] font-bold text-[#64748B]">{stat.title}</p>
+                <p className="text-[12px] font-bold text-text-muted">{stat.title}</p>
               </div>
             </div>
             <div className="flex items-end justify-between mt-auto">
               <div>
-                <h3 className="text-[32px] font-black text-[#1E293B] leading-none mb-2">{stat.value}</h3>
-                <p className={`text-[11px] font-bold ${stat.trend.includes('↓') ? 'text-[#10B981]' : 'text-[#10B981]'}`}>{stat.trend}</p>
+                <h3 className="text-[32px] font-black text-text-main leading-none mb-2">{stat.value}</h3>
+                <p className={`text-[11px] font-bold ${stat.trend.includes('↓') ? 'text-electric-blue' : 'text-electric-blue'}`}>{stat.trend}</p>
               </div>
               <div className="w-24 h-8">
                 <svg viewBox="0 0 100 30" className="w-full h-full fill-none" style={{ stroke: stat.color }} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
@@ -124,17 +124,17 @@ export default function FacultyAnalyticsDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Project Progress Overview */}
-        <div className="lg:col-span-2 bg-white rounded-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-[#F1F5F9] p-6">
+        <div className="lg:col-span-2 bg-white rounded-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-border-light p-6">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="text-[16px] font-bold text-[#1E293B]">Project Progress Overview</h3>
-            <select value={timeframe} onChange={(e) => setTimeframe(e.target.value)} className="border border-[#E2E8F0] rounded-xl px-3 py-1.5 text-[11px] font-bold text-[#64748B] cursor-pointer hover:bg-[#F8F9FC] outline-none focus:border-[#6C3DFF] bg-white">
+            <h3 className="text-[16px] font-bold text-text-main">Project Progress Overview</h3>
+            <select value={timeframe} onChange={(e) => setTimeframe(e.target.value)} className="border border-border-light rounded-xl px-3 py-1.5 text-[11px] font-bold text-text-muted cursor-pointer hover:bg-page-bg outline-none focus:border-primary-purple bg-white">
               <option>This Semester</option>
               <option>Last Semester</option>
             </select>
           </div>
           <div className="relative h-[250px] mt-4">
             {/* Y Axis */}
-            <div className="absolute left-0 top-0 bottom-8 w-10 flex flex-col justify-between text-[11px] font-semibold text-[#94A3B8]">
+            <div className="absolute left-0 top-0 bottom-8 w-10 flex flex-col justify-between text-[11px] font-semibold text-text-muted">
               <span>100%</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span>
             </div>
             {/* Chart Area */}
@@ -162,55 +162,55 @@ export default function FacultyAnalyticsDashboard() {
                 <circle cx="1000" cy="50" r="4" fill="white" stroke="#8B5CF6" strokeWidth="2" />
               </svg>
               
-              <div className="absolute left-[90%] top-[40px] -translate-x-1/2 -translate-y-full mb-3 bg-white border border-[#E2E8F0] shadow-md rounded-xl px-3 py-2 text-center pointer-events-none z-10 w-[110px]">
-                <p className="text-[10px] font-bold text-[#94A3B8] mb-0.5">Jun 12, 2025</p>
-                <p className="text-[12px] font-black text-[#1E293B]">68% <span className="text-[10px] font-semibold text-[#64748B]">Avg. Progress</span></p>
-                <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-b border-r border-[#E2E8F0] rotate-45"></div>
+              <div className="absolute left-[90%] top-[40px] -translate-x-1/2 -translate-y-full mb-3 bg-white border border-border-light shadow-md rounded-xl px-3 py-2 text-center pointer-events-none z-10 w-[110px]">
+                <p className="text-[10px] font-bold text-text-muted mb-0.5">Jun 12, 2025</p>
+                <p className="text-[12px] font-black text-text-main">68% <span className="text-[10px] font-semibold text-text-muted">Avg. Progress</span></p>
+                <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-b border-r border-border-light rotate-45"></div>
               </div>
             </div>
             {/* X Axis */}
-            <div className="absolute left-12 right-0 bottom-0 flex justify-between text-[11px] font-semibold text-[#94A3B8]">
+            <div className="absolute left-12 right-0 bottom-0 flex justify-between text-[11px] font-semibold text-text-muted">
               <span>May 12</span><span>May 19</span><span>May 26</span><span>Jun 2</span><span>Jun 9</span><span>Jun 12</span>
             </div>
           </div>
         </div>
 
         {/* Projects by Domain */}
-        <div className="bg-white rounded-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-[#F1F5F9] p-6">
+        <div className="bg-white rounded-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-border-light p-6">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="text-[16px] font-bold text-[#1E293B]">Projects by Domain</h3>
-            <Link href="#" className="text-[12px] font-bold text-[#6C3DFF]">View All</Link>
+            <h3 className="text-[16px] font-bold text-text-main">Projects by Domain</h3>
+            <Link href="#" className="text-[12px] font-bold text-primary-purple">View All</Link>
           </div>
           
           <div className="flex flex-col items-center gap-6 mt-4">
             <div className="relative w-[180px] h-[180px]">
               <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
                 <circle cx="18" cy="18" r="14" fill="none" className="stroke-[#8B5CF6]" strokeWidth="8" strokeDasharray="30 100" strokeDashoffset="0"></circle>
-                <circle cx="18" cy="18" r="14" fill="none" className="stroke-[#3B82F6]" strokeWidth="8" strokeDasharray="21 100" strokeDashoffset="-30"></circle>
+                <circle cx="18" cy="18" r="14" fill="none" className="stroke-electric-blue" strokeWidth="8" strokeDasharray="21 100" strokeDashoffset="-30"></circle>
                 <circle cx="18" cy="18" r="14" fill="none" className="stroke-[#64748B]" strokeWidth="8" strokeDasharray="18 100" strokeDashoffset="-51"></circle>
-                <circle cx="18" cy="18" r="14" fill="none" className="stroke-[#F59E0B]" strokeWidth="8" strokeDasharray="14 100" strokeDashoffset="-69"></circle>
-                <circle cx="18" cy="18" r="14" fill="none" className="stroke-[#F43F5E]" strokeWidth="8" strokeDasharray="11 100" strokeDashoffset="-83"></circle>
+                <circle cx="18" cy="18" r="14" fill="none" className="stroke-illus-gold" strokeWidth="8" strokeDasharray="14 100" strokeDashoffset="-69"></circle>
+                <circle cx="18" cy="18" r="14" fill="none" className="stroke-deep-violet" strokeWidth="8" strokeDasharray="11 100" strokeDashoffset="-83"></circle>
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-[28px] font-black text-[#1E293B] leading-none">28</span>
-                <span className="text-[11px] font-bold text-[#64748B]">Projects</span>
+                <span className="text-[28px] font-black text-text-main leading-none">28</span>
+                <span className="text-[11px] font-bold text-text-muted">Projects</span>
               </div>
             </div>
             
             <div className="w-full space-y-2.5">
               {[
                 { label: 'Artificial Intelligence', val: '8 (29%)', color: 'bg-[#8B5CF6]' },
-                { label: 'Web Development', val: '6 (21%)', color: 'bg-[#3B82F6]' },
+                { label: 'Web Development', val: '6 (21%)', color: 'bg-electric-blue' },
                 { label: 'Data Science', val: '5 (18%)', color: 'bg-[#64748B]' },
-                { label: 'Machine Learning', val: '4 (14%)', color: 'bg-[#F59E0B]' },
-                { label: 'IoT & Embedded', val: '3 (11%)', color: 'bg-[#F43F5E]' },
+                { label: 'Machine Learning', val: '4 (14%)', color: 'bg-illus-gold' },
+                { label: 'IoT & Embedded', val: '3 (11%)', color: 'bg-deep-violet' },
               ].map((item, i) => (
                 <div key={i} className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className={`w-2.5 h-2.5 rounded-full ${item.color}`}></div>
-                    <span className="text-[12px] font-bold text-[#1E293B]">{item.label}</span>
+                    <span className="text-[12px] font-bold text-text-main">{item.label}</span>
                   </div>
-                  <span className="text-[12px] font-bold text-[#64748B]">{item.val}</span>
+                  <span className="text-[12px] font-bold text-text-muted">{item.val}</span>
                 </div>
               ))}
             </div>
@@ -223,118 +223,118 @@ export default function FacultyAnalyticsDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Student Engagement */}
-        <div className="bg-white rounded-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-[#F1F5F9] p-6 flex flex-col">
-          <h3 className="text-[16px] font-bold text-[#1E293B] mb-6">Student Engagement</h3>
+        <div className="bg-white rounded-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-border-light p-6 flex flex-col">
+          <h3 className="text-[16px] font-bold text-text-main mb-6">Student Engagement</h3>
           <div className="flex-1 flex flex-col justify-center">
             <div className="flex gap-2">
-              <div className="flex flex-col justify-between text-[10px] font-bold text-[#94A3B8] h-[140px] pr-2">
+              <div className="flex flex-col justify-between text-[10px] font-bold text-text-muted h-[140px] pr-2">
                 <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
               </div>
               <div className="flex-1 grid grid-cols-7 gap-1 h-[140px]">
                 {[...Array(49)].map((_, i) => {
                   const r = Math.sin(i * 10) * 0.5 + 0.5; // Deterministic pseudo-random
-                  const bg = r > 0.8 ? 'bg-[#6C3DFF]' : r > 0.6 ? 'bg-[#8B5CF6]' : r > 0.4 ? 'bg-[#A78BFA]' : r > 0.2 ? 'bg-[#C4B5FD]' : 'bg-[#EDE9FE]';
+                  const bg = r > 0.8 ? 'bg-primary-purple' : r > 0.6 ? 'bg-[#8B5CF6]' : r > 0.4 ? 'bg-[#A78BFA]' : r > 0.2 ? 'bg-[#C4B5FD]' : 'bg-[#EDE9FE]';
                   return <div key={i} className={`rounded-sm ${bg} hover:ring-1 hover:ring-[#1E293B] cursor-pointer transition-all`}></div>;
                 })}
               </div>
             </div>
-            <div className="flex justify-between items-center text-[10px] font-bold text-[#94A3B8] pl-8 mt-2">
+            <div className="flex justify-between items-center text-[10px] font-bold text-text-muted pl-8 mt-2">
               <span>12 May</span><span>19 May</span><span>26 May</span><span>2 Jun</span><span>9 Jun</span><span>12 Jun</span>
             </div>
             <div className="flex items-center justify-between mt-4 pl-8">
-              <span className="text-[10px] font-bold text-[#94A3B8]">Low</span>
+              <span className="text-[10px] font-bold text-text-muted">Low</span>
               <div className="flex gap-1">
                 <div className="w-6 h-2 bg-[#EDE9FE] rounded-sm"></div>
                 <div className="w-6 h-2 bg-[#C4B5FD] rounded-sm"></div>
                 <div className="w-6 h-2 bg-[#A78BFA] rounded-sm"></div>
                 <div className="w-6 h-2 bg-[#8B5CF6] rounded-sm"></div>
-                <div className="w-6 h-2 bg-[#6C3DFF] rounded-sm"></div>
+                <div className="w-6 h-2 bg-primary-purple rounded-sm"></div>
               </div>
-              <span className="text-[10px] font-bold text-[#94A3B8]">High</span>
+              <span className="text-[10px] font-bold text-text-muted">High</span>
             </div>
           </div>
         </div>
 
         {/* Mentorship Impact */}
-        <div className="bg-white rounded-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-[#F1F5F9] p-6">
-          <h3 className="text-[16px] font-bold text-[#1E293B] mb-2">Mentorship Impact</h3>
+        <div className="bg-white rounded-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-border-light p-6">
+          <h3 className="text-[16px] font-bold text-text-main mb-2">Mentorship Impact</h3>
           <div className="flex flex-col items-center">
             {/* Arc Chart */}
             <div className="relative w-40 h-24 overflow-hidden mt-6">
               <svg viewBox="0 0 100 50" className="w-full h-full transform scale-150 origin-bottom">
                 <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" className="stroke-[#F1F5F9]" strokeWidth="12" strokeLinecap="round" />
-                <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" className="stroke-[#6C3DFF]" strokeWidth="12" strokeLinecap="round" strokeDasharray="125" strokeDashoffset="25" />
+                <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" className="stroke-primary-purple" strokeWidth="12" strokeLinecap="round" strokeDasharray="125" strokeDashoffset="25" />
               </svg>
               <div className="absolute bottom-0 left-0 right-0 flex flex-col items-center justify-end pb-2">
-                <h4 className="text-[28px] font-black text-[#1E293B] leading-none">4.7 <span className="text-[16px] text-[#64748B]">/ 5</span></h4>
-                <p className="text-[10px] font-bold text-[#64748B] mt-1">Avg. Satisfaction</p>
-                <p className="text-[9px] font-bold text-[#10B981] mt-0.5">↑ 8% from last 30 days</p>
+                <h4 className="text-[28px] font-black text-text-main leading-none">4.7 <span className="text-[16px] text-text-muted">/ 5</span></h4>
+                <p className="text-[10px] font-bold text-text-muted mt-1">Avg. Satisfaction</p>
+                <p className="text-[9px] font-bold text-electric-blue mt-0.5">↑ 8% from last 30 days</p>
               </div>
             </div>
             
             <div className="grid grid-cols-3 gap-2 w-full mt-10">
               <div className="text-center">
-                <div className="w-8 h-8 mx-auto rounded-lg bg-[#F5F3FF] text-[#6C3DFF] flex items-center justify-center mb-1"><Calendar className="w-4 h-4" /></div>
-                <p className="text-[14px] font-black text-[#1E293B]">24</p>
-                <p className="text-[9px] font-bold text-[#64748B]">Sessions</p>
-                <p className="text-[9px] font-bold text-[#10B981] mt-0.5">↑ 25%</p>
+                <div className="w-8 h-8 mx-auto rounded-lg bg-page-bg text-primary-purple flex items-center justify-center mb-1"><Calendar className="w-4 h-4" /></div>
+                <p className="text-[14px] font-black text-text-main">24</p>
+                <p className="text-[9px] font-bold text-text-muted">Sessions</p>
+                <p className="text-[9px] font-bold text-electric-blue mt-0.5">↑ 25%</p>
               </div>
               <div className="text-center">
-                <div className="w-8 h-8 mx-auto rounded-lg bg-[#ECFDF5] text-[#10B981] flex items-center justify-center mb-1"><TrendingUp className="w-4 h-4" /></div>
-                <p className="text-[14px] font-black text-[#1E293B]">16</p>
-                <p className="text-[9px] font-bold text-[#64748B]">Mentees Improved</p>
-                <p className="text-[9px] font-bold text-[#10B981] mt-0.5">↑ 20%</p>
+                <div className="w-8 h-8 mx-auto rounded-lg bg-white text-electric-blue flex items-center justify-center mb-1"><TrendingUp className="w-4 h-4" /></div>
+                <p className="text-[14px] font-black text-text-main">16</p>
+                <p className="text-[9px] font-bold text-text-muted">Mentees Improved</p>
+                <p className="text-[9px] font-bold text-electric-blue mt-0.5">↑ 20%</p>
               </div>
               <div className="text-center">
-                <div className="w-8 h-8 mx-auto rounded-lg bg-[#FFFBEB] text-[#F59E0B] flex items-center justify-center mb-1"><Star className="w-4 h-4" /></div>
-                <p className="text-[14px] font-black text-[#1E293B]">4.7 / 5</p>
-                <p className="text-[9px] font-bold text-[#64748B]">Satisfaction</p>
-                <p className="text-[9px] font-bold text-[#10B981] mt-0.5">↑ 8%</p>
+                <div className="w-8 h-8 mx-auto rounded-lg bg-white text-illus-gold flex items-center justify-center mb-1"><Star className="w-4 h-4" /></div>
+                <p className="text-[14px] font-black text-text-main">4.7 / 5</p>
+                <p className="text-[9px] font-bold text-text-muted">Satisfaction</p>
+                <p className="text-[9px] font-bold text-electric-blue mt-0.5">↑ 8%</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Project Status */}
-        <div className="bg-white rounded-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-[#F1F5F9] p-6 flex flex-col">
-          <h3 className="text-[16px] font-bold text-[#1E293B] mb-6">Project Status</h3>
+        <div className="bg-white rounded-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-border-light p-6 flex flex-col">
+          <h3 className="text-[16px] font-bold text-text-main mb-6">Project Status</h3>
           <div className="flex-1 space-y-4">
             {[
-              { label: 'Active', val: '28 (44%)', pct: 44, color: 'bg-[#6C3DFF]' },
-              { label: 'In Review', val: '12 (19%)', pct: 19, color: 'bg-[#3B82F6]' },
-              { label: 'Completed', val: '23 (36%)', pct: 36, color: 'bg-[#10B981]' },
-              { label: 'On Hold', val: '1 (2%)', pct: 2, color: 'bg-[#F59E0B]' },
-              { label: 'Archived', val: '0 (0%)', pct: 0, color: 'bg-[#F43F5E]' },
+              { label: 'Active', val: '28 (44%)', pct: 44, color: 'bg-primary-purple' },
+              { label: 'In Review', val: '12 (19%)', pct: 19, color: 'bg-electric-blue' },
+              { label: 'Completed', val: '23 (36%)', pct: 36, color: 'bg-electric-blue' },
+              { label: 'On Hold', val: '1 (2%)', pct: 2, color: 'bg-illus-gold' },
+              { label: 'Archived', val: '0 (0%)', pct: 0, color: 'bg-deep-violet' },
             ].map((status, i) => (
               <div key={i} className="flex items-center gap-4">
                 <div className="w-24 shrink-0 flex items-center gap-2">
                   <div className={`w-2.5 h-2.5 rounded-full ${status.color}`}></div>
-                  <span className="text-[12px] font-bold text-[#1E293B]">{status.label}</span>
+                  <span className="text-[12px] font-bold text-text-main">{status.label}</span>
                 </div>
-                <div className="flex-1 h-2 bg-[#F1F5F9] rounded-full overflow-hidden">
+                <div className="flex-1 h-2 bg-page-bg rounded-full overflow-hidden">
                   <div className={`h-full rounded-full ${status.color}`} style={{ width: `${status.pct}%` }}></div>
                 </div>
-                <span className="text-[11px] font-bold text-[#64748B] w-12 text-right">{status.val}</span>
+                <span className="text-[11px] font-bold text-text-muted w-12 text-right">{status.val}</span>
               </div>
             ))}
           </div>
-          <div className="mt-auto pt-4 border-t border-[#F1F5F9] flex justify-between items-center">
-            <span className="text-[12px] font-bold text-[#64748B]">Total Projects: 64</span>
-            <Link href="#" className="text-[12px] font-bold text-[#6C3DFF]">View All</Link>
+          <div className="mt-auto pt-4 border-t border-border-light flex justify-between items-center">
+            <span className="text-[12px] font-bold text-text-muted">Total Projects: 64</span>
+            <Link href="#" className="text-[12px] font-bold text-primary-purple">View All</Link>
           </div>
         </div>
 
       </div>
 
       {/* Bottom Banner */}
-      <div className="w-full bg-[#F5F3FF] rounded-[20px] p-6 border border-[#E5D4FF]/50 flex items-center justify-between overflow-hidden relative">
+      <div className="w-full bg-page-bg rounded-[20px] p-6 border border-primary-purple/20 flex items-center justify-between overflow-hidden relative">
         <div className="flex items-center gap-4 relative z-10">
-          <div className="w-12 h-12 rounded-[14px] bg-[#6C3DFF] flex items-center justify-center shadow-lg shadow-[#6C3DFF]/20 text-white">
+          <div className="w-12 h-12 rounded-[14px] bg-primary-purple flex items-center justify-center shadow-lg shadow-md shadow-primary-purple/10 text-white">
             <Trophy className="w-6 h-6" />
           </div>
           <div>
-            <h4 className="text-[16px] font-bold text-[#1E293B] mb-0.5">Great Progress!</h4>
-            <p className="text-[13px] text-[#475569] font-medium">Projects completion rate increased by 18% this month. Keep up the excellent work!</p>
+            <h4 className="text-[16px] font-bold text-text-main mb-0.5">Great Progress!</h4>
+            <p className="text-[13px] text-text-muted font-medium">Projects completion rate increased by 18% this month. Keep up the excellent work!</p>
           </div>
         </div>
         {/* Fake decorative graph background */}
