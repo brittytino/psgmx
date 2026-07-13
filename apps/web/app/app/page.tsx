@@ -1,10 +1,7 @@
-import UnifiedLogin from "@/components/basic/unified-login";
+import { redirect } from 'next/navigation'
 
-export const metadata = {
-  title: "PSGMX | Login Portal",
-  description: "Secure access to the Department OS",
-};
-
-export default function Home() {
-  return <UnifiedLogin />;
+// /app is a guarded route — middleware will redirect to /login if not authenticated.
+// If the user IS authenticated, middleware lets them through and we redirect to /student.
+export default function AppEntrypoint() {
+  redirect('/student')
 }

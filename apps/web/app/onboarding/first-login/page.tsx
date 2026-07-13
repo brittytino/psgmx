@@ -10,8 +10,6 @@ export default function FirstLoginPage() {
   const [error, setError] = useState('');
 
   const [formData, setFormData] = useState({
-    password: '',
-    confirmPassword: '',
     github: '',
     linkedin: '',
     skills: '',
@@ -43,19 +41,15 @@ export default function FirstLoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-
     setLoading(true);
 
     try {
       const res = await fetch('/api/auth/first-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          linkedin_url: formData.linkedin || null,
+        }),
       });
 
       const data = await res.json();
@@ -64,10 +58,7 @@ export default function FirstLoginPage() {
         throw new Error(data.error || 'Failed to update profile');
       }
 
-      // Update token in cookies
-      document.cookie = `token=${data.token}; path=/; max-age=28800; SameSite=Lax`;
-      
-      router.push(data.redirect);
+      router.push(data.redirect || '/student');
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -92,35 +83,9 @@ export default function FirstLoginPage() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-8">
-          
-          <div className="space-y-5">
-            <h3 className="text-lg font-bold text-white border-b border-slate-800 pb-2">1. Security</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div>
-                <label className="mb-1 block text-xs font-medium text-slate-400 uppercase tracking-wider">New Password</label>
-                <input
-                  type="password"
-                  required
-                  className="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-4 py-3 text-white placeholder-slate-500 focus:border-[#6C3DFF] focus:outline-none focus:ring-1 focus:ring-[#6C3DFF]"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-slate-400 uppercase tracking-wider">Confirm Password</label>
-                <input
-                  type="password"
-                  required
-                  className="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-4 py-3 text-white placeholder-slate-500 focus:border-[#6C3DFF] focus:outline-none focus:ring-1 focus:ring-[#6C3DFF]"
-                  value={formData.confirmPassword}
-                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                />
-              </div>
-            </div>
-          </div>
 
           <div className="space-y-5">
-            <h3 className="text-lg font-bold text-white border-b border-slate-800 pb-2">2. Professional Links</h3>
+            <h3 className="text-lg font-bold text-white border-b border-slate-800 pb-2">1. Professional Links</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
                 <label className="mb-1 block text-xs font-medium text-slate-400 uppercase tracking-wider">GitHub URL</label>
@@ -146,7 +111,7 @@ export default function FirstLoginPage() {
           </div>
 
           <div className="space-y-5">
-            <h3 className="text-lg font-bold text-white border-b border-slate-800 pb-2">3. Technical Profile</h3>
+            <h3 className="text-lg font-bold text-white border-b border-slate-800 pb-2">2. Technical Profile</h3>
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-400 uppercase tracking-wider">Skills (Comma separated)</label>
               <input
@@ -170,7 +135,7 @@ export default function FirstLoginPage() {
           </div>
 
           <div className="space-y-5">
-            <h3 className="text-lg font-bold text-white border-b border-slate-800 pb-2">4. Academic Profile</h3>
+            <h3 className="text-lg font-bold text-white border-b border-slate-800 pb-2">3. Academic Profile</h3>
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-300">Do you currently have arrears?</label>
               <div className="flex gap-4">

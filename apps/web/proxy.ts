@@ -1,7 +1,7 @@
 // ============================================================
-// PSGMX — apps/web/middleware.ts
-// Supabase SSR session middleware + route-based access control.
-// Refreshes sessions on every request and enforces role guards.
+// PSGMX — apps/web/proxy.ts
+// Next.js 16 proxy (formerly middleware).
+// Supabase SSR session refresh + route-based access control.
 // ============================================================
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
@@ -25,14 +25,15 @@ const PUBLIC_ROUTES = [
   '/login',
   '/join-alumni',
   '/change-password',
-  '/api/auth/login',
-  '/api/auth/verify',
+  '/api/auth',    // covers /api/auth/login, /api/auth/verify, /api/auth/logout, etc.
   '/api/health',
 ]
 
 function isPublicRoute(pathname: string): boolean {
   return PUBLIC_ROUTES.some(route =>
-    pathname === route || pathname.startsWith(route + '?')
+    pathname === route ||
+    pathname.startsWith(route + '?') ||
+    pathname.startsWith(route + '/')
   )
 }
 
