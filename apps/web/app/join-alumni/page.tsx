@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Users, MessageSquare, Star, User, Calendar, Mail, Link as LinkIcon, Lock, EyeOff, Eye, ArrowRight, ShieldCheck, Check } from 'lucide-react';
+import { User, Calendar, Mail, Link as LinkIcon, Lock, EyeOff, Eye, ArrowRight, ShieldCheck, Check, GraduationCap } from 'lucide-react';
+import Image from 'next/image';
 
 export default function JoinAlumniPage() {
   const router = useRouter();
@@ -40,7 +41,7 @@ export default function JoinAlumniPage() {
 
       setSuccess(true);
       setTimeout(() => {
-        router.push('/');
+        router.push('/login');
       }, 3000);
     } catch (err: any) {
       setError(err.message);
@@ -55,16 +56,16 @@ export default function JoinAlumniPage() {
 
   if (success) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F4F7FE] p-4 font-sans">
-        <div className="w-full max-w-md rounded-[2rem] border border-[#E2E8F0] bg-white p-10 text-center shadow-xl">
-          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-[#F0FDF4] text-[#16A34A]">
+      <div className="min-h-screen w-full bg-[#FDF7F3] flex items-center justify-center p-4">
+        <div className="w-full max-w-md rounded-[32px] bg-white p-10 text-center shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)]">
+          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-[#FFF0E6] text-[#FF5A1F]">
             <Check className="h-8 w-8" />
           </div>
-          <h2 className="mb-2 text-2xl font-bold text-[#1E293B]">Application Submitted</h2>
-          <p className="text-[#64748B] mb-6">
-            Your request to join the MCA Alumni Network has been sent to the HOD for verification. You will be able to log in once approved.
+          <h2 className="mb-2 text-[26px] font-bold text-[#101828]">Application Submitted</h2>
+          <p className="text-[#475467] text-[15px] mb-8 font-medium">
+            Your request to join the MCA Alumni Network has been sent to the HOD for verification. You will receive login access once approved.
           </p>
-          <div className="flex justify-center items-center gap-2 text-sm font-bold text-[#6C3DFF]">
+          <div className="flex justify-center items-center gap-2 text-[14px] font-bold text-[#FF5A1F]">
             <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
             Redirecting to login...
           </div>
@@ -74,109 +75,52 @@ export default function JoinAlumniPage() {
   }
 
   return (
-    <div className="h-screen w-screen bg-[#F8F9FC] flex items-center justify-center overflow-hidden relative font-sans text-[#1E293B]">
-      
-      {/* Abstract Background Waves (Bottom Left) */}
-      <div className="absolute bottom-0 left-0 w-[80%] h-[50%] pointer-events-none opacity-60 z-0">
-        <svg viewBox="0 0 1440 320" className="absolute bottom-0 w-full h-full" preserveAspectRatio="none">
-          <path fill="url(#wave-gradient)" fillOpacity="1" d="M0,288L48,272C96,256,192,224,288,197.3C384,171,480,149,576,165.3C672,181,768,235,864,250.7C960,267,1056,245,1152,213.3C1248,181,1344,139,1392,117.3L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
-          <defs>
-            <linearGradient id="wave-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#C4B5FD" stopOpacity="0.4" />
-              <stop offset="50%" stopColor="#FBCFE8" stopOpacity="0.3" />
-              <stop offset="100%" stopColor="#BAE6FD" stopOpacity="0.1" />
-            </linearGradient>
-          </defs>
-        </svg>
-      </div>
+    <div className="min-h-screen w-full bg-[#FDF7F3] flex items-center justify-center p-4 sm:p-6 lg:p-8 font-sans text-[#101828]">
 
-      {/* Main Container - Full Screen with consistent padding */}
-      <div className="w-full h-full flex items-center justify-between relative z-10 px-8 lg:px-20 xl:px-32">
-        
-        {/* Left Section (Text + Image) */}
-        <div className="w-[55%] xl:w-[60%] h-full relative flex items-center">
-          
-          {/* Text Content */}
-          <div className="w-[55%] flex flex-col justify-center z-20">
-            {/* Logo */}
-            <div className="mb-10">
-              <img src="/logo.webp" alt="PSGMX Logo" className="w-24 h-24 object-contain drop-shadow-md" />
-            </div>
+      {/* Main Container - The White Card */}
+      <div className="w-full max-w-[1200px] bg-white rounded-[32px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] flex flex-col lg:flex-row p-3 relative h-auto lg:h-[840px]">
 
-            {/* Title */}
-            <h1 className="text-5xl xl:text-[3.8rem] font-bold tracking-tight leading-[1.15] text-[#1E293B] mb-5">
-              Stay Connected.<br />
-              Give Back.<br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#6C3DFF] to-[#3B82F6]">Inspire the Next.</span>
-            </h1>
+        {/* Left Side - Image Container */}
+        <div className="hidden lg:flex lg:w-[50%] bg-[#fef6eb] rounded-[24px] overflow-hidden relative">
 
-            {/* Paragraph */}
-            <p className="text-[#64748B] text-[15px] xl:text-[17px] leading-relaxed max-w-[380px] mb-12">
-              Join the PSGMX Alumni Network and continue shaping the future of the MCA Department.
-            </p>
-
-            {/* Features */}
-            <div className="space-y-7">
-              {/* Feature 1 */}
-              <div className="flex gap-4 items-start">
-                <div className="w-[46px] h-[46px] rounded-full border border-[#E2E8F0] bg-white flex items-center justify-center shrink-0 shadow-sm">
-                  <Users className="w-5 h-5 text-[#6C3DFF]" />
-                </div>
-                <div className="pt-0.5">
-                  <h3 className="font-bold text-[#1E293B] text-[14px]">Reconnect</h3>
-                  <p className="text-xs text-[#94A3B8] mt-0.5">Find classmates, seniors, and juniors.</p>
-                </div>
-              </div>
-
-              {/* Feature 2 */}
-              <div className="flex gap-4 items-start">
-                <div className="w-[46px] h-[46px] rounded-full border border-[#E2E8F0] bg-white flex items-center justify-center shrink-0 shadow-sm">
-                  <MessageSquare className="w-5 h-5 text-[#3B82F6]" />
-                </div>
-                <div className="pt-0.5">
-                  <h3 className="font-bold text-[#1E293B] text-[14px]">Mentor</h3>
-                  <p className="text-xs text-[#94A3B8] mt-0.5">Guide and support the next generation.</p>
-                </div>
-              </div>
-
-              {/* Feature 3 */}
-              <div className="flex gap-4 items-start">
-                <div className="w-[46px] h-[46px] rounded-full border border-[#E2E8F0] bg-white flex items-center justify-center shrink-0 shadow-sm">
-                  <Star className="w-5 h-5 text-[#10B981]" />
-                </div>
-                <div className="pt-0.5">
-                  <h3 className="font-bold text-[#1E293B] text-[14px]">Make Impact</h3>
-                  <p className="text-xs text-[#94A3B8] mt-0.5">Your knowledge. Your experience. Their future.</p>
-                </div>
-              </div>
-            </div>
+          {/* Logo overlay on top left */}
+          <div className="absolute top-10 left-10 flex items-center gap-2 z-10">
+            <img src="/logo.webp" alt="PSGMX" className="w-8 h-8" />
+            <span className="font-bold text-[22px] tracking-tight text-[#1E293B]">PSGMX</span>
           </div>
 
-          {/* 3D Image & Orb */}
-          <div className="absolute right-[-15%] top-1/2 -translate-y-1/2 w-[65%] h-[85%] flex items-center justify-center z-10 pointer-events-none">
-            {/* Orb */}
-            <div className="absolute w-[500px] h-[500px] bg-gradient-to-tr from-[#E5D4FF]/60 to-[#E0F2FE]/60 rounded-full blur-[70px]"></div>
-            {/* Image */}
-            <img src="/alumni-illustration.png" alt="Graduates" className="relative z-10 max-h-full object-contain mix-blend-multiply" />
+          <div className="w-full h-full flex items-center justify-center pt-20 px-6">
+            <img
+              src="/auth/alumni.png"
+              alt="PSGMX Alumni"
+              className="w-full max-w-[900px] object-contain"
+            />
           </div>
         </div>
 
-        {/* Right Section (Form Card) */}
-        <div className="w-[45%] xl:w-[40%] h-full flex items-center justify-end z-20">
-          <div className="w-full max-w-[480px] bg-white rounded-3xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.06)] border border-[#F1F5F9] flex flex-col p-8 sm:p-10">
-            
-            {/* Header */}
-            <div className="flex justify-center mb-5">
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#F5F3FF] text-[#6C3DFF] text-[11px] font-bold">
-                <Users className="w-3.5 h-3.5" /> Alumni Network
+        {/* Right Side - Form */}
+        <div className="w-full lg:w-[50%] flex flex-col justify-center px-6 sm:px-16 py-8 lg:py-6 bg-white overflow-y-auto custom-scrollbar">
+
+          <div className="w-full max-w-[420px] mx-auto py-6">
+            {/* Tag */}
+            <div className="flex mb-5">
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFF0E6] text-[#FF5A1F] text-[12px] font-bold">
+                <GraduationCap className="w-3.5 h-3.5" />
+                Alumni Network
               </div>
             </div>
-            <h2 className="text-[26px] font-bold tracking-tight text-[#1E293B] text-center mb-1.5">Join Alumni Network</h2>
-            <p className="text-[12px] text-[#64748B] text-center mb-8">Connect with the MCA Department and mentor the next generation.</p>
+
+            {/* Headers */}
+            <h1 className="text-[36px] sm:text-[40px] font-bold tracking-tight text-[#101828] mb-1.5 leading-[1.1]">
+              Join the <span className="text-[#FF5A1F]">PSGMX</span><br />Alumni Network
+            </h1>
+            <p className="text-[#475467] text-[15px] mb-8 font-medium leading-[1.6]">
+              Connect with your department. Mentor and inspire the next generation.
+            </p>
 
             {/* Error Message */}
             {error && (
-              <div className="mb-6 bg-red-50 border border-red-100 text-red-600 text-[13px] px-4 py-3 rounded-xl flex items-center gap-2">
+              <div className="mb-6 bg-red-50 border border-red-100 text-red-600 text-[13px] px-4 py-3 rounded-[12px] flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 shrink-0" />
                 <p className="font-semibold">{error}</p>
               </div>
@@ -184,156 +128,162 @@ export default function JoinAlumniPage() {
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
-              
-              {/* Roll Number */}
+
               <div className="space-y-1.5">
-                <label className="block text-[10px] font-bold text-[#94A3B8] tracking-widest pl-1 uppercase">
+                <label className="block text-[13px] font-bold text-[#101828]">
                   Roll Number (Token)
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <User className="h-[18px] w-[18px] text-[#CBD5E1]" />
+                    <User className="h-[18px] w-[18px] text-[#98A2B3]" />
                   </div>
                   <input
                     type="text"
                     required
-                    placeholder="E.g., 21MX114"
-                    className="block w-full pl-11 pr-4 py-3.5 bg-white border border-[#E2E8F0] rounded-[10px] text-[14px] text-[#1E293B] placeholder-[#94A3B8] focus:border-[#6C3DFF] focus:ring-1 focus:ring-[#6C3DFF] focus:outline-none transition-colors uppercase"
+                    placeholder="e.g., 21MX114"
+                    className="block w-full pl-11 pr-4 py-3.5 bg-white border border-[#D0D5DD] rounded-[12px] text-[15px] text-[#101828] placeholder-[#98A2B3] focus:border-[#FF5A1F] focus:ring-1 focus:ring-[#FF5A1F] focus:outline-none transition-colors uppercase"
                     value={formData.token}
                     onChange={(e) => setFormData({ ...formData, token: e.target.value })}
                   />
                 </div>
               </div>
 
-              {/* Graduation Year */}
               <div className="space-y-1.5">
-                <label className="block text-[10px] font-bold text-[#94A3B8] tracking-widest pl-1 uppercase">
+                <label className="block text-[13px] font-bold text-[#101828]">
                   Graduation Year
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Calendar className="h-[18px] w-[18px] text-[#CBD5E1]" />
+                    <Calendar className="h-[18px] w-[18px] text-[#98A2B3]" />
                   </div>
                   <input
                     type="number"
                     required
                     placeholder="e.g., 2023"
-                    className="block w-full pl-11 pr-4 py-3.5 bg-white border border-[#E2E8F0] rounded-[10px] text-[14px] text-[#1E293B] placeholder-[#94A3B8] focus:border-[#6C3DFF] focus:ring-1 focus:ring-[#6C3DFF] focus:outline-none transition-colors"
+                    className="block w-full pl-11 pr-4 py-3.5 bg-white border border-[#D0D5DD] rounded-[12px] text-[15px] text-[#101828] placeholder-[#98A2B3] focus:border-[#FF5A1F] focus:ring-1 focus:ring-[#FF5A1F] focus:outline-none transition-colors"
                     value={formData.graduationYear}
                     onChange={(e) => setFormData({ ...formData, graduationYear: e.target.value })}
                   />
                 </div>
               </div>
 
-              {/* Email */}
               <div className="space-y-1.5">
-                <label className="block text-[10px] font-bold text-[#94A3B8] tracking-widest pl-1 uppercase">
+                <label className="block text-[13px] font-bold text-[#101828]">
                   Email Address
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Mail className="h-[18px] w-[18px] text-[#CBD5E1]" />
+                    <Mail className="h-[18px] w-[18px] text-[#98A2B3]" />
                   </div>
                   <input
                     type="email"
                     required
                     placeholder="you@example.com"
-                    className="block w-full pl-11 pr-4 py-3.5 bg-white border border-[#E2E8F0] rounded-[10px] text-[14px] text-[#1E293B] placeholder-[#94A3B8] focus:border-[#6C3DFF] focus:ring-1 focus:ring-[#6C3DFF] focus:outline-none transition-colors"
+                    className="block w-full pl-11 pr-4 py-3.5 bg-white border border-[#D0D5DD] rounded-[12px] text-[15px] text-[#101828] placeholder-[#98A2B3] focus:border-[#FF5A1F] focus:ring-1 focus:ring-[#FF5A1F] focus:outline-none transition-colors"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   />
                 </div>
               </div>
 
-              {/* LinkedIn */}
               <div className="space-y-1.5">
-                <label className="block text-[10px] font-bold text-[#94A3B8] tracking-widest pl-1 uppercase">
-                  LinkedIn URL (Optional)
+                <label className="block text-[13px] font-bold text-[#101828]">
+                  LinkedIn Profile (Optional)
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <LinkIcon className="h-[18px] w-[18px] text-[#CBD5E1]" />
+                    <LinkIcon className="h-[18px] w-[18px] text-[#98A2B3]" />
                   </div>
                   <input
                     type="url"
                     placeholder="https://linkedin.com/in/username"
-                    className="block w-full pl-11 pr-4 py-3.5 bg-white border border-[#E2E8F0] rounded-[10px] text-[14px] text-[#1E293B] placeholder-[#94A3B8] focus:border-[#6C3DFF] focus:ring-1 focus:ring-[#6C3DFF] focus:outline-none transition-colors"
+                    className="block w-full pl-11 pr-4 py-3.5 bg-white border border-[#D0D5DD] rounded-[12px] text-[15px] text-[#101828] placeholder-[#98A2B3] focus:border-[#FF5A1F] focus:ring-1 focus:ring-[#FF5A1F] focus:outline-none transition-colors"
                     value={formData.linkedin}
                     onChange={(e) => setFormData({ ...formData, linkedin: e.target.value })}
                   />
                 </div>
               </div>
 
-              {/* Password */}
-              <div className="space-y-1.5 pb-2">
-                <label className="block text-[10px] font-bold text-[#94A3B8] tracking-widest pl-1 uppercase">
+              <div className="space-y-1.5 pb-1">
+                <label className="block text-[13px] font-bold text-[#101828]">
                   Create Password
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Lock className="h-[18px] w-[18px] text-[#CBD5E1]" />
+                    <Lock className="h-[18px] w-[18px] text-[#98A2B3]" />
                   </div>
                   <input
                     type={showPassword ? 'text' : 'password'}
                     required
                     placeholder="••••••••"
-                    className="block w-full pl-11 pr-12 py-3.5 bg-white border border-[#E2E8F0] rounded-[10px] text-[14px] text-[#1E293B] placeholder-[#94A3B8] focus:border-[#6C3DFF] focus:ring-1 focus:ring-[#6C3DFF] focus:outline-none transition-colors"
+                    className="block w-full pl-11 pr-11 py-3.5 bg-white border border-[#D0D5DD] rounded-[12px] text-[15px] text-[#101828] placeholder-[#98A2B3] focus:border-[#FF5A1F] focus:ring-1 focus:ring-[#FF5A1F] focus:outline-none transition-colors"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-[#CBD5E1] hover:text-[#94A3B8] transition-colors"
+                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-[#98A2B3] hover:text-[#101828] transition-colors"
                   >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showPassword ? <EyeOff className="h-[18px] w-[18px]" /> : <Eye className="h-[18px] w-[18px]" />}
                   </button>
                 </div>
 
-                {/* Validation Rules */}
-                <div className="flex items-center justify-between pt-3 px-1">
-                  <div className={`flex items-center gap-1.5 text-[10px] font-semibold ${hasMinChars ? 'text-[#2563EB]' : 'text-[#94A3B8]'}`}>
-                    <Check className="w-3 h-3" /> Min. 8 characters
+                <div className="flex items-center justify-between pt-3">
+                  <div className={`flex items-center gap-1 text-[11px] font-semibold ${hasMinChars ? 'text-[#101828]' : 'text-[#98A2B3]'}`}>
+                    <Check className="w-3.5 h-3.5" /> Min. 8 characters
                   </div>
-                  <div className={`flex items-center gap-1.5 text-[10px] font-semibold ${hasNumber ? 'text-[#2563EB]' : 'text-[#94A3B8]'}`}>
-                    <Check className="w-3 h-3" /> One number
+                  <div className={`flex items-center gap-1 text-[11px] font-semibold ${hasNumber ? 'text-[#101828]' : 'text-[#98A2B3]'}`}>
+                    <Check className="w-3.5 h-3.5" /> One number
                   </div>
-                  <div className={`flex items-center gap-1.5 text-[10px] font-semibold ${hasSpecial ? 'text-[#2563EB]' : 'text-[#94A3B8]'}`}>
-                    <Check className="w-3 h-3" /> One special character
+                  <div className={`flex items-center gap-1 text-[11px] font-semibold ${hasSpecial ? 'text-[#101828]' : 'text-[#98A2B3]'}`}>
+                    <Check className="w-3.5 h-3.5" /> One special character
                   </div>
                 </div>
               </div>
 
-              {/* Submit Button */}
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-[#7E22CE] to-[#2563EB] hover:opacity-95 text-white font-semibold py-3.5 rounded-xl transition-opacity disabled:opacity-50 flex items-center justify-center gap-2 mt-2 text-[14px]"
+                className="w-full bg-[#FF5A1F] hover:bg-[#E04812] text-white font-semibold py-3.5 rounded-[12px] transition-all disabled:opacity-50 flex items-center justify-center gap-2 mt-2 text-[16px] shadow-[0_4px_14px_rgba(255,90,31,0.25)]"
               >
                 {loading ? 'Submitting...' : 'Submit Application'}
                 {!loading && <ArrowRight className="w-4 h-4" />}
               </button>
             </form>
 
-            {/* Login Link */}
-            <div className="mt-5 text-center text-[12px] font-medium text-[#64748B]">
+            <div className="mt-5 text-center text-[14px] font-medium text-[#475467]">
               Already verified?{' '}
-              <Link href="/" className="text-[#6C3DFF] hover:text-[#5B21B6] font-bold">
+              <Link href="/login" className="text-[#FF5A1F] hover:text-[#E04812] font-bold transition-colors">
                 Log in here
               </Link>
             </div>
-            
-            {/* Footer */}
-            <div className="mt-7 pt-5 border-t border-[#F1F5F9] flex items-start gap-2.5">
-              <ShieldCheck className="w-[16px] h-[16px] text-[#6C3DFF] shrink-0" />
-              <p className="text-[10px] font-medium text-[#64748B] leading-[1.6]">
-                All applications are reviewed by the department.<br/>You will receive login access once verified.
+
+            <div className="mt-8 flex items-start justify-center gap-2 pt-5 border-t border-[#F2F4F7]">
+              <ShieldCheck className="w-4 h-4 text-[#98A2B3] shrink-0 mt-0.5" />
+              <p className="text-[12px] font-medium text-[#98A2B3] leading-[1.6]">
+                All applications are reviewed by the department.<br />You will receive login access once verified.
               </p>
             </div>
 
           </div>
         </div>
       </div>
+
+      {/* Global styles for custom scrollbar hidden internally */}
+      <style dangerouslySetInnerHTML={{
+        __html: `
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background-color: #D0D5DD;
+          border-radius: 20px;
+        }
+      `}} />
     </div>
   );
 }
