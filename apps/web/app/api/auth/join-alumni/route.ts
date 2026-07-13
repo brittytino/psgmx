@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
 
     // Check reg_no not already registered
     const { data: existing } = await supabaseAdmin
-      .from('users')
+      .from('users') 
       .select('id')
       .eq('reg_no', cleanedRegNo)
       .maybeSingle()
