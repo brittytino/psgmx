@@ -27,11 +27,12 @@ export async function POST(request: NextRequest) {
 
   // If it doesn't look like an email, assume it's a registration number (token)
   if (!trimmedIdentifier.includes('@')) {
-    const { data: userData, error: userError } = await supabaseAdmin
+    const { data: rawData, error: userError } = await supabaseAdmin
       .from('users')
       .select('email')
       .ilike('reg_no', trimmedIdentifier)
       .single()
+    const userData = rawData as any;
 
     if (userError || !userData?.email) {
       console.log('User lookup error or not found:', userError?.message)
@@ -53,11 +54,12 @@ export async function POST(request: NextRequest) {
   }
 
   // Determine redirect based on role label
-  const { data: profile } = await supabaseAdmin
+  const { data: rawProfile } = await supabaseAdmin
     .from('users')
     .select('role_label, roles')
     .eq('id', data.user.id)
     .single()
+  const profile = rawProfile as any;
 
   const roleLabel = profile?.role_label?.toLowerCase() || 'student'
   let redirectUrl = '/student'
