@@ -36,6 +36,8 @@ import 'services/birthday_notification_service.dart';
 import 'services/ca_exam_notification_service.dart';
 import 'services/leetcode_auto_refresh_service.dart';
 import 'services/update_service.dart';
+import 'services/sync_service.dart';
+import 'data/local_database.dart';
 
 import 'ui/widgets/error_boundary.dart';
 import 'ui/widgets/modern_offline_banner.dart';
@@ -86,6 +88,10 @@ void main() async {
     debugPrint('[APP] Initializing UpdateService...');
     await UpdateService().initialize();
     debugPrint('[APP] UpdateService initialized successfully');
+    
+    debugPrint('[APP] Initializing SyncService...');
+    SyncService(Supabase.instance.client, localDb);
+    debugPrint('[APP] SyncService initialized successfully');
   } catch (e) {
     debugPrint('[APP ERROR] Initialization failed: $e');
     rethrow;
@@ -202,18 +208,26 @@ class _PsgMxAppInnerState extends State<PsgMxAppInner> {
       themeMode: ThemeMode.light,
       routerConfig: _router,
       builder: (context, child) {
-        // Enforce a fixed text scaler across the entire app so system font size settings
-        // do not break our pixel-perfect design.
+        // Calculate a responsive scaling factor to bump up all tiny fonts proportionally.
+        // It respects user's OS settings, ensuring a minimum baseline scale.
+        final mediaData = MediaQuery.of(context);
+        final screenWidth = mediaData.size.width;
+        
+        double scale = mediaData.textScaler.scale(1.0);
+        if (scale < 1.25) {
+          scale = 1.25; // 25% bump for standard mobile devices
+        }
+        if (screenWidth >= 600 && scale < 1.4) {
+          scale = 1.4; // 40% bump for tablets
+        }
+        
         final scaledChild = MediaQuery(
-          data: MediaQuery.of(context).copyWith(
-            textScaler: const TextScaler.linear(1.0),
+          data: mediaData.copyWith(
+            textScaler: TextScaler.linear(scale),
           ),
           child: child ?? const SizedBox(),
         );
 
-        // Wrap with UpdateGate to enforce version checks
-        // Then NotificationListenerWrapper for in-app notifications
-        // Then ModernOfflineBanner for connectivity status
         return UpdateGate(
           child: NotificationListenerWrapper(
             child: ModernOfflineBanner(child: scaledChild)

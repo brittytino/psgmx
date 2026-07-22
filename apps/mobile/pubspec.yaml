@@ -48,12 +48,18 @@ dependencies:
   flutter_windowmanager_plus: ^1.0.1
   dicebear_core: ^10.3.0
   dicebear_styles: ^10.2.0
+  drift: ^2.34.2
+  sqlite3_flutter_libs: ^0.6.0+eol
+  path_provider: ^2.1.6
+  path: ^1.9.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.14.1
+  drift_dev: ^2.34.4
+  build_runner: ^2.15.1
 
 flutter:
   uses-material-design: true

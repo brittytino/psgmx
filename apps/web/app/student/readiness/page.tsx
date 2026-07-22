@@ -26,10 +26,10 @@ export default function ReadinessPage() {
   const band = score >= 80 ? 'STRONG' : score >= 60 ? 'BUILDING' : score >= 40 ? 'NEEDS ATTENTION' : 'AT RISK';
   const bandColor = score >= 80 ? 'text-electric-blue' : score >= 60 ? 'text-illus-gold' : score >= 40 ? 'text-primary-purple' : 'text-deep-violet';
 
-  const heatmapDays = Array.from({ length: 30 }, (_, i) => ({
+  const heatmapDays = React.useMemo(() => Array.from({ length: 30 }, (_, i) => ({
     day: i + 1,
-    status: Math.random() > 0.2 ? (Math.random() > 0.1 ? 'completed' : 'frozen') : 'missed',
-  }));
+    status: (i + 1) % 5 !== 0 ? 'completed' : ((i + 1) % 10 === 0 ? 'frozen' : 'missed'),
+  })), []);
 
   return (
     <div className="max-w-[1200px] mx-auto space-y-8 pb-8">

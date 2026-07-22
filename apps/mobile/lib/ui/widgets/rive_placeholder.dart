@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+// import 'package:rive/rive.dart';
 import '../../core/theme/app_theme.dart';
 
 class RivePlaceholder extends StatelessWidget {
@@ -18,9 +19,8 @@ class RivePlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Pick a mascot deterministically based on label
     final mascotIndex = (label.hashCode % 3) + 1;
-    final mascotAsset = 'assets/images/mascots/mascot$mascotIndex.png';
+    final fallbackAsset = 'assets/images/mascots/mascot$mascotIndex.png';
 
     return Container(
       width: width,
@@ -30,13 +30,29 @@ class RivePlaceholder extends StatelessWidget {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
-        child: Image.asset(
-          mascotAsset,
-          fit: BoxFit.contain,
-          errorBuilder: (context, error, stackTrace) => Container(
-            color: AppTheme.illusGold.withValues(alpha: 0.1),
-            child: const Center(child: Icon(LucideIcons.image, color: AppTheme.illusGold)),
-          ),
+        child: Stack(
+          children: [
+            // Fallback Image
+            Positioned.fill(
+              child: Image.asset(
+                fallbackAsset,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  color: AppTheme.illusGold.withValues(alpha: 0.1),
+                  child: const Center(child: Icon(LucideIcons.image, color: AppTheme.illusGold)),
+                ),
+              ),
+            ),
+            // TODO: Uncomment this block when 'assets/rive/spark.riv' is added to the project.
+            /*
+            Positioned.fill(
+              child: RiveAnimation.asset(
+                'assets/rive/spark.riv',
+                fit: BoxFit.contain,
+              ),
+            ),
+            */
+          ],
         ),
       ),
     );
@@ -64,11 +80,29 @@ class SparkPlaceholder extends StatelessWidget {
           ),
         ],
       ),
-      child: Center(
-        child: Icon(
-          LucideIcons.sparkles,
-          color: Colors.white,
-          size: size * 0.5,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(size / 2),
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: Center(
+                child: Icon(
+                  LucideIcons.sparkles,
+                  color: Colors.white,
+                  size: size * 0.5,
+                ),
+              ),
+            ),
+            // TODO: Uncomment this block when 'assets/rive/spark.riv' is added to the project.
+            /*
+            Positioned.fill(
+              child: RiveAnimation.asset(
+                'assets/rive/spark.riv',
+                fit: BoxFit.contain,
+              ),
+            ),
+            */
+          ],
         ),
       ),
     );

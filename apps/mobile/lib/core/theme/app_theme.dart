@@ -301,6 +301,25 @@ class AppTheme {
         unselectedLabelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
       ),
       
+      // NavigationBar (Material 3)
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: surfaceColor,
+        indicatorColor: accentCoral.withValues(alpha: 0.1),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: accentCoral);
+          }
+          return TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: textMuted);
+        }),
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const IconThemeData(color: accentCoral, size: 24);
+          }
+          return IconThemeData(color: textMuted, size: 24);
+        }),
+        elevation: 0,
+      ),
+      
       // Divider
       dividerTheme: DividerThemeData(
         color: borderColor,

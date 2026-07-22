@@ -1,5 +1,6 @@
-require('dotenv').config({ path: '.env' });
-const { createClient } = require('@supabase/supabase-js');
+import dotenv from "dotenv";
+dotenv.config({ path: ".env" });
+import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -7,7 +8,7 @@ const supabase = createClient(
   { auth: { persistSession: false } }
 );
 
-async function createTestUser(regNo, email, roleLabel, name) {
+async function createTestUser(regNo, email, rolesLabel, name) {
   // 1. Create in auth
   const { data: authData, error: authError } = await supabase.auth.admin.createUser({
     email,

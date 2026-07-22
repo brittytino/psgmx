@@ -182,8 +182,10 @@ class UserProvider with ChangeNotifier {
   Future<void> _checkSpecialStates() async {
     if (_currentUser == null) return;
     try {
-      _needsCalibration = !_currentUser!.onboardingComplete;
-      
+      final prefs = await SharedPreferences.getInstance();
+      final localCalibrated = prefs.getBool('calibrated_${_currentUser!.uid}') ?? false;
+      _needsCalibration = !(_currentUser!.onboardingComplete || localCalibrated);
+
       if (_currentUser!.isAlumni && _currentUser!.isGraduatedBatch) {
         final prefs = await SharedPreferences.getInstance();
         final seenGraduation = prefs.getBool('seen_graduation_${_currentUser!.uid}') ?? false;
@@ -200,13 +202,23 @@ class UserProvider with ChangeNotifier {
 
   Future<void> completeCalibration(int startingScore) async {
     if (_currentUser == null) return;
+    
+    // 1. Update local state immediately (optimistic update) so the user is never trapped in a routing loop
+    _needsCalibration = false;
+    _currentUser = _currentUser!.copyWith(onboardingComplete: true);
+    notifyListeners();
+
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('calibrated_${_currentUser!.uid}', true);
       
-      await Supabase.instance.client.from('users').update({
-        'onboarding_complete': true
-      }).eq('id', _currentUser!.uid);
+      try {
+        await Supabase.instance.client.from('users').update({
+          'onboarding_complete': true
+        }).eq('id', _currentUser!.uid);
+      } catch (e) {
+        debugPrint('[UserProvider] Error updating users table onboarding_complete: $e');
+      }
 
       // Initialize daily_five_streaks if it doesn't exist
       try {
@@ -240,10 +252,6 @@ class UserProvider with ChangeNotifier {
       } catch (e) {
         debugPrint('[UserProvider] Error calling compute_readiness_score: $e');
       }
-      
-      _needsCalibration = false;
-      _currentUser = _currentUser!.copyWith(onboardingComplete: true);
-      notifyListeners();
     } catch (e) {
       debugPrint('[UserProvider] Error saving calibration: $e');
     }

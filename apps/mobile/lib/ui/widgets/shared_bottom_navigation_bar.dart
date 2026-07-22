@@ -12,42 +12,47 @@ class SharedBottomNavigationBar extends StatelessWidget {
     final navProvider = Provider.of<NavigationProvider>(context);
     final theme = Theme.of(context);
     
-    return NavigationBar(
-      selectedIndex: navProvider.currentIndex,
-      onDestinationSelected: (idx) {
-        navProvider.setIndex(idx);
-        // Navigate back to root layout if we are not already there
-        if (GoRouterState.of(context).uri.toString() != '/') {
-           context.go('/');
-        }
-      },
-      destinations: [
-        NavigationDestination(
-          icon: const Icon(LucideIcons.home), 
-          selectedIcon: Icon(LucideIcons.home, color: theme.colorScheme.primary), 
-          label: 'Home'
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        border: Border(
+          top: BorderSide(
+            color: theme.colorScheme.outline,
+            width: 1,
+          ),
         ),
-        NavigationDestination(
-          icon: const Icon(LucideIcons.calendarCheck), 
-          selectedIcon: Icon(LucideIcons.calendarCheck, color: theme.colorScheme.primary), 
-          label: 'Quests'
-        ),
-        NavigationDestination(
-          icon: const Icon(LucideIcons.calendar), 
-          selectedIcon: Icon(LucideIcons.calendar, color: theme.colorScheme.primary), 
-          label: 'Sessions'
-        ),
-        NavigationDestination(
-          icon: const Icon(LucideIcons.graduationCap),
-          selectedIcon: Icon(LucideIcons.graduationCap, color: theme.colorScheme.primary),
-          label: 'Campus'
-        ),
-        NavigationDestination(
-          icon: const Icon(LucideIcons.user), 
-          selectedIcon: Icon(LucideIcons.user, color: theme.colorScheme.primary), 
-          label: 'You'
-        ),
-      ],
+      ),
+      child: NavigationBar(
+        selectedIndex: navProvider.currentIndex,
+        onDestinationSelected: (idx) {
+          navProvider.setIndex(idx);
+          if (GoRouterState.of(context).uri.toString() != '/') {
+             context.go('/');
+          }
+        },
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(LucideIcons.home), 
+            label: 'Home'
+          ),
+          NavigationDestination(
+            icon: Icon(LucideIcons.calendarCheck), 
+            label: 'Quests'
+          ),
+          NavigationDestination(
+            icon: Icon(LucideIcons.calendar), 
+            label: 'Sessions'
+          ),
+          NavigationDestination(
+            icon: Icon(LucideIcons.graduationCap),
+            label: 'Campus'
+          ),
+          NavigationDestination(
+            icon: Icon(LucideIcons.user), 
+            label: 'You'
+          ),
+        ],
+      ),
     );
   }
 }

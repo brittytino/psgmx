@@ -49,10 +49,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Text(
                         'You',
                         style: GoogleFonts.sora(
-                          fontSize: 16,
+                          fontSize: 20,
                           fontWeight: FontWeight.bold,
                           color: theme.colorScheme.onSurface,
-                          letterSpacing: -1,
+                          letterSpacing: -0.5,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -61,8 +61,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Text(
                             'Your profile, your progress, your journey.',
                             style: GoogleFonts.inter(
-                              fontSize: 9,
-                              color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
+                              fontSize: 12,
+                              color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
                             ),
                           ),
                           const SizedBox(width: 4),

@@ -185,7 +185,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-              child: _buildHeader(firstName),
+              child: _buildHeader(firstName, Theme.of(context)),
             ),
             Expanded(
               child: SingleChildScrollView(
@@ -297,7 +297,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   // WIDGET BUILDERS
   // ==========================================
 
-  Widget _buildHeader(String name) {
+  Widget _buildHeader(String name, ThemeData theme) {
     final hour = DateTime.now().hour;
     String greeting = 'Good morning';
     if (hour >= 12 && hour < 17) {
@@ -315,12 +315,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             children: [
               Text(
                 '$greeting, $name! 👋',
-                style: GoogleFonts.sora(fontSize: 11, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B)),
+                style: GoogleFonts.sora(fontSize: 20, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface, letterSpacing: -0.5),
               ),
               const SizedBox(height: 4),
               Text(
                 'Let\'s make today count.',
-                style: GoogleFonts.inter(fontSize: 9, color: const Color(0xFF64748B)),
+                style: GoogleFonts.inter(fontSize: 12, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7)),
               ),
             ],
           ),

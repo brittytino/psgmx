@@ -98,7 +98,7 @@ class _TasksScreenState extends State<TasksScreen> with SingleTickerProviderStat
                       Text(
                         'Quests',
                         style: GoogleFonts.sora(
-                          fontSize: 16,
+                          fontSize: 20,
                           fontWeight: FontWeight.bold,
                           color: theme.colorScheme.onSurface,
                           letterSpacing: -0.5,
@@ -110,7 +110,7 @@ class _TasksScreenState extends State<TasksScreen> with SingleTickerProviderStat
                           Text(
                             'Your daily roadmap to growth ',
                             style: GoogleFonts.inter(
-                              fontSize: 11,
+                              fontSize: 12,
                               color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
                             ),
                           ),

@@ -1,5 +1,6 @@
-require('dotenv').config({ path: '.env' });
-const { createClient } = require('@supabase/supabase-js');
+import dotenv from "dotenv";
+dotenv.config({ path: ".env" });
+import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -8,7 +9,7 @@ const supabase = createClient(
 );
 
 async function test() {
-  const { data, error } = await supabase.from('users').select('id, email, roll_no, role').limit(5);
+  const { data, error } = await supabase.from('users').select('id, email, reg_no, roles').limit(5);
   console.log('Users in DB:', data, error);
   
   // also check auth.users if possible

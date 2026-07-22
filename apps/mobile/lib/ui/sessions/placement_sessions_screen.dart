@@ -13,6 +13,7 @@ class PlacementSessionsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
+    final theme = Theme.of(context);
 
     // Determine effective role (considering simulation mode)
     final isActualPlacementRep = userProvider.isActualPlacementRep;
@@ -72,17 +73,19 @@ class PlacementSessionsScreen extends StatelessWidget {
                 children: [
                   Text(
                     'Placement Sessions',
-                    style: GoogleFonts.poppins(
+                    style: GoogleFonts.sora(
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: const Color(0xFF2D3142),
+                      color: theme.colorScheme.onSurface,
+                      letterSpacing: -0.5,
                     ),
                   ),
+                  const SizedBox(height: 4),
                   Text(
                     'Consistency today, opportunities tomorrow. ✨',
                     style: GoogleFonts.inter(
-                      fontSize: 11,
-                      color: const Color(0xFF9094A6),
+                      fontSize: 12,
+                      color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
                     ),
                   ),
                 ],

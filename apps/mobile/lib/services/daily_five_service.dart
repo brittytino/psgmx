@@ -3,6 +3,10 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/daily_five.dart';
 import 'readiness_score_service.dart';
+import 'dart:convert';
+import '../data/local_database.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:drift/drift.dart' as drift;
 
 /// Manages all Daily Five quiz operations:
 /// - Fetching today's 5 questions from the question bank (kept in memory only)
@@ -24,6 +28,35 @@ class DailyFiveService {
   /// the database at any point.
   Future<DailyFiveSession> fetchTodaysSession(String userId) async {
     try {
+      // Determine network status
+      final connectivityResult = await Connectivity().checkConnectivity();
+      final isOffline = connectivityResult.contains(ConnectivityResult.none);
+
+      if (isOffline) {
+        debugPrint('[DailyFiveService] Offline mode: loading from Drift cache');
+        final cached = await localDb.select(localDb.dailyFiveCache).get();
+        if (cached.isEmpty) {
+          throw Exception('No offline questions available. Please connect to internet.');
+        }
+        
+        final questions = cached.map((c) {
+          final optsList = (jsonDecode(c.optionsJson) as List).map((e) => e.toString()).toList();
+          return DailyFiveQuestion(
+            id: c.id,
+            questionText: c.questionText,
+            options: optsList,
+            correctOption: c.correctOption,
+            topic: c.topic,
+            difficulty: c.difficulty,
+            isActive: c.isActive,
+          );
+        }).toList();
+        
+        questions.shuffle(_rng);
+        final selected = questions.take(5).toList();
+        return DailyFiveSession(questions: selected);
+      }
+
       // Find user's batch status to determine target year
       final userRes = await _supabase.from('users').select('batch_id, batches!inner(status)').eq('id', userId).single();
       final batchStatus = userRes['batches']['status'] as String;
@@ -45,15 +78,41 @@ class DailyFiveService {
         throw Exception('No active questions found in question bank for topic: $topicPrefix');
       }
 
+      // Update local Drift cache with latest questions for next time we're offline
+      _cacheQuestionsInDrift(questions);
+
       questions.shuffle(_rng);
 
       // Trim to 5 
       final selected = questions.take(5).toList();
-      debugPrint('[DailyFiveService] Loaded ${selected.length} questions');
+      debugPrint('[DailyFiveService] Loaded ${selected.length} questions from Supabase');
       return DailyFiveSession(questions: selected);
     } catch (e) {
       debugPrint('[DailyFiveService] fetchTodaysSession error: $e');
       rethrow;
+    }
+  }
+
+  Future<void> _cacheQuestionsInDrift(List<DailyFiveQuestion> questions) async {
+    try {
+      await localDb.delete(localDb.dailyFiveCache).go(); // Clear old cache
+      await localDb.batch((batch) {
+        batch.insertAll(
+          localDb.dailyFiveCache,
+          questions.map((q) => DailyFiveCacheCompanion.insert(
+                id: q.id,
+                questionText: q.questionText,
+                optionsJson: jsonEncode(q.options),
+                correctOption: q.correctOption,
+                topic: q.topic,
+                difficulty: q.difficulty,
+                isActive: drift.Value(q.isActive),
+              )),
+        );
+      });
+      debugPrint('[DailyFiveService] Successfully cached ${questions.length} questions to Drift');
+    } catch (e) {
+      debugPrint('[DailyFiveService] Failed to cache to Drift: $e');
     }
   }
 
@@ -138,6 +197,48 @@ class DailyFiveService {
     required String userId,
     required double accuracyRate,
   }) async {
+    final connectivityResult = await Connectivity().checkConnectivity();
+    final isOffline = connectivityResult.contains(ConnectivityResult.none);
+
+    if (isOffline) {
+      debugPrint('[DailyFiveService] Offline mode: queueing completion action');
+      await localDb.into(localDb.syncQueue).insert(SyncQueueCompanion.insert(
+        actionType: 'submit_daily_five',
+        payloadJson: jsonEncode({
+          'user_id': userId,
+          'accuracy_rate': accuracyRate,
+        }),
+      ));
+
+      // Attempt to load offline streak fallback
+      final cachedStreak = await localDb.select(localDb.offlineStreaks).get();
+      if (cachedStreak.isNotEmpty) {
+        final st = cachedStreak.first;
+        return DailyFiveStreak(
+          userId: st.userId,
+          currentStreak: st.currentStreak + 1, // optimistic UI increment
+          longestStreak: st.longestStreak,
+          freezesRemaining: st.freezesRemaining,
+          freezesResetMonth: st.freezesResetMonth,
+          lastCompletedDate: DateTime.now(),
+          lastAccuracyRate: accuracyRate,
+          updatedAt: DateTime.now(),
+        );
+      } else {
+        // Fallback optimistic streak
+        return DailyFiveStreak(
+          userId: userId,
+          currentStreak: 1,
+          longestStreak: 1,
+          freezesRemaining: 2,
+          freezesResetMonth: 'offline',
+          lastCompletedDate: DateTime.now(),
+          lastAccuracyRate: accuracyRate,
+          updatedAt: DateTime.now(),
+        );
+      }
+    }
+
     await _supabase.rpc('increment_daily_five_streak', params: {
       'p_user_id': userId,
       'p_accuracy_rate': accuracyRate,
@@ -158,6 +259,25 @@ class DailyFiveService {
     }
 
     final updated = await fetchStreak(userId);
+
+    // Cache the updated streak for next offline run
+    if (updated != null) {
+      try {
+        await localDb.into(localDb.offlineStreaks).insertOnConflictUpdate(OfflineStreaksCompanion.insert(
+          userId: updated.userId,
+          currentStreak: updated.currentStreak,
+          longestStreak: updated.longestStreak,
+          freezesRemaining: updated.freezesRemaining,
+          freezesResetMonth: updated.freezesResetMonth,
+          lastCompletedDate: drift.Value(updated.lastCompletedDate?.toIso8601String()),
+          lastAccuracyRate: drift.Value(updated.lastAccuracyRate),
+          updatedAt: updated.updatedAt,
+        ));
+      } catch (e) {
+         debugPrint('[DailyFiveService] Could not cache streak: $e');
+      }
+    }
+
     return updated!;
   }
 

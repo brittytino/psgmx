@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  /* Flutter Cream Theme Base */
+  /* Daybreak Cream Theme Base (Light) */
   --page-bg: #FBF6EE; /* Paper Cream */
   --surface: #FFFFFF;
   --border: #EFE9E0; /* Subtle darker cream for borders */
@@ -13,6 +13,19 @@
   --illus-terracotta: #E4572E;
   --illus-sage: #8FB996;
   --illus-gold: #E8B84B;
+
+  /* Semantic Colors (Light) */
+  --success: #059669;
+  --success-container: #D1FAE5;
+  --on-success: #065F46;
+  --warning: #F59E0B;
+  --warning-container: #FEF3C7;
+  --on-warning: #92400E;
+  --info: #3B82F6;
+  --info-container: #DEEBFF;
+  --on-info: #1E40AF;
+  --error: #EF4743;
+  --on-error: #FFFFFF;
 
   /* Legacy variable mappings to maintain compatibility */
   --primary-purple: var(--accent-coral);
@@ -39,6 +52,33 @@
   --primary-red-glow: 0 0 20px rgba(255, 107, 74, 0.2);
 }
 
+.dark {
+  /* Daybreak Cream Theme Base (Dark) */
+  --page-bg: #0C0C0E;
+  --surface: #17171B;
+  --border: rgba(255, 255, 255, 0.1);
+  --text-primary: #F5F4F2;
+  --text-muted: #6B7078;
+  
+  /* Semantic Colors (Dark) */
+  --success: #10B981;
+  --success-container: #064E3B;
+  --on-success: #D1FAE5;
+  --warning: #FBBF24;
+  --warning-container: #78350F;
+  --on-warning: #FEF3C7;
+  --info: #60A5FA;
+  --info-container: #1E3A8A;
+  --on-info: #DEEBFF;
+  --error: #EF4743;
+  --on-error: #FFFFFF;
+
+  /* Theme mapping updates for dark mode */
+  --glass-bg: rgba(23, 23, 27, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --card-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
 @theme inline {
   --color-primary-purple: var(--primary-purple);
   --color-deep-violet: var(--deep-violet);
@@ -56,6 +96,20 @@
   --color-text-secondary: var(--text-secondary);
   --color-text-muted: var(--text-muted);
   --color-border-light: var(--border);
+  
+  /* Semantic tailwind mappings */
+  --color-success: var(--success);
+  --color-success-container: var(--success-container);
+  --color-on-success: var(--on-success);
+  --color-warning: var(--warning);
+  --color-warning-container: var(--warning-container);
+  --color-on-warning: var(--on-warning);
+  --color-info: var(--info);
+  --color-info-container: var(--info-container);
+  --color-on-info: var(--on-info);
+  --color-error: var(--error);
+  --color-on-error: var(--on-error);
+
   --font-sans: "Plus Jakarta Sans", sans-serif;
 }
 

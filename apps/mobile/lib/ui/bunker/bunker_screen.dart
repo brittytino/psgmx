@@ -85,17 +85,17 @@ class _BunkerScreenState extends State<BunkerScreen> {
                           Text(
                             'Academic Insights',
                             style: GoogleFonts.sora(
-                              fontSize: 11,
+                              fontSize: 20,
                               fontWeight: FontWeight.bold,
                               color: theme.colorScheme.onSurface,
                               letterSpacing: -0.5,
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 4),
                           Text(
                             'Your academic overview, all in one place.',
                             style: GoogleFonts.inter(
-                              fontSize: 9,
+                              fontSize: 12,
                               color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
                             ),
                           ),

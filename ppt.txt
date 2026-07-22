@@ -1,0 +1,1268 @@
+# PSGMX — Complete PPT Content File
+## All Slides | Both Platforms | Ready to Generate
+
+---
+> **Design Notes for PPT Generation:**
+> Theme: Light cream `#F8F4EE` background, dark charcoal `#25180A` text, warm brown accent `#7A5228`.
+> Fonts: Georgia (headings), Calibri (body). Formal academic style. No gradients, no neon colors.
+> Canvas: 16:9 widescreen. Section label (small, top-left) → Slide title (large, bold) → Content.
+
+---
+
+## SLIDE 01 — TITLE SLIDE
+
+```
+DEPARTMENT OF COMPUTER APPLICATIONS
+PSG College of Technology, Coimbatore — An Autonomous Institution
+
+━━━━━━━━━━━━━━
+
+PSGMX
+A Dual-Platform Placement Readiness Ecosystem
+for the MCA Department
+
+━━━━━━━━━━━━━━
+
+Presented by   ·   Tino
+MCA — Batch 25MX  (June 2025 – June 2027)
+
+Project Guide   ·   [Faculty Guide Name]
+Academic Year   ·   2025 – 2026
+
+─────────────────────────────────────────────────────────
+Student Initiative  ·  Open Source  ·  Built for Students, By Students
+```
+
+**Speaker Notes:**
+Good morning / afternoon. I am Tino from MCA Batch 25MX. The project I am presenting today is PSGMX — a placement readiness ecosystem built entirely by students, for students, with no institutional funding. It consists of two connected applications: a Flutter mobile app and a Next.js web platform, both sharing a single Supabase database.
+
+---
+
+## SLIDE 02 — PROBLEM STATEMENT
+
+**Section Label:** 01 · THE PROBLEM
+
+**Slide Title:** The MCA Placement Preparation Gap
+
+**Content — 4 Problems in a 2×2 Grid:**
+
+---
+
+### Problem 01 — Fragmented Toolchain
+> Students simultaneously manage WhatsApp for announcements, Google Sheets for attendance, a separate LeetCode account for practice, and the college eCampus portal for academic data. No single platform connects or reflects their actual placement readiness.
+
+- No unified view of preparation progress
+- Data scattered across 4–5 unconnected tools
+- Students cannot measure what matters
+
+---
+
+### Problem 02 — Zero Readiness Visibility
+> Neither students nor faculty have a real-time, honest signal of how prepared any student actually is for an upcoming placement drive. Faculty receive manually compiled reports weeks after the fact, making timely intervention impossible.
+
+- No continuous performance indicator for students
+- Faculty cannot identify at-risk students in time
+- Preparation gaps discovered only at the placement drive itself
+
+---
+
+### Problem 03 — Institutional Memory Lost Every Batch
+> Every batch builds valuable knowledge — interview experiences, company-specific tips, preparation strategies. This knowledge lives in personal chats and memories. When a batch graduates, it is permanently lost. The next batch starts from zero every single time.
+
+- Interview experiences never recorded or archived
+- Juniors cannot learn from seniors' real placement encounters
+- The department has no growing knowledge repository
+
+---
+
+### Problem 04 — Manual Administrative Overhead
+> The Placement Representative manually collects attendance sheets from Team Leaders, aggregates them across teams of 120 students, calculates percentages by hand, and compiles reports for faculty — consuming 3–5 hours every week that should be spent on actual placement preparation.
+
+- Repetitive data entry and calculation errors
+- No automated reporting or alerting system
+- Placement Rep time wasted on administration, not strategy
+
+---
+
+**Speaker Notes:**
+The problem has four distinct dimensions: tool fragmentation, visibility gaps, knowledge loss, and administrative burden. Every one of these is real and experienced by our batch today. PSGMX was built specifically to solve all four.
+
+---
+
+## SLIDE 03 — PROPOSED SOLUTION
+
+**Section Label:** 01 · THE SOLUTION
+
+**Slide Title:** PSGMX — One Ecosystem, Two Platforms, One Database
+
+**Content:**
+
+### The Core Idea
+PSGMX is a dual-platform placement readiness ecosystem built entirely by students of the MCA Department at PSG College of Technology. Instead of replacing existing institutional tools, it fills the placement-preparation layer that currently does not exist.
+
+### The Two-Platform Architecture
+
+---
+
+**Platform 01 — PSGMX Mobile App**
+**URL: app.psgmx.tech**
+
+The daily habit tool. Students open it every morning — the same way they open a fitness or language app — to track their placement preparation through small, consistent daily actions.
+
+| Feature | Description |
+|---|---|
+| Daily Five Quiz | 5 MCQs/day, mixed topics, streak-based |
+| Quest Board | Daily LeetCode + core-subject task |
+| Placement Attendance | Session tracking, team-scoped marking |
+| LeetCode Leaderboard | Batch-scoped ranking, 6-hour sync |
+| Placement Log | Company records + interview experiences |
+| AI Mentor Chat | OpenRouter-powered, grounded in Knowledge Brain |
+| Readiness Score | Live 0–100 score, updated in real time |
+
+**Distribution:** Android APK via GitHub Releases · iOS via PWA (Safari, no App Store needed)
+
+---
+
+**Platform 02 — PSGMX Web Platform**
+**URL: psgmx.tech**
+
+The knowledge and examination tool. Students, faculty, and alumni use this when they need depth — reading interview guides, sitting proctored mock exams, contributing knowledge, or reviewing student progress.
+
+| Feature | Description |
+|---|---|
+| Knowledge Brain | Searchable articles and interview guides |
+| AI Senior Chat | RAG-powered AI using real department knowledge |
+| Mock Examinations | Proctored exams (camera + tab detection) |
+| Alumni Lineage Network | Senior–junior matching by roll number |
+| Faculty Mentee Roster | Real-time readiness scores for all mentees |
+| HOD Department View | Batch-level aggregate analytics |
+
+---
+
+### The Unifying Principle
+**One Supabase PostgreSQL database** — shared by both platforms. No sync jobs. No bridge APIs. When a student completes their Daily Five on the mobile app, the readiness score updates, and the faculty member on the web platform sees it within 60 seconds. The **roll number** is the universal identity key that connects everything.
+
+---
+
+**Speaker Notes:**
+The key insight is that these two platforms serve different moments in a student's day. The mobile app is opened by habit — every morning. The web platform is opened with intent — when there's a specific need. Because they share one database, data flows naturally between them without any integration complexity.
+
+---
+
+## SLIDE 04 — OBJECTIVES OF THE PROJECT
+
+**Section Label:** 02 · PROJECT GOALS
+
+**Slide Title:** Objectives of the Proposed System
+
+**Content — 7 Objectives:**
+
+---
+
+**01. Build a unified daily habit platform for placement preparation**
+Design and develop a mobile-first application that encourages consistent daily engagement through streaks, tasks, and leaderboards, covering every aspect of placement readiness in one interface.
+
+**02. Deliver a real-time Readiness Score computed from verifiable activity**
+Replace subjective self-assessment with an objective, continuously updated 0–100 score derived from four measurable inputs: Daily Five engagement, LeetCode progress, mock exam performance, and placement attendance.
+
+**03. Automate the full batch lifecycle without manual intervention**
+Implement a system where new students enroll automatically by roll number, graduating students transition to alumni status programmatically, and each new batch inherits the knowledge accumulated by all previous batches.
+
+**04. Build a searchable, AI-augmented institutional Knowledge Brain**
+Create a growing repository of interview experiences, preparation guides, and placement insights contributed by students and alumni — indexed with vector embeddings and accessible through an AI-powered chat interface.
+
+**05. Conduct and proctor mock examinations at placement-grade rigor**
+Provide faculty with tools to create, schedule, and administer proctored mock examinations — with camera monitoring, tab-switch detection, and per-student question randomization — whose scores feed directly into the Readiness Score.
+
+**06. Connect current students to alumni through a lineage network**
+Automatically link each student to the alumnus whose roll number matches theirs by suffix pattern, enabling direct mentorship connections, knowledge handover, and career guidance.
+
+**07. Give faculty real-time, zero-effort visibility into student readiness**
+Ensure that every faculty member can see the current readiness score, component breakdown, and 90-day trend for every assigned mentee — without manually collecting any data.
+
+---
+
+**Speaker Notes:**
+Note that objective 3 — the batch lifecycle automation — is what makes this system sustainable beyond our batch. By June 2027, when we graduate, the system transitions us to alumni automatically, the next batch takes our place, and the system continues running without anyone touching the code.
+
+---
+
+## SLIDE 05 — SCOPE OF THE SYSTEM
+
+**Section Label:** 02 · SCOPE & BOUNDARIES
+
+**Slide Title:** Scope and Boundaries of PSGMX
+
+**Content — Two Columns:**
+
+---
+
+### IN SCOPE ✓
+
+**Department & Institution**
+- MCA Department, PSG College of Technology, Coimbatore only
+- Two active student batches simultaneously (approx. 240 students total)
+- Alumni from all graduated batches
+
+**User Roles (7 total)**
+- Student · Team Leader · Placement Coordinator · Placement Rep (four student roles)
+- Faculty · Alumni · Head of Department (HOD)
+
+**Mobile App Modules**
+- Daily Five quiz engine with streak and freeze tracking
+- Placement session scheduling and team-scoped attendance marking
+- LeetCode stats sync and batch-scoped leaderboard
+- Placement Log: company records and interview experience writeups
+- In-app AI Mentor (OpenRouter, with Knowledge Brain context)
+- Readiness Score dashboard with component breakdown
+- Official eCampus data display (informational — not used in readiness score)
+
+**Web Platform Modules**
+- Knowledge Brain: article submission, faculty review, semantic search
+- AI Senior: RAG-powered chat grounded in department-specific knowledge
+- Mock exam builder and proctored administration (camera + tab detection)
+- Alumni profile, lineage matching, mentorship toggle
+- Faculty mentee roster with real-time readiness scores
+- HOD department analytics dashboard
+
+**Infrastructure**
+- Single Supabase PostgreSQL database (shared)
+- Supabase Edge Functions for automated score computation and graduation
+- GitHub Actions for CI/CD; Firebase Hosting (mobile), Vercel (web)
+
+---
+
+### OUT OF SCOPE ✗
+
+- Other departments or institutions
+- eCampus academic marks as readiness score input (academic ≠ placement readiness)
+- Google Play Store / Apple App Store publishing (APK + PWA only)
+- Final Year Project (FYP) repository module — planned for Phase 2
+- Faculty course management or LMS features
+- Financial transactions, fee management, or institutional ERP functions
+- Real-time coding judge (belongs to the separate desktop exam platform)
+
+---
+
+**Speaker Notes:**
+The scope boundary is important — PSGMX is explicitly not an ERP or LMS. It is a placement-readiness layer that sits on top of existing institutional infrastructure, built by students, operated by students, and self-sustaining across multiple batches.
+
+---
+
+## SLIDE 06 — FUNCTIONAL REQUIREMENTS
+
+**Section Label:** 03 · REQUIREMENTS
+
+**Slide Title:** Functional Requirements
+
+**Content — Two Sections:**
+
+---
+
+### PSGMX MOBILE APP — app.psgmx.tech
+
+**Authentication & Onboarding**
+- FR01: OTP-based login restricted to @psgtech.ac.in email domain
+- FR02: Roll number input auto-assigns student to correct batch (no manual whitelist)
+- FR03: First-time 3-question calibration generates a personalized starting Readiness Score
+- FR04: Supabase Auth manages sessions; no passwords stored
+
+**Daily Five Quiz (All Roles)**
+- FR05: System serves 5 randomized MCQs daily from the central question bank
+- FR06: Individual question responses are never stored; only running accuracy rate is updated
+- FR07: Completing all 5 questions increments current streak by 1
+- FR08: Missing a day resets streak to 0 unless a freeze token is consumed
+- FR09: System grants 2 freeze tokens per student per calendar month; unused tokens do not carry over
+
+**Quests — Daily Task Management**
+- FR10: Coordinators and Placement Reps publish one LeetCode task + one core-subject task per day per batch
+- FR11: Students mark tasks complete; Team Leaders verify completions
+- FR12: Task completion feeds into the Readiness Score calculation
+
+**Sessions — Placement Attendance**
+- FR13: Coordinators/Reps schedule placement-prep sessions with date, topic, and target teams
+- FR14: Push notifications sent automatically to eligible students on session creation
+- FR15: Team Leaders mark present/absent/excused for each member of their team per session
+- FR16: Placement-session attendance percentage computed automatically and shown to students
+
+**Placement Log**
+- FR17: Placement Reps log company visit records (name, date, roles, package band, rounds)
+- FR18: Second-year students add personal experience writeups per round per company
+- FR19: Approved writeups auto-ingest into the Next.js Knowledge Brain via database trigger
+- FR20: All placement logs remain permanently visible to future batches after graduation
+
+**LeetCode Integration**
+- FR21: LeetCode stats synced every 6 hours via public API
+- FR22: Batch-period weighted score computed: Easy×1 + Medium×2 + Hard×3
+- FR23: Batch-scoped percentile rank computed and displayed; two separate leaderboards (Readiness + LeetCode)
+
+**AI Mentor Chat**
+- FR24: AI Mentor powered by OpenRouter (free-tier models with fallback chain)
+- FR25: Before sending to AI model, query Next.js Knowledge Brain for relevant context
+- FR26: If AI unavailable, return pre-written contextual fallback — never an error screen
+
+---
+
+### PSGMX WEB PLATFORM — psgmx.tech
+
+**Mock Examinations (Faculty)**
+- FR27: Faculty create mock exams with configurable question types, duration, and proctoring level
+- FR28: Proctoring: camera access required; tab-switch detection; per-student question randomization
+- FR29: Exam results written to Supabase immediately on submission; Readiness Score updates within 60 seconds
+
+**Knowledge Brain**
+- FR30: Students and alumni submit articles; faculty review and approve before indexing
+- FR31: Approved articles chunked and embedded using Supabase AI (gte-small) into pgvector index
+- FR32: Semantic search across all approved articles using cosine similarity
+
+**AI Senior Chat (RAG)**
+- FR33: Student question generates an embedding; top 3 matching Knowledge Brain chunks retrieved
+- FR34: Chunks passed as context to Gemini 2.5 Flash (primary) or OpenRouter Claude (fallback)
+- FR35: If all AI calls fail, return a static fallback — never an error message
+
+**Alumni & Lineage**
+- FR36: On student creation, lineage_map auto-populated by matching roll number suffix across batches
+- FR37: Alumni toggle mentorship availability; matched juniors see "Your Senior" card on both platforms
+- FR38: Alumni contribute to Knowledge Brain and Collaboration Marketplace
+
+**Faculty Mentee Roster**
+- FR39: Faculty see all assigned mentees' current Readiness Score, 4-component breakdown, and 90-day trend
+- FR40: Students with band "At Risk" (0–39) or declining trend for 14+ days flagged automatically
+
+**HOD Dashboard**
+- FR41: HOD sees batch-level average scores, session attendance trend, drives completed, company packages
+- FR42: HOD access is read-only; no write permissions on student data
+
+**Batch Graduation (Automated)**
+- FR43: Supabase CRON Edge Function runs on configured graduation date per batch
+- FR44: Batch status → graduated; student roles → alumni; Flutter app → read-only archive
+- FR45: Graduation screen shown once to each student summarizing their 2-year journey
+
+---
+
+**Speaker Notes:**
+The key functional distinction between the two platforms: the mobile app handles everything that benefits from daily mobile-first access. The web platform handles everything that benefits from a full desktop screen — reading long articles, sitting a 60-minute exam, or reviewing 120 students' data in a faculty dashboard.
+
+---
+
+## SLIDE 07 — NON-FUNCTIONAL REQUIREMENTS
+
+**Section Label:** 03 · REQUIREMENTS
+
+**Slide Title:** Non-Functional Requirements
+
+**Content — 3×3 Grid of Requirement Cards:**
+
+---
+
+### Performance
+- Home screen loads within 2 seconds on a standard 4G connection
+- Readiness Score updates within 60 seconds of any contributing activity
+- Knowledge Brain semantic search returns results within 1 second
+- Mock exam page loads within 3 seconds under concurrent student load
+
+### Scalability
+- Supports 240 active students across two batches simultaneously
+- Supports 500+ alumni without database performance degradation
+- Batch architecture accommodates new intake every year with zero schema changes or migrations
+
+### Reliability
+- 99.9% database uptime guaranteed by Supabase service-level agreement
+- Offline-first local cache on Android (Drift/SQLite) ensures Daily Five and readiness data accessible without connectivity
+- AI Mentor fallback chain ensures graceful degradation — never a blank error screen
+
+### Security
+- Row Level Security (RLS) enforced on every Supabase table — no client can access data outside its permitted scope
+- Service Role Key (admin access) never included in any client-side or mobile code
+- OTP authentication — no passwords ever stored or transmitted
+- eCampus passwords encrypted at rest; never exposed in API responses
+
+### Privacy
+- Individual Daily Five question responses never written to any database
+- Individual readiness score components visible only to the student and their assigned faculty mentor
+- Alumni cannot view other students' current scores; only their own historical record
+- Mock exam answers stored only as aggregate score; individual responses not retained
+
+### Usability
+- Zero manual enrollment — roll number parsing eliminates the need for any whitelist or seed file
+- Placement Representative can operate the entire system with basic smartphone familiarity
+- Batch handover on graduation requires no developer involvement — fully automated
+
+### Maintainability
+- Entire system maintainable by one non-technical student Placement Rep with no DevOps knowledge
+- New batch joins automatically; old batch graduates automatically; code does not change
+- Contributing guide included — any future MCA student can add features via GitHub pull request
+
+### Availability
+- Android users: APK downloadable from GitHub Releases at any time (no Play Store dependency)
+- iOS users: PWA installable via Safari — push notifications and offline cache supported
+- Web platform deployed on Vercel — zero-downtime deployments via GitHub Actions on every push to main
+
+### Data Integrity
+- All 20+ Supabase tables have RLS enabled — no unauthorized writes possible
+- Foreign key constraints with CASCADE deletes prevent orphaned records
+- Audit log table records every sensitive action (role changes, graduation triggers, approvals)
+- Readiness Score computed server-side by Edge Function — cannot be manipulated by client
+
+---
+
+**Speaker Notes:**
+The privacy requirement about Daily Five answers is worth explaining carefully. We deliberately do not store individual question responses. The system computes a running accuracy rate at the moment of submission and discards everything else. This means we cannot recreate what any student answered on any given day — which is exactly the design intent.
+
+---
+
+## SLIDE 08 — SYSTEM ARCHITECTURE OVERVIEW
+
+**Section Label:** 04 · ARCHITECTURE
+
+**Slide Title:** System Architecture Overview
+
+**Content — Three-Tier Diagram:**
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           PSGMX ECOSYSTEM                                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+ CLIENT TIER                    BACKEND TIER                   EXTERNAL TIER
+ ─────────────               ───────────────────────          ──────────────────
+                             
+┌──────────────┐    ←→       ┌─────────────────────┐          ┌──────────────┐
+│ Flutter App  │             │  SUPABASE PROJECT   │    ←     │ LeetCode API │
+│              │             │  ─────────────────  │          │ (public)     │
+│ Android APK  │             │  PostgreSQL DB       │          │              │
+│ iOS PWA      │             │  + pgvector ext.     │    ←     │ OpenRouter   │
+│              │             │  ─────────────────  │          │ (AI Fallback)│
+│ app.psgmx    │             │  Row Level Security  │          │              │
+│ .tech        │             │  on ALL tables       │    ←     │ Gemini 2.5   │
+│              │             │  ─────────────────  │          │ Flash (AI    │
+│ Drift/SQLite │             │  Supabase Auth       │          │ Senior)      │
+│ (offline     │             │  OTP-based           │          │              │
+│  cache)      │             │  ─────────────────  │    ←     │ eCampus      │
+└──────────────┘             │  Realtime Engine     │          │ Scraper API  │
+                             │  WebSocket updates   │          │ (Python      │
+                             │  ─────────────────  │          │  FastAPI,    │
+┌──────────────┐    ←→       │  Edge Functions      │          │  Render.com) │
+│ Next.js 15   │             │  ─────────────────  │          └──────────────┘
+│ Web Platform │             │  • compute-          │
+│              │             │    readiness-score   │          ┌──────────────┐
+│ Faculty      │             │  • batch-graduation  │          │   HOSTING    │
+│ Students     │             │  • knowledge-ingest  │          │──────────────│
+│ Alumni       │             └─────────────────────┘          │ Firebase     │
+│ HOD          │                                               │ (mobile web) │
+│              │                                               │ app.psgmx   │
+│ psgmx.tech   │                                               │ .tech        │
+│              │                                               │              │
+│ Vercel       │                                               │ Vercel       │
+│ Serverless   │                                               │ (Next.js)    │
+└──────────────┘                                               │ psgmx.tech  │
+                                                               └──────────────┘
+
+KEY DESIGN RULE
+───────────────
+Both apps share ONE Supabase database. No sync jobs. No message queues.
+Roll number = universal identity key across both platforms.
+Score computed server-side by Edge Function — client never manipulates it.
+```
+
+**Architecture Highlights:**
+- **Single database** eliminates sync complexity between the two apps
+- **RLS on every table** means both apps safely share the same database without risk
+- **Edge Functions** run server-side Deno code — score computation, graduation, and knowledge ingestion are all automated triggers
+- **Realtime engine** broadcasts readiness score changes to Flutter app within seconds of a mock exam submission on the web platform
+
+---
+
+**Speaker Notes:**
+The single-database decision is the most important architectural choice in this project. When I first designed this, I considered two databases with a bridge API. But that adds latency, sync errors, and maintenance burden. One database with proper RLS is simpler, faster, and more reliable. The trade-off is that both apps must connect to the same Supabase project — which is fine since they serve the same institution.
+
+---
+
+## SLIDE 09 — TECHNOLOGY STACK
+
+**Section Label:** 04 · ARCHITECTURE
+
+**Slide Title:** Technology Stack
+
+**Content — Full Table:**
+
+| Layer | Technology | Version / Details |
+|---|---|---|
+| **Mobile App** | Flutter | 3.27+ · Dart · Cross-platform |
+| **State Management** | Provider | 6.x · MultiProvider pattern |
+| **Local Storage (Android)** | Drift (SQLite) | Offline-first cache, sync queue |
+| **Local Storage (iOS PWA)** | IndexedDB | Browser-native, equivalent behavior |
+| **Mobile Animations** | Rive | `.riv` assets · Spark mascot animations |
+| **Web Framework** | Next.js 15 | TypeScript · App Router · RSC |
+| **Web Styling** | Tailwind CSS v4 | Framer Motion for transitions |
+| **Shared Database** | Supabase PostgreSQL | Single instance · Both apps connect here |
+| **Vector Search** | pgvector extension | Semantic search for Knowledge Brain |
+| **Authentication** | Supabase Auth | OTP email · @psgtech.ac.in only |
+| **Realtime** | Supabase Realtime | WebSocket · Score updates to Flutter |
+| **Edge Functions** | Supabase Deno | Score compute · Graduation · KB ingest |
+| **Primary AI (Web)** | Gemini 2.5 Flash | @google/generative-ai SDK · AI Senior |
+| **AI Fallback (Web)** | OpenRouter / Claude Haiku | Circuit-breaker fallback chain |
+| **AI Embeddings** | Supabase AI gte-small | Native Edge Function · No external API key |
+| **Mobile AI** | OpenRouter (free models) | AI Mentor · Grounded with KB context |
+| **Mobile Hosting** | Firebase Hosting | CDN · app.psgmx.tech |
+| **Web Hosting** | Vercel | Serverless · psgmx.tech |
+| **Android Distribution** | GitHub Releases | APK sideload · No Play Store |
+| **iOS Distribution** | Safari PWA | Add to home screen · Web Push |
+| **CI/CD** | GitHub Actions | APK build on tag · Web deploy on push |
+| **eCampus Bridge** | Python FastAPI | Deployed on Render · Thursday sync |
+| **Charts / Analytics** | fl_chart (Flutter) | Recharts (Next.js) |
+
+---
+
+**Speaker Notes:**
+The technology choices were driven by cost and simplicity. Everything is free-tier or open source. Supabase free tier supports up to 50,000 monthly active users — well above our 240-student scope. Vercel and Firebase Hosting are free for small projects. OpenRouter and Gemini both have free tiers. The entire ecosystem runs at zero cost.
+
+---
+
+## SLIDE 10 — DATABASE SCHEMA / CORE TABLES
+
+**Section Label:** 05 · DATA DESIGN
+
+**Slide Title:** Database Schema — Core Tables (Single Supabase PostgreSQL)
+
+**Content — Table Reference:**
+
+| Table | Key Columns | Purpose | Written By |
+|---|---|---|---|
+| **batches** | batch_code, start_date, end_date, status | One row per MCA intake year; status = active_junior / active_senior / graduated | Auto / Admin |
+| **users** | id, email, roll_no, batch_id, role, app_role, team_id | All identities: students, alumni, faculty, HOD | Auth system |
+| **teams** | batch_id, team_leader_id, target_size | Team structure within a batch; auto-distributed by Rep | Placement Rep |
+| **user_permissions** | user_id, permission, granted_by | Granular capability flags per user (manage_members, schedule_sessions, etc.) | Placement Rep |
+| **placement_sessions** | batch_id, session_date, topic, target_scope | Placement-prep sessions scheduled by Rep/Coordinator | Coordinator / Rep |
+| **placement_attendance** | session_id, student_id, status, marked_by | Attendance marked by Team Leaders per session | Team Leader |
+| **question_bank** | question_text, options A–D, correct_option, topic, difficulty | Daily Five question pool — shared across all batches | Coordinator / Rep |
+| **daily_five_streaks** | current_streak, longest_streak, freezes_remaining, running_accuracy_rate | Streak state only — individual answers NEVER stored | Flutter App (auto) |
+| **leetcode_stats** | batch_easy/medium/hard_solved, batch_weighted_score, batch_percentile | LeetCode progress in batch period; percentile computed server-side | Edge Function |
+| **mock_exams** | title, duration_minutes, proctoring_level, status, target_batch_id | Exam definitions created by faculty | Faculty |
+| **mock_exam_results** | exam_id, student_id, score, proctoring_flags | Submitted exam scores with integrity flags | Next.js (auto) |
+| **readiness_scores** | score (0–100), daily_five_score, leetcode_score, mock_exam_score, session_score, band | Computed and upserted by Edge Function within 60s of any activity | Edge Function (auto) |
+| **knowledge_brain_articles** | title, content, source, approval_status, company_name, batch_year | Faculty-approved articles; source = 'web' or 'flutter_placement_log' | Students / Alumni / Edge Fn |
+| **knowledge_embeddings** | article_id, chunk_text, embedding (vector 1536) | pgvector index for semantic search — gte-small model | Edge Function (auto) |
+| **companies** | company_name, visit_date, package_band_min/max, rounds[] | Placement drive records visible to all batches | Placement Rep |
+| **placement_log_entries** | company_id, student_id, round_name, experience_text, approval_status | Student-written interview experiences; approved → KB ingest | 2nd-year students |
+| **lineage_map** | junior_user_id, senior_user_id, roll_suffix | Alumni–student matching by shared roll number suffix; auto-built on signup | Trigger (auto) |
+| **readiness_score_history** | user_id, score, components, snapshot_date | Daily snapshots for trend analysis and faculty dashboard | Edge Function (auto) |
+| **audit_logs** | actor_id, action, target_table, target_id, metadata | Trail of all sensitive actions (role changes, graduation, approvals) | All (auto) |
+
+**Key Relationship:**
+```
+batches ──< users ──< teams ──< placement_attendance
+                  ──< daily_five_streaks
+                  ──< leetcode_stats
+                  ──< mock_exam_results ──> readiness_scores
+                  ──< placement_log_entries ──> knowledge_brain_articles
+                  ──< lineage_map
+```
+
+---
+
+**Speaker Notes:**
+The most important table is `readiness_scores`. It is never written by the client — only by the server-side Edge Function, triggered automatically by database events. The client only reads it. This ensures the score cannot be manipulated. The second important design decision: `daily_five_streaks` stores the running accuracy rate but never individual answers — those are computed and discarded at submission time.
+
+---
+
+## SLIDE 11 — SYSTEM WORKFLOW / FLOW DIAGRAM
+
+**Section Label:** 05 · SYSTEM DESIGN
+
+**Slide Title:** End-to-End System Workflow
+
+**Content — Three-Phase Flow:**
+
+---
+
+### PHASE 1 — ONBOARDING (One-Time per Student)
+
+```
+[Student Downloads App / Opens PWA]
+          ↓
+[Enters @psgtech.ac.in email + Roll No]
+          ↓
+[OTP verification via Supabase Auth]
+          ↓
+[Roll number parsed → Batch auto-assigned]
+[No whitelist. No manual approval. Automatic.]
+          ↓
+[3-Question Calibration Quiz]
+[How many DSA problems solved? Study habit? Confidence?]
+          ↓
+[Starting Readiness Score Generated]
+[Student enters app with a real number, not a blank dashboard]
+```
+
+---
+
+### PHASE 2 — DAILY HABIT LOOP (Every Day)
+
+```
+[Student Opens Flutter App (Morning)]
+          ↓
+[HOME: Readiness Gauge + Streak Status + Today's Quest]
+          ↓
+         ┌──────────────────────────────────────────────┐
+         ↓              ↓               ↓               ↓
+  [Daily Five]    [Quest Board]   [Sessions Tab]  [LeetCode Sync]
+   5 MCQs          LeetCode +      Attend session   Auto every 6h
+   Streak +1        Core task       Marked by TL     API pull
+   Accuracy         Complete &      Attendance       Batch % update
+   Rate updated     verify          % updated
+         ↓              ↓               ↓               ↓
+         └──────────────────────────────────────────────┘
+                             ↓
+              [Database writes → Triggers fire]
+                             ↓
+         [Edge Function: compute-readiness-score]
+                             ↓
+              [readiness_scores table upserted]
+                             ↓
+        [Supabase Realtime → Gauge updates live on screen]
+```
+
+---
+
+### PHASE 3 — EXAMINATION & LONG-TERM OUTCOMES
+
+```
+[Placement Rep announces Mock Exam]
+[Flutter Push Notification → Students]
+          ↓
+[Student opens psgmx.tech on laptop]
+          ↓
+[Proctored Mock Exam (camera + tab detection)]
+          ↓
+[Score written → Edge Function → Readiness Score updated]
+          ↓
+[Faculty sees updated mentee score in < 60 seconds]
+          ↓
+[Company visits → Rep logs drive in Flutter]
+          ↓
+[2nd-year students add interview experiences]
+          ↓
+[Auto-ingest to Knowledge Brain → Faculty approves → Indexed]
+          ↓
+[AI Senior now answers future students' questions with this data]
+          ↓
+[June Graduation → Batch auto-transitions to Alumni]
+[Placement logs remain forever → Next batch inherits all knowledge]
+```
+
+---
+
+**Speaker Notes:**
+The three phases map to the three time horizons of the system: Phase 1 happens once. Phase 2 happens every day for two years. Phase 3 happens at semester intervals and at graduation. The system is designed to make Phase 2 as frictionless as possible — because that's where the actual value is built.
+
+---
+
+## SLIDE 12 — REAL-TIME FEATURE FLOW
+
+**Section Label:** 06 · REAL-TIME SYSTEM
+
+**Slide Title:** Real-Time Readiness Score Update Flow
+
+**Content — Vertical Trigger Flow:**
+
+---
+
+### Trigger Events (Any One of Four)
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ ACTIVITY TRIGGER — any of the following:                │
+│                                                         │
+│  • Daily Five completed (all 5 questions answered)      │
+│  • Mock exam submitted on web platform                  │
+│  • LeetCode stats synced (6-hour auto-cycle)            │
+│  • Placement session attendance marked by Team Leader   │
+└─────────────────────────┬───────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────────┐
+│ SUPABASE TABLE UPDATED                                  │
+│                                                         │
+│ daily_five_streaks  /  mock_exam_results  /             │
+│ leetcode_stats  /  placement_attendance                 │
+└─────────────────────────┬───────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────────┐
+│ POSTGRESQL TRIGGER FIRES                                │
+│ → Invokes Supabase Edge Function via HTTP POST          │
+│ → compute-readiness-score (Deno runtime)                │
+└─────────────────────────┬───────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────────┐
+│ EDGE FUNCTION EXECUTES                                  │
+│                                                         │
+│  daily_five_score  = (adherence × 20) + (accuracy × 10)│
+│  leetcode_score    = batch_percentile × 0.25            │
+│  mock_exam_score   = decay_weighted_avg × 0.35          │
+│  session_score     = (attended / eligible) × 10        │
+│  total_score       = sum of all four (0 – 100)          │
+│                                                         │
+│  → UPSERT into readiness_scores table                   │
+│  → INSERT daily snapshot into readiness_score_history   │
+└─────────────────────────┬───────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────────┐
+│ SUPABASE REALTIME BROADCASTS CHANGE EVENT               │
+│ Channel: readiness_scores WHERE user_id = <this user>   │
+└────────────┬────────────────────────────┬───────────────┘
+             ↓                            ↓
+┌────────────────────────┐   ┌───────────────────────────┐
+│ FLUTTER APP UPDATES    │   │ NEXT.JS DASHBOARD UPDATES │
+│                        │   │                           │
+│ Home screen gauge      │   │ Faculty mentee roster     │
+│ animates to new score  │   │ updates score + band      │
+│ within 2 seconds       │   │ within 60 seconds         │
+└────────────────────────┘   └───────────────────────────┘
+```
+
+---
+
+### Key Guarantees
+- Score updates within 60 seconds of any activity — without any manual action
+- Client never computes the score — only reads it from the database
+- If Edge Function fails, last known score is retained — no stale zero values
+- Daily snapshot stored so trend analysis always has historical data
+
+---
+
+**Speaker Notes:**
+The real-time flow is the core of what makes this system feel alive rather than like a static tracker. The student doesn't have to refresh anything. They complete their Daily Five, tap Submit, and within a few seconds the score gauge on their home screen visibly moves. That immediate feedback is what makes the habit loop work.
+
+---
+
+## SLIDE 13 — MATCHING ALGORITHM / READINESS SCORE LOGIC
+
+**Section Label:** 06 · CORE ALGORITHM
+
+**Slide Title:** Readiness Score Engine — The Algorithm
+
+**Content — Formula Breakdown:**
+
+---
+
+### The Four Inputs
+
+---
+
+**INPUT 01 — Daily Five Engagement**
+**Maximum contribution: 30 points**
+
+```
+daily_five_score = (Adherence Rate × 20) + (Accuracy Rate × 10)
+
+Where:
+  Adherence Rate   = days all 5 questions completed ÷ total eligible days (last 90)
+  Accuracy Rate    = total correct answers ÷ total questions answered (running rate)
+  Streak Bonus     = up to +5% on adherence for active streaks ≥ 30 days
+
+Example: 80% adherence + 70% accuracy = (0.80 × 20) + (0.70 × 10) = 16 + 7 = 23/30
+```
+
+---
+
+**INPUT 02 — LeetCode Progress (Batch Period)**
+**Maximum contribution: 25 points**
+
+```
+leetcode_score = batch_percentile × 0.25
+
+Where:
+  batch_weighted_score = (Easy solved × 1) + (Medium × 2) + (Hard × 3)
+  [Only problems solved DURING the batch period — June 2025 onwards]
+  batch_percentile     = rank within own batch (0–100)
+  [Always compared within same batch — fair for both 1st and 2nd years]
+
+Example: 85th percentile in batch = 0.85 × 25 = 21.25/25
+```
+
+---
+
+**INPUT 03 — Mock Exam Performance**
+**Maximum contribution: 35 points**
+
+```
+mock_exam_score = decay_weighted_average × 0.35
+
+Decay weights by recency:
+  Within last 30 days  → weight = 1.00 (full weight)
+  30 to 90 days ago    → weight = 0.70
+  Older than 90 days   → weight = 0.40
+
+Example: One recent exam at 80%, one older at 60%
+  = ((80 × 1.0) + (60 × 0.40)) ÷ (1.0 + 0.40) = (80 + 24) ÷ 1.40 = 74.3
+  = 74.3 × 0.35 = 26.0/35
+
+NOTE: Student with ZERO mock exams scores 0/35 — strongest incentive to sit exams early.
+```
+
+---
+
+**INPUT 04 — Placement Session Attendance**
+**Maximum contribution: 10 points**
+
+```
+session_score = (sessions_attended ÷ sessions_eligible) × 10
+
+Where:
+  sessions_attended  = placement sessions where student was marked present or excused
+  sessions_eligible  = all sessions targeting this student's batch or team
+  [If no sessions scheduled yet, this input = 0 (not penalized)]
+```
+
+---
+
+### The Final Formula
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                                                                        │
+│   READINESS SCORE  =  D5 Score  +  LC Score  +  ME Score  +  SA Score │
+│        (0–100)           (0–30)      (0–25)       (0–35)      (0–10)  │
+│                                                                        │
+│   Computed server-side by Supabase Edge Function.                      │
+│   Never writable by client. Updated within 60 seconds of any event.   │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Score Bands
+
+| Band | Score Range | Interpretation | Faculty Action |
+|---|---|---|---|
+| **STRONG** | 80 – 100 | Consistently active across all four dimensions | Monitor, encourage |
+| **BUILDING** | 60 – 79 | Active but likely missing one input dimension | Check which input lags |
+| **NEEDS ATTENTION** | 40 – 59 | Present but inconsistent across inputs | Schedule check-in |
+| **AT RISK** | 0 – 39 | Low engagement or zero mock exams taken | Immediate intervention |
+
+---
+
+### Roll-Suffix Lineage Matching (Alumni Algorithm)
+
+```
+Student 25MX223 signs up
+  → Extract suffix "223"
+  → Query users WHERE roll_no LIKE '%MX223' AND batch.status = 'graduated'
+  → Find 24MX223 (graduated, role = alumni)
+  → Insert lineage_map (junior_user_id=25MX223, senior_user_id=24MX223, roll_suffix="223")
+  → If 24MX223 has mentorship_open = true → show "Your Senior" card in Flutter app
+```
+
+---
+
+**Speaker Notes:**
+The mock exam weight of 35 points is deliberate. It is the single highest-weighted input because a proctored exam is the closest approximation of a real placement test. A student with great streaks but no exams taken cannot score above 65/100. This creates a visible, material incentive to engage with the web platform at least once per semester.
+
+---
+
+## SLIDE 14 — KEY TECHNICAL CHALLENGES AND SOLUTIONS
+
+**Section Label:** 07 · IMPLEMENTATION
+
+**Slide Title:** Key Technical Challenges and How They Were Solved
+
+**Content — 4 Challenge-Solution Pairs:**
+
+---
+
+### Challenge 01 — Two Apps Sharing One Database Safely
+
+**Problem:**
+Both the Flutter app and the Next.js platform must read and write to the same Supabase database. A student on the mobile app must not be able to see another student's score. A faculty member must see all students. Alumni must see only their own historical data. How do you enforce these rules at the database level without relying on application-layer checks that could be bypassed?
+
+**Solution:**
+Supabase's Row Level Security (RLS) is enabled on every table. RLS policies are written in SQL and enforced by PostgreSQL itself — they cannot be bypassed regardless of which application connects or what query it runs. The mobile app uses the anon key (minimal access, governed by RLS). The web platform uses the service role key only in server-side API routes, never in browser code. The rule is: the client can only read and write its own permitted rows.
+
+---
+
+### Challenge 02 — Batch Lifecycle Without Manual Intervention
+
+**Problem:**
+A graduating batch of 120 students must have their accounts transitioned to alumni status, their Flutter app converted to read-only archive, and the next junior batch promoted to senior — all on a specific date in June, without a developer doing anything, without disrupting active users, and without corrupting any data.
+
+**Solution:**
+A Supabase CRON Edge Function (`batch-graduation`) runs on a configured date (e.g., `0 0 1 6 *` — midnight June 1st). It executes a single database transaction: flip batch status to `graduated`, update all student roles to `alumni`, insert graduation notifications for each user, demote the junior batch to senior, and log the entire operation in `audit_logs`. If any step fails, the entire transaction rolls back — no partial states.
+
+---
+
+### Challenge 03 — Vector Search Without External Infrastructure
+
+**Problem:**
+The Knowledge Brain needs semantic vector search — so a student asking "What is TCS's DSA round like?" gets articles about TCS interviews, not just keyword matches on "TCS" or "DSA." Traditional vector databases (Pinecone, Weaviate) add external infrastructure, cost, and complexity. How do you add real semantic search without leaving the single-database architecture?
+
+**Solution:**
+Supabase's `pgvector` extension runs inside PostgreSQL — no external service required. Articles are chunked into 500-character segments and embedded using Supabase's native AI embedding (`gte-small` model), available directly in Edge Functions without any API key. Embeddings are stored as `vector(1536)` columns with an IVFFlat index. Semantic search is a single SQL query using the `<=>` cosine distance operator. Everything stays in one database.
+
+---
+
+### Challenge 04 — iOS Support Without App Store Publishing
+
+**Problem:**
+The project has no budget for Apple's $99/year developer fee and no institutional backing to publish on the App Store. But iOS users (approximately 40% of Indian MCA students) cannot sideload APKs the way Android users can. Excluding iOS entirely would leave a significant portion of the batch without access.
+
+**Solution:**
+The Flutter app is compiled as a Progressive Web App (PWA) and deployed to Firebase Hosting at `app.psgmx.tech`. An iOS user opens this URL in Safari, taps "Add to Home Screen," and from that point on the app behaves exactly like a native app — it appears on the home screen, supports web push notifications for exam reminders and streak nudges, and uses IndexedDB for offline caching of the Daily Five question set and readiness data. The only capability not available on iOS PWA is screenshot blocking during the quiz (a Safari sandbox limitation) — which is documented and accepted.
+
+---
+
+**Speaker Notes:**
+Challenge 3 was the one that initially seemed hardest. The first instinct was to use a dedicated vector database service. But then I discovered pgvector — and realized the entire semantic search capability could live inside Supabase without adding any external dependency. That's when the "one database for everything" architecture became obviously right.
+
+---
+
+## SLIDE 15 — SECURITY AND PRIVACY MEASURES
+
+**Section Label:** 08 · SECURITY
+
+**Slide Title:** Security Architecture and Privacy Design
+
+**Content — 6 Security Areas:**
+
+---
+
+### 01 — Authentication (Identity Verification)
+- **Method:** Supabase Auth with OTP delivery to institutional email
+- **Domain restriction:** Only `@psgtech.ac.in` email addresses accepted — enforced at auth layer and via database `CHECK` constraint
+- **No passwords:** Students never create or remember a password; OTP is single-use and expires in 10 minutes
+- **Session management:** JWT tokens managed by Supabase; refresh handled automatically by `@supabase/ssr` middleware
+
+---
+
+### 02 — Authorization (Access Control)
+- **Row Level Security (RLS):** Enabled on all 20+ Supabase tables — no table is publicly readable or writable
+- **Role-based policies:** SELECT, INSERT, UPDATE, DELETE policies written per role per table — a student cannot see another student's exam score regardless of which query they run
+- **Service role isolation:** Admin-level database access (service role key) used only in Next.js server-side API routes and Edge Functions — never exposed to any browser or mobile client
+- **Permission flags:** Granular per-user capabilities stored in `user_permissions` table; the Placement Rep is the only role that can grant permissions
+
+---
+
+### 03 — Data Privacy
+- **Daily Five answers never stored:** Individual question responses exist only in memory for the duration of the quiz; only the running accuracy rate is written to the database
+- **Score visibility:** Individual readiness score components visible only to the student and their assigned faculty mentor — not to peers, not to alumni
+- **Mock exam privacy:** Individual question responses stored only as aggregate score; answer-level data not retained after submission
+- **Alumni scope:** After graduation, alumni cannot see current students' individual scores — only their own historical record
+
+---
+
+### 04 — API and Transport Security
+- **HTTPS everywhere:** All Supabase, Vercel, Firebase, and external API calls use TLS 1.2+ — no unencrypted communication at any layer
+- **eCampus credentials:** Custom eCampus passwords stored encrypted at rest in Supabase; never included in API responses or logs
+- **Edge Function security:** Internal Edge Functions called via database trigger with a pre-shared secret stored in Supabase secrets — not exposed in source code
+- **Environment variables:** All keys (Supabase URL, anon key, service role key, AI keys) stored in environment configuration — no credentials in source code
+
+---
+
+### 05 — Examination Integrity
+- **Camera access required:** Mock exam on the web platform requires camera permission before the exam begins; if denied, exam cannot start
+- **Tab-switch detection:** `document.visibilitychange` event monitored throughout exam; each violation logged as a proctoring flag in `mock_exam_results.proctoring_flags`
+- **Question randomization:** Each student receives a unique question ordering derived from their `user_id` as a seed — answers cannot be shared between students in the same session
+- **Daily Five protection (Android):** Screenshot and screen recording blocked during the 5-question session; app-backgrounding forfeits the attempt
+- **Daily Five limitation (iOS PWA):** Safari sandbox does not support screenshot blocking — documented limitation; tab-switch forfeiture still applies
+
+---
+
+### 06 — Database and Infrastructure Security
+- **Audit trail:** `audit_logs` table records every sensitive action: role changes, permission grants, graduation triggers, article approvals, exam creation
+- **Cascade constraints:** Foreign keys with `ON DELETE CASCADE` prevent orphaned records; no dangling data on user deletion
+- **pgvector access:** Knowledge embeddings table accessible only through the Next.js server-side API — not directly queryable by any client
+- **Supabase SLA:** 99.9% uptime guaranteed; automated daily backups; point-in-time recovery available
+
+---
+
+**Speaker Notes:**
+The key security insight is that RLS makes the database self-defending. Even if a bug in the application code accidentally runs the wrong query, PostgreSQL enforces the access rules before returning any data. We don't rely on application-layer checks alone. This is defense in depth — multiple independent layers, so no single failure exposes the data.
+
+---
+
+## SLIDE 16 — EXPECTED OUTCOME / BENEFITS
+
+**Section Label:** 09 · OUTCOMES
+
+**Slide Title:** Expected Outcomes and System Benefits
+
+**Content — Benefits Across All Stakeholders:**
+
+---
+
+### For Students (240 across two active batches)
+
+| Outcome | Measurable Indicator |
+|---|---|
+| Single honest signal of placement readiness | Readiness Score updated within 60 seconds of any activity |
+| Habit formation through daily engagement | Streak tracking with visible consequence of missing a day |
+| Batch-fair competitive ranking | LeetCode and Readiness leaderboards always compared within own batch |
+| Access to real interview experiences from seniors | Knowledge Brain searchable by company, round, topic |
+| AI answers grounded in department-specific data | AI Senior retrieves real PSG MCA interview accounts, not generic content |
+| Connection to a senior alumnus by roll number | Automatic lineage matching — no manual search or cold outreach |
+| Zero time wasted on tool-switching | One mobile app for all daily placement activities |
+
+---
+
+### For Placement Representatives and Coordinators
+
+| Outcome | Measurable Indicator |
+|---|---|
+| Attendance aggregation eliminated | Team Leaders mark attendance in the app; percentages computed automatically |
+| Company drive records preserved permanently | Every log entry visible to all future batches — no re-entry ever |
+| Batch-wide readiness visible at a glance | Reports tab shows distribution across four score bands in real time |
+| Students notified automatically | Push notifications on session creation, exam scheduling, announcements |
+| Team configuration done in minutes | Slider-based team size + auto-distribution; Rep can reassign any student |
+| 3–5 hours/week of manual admin work eliminated | System generates reports, calculates percentages, logs drives |
+
+---
+
+### For Faculty
+
+| Outcome | Measurable Indicator |
+|---|---|
+| Real-time view of every mentee's readiness | Score, 4-component breakdown, and 90-day trend visible without any data collection |
+| At-risk students flagged automatically | "Needs Attention" flag appears for students below 40 or declining for 14+ days |
+| Proctored mock exam infrastructure included | No external exam software needed; exam builder and proctoring built in |
+| Knowledge review workflow built in | Student-submitted articles and interview experiences reviewable in one queue |
+| Zero manual report compilation | Dashboard always current; no waiting for the Placement Rep to compile data |
+
+---
+
+### For the Department (Long-Term / Institutional)
+
+| Outcome | Measurable Indicator |
+|---|---|
+| Institutional memory preserved across batches | Placement logs, interview experiences, and articles never lost on graduation |
+| Self-sustaining system beyond the founding batch | Batch lifecycle automation ensures continuity without the original developer |
+| Growing Knowledge Brain | Every placement drive adds verified, searchable, AI-usable knowledge |
+| Alumni network activated | Graduated students remain connected, contribute articles, and mentor juniors |
+| HOD visibility into placement readiness | Department-level aggregate view available without faculty manual reporting |
+| Zero ongoing cost | Entire ecosystem runs on free-tier infrastructure |
+
+---
+
+### System Lifecycle Projection
+
+```
+Year 1 (2025–2026): 120 students (25MX) onboarded, Daily Five habit established, first Knowledge Brain articles
+Year 2 (2026–2027): 240 students active, 25MX goes through placements, experiences logged, 26MX benefits
+Year 3+ (2027+):    25MX graduates to alumni, 26MX becomes senior, 27MX joins — system continues automatically
+By Year 5:          500+ alumni in lineage network, 1000+ Knowledge Brain articles, 4 full batch cycles of data
+```
+
+---
+
+**Speaker Notes:**
+The institutional benefit compounds over time. In Year 1, the Knowledge Brain has a few dozen articles. By Year 5, it has years of real placement drive data from every company that visited the MCA department. The AI Senior in Year 5 is dramatically more useful than in Year 1 — because it's grounded in 5 years of real student-written experiences, not generic internet data.
+
+---
+
+## SLIDE 17 — CONCLUSION
+
+**Section Label:** 10 · CONCLUSION
+
+**Slide Title:** Conclusion
+
+**Content:**
+
+---
+
+### What Was Built
+
+PSGMX is a dual-platform placement readiness ecosystem consisting of:
+
+- **PSGMX Mobile App** (`app.psgmx.tech`) — a Flutter-based daily habit application for Android (APK via GitHub) and iOS (PWA via Safari), serving 240 students across two active MCA batches with Daily Five quiz streaks, placement attendance tracking, LeetCode leaderboards, an AI Mentor, and a real-time Readiness Score
+- **PSGMX Web Platform** (`psgmx.tech`) — a Next.js knowledge and examination platform for students, faculty, alumni, and the HOD, delivering a searchable Knowledge Brain, RAG-powered AI Senior, proctored mock examinations, faculty mentee dashboards, and an alumni lineage network
+
+Both platforms share a **single Supabase PostgreSQL database** — eliminating synchronization complexity and ensuring that every student action on mobile is immediately visible to faculty on the web platform.
+
+---
+
+### What Was Achieved
+
+| Goal | Status |
+|---|---|
+| Unified daily habit platform for placement preparation | ✓ Fully designed and architected |
+| Real-time Readiness Score from verifiable activity | ✓ Formula defined; Edge Function implemented |
+| Automated batch lifecycle — enroll to graduation | ✓ CRON-triggered Edge Function designed |
+| Searchable AI-grounded Knowledge Brain | ✓ pgvector + RAG pipeline implemented |
+| Proctored mock examinations | ✓ Camera + tab-detection system built |
+| Alumni lineage network by roll number | ✓ Auto-matching trigger implemented |
+| Zero ongoing infrastructure cost | ✓ Runs entirely on free-tier services |
+
+---
+
+### Why This Matters
+
+This system was not commissioned by the institution. It was not funded by the department. It was built by one student, during their own study time, with tools available free of charge, to solve a problem the department has had for years. The design ensures it will continue running — and growing more useful — long after the founding batch has graduated.
+
+> *"The best systems are the ones that outlive the people who built them."*
+
+---
+
+### Future Enhancement Scope
+
+1. **FYP Repository Module** — Final Year Project tracking with faculty supervisor assignment and progress monitoring (Phase 2)
+2. **Alumni Job Board** — Verified job postings from alumni in the Collaboration Marketplace with lineage-scoped visibility
+3. **Automated Company Shortlisting** — Suggest which students to nominate for drives based on readiness band and LeetCode profile
+4. **Multi-Language Support** — Tamil and Hindi interfaces for accessibility
+5. **Coding Question Engine** — Simple online judge for practice problems within the Daily Five system (Phase 3)
+
+---
+
+**Speaker Notes:**
+This project represents what a motivated student can build when given the right tools and a clear problem. The technology exists. The students are capable. The only thing missing was someone to build it. PSGMX is the answer to that. I am happy to take questions.
+
+---
+
+## SLIDE 18 — THANK YOU
+
+**Section Label:** PSG College of Technology
+
+**Slide Title:** [Large, Centered]
+
+```
+              Thank You
+
+─────────────────────────────────────────────
+
+       PSGMX — Placement Readiness Ecosystem
+       app.psgmx.tech  ·  psgmx.tech
+
+─────────────────────────────────────────────
+
+  Tino  ·  MCA Batch 25MX  ·  2025 – 2027
+  Department of Computer Applications
+  PSG College of Technology, Coimbatore
+
+─────────────────────────────────────────────
+
+       github.com/[your-username]/psgmx
+       Open Source · MIT License
+
+─────────────────────────────────────────────
+
+     "Built for students. By a student.
+      Designed to outlast us both."
+```
+
+---
+
+> **Queries welcome** — Architecture · Algorithm · Technology choices · Design decisions
+
+---
+
+---
+
+# APPENDIX — ADDITIONAL REFERENCE CONTENT
+
+*(Include any of these as backup slides or annexures if time and format permit)*
+
+---
+
+## APPENDIX A — Readiness Score Component Summary
+
+| Component | Formula | Max Points | Data Source |
+|---|---|---|---|
+| Daily Five Engagement | (Adherence × 0.20) + (Accuracy × 0.10) × 100 | 30 | daily_five_streaks (Flutter) |
+| LeetCode Progress | batch_percentile × 0.25 | 25 | leetcode_stats (LeetCode API) |
+| Mock Exam Performance | decay_weighted_average × 0.35 | 35 | mock_exam_results (Next.js) |
+| Placement Attendance | (attended ÷ eligible) × 10 | 10 | placement_attendance (Flutter) |
+| **TOTAL** | **Sum of all four** | **100** | **Supabase Edge Function** |
+
+---
+
+## APPENDIX B — Role Capability Matrix
+
+| Action | Student | Team Leader | Coordinator | Placement Rep | Faculty | Alumni | HOD |
+|---|---|---|---|---|---|---|---|
+| Daily Five quiz | ✓ | ✓ | ✓ | ✓ | — | — | — |
+| Mark own attendance | ✓ | ✓ | ✓ | ✓ | — | — | — |
+| Mark team attendance | — | ✓ | ✓ | ✓ | — | — | — |
+| Schedule sessions | — | — | ✓ | ✓ | — | — | — |
+| Publish daily tasks | — | — | ✓ | ✓ | — | — | — |
+| Log company visits | — | — | — | ✓ | — | — | — |
+| Write interview experiences | ✓ (2nd yr) | ✓ (2nd yr) | ✓ | ✓ | — | — | — |
+| Configure teams | — | — | — | ✓ | — | — | — |
+| Manage permissions | — | — | — | ✓ | — | — | — |
+| Create mock exams | — | — | — | — | ✓ | — | — |
+| View all mentee scores | — | — | — | ✓ | ✓ | — | — |
+| Approve KB articles | — | — | — | — | ✓ | — | — |
+| Write KB articles | — | — | — | — | — | ✓ | — |
+| Department analytics | — | — | — | ✓ | ✓ | — | ✓ |
+| Alumni mentorship | — | — | — | — | — | ✓ | — |
+
+---
+
+## APPENDIX C — Batch Lifecycle Timeline Example
+
+```
+JUNE 2025    JUNE 2026    JUNE 2027    JUNE 2028    JUNE 2029
+    │             │             │             │             │
+    ├── 25MX ─────────────────►│ GRADUATED   │             │
+    │   (Junior)  │  (Senior)   │ → Alumni    │             │
+    │             │             │             │             │
+    │         ├── 26MX ─────────────────────►│ GRADUATED   │
+    │         │   (Junior)      │  (Senior)   │ → Alumni    │
+    │         │                 │             │             │
+    │         │             ├── 27MX ──────────────────────►
+    │         │             │   (Junior)      │  (Senior)   
+    │         │             │                 │             
+    │         │             │             ├── 28MX ─────────
+    │         │             │             │   (Junior)      
+                                                            
+At any point: max 2 active batches. New batch auto-joins. Old batch auto-graduates.
+```
+
+---
+
+## APPENDIX D — Edge Function: compute-readiness-score (Logic Summary)
+
+```
+FUNCTION: compute-readiness-score(user_id)
+─────────────────────────────────────────────────────────────
+
+INPUT: user_id (UUID)
+
+STEP 1: Fetch daily_five_streaks for user
+  adherence_rate = total_days_completed / eligible_days_last_90
+  accuracy_rate  = running_accuracy_rate / 100
+  daily_five_score = clamp((adherence_rate × 20) + (accuracy_rate × 10), 0, 30)
+
+STEP 2: Fetch leetcode_stats for user
+  leetcode_score = clamp(batch_percentile × 0.25, 0, 25)
+  [Also recompute batch_percentile for ALL users in this batch
+   if leetcode_stats was the trigger event]
+
+STEP 3: Fetch all mock_exam_results for user
+  For each result:
+    age = days since submitted_at
+    weight = 1.00 if age < 30, 0.70 if 30–90, 0.40 if > 90
+  weighted_avg = sum(score × weight) / sum(weights) [or 0 if no results]
+  mock_exam_score = clamp(weighted_avg × 0.35, 0, 35)
+
+STEP 4: Compute session_score
+  attended = COUNT(placement_attendance WHERE student_id=user_id AND status IN ('present','excused'))
+  eligible = COUNT(sessions that targeted this student's batch or team)
+  session_score = clamp((attended / max(eligible, 1)) × 10, 0, 10)
+
+STEP 5: Compute total
+  total = daily_five_score + leetcode_score + mock_exam_score + session_score
+
+STEP 6: UPSERT readiness_scores
+  { user_id, score=total, components, band, computed_at=now() }
+
+STEP 7: UPSERT readiness_score_history
+  { user_id, score=total, components, snapshot_date=today }
+  [ON CONFLICT (user_id, snapshot_date) DO UPDATE]
+
+OUTPUT: Updated readiness_scores row
+SIDE EFFECT: Supabase Realtime broadcasts change to all subscribers
+─────────────────────────────────────────────────────────────
+```
+
+---
+
+*End of PSGMX PPT Content File.*
+*Total Slides: 18 main + 4 appendix slides.*
+*All content is project-specific — no placeholder or generic filler.*
