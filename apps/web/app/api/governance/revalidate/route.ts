@@ -1,10 +1,28 @@
 // ============================================================
 // POST /api/governance/revalidate
-// Migrated stub. Knowledge Brain revalidation now handled by
-// the knowledge-ingest Edge Function.
+// Knowledge Brain cache revalidation endpoint for Faculty/HOD.
 // ============================================================
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+import { getUserFromRequest } from '@/lib/auth'
+import { revalidatePath } from 'next/cache'
 
-export async function POST() {
-  return NextResponse.json({ message: 'TODO: Use Supabase Edge Function for knowledge ingestion', status: 'stub' })
+export async function POST(req: NextRequest) {
+  try {
+    const session = await getUserFromRequest(req)
+    if (!session?.id || !['faculty', 'hod'].includes(session.role)) {
+      return NextResponse.json({ error: 'Unauthorized — Faculty or HOD required' }, { status: 401 })
+    }
+
+    revalidatePath('/knowledge')
+    revalidatePath('/student/knowledge-brain')
+    revalidatePath('/faculty/knowledge-brain')
+
+    return NextResponse.json({
+      success: true,
+      message: 'Knowledge Brain cache revalidated successfully',
+    })
+  } catch (err) {
+    console.error('[POST /api/governance/revalidate] Exception:', err)
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+  }
 }

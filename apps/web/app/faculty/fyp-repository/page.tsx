@@ -23,6 +23,37 @@ export default function FacultyFYPRepositoryDashboard() {
   const [searchQuery, setSearchQuery] = React.useState('');
   const [toastMessage, setToastMessage] = React.useState('');
 
+  React.useEffect(() => {
+    async function fetchLiveProjects() {
+      try {
+        const res = await fetch('/api/projects');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.projects?.length) {
+            const mapped = data.projects.map((p: any) => ({
+              id: p.id,
+              title: p.title,
+              domain: 'FYP Project',
+              rollId: p.users?.roll_no ?? 'Student',
+              guide: p.guide_name ?? 'Faculty',
+              members: p.team_members_count ?? 1,
+              batch: 'Active Batch',
+              status: p.status === 'completed' ? 'Completed' : 'Active',
+              statusColor: 'border-primary-purple text-primary-purple bg-page-bg',
+              icon: BrainCircuit,
+              bg: 'bg-page-bg',
+              color: 'var(--primary-purple)',
+            }));
+            setProjects(prev => [...mapped, ...prev]);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch live projects:', err);
+      }
+    }
+    fetchLiveProjects();
+  }, []);
+
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(''), 3000);
