@@ -19,7 +19,7 @@ export default async function FacultyGovernance() {
     _id: doc.id,
     title: doc.title,
     authorToken: doc.author_id,
-    freshnessScore: 0, // Placeholder
+    freshnessScore: Math.max(0, 100 - Math.floor((Date.now() - new Date(doc.created_at).getTime()) / (1000 * 60 * 60 * 24))),
     lastReviewedAt: doc.created_at,
   }));
 

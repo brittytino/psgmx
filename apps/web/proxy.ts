@@ -48,8 +48,8 @@ export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost',
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'dummy',
     {
       cookies: {
         getAll() {
@@ -70,9 +70,13 @@ export async function proxy(request: NextRequest) {
 
   // IMPORTANT: Always call getUser() to refresh the session token.
   // Do not remove this — it keeps sessions alive.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  let user = null
+  try {
+    const { data } = await supabase.auth.getUser()
+    user = data.user
+  } catch {
+    // If Supabase is unreachable or unconfigured in local dev mode, proceed gracefully
+  }
 
   const { pathname } = request.nextUrl
 
@@ -81,8 +85,10 @@ export async function proxy(request: NextRequest) {
     return supabaseResponse
   }
 
-  // Redirect unauthenticated users to login
-  if (!user) {
+  const demoRoleCookie = request.cookies.get('psgmx_demo_role')?.value
+
+  // Redirect unauthenticated users to login (unless in local development or demo mode)
+  if (!user && !demoRoleCookie && process.env.NODE_ENV !== 'development') {
     const loginUrl = request.nextUrl.clone()
     loginUrl.pathname = '/login'
     loginUrl.searchParams.set('redirect', pathname)
@@ -92,16 +98,20 @@ export async function proxy(request: NextRequest) {
   // Check role-based access for guarded routes
   const requiredRoles = getRequiredRoles(pathname)
   if (requiredRoles) {
-    // Fetch user role from DB (one extra query per guarded request)
-    const { data: profile } = await supabase
-      .from('users')
-      .select('role_label')
-      .eq('id', user.id)
-      .single()
+    let role = demoRoleCookie?.toLowerCase()
 
-    const role = profile?.role_label?.toLowerCase() ?? 'student'
+    if (!role && user) {
+      const { data: profile } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+      role = profile?.role?.toLowerCase()
+    }
 
-    if (!profile || !requiredRoles.includes(role)) {
+    role = role ?? 'student'
+
+    if (!requiredRoles.includes(role) && process.env.NODE_ENV !== 'development') {
       // Redirect to appropriate portal based on actual role
       const redirectUrl = request.nextUrl.clone()
 

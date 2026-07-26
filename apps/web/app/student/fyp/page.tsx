@@ -28,6 +28,22 @@ const facultyComments = [
 export default function FYPPage() {
   const [showAddLog, setShowAddLog] = useState(false);
   const [newNote, setNewNote] = useState('');
+  const [logs, setLogs] = useState(progressLog);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSaveLog = async () => {
+    if (!newNote.trim()) return;
+    setIsSubmitting(true);
+    const newEntry = {
+      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      note: newNote,
+      author: 'You',
+    };
+    setLogs([newEntry, ...logs]);
+    setNewNote('');
+    setShowAddLog(false);
+    setIsSubmitting(false);
+  };
 
   const currentPhaseIdx = milestones.findIndex(m => m.status === 'active');
   const progress = Math.round(((currentPhaseIdx) / (milestones.length - 1)) * 100);
@@ -120,7 +136,9 @@ export default function FYPPage() {
                   className="w-full bg-white border border-border-light rounded-xl px-4 py-3 text-[14px] text-text-main outline-none focus:border-primary-purple transition-colors resize-none"
                 />
                 <div className="flex gap-3 mt-3">
-                  <button className="px-5 py-2 bg-primary-purple text-white rounded-xl text-[13px] font-bold hover:bg-deep-violet transition-colors">Save Entry</button>
+                  <button onClick={handleSaveLog} disabled={isSubmitting} className="px-5 py-2 bg-primary-purple text-white rounded-xl text-[13px] font-bold hover:bg-deep-violet transition-colors disabled:opacity-50">
+                    {isSubmitting ? 'Saving...' : 'Save Entry'}
+                  </button>
                   <button onClick={() => setShowAddLog(false)} className="px-5 py-2 bg-white border border-border-light text-text-muted rounded-xl text-[13px] font-bold hover:bg-page-bg transition-colors">Cancel</button>
                 </div>
               </motion.div>
@@ -130,10 +148,10 @@ export default function FYPPage() {
             <div className="relative">
               <div className="absolute left-4 top-0 bottom-0 w-px bg-border-light" />
               <div className="space-y-6 pl-12">
-                {progressLog.map((entry, i) => (
+                {logs.map((entry, i) => (
                   <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.1 }} className="relative">
                     <div className="absolute -left-[44px] w-8 h-8 rounded-full bg-primary-purple flex items-center justify-center shadow-sm border-2 border-white">
-                      <span className="text-[10px] font-black text-white">{String(progressLog.length - i).padStart(2, '0')}</span>
+                      <span className="text-[10px] font-black text-white">{String(logs.length - i).padStart(2, '0')}</span>
                     </div>
                     <div className="p-4 bg-page-bg rounded-[16px] border border-border-light">
                       <p className="text-[14px] text-text-main leading-relaxed">{entry.note}</p>

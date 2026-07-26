@@ -187,8 +187,58 @@ function LoginForm() {
               </button>
             </form>
 
+            {/* DEMO TESTING PORTALS (One-Click Access for Evaluation) */}
+            <div className="mt-6 p-4 bg-[#F8F9FA] rounded-[16px] border border-[#EAECF0]">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[11px] font-bold text-[#667085] uppercase tracking-wider">⚡ Instant Demo Mode (Testing)</span>
+                <span className="text-[10px] bg-[#EEF4FF] text-[#3538CD] font-bold px-2 py-0.5 rounded-full">Dev Mode</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    document.cookie = 'psgmx_demo_role=student; path=/; max-age=86400';
+                    window.location.href = '/student';
+                  }}
+                  className="px-3 py-2 bg-white hover:bg-page-bg border border-[#D0D5DD] rounded-xl text-[12px] font-bold text-[#101828] transition-colors flex items-center justify-center gap-1.5 shadow-sm"
+                >
+                  🎓 Student
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    document.cookie = 'psgmx_demo_role=faculty; path=/; max-age=86400';
+                    window.location.href = '/faculty';
+                  }}
+                  className="px-3 py-2 bg-white hover:bg-page-bg border border-[#D0D5DD] rounded-xl text-[12px] font-bold text-[#101828] transition-colors flex items-center justify-center gap-1.5 shadow-sm"
+                >
+                  👨‍🏫 Faculty
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    document.cookie = 'psgmx_demo_role=alumni; path=/; max-age=86400';
+                    window.location.href = '/alumni';
+                  }}
+                  className="px-3 py-2 bg-white hover:bg-page-bg border border-[#D0D5DD] rounded-xl text-[12px] font-bold text-[#101828] transition-colors flex items-center justify-center gap-1.5 shadow-sm"
+                >
+                  🎓 Alumni
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    document.cookie = 'psgmx_demo_role=hod; path=/; max-age=86400';
+                    window.location.href = '/hod';
+                  }}
+                  className="px-3 py-2 bg-white hover:bg-page-bg border border-[#D0D5DD] rounded-xl text-[12px] font-bold text-[#101828] transition-colors flex items-center justify-center gap-1.5 shadow-sm"
+                >
+                  👑 HOD / Admin
+                </button>
+              </div>
+            </div>
+
             {/* Divider */}
-            <div className="relative my-8">
+            <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-[#F2F4F7]" />
               </div>

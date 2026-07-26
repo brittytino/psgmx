@@ -1,8 +1,12 @@
 import type { NextConfig } from "next";
+import path from "path";
 
 const nextConfig: NextConfig = {
   output: "standalone",
   poweredByHeader: false,
+  turbopack: {
+    root: path.resolve(__dirname),
+  },
 
   // Tell Next.js to only import what's actually used from these large libraries
   // instead of loading their entire module graph during compilation
