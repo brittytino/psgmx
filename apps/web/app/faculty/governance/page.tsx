@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/purity */
 import React from 'react';
 import { createClient } from '@/lib/supabase/server';
 import { AlertCircle } from 'lucide-react';
