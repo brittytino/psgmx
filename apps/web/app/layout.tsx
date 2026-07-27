@@ -8,6 +8,7 @@ import RouteLoadingOverlay from "@/components/basic/RouteLoadingOverlay";
 import { Suspense } from "react";
 import { UIProvider } from "@/components/providers/ui-provider";
 import ImpersonationBanner from "@/components/auth/ImpersonationBanner";
+import IOSInstallModal from "@/components/platform/IOSInstallModal";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -56,6 +57,8 @@ export default function RootLayout({
           </Suspense>
           {children}
         </UIProvider>
+        {/* iOS "Add to Home Screen" install guide — client-side only, no-op on non-iOS */}
+        <IOSInstallModal />
       </body>
     </html>
   );
