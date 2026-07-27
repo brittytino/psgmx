@@ -38,8 +38,10 @@ const PUBLIC_ROUTES = [
   '/login',
   '/join-alumni',
   '/change-password',
-  '/api/auth',    // covers /api/auth/login, /api/auth/verify, /api/auth/logout, etc.
+  '/download',        // Android download landing page
+  '/api/auth',        // covers /api/auth/login, /api/auth/verify, /api/auth/logout, etc.
   '/api/health',
+  '/api/download',    // APK redirect API
 ]
 
 function isPublicRoute(pathname: string): boolean {
@@ -62,10 +64,11 @@ export async function proxy(request: NextRequest) {
   const userAgent = request.headers.get('user-agent') ?? ''
 
   // ── Android redirect ──────────────────────────────────────
-  // Android mobile visitors hitting the landing page are redirected
-  // to the latest APK. Deep links and API routes are unaffected.
+  // Android mobile visitors hitting the landing page are sent to the
+  // branded download page first — not directly to the APK.
+  // Deep links (/login, /student, etc.) are unaffected.
   if (pathname === '/' && isAndroidMobileBrowser(userAgent)) {
-    return NextResponse.redirect(new URL('/api/download/android', request.url))
+    return NextResponse.redirect(new URL('/download', request.url))
   }
 
   let supabaseResponse = NextResponse.next({ request })
