@@ -6,6 +6,19 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+// ── Platform detection ──────────────────────────────────────
+// Returns true for Android *phone* browsers (not tablets, not bots).
+// Android phones include both "Android" and "Mobile" in their UA.
+// Android tablets omit "Mobile", so they continue to get the web app.
+function isAndroidMobileBrowser(userAgent: string): boolean {
+  if (!userAgent) return false
+  const ua = userAgent.toLowerCase()
+  // Exclude common bots/crawlers that might spoof a mobile UA
+  const isBot = /bot|crawl|spider|slurp|bingpreview|googlebot|facebookexternalhit/.test(ua)
+  if (isBot) return false
+  return ua.includes('android') && ua.includes('mobile')
+}
+
 // Route → allowed roles map
 // key: route prefix | value: array of allowed `role` values (from users table)
 const ROLE_GUARDS: Record<string, string[]> = {
@@ -45,6 +58,16 @@ function getRequiredRoles(pathname: string): string[] | null {
 }
 
 export async function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl
+  const userAgent = request.headers.get('user-agent') ?? ''
+
+  // ── Android redirect ──────────────────────────────────────
+  // Android mobile visitors hitting the landing page are redirected
+  // to the latest APK. Deep links and API routes are unaffected.
+  if (pathname === '/' && isAndroidMobileBrowser(userAgent)) {
+    return NextResponse.redirect(new URL('/api/download/android', request.url))
+  }
+
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -78,7 +101,7 @@ export async function proxy(request: NextRequest) {
     // If Supabase is unreachable or unconfigured in local dev mode, proceed gracefully
   }
 
-  const { pathname } = request.nextUrl
+  // pathname was already extracted above for the Android check
 
   // Allow public routes without authentication
   if (isPublicRoute(pathname)) {
