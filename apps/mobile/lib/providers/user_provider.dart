@@ -20,8 +20,7 @@ class UserProvider with ChangeNotifier {
   bool _needsCalibration = false;
   bool _needsGraduationScreen = false;
 
-  // Simulation Mode
-  UserRole? _simulatedRole;
+  // Removed simulation mode fields
 
   UserProvider({required AuthService authService})
       : _authService = authService {
@@ -36,39 +35,22 @@ class UserProvider with ChangeNotifier {
   bool get needsCalibration => _needsCalibration;
   bool get needsGraduationScreen => _needsGraduationScreen;
 
-  bool get isSimulating => _simulatedRole != null;
-  UserRole? get simulatedRole => _simulatedRole;
-
   /// Returns true if the current user holds [permission].
   bool hasPermission(UserPermission permission) =>
       _currentUser?.hasPermission(permission) ?? false;
 
   AuthService get authService => _authService;
 
-  bool get isStudent => _simulatedRole != null
-      ? _simulatedRole == UserRole.student
-      : (_currentUser?.isStudent ?? false);
+  bool get isStudent => _currentUser?.isStudent ?? false;
 
-  bool get isTeamLeader => _simulatedRole != null
-      ? _simulatedRole == UserRole.teamLeader
-      : (_currentUser?.isTeamLeader ?? false);
+  bool get isTeamLeader => _currentUser?.isTeamLeader ?? false;
 
-  bool get isCoordinator => _simulatedRole != null
-      ? _simulatedRole == UserRole.coordinator
-      : (_currentUser?.isCoordinator ?? false);
+  bool get isCoordinator => _currentUser?.isCoordinator ?? false;
 
-  bool get isPlacementRep => _simulatedRole != null
-      ? _simulatedRole == UserRole.placementRep
-      : (_currentUser?.isPlacementRep ?? false);
+  bool get isPlacementRep => _currentUser?.isPlacementRep ?? false;
 
   bool get hasActualAdminAccess => _currentUser?.hasAdminAccess ?? false;
   bool get isActualPlacementRep => _currentUser?.isPlacementRep ?? false;
-
-  void setSimulationRole(UserRole? role) {
-    if (!isActualPlacementRep) return;
-    _simulatedRole = role;
-    notifyListeners();
-  }
 
   void retryInit() {
     _init();

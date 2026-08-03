@@ -178,116 +178,88 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       );
     }
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-              child: _buildHeader(firstName, Theme.of(context)),
-            ),
-            Expanded(
-              child: SingleChildScrollView(
-                physics: const ClampingScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(20.0, 8.0, 20.0, 24.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Hero Banner
-                    _buildHeroBanner(),
-                    const SizedBox(height: 24),
+    return MediaQuery(
+      data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
+      child: Scaffold(
+        backgroundColor: const Color(0xFFFAFAFA),
+        body: SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+                child: _buildHeader(firstName, Theme.of(context)),
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  physics: const ClampingScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(20.0, 4.0, 20.0, 32.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Hero Banner
+                      _buildHeroBanner(),
+                      const SizedBox(height: 24),
 
-                    // Placement Readiness
-                    _buildReadinessCard(),
-                    const SizedBox(height: 24),
+                      // Placement Readiness Card
+                      _buildReadinessCard(),
+                      const SizedBox(height: 24),
 
-                    // Dual Cards (Spark Five & Logbook)
-                    Row(
-                      children: [
-                        Expanded(child: _buildSparkCard(context)),
-                        const SizedBox(width: 16),
-                        Expanded(child: _buildLogCard(context)),
-                      ],
-                    ),
-                    const SizedBox(height: 32),
-
-                    // LeetCode Progress
-                    _buildLeetCodeCard(),
-                    const SizedBox(height: 32),
-
-                    // Readiness Top Performers Podium
-                    _buildReadinessLeaderboardList(user?.uid ?? ''),
-                    const SizedBox(height: 32),
-                    
-                    // LeetCode Top Solvers Medals
-                    _buildLeetCodeLeaderboardList(),
-                    const SizedBox(height: 32),
-                    
-                    // Bottom Promotional Banner
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFFF8FAFC), Color(0xFFEEF2FF)],
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
-                      ),
-                      child: Row(
+                      // Dual Cards (Spark Five & Logbook)
+                      Row(
                         children: [
-                          Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(color: const Color(0xFF4F46E5).withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, 4)),
-                              ],
-                            ),
-                            child: const Icon(LucideIcons.trophy, color: Color(0xFF4F46E5), size: 12),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Climb the ranks, inspire others!', style: GoogleFonts.sora(fontSize: 9, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
-                                const SizedBox(height: 2),
-                                Text('Consistency today, leadership tomorrow.', style: GoogleFonts.inter(fontSize: 9, color: const Color(0xFF64748B))),
-                              ],
-                            ),
-                          ),
+                          Expanded(child: _buildSparkCard(context)),
+                          const SizedBox(width: 16),
+                          Expanded(child: _buildLogCard(context)),
                         ],
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 24),
+
+                      // LeetCode Progress Card
+                      _buildLeetCodeCard(),
+                      const SizedBox(height: 24),
+
+                      // Readiness Top Performers Podium
+                      _buildReadinessLeaderboardList(user?.uid ?? ''),
+                      const SizedBox(height: 24),
+
+                      // LeetCode Top Solvers Medals
+                      _buildLeetCodeLeaderboardList(),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
-      floatingActionButton: Container(
-        height: 64,
-        width: 64,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF4F46E5).withValues(alpha: 0.3),
-              blurRadius: 24,
-              spreadRadius: 4,
+        floatingActionButton: Container(
+          height: 60,
+          width: 60,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: const Color(0xFF0F172A),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF4F46E5).withValues(alpha: 0.35),
+                blurRadius: 20,
+                spreadRadius: 2,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: FloatingActionButton(
+            onPressed: () => context.push('/ai-mentor'),
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            highlightElevation: 0,
+            child: ClipOval(
+              child: Image.asset(
+                'assets/images/home/sparkAI.png',
+                width: 46,
+                height: 46,
+                fit: BoxFit.cover,
+              ),
             ),
-          ],
-        ),
-        child: FloatingActionButton(
-          onPressed: () => context.push('/ai-mentor'),
-          backgroundColor: const Color(0xFF0F172A),
-          elevation: 0,
-          child: ClipOval(child: Image.asset('assets/images/home/sparkAI.png', width: 44, height: 44, fit: BoxFit.cover)),
+          ),
         ),
       ),
     );
@@ -308,53 +280,62 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 '$greeting, $name! 👋',
-                style: GoogleFonts.sora(fontSize: 20, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface, letterSpacing: -0.5),
+                style: GoogleFonts.sora(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF0F172A),
+                  letterSpacing: -0.5,
+                ),
               ),
               const SizedBox(height: 4),
               Text(
                 'Let\'s make today count.',
-                style: GoogleFonts.inter(fontSize: 12, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7)),
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w400,
+                  color: const Color(0xFF64748B),
+                ),
               ),
             ],
           ),
         ),
-        const SizedBox(width: 16),
+        const SizedBox(width: 12),
         Row(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Streak
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                AnimatedBuilder(
-                  animation: _fireGlowAnim,
-                  builder: (context, child) {
-                    return Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        boxShadow: _currentStreak > 0 ? [
-                          BoxShadow(
-                            color: const Color(0xFFFF6B00).withValues(alpha: 0.3 + _fireGlowAnim.value * 0.4),
-                            blurRadius: 8 + _fireGlowAnim.value * 8,
-                            spreadRadius: _fireGlowAnim.value * 2,
-                          ),
-                          BoxShadow(
-                            color: const Color(0xFFFFD700).withValues(alpha: 0.2 + _fireGlowAnim.value * 0.2),
-                            blurRadius: 4 + _fireGlowAnim.value * 4,
-                            spreadRadius: _fireGlowAnim.value,
-                          ),
-                        ] : [],
-                      ),
-                      child: ShaderMask(
+            // Streak Pill Badge
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: const Color(0xFFF1F5F9), width: 1.5),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  AnimatedBuilder(
+                    animation: _fireGlowAnim,
+                    builder: (context, child) {
+                      return ShaderMask(
                         shaderCallback: (bounds) => const LinearGradient(
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
@@ -362,34 +343,64 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                           stops: [0.0, 0.5, 1.0],
                         ).createShader(bounds),
                         child: const FaIcon(FontAwesomeIcons.fire, color: Colors.white, size: 16),
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  '$_currentStreak',
-                  style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B)),
-                ),
-              ],
-            ),
-            const SizedBox(width: 16),
-            // Bell
-            GestureDetector(
-              onTap: () => context.push('/notifications'),
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  const Icon(LucideIcons.bell, color: Color(0xFF1E293B), size: 16),
-                  Positioned(
-                    right: 0, top: 0,
-                    child: Container(width: 8, height: 8, decoration: const BoxDecoration(color: AppTheme.accentCoral, shape: BoxShape.circle)),
+                      );
+                    },
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    '$_currentStreak',
+                    style: GoogleFonts.sora(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF1E293B),
+                    ),
                   ),
                 ],
               ),
             ),
+            const SizedBox(width: 10),
+            // Notification Bell Button
+            GestureDetector(
+              onTap: () => context.push('/notifications'),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFFF1F5F9), width: 1.5),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      const Icon(LucideIcons.bell, color: Color(0xFF1E293B), size: 18),
+                      Positioned(
+                        right: -1,
+                        top: -1,
+                        child: Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFEF4444),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           ],
-        )
+        ),
       ],
     );
   }
@@ -397,26 +408,23 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   Widget _buildHeroBanner() {
     return Container(
       width: double.infinity,
+      height: 110,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 16,
             offset: const Offset(0, 4),
           ),
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: SizedBox(
-          width: double.infinity,
-          height: 90,
-          child: Image.asset(
-            'assets/images/home/homeBanner.png',
-            fit: BoxFit.cover,
-            alignment: Alignment.center,
-          ),
+        borderRadius: BorderRadius.circular(20),
+        child: Image.asset(
+          'assets/images/home/homeBanner.png',
+          fit: BoxFit.cover,
+          alignment: Alignment.center,
         ),
       ),
     );
@@ -435,13 +443,20 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     final xpText = _getLevelXpText(solved);
 
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 20, offset: const Offset(0, 10))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -450,18 +465,27 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 child: Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(color: const Color(0xFFEF4444), borderRadius: BorderRadius.circular(10)),
-                      child: const Icon(LucideIcons.code, color: Colors.white, size: 12),
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEF4444),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(LucideIcons.code, color: Colors.white, size: 18),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('LeetCode Progress', style: GoogleFonts.sora(fontSize: 9, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
+                          Text(
+                            'LeetCode Progress',
+                            style: GoogleFonts.sora(fontSize: 17, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B)),
+                          ),
                           const SizedBox(height: 2),
-                          Text('Keep building. Every problem counts.', style: GoogleFonts.inter(fontSize: 9, color: const Color(0xFF64748B))),
+                          Text(
+                            'Keep building. Every problem counts.',
+                            style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748B)),
+                          ),
                         ],
                       ),
                     ),
@@ -473,8 +497,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 onTap: () => context.push('/leetcode-arena'),
                 child: Row(
                   children: [
-                    Text('View All', style: GoogleFonts.inter(fontSize: 8, fontWeight: FontWeight.w600, color: AppTheme.accentCoral)),
-                    const Icon(LucideIcons.chevronRight, size: 12, color: AppTheme.accentCoral),
+                    Text('View All', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.accentCoral)),
+                    const SizedBox(width: 2),
+                    const Icon(LucideIcons.chevronRight, size: 14, color: AppTheme.accentCoral),
                   ],
                 ),
               ),
@@ -485,7 +510,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             children: [
               // Gauge
               SizedBox(
-                width: 120, height: 120,
+                width: 110,
+                height: 110,
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
@@ -499,15 +525,22 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(solved.toString(), style: GoogleFonts.sora(fontSize: 12, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B), height: 1.0)),
+                        Text(
+                          solved.toString(),
+                          style: GoogleFonts.sora(fontSize: 30, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B), height: 1.0),
+                        ),
                         const SizedBox(height: 2),
-                        Text('Solved\nTotal', textAlign: TextAlign.center, style: GoogleFonts.inter(fontSize: 8, color: const Color(0xFF64748B))),
+                        Text(
+                          'Solved\nTotal',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF64748B)),
+                        ),
                       ],
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 24),
+              const SizedBox(width: 20),
               // Level & XP
               Expanded(
                 child: Column(
@@ -517,7 +550,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       children: [
                         Container(width: 8, height: 8, decoration: BoxDecoration(color: levelColor, shape: BoxShape.circle)),
                         const SizedBox(width: 8),
-                        Text('Current Level', style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF64748B))),
+                        Text('Current Level', style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF64748B))),
                       ],
                     ),
                     const SizedBox(height: 4),
@@ -525,9 +558,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text(level, style: GoogleFonts.sora(fontSize: 11, fontWeight: FontWeight.bold, color: levelColor)),
-                        Text(xpText, 
-                          style: GoogleFonts.inter(fontSize: 8, color: const Color(0xFF64748B), fontWeight: FontWeight.w600)),
+                        Text(level, style: GoogleFonts.sora(fontSize: 16, fontWeight: FontWeight.bold, color: levelColor)),
+                        Text(xpText, style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF64748B), fontWeight: FontWeight.w600)),
                       ],
                     ),
                     const SizedBox(height: 8),
@@ -537,10 +569,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                         value: math.min(1.0, progress),
                         backgroundColor: const Color(0xFFF1F5F9),
                         color: levelColor,
-                        minHeight: 10,
+                        minHeight: 8,
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 18),
                     // Stats Row
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -569,12 +601,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           children: [
             Container(width: 6, height: 6, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
             const SizedBox(width: 4),
-            Text(label, style: GoogleFonts.inter(fontSize: 9, color: const Color(0xFF64748B))),
+            Text(label, style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF64748B))),
           ],
         ),
         const SizedBox(height: 4),
-        Text(val, style: GoogleFonts.sora(fontSize: 11, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
-        Text('Solved', style: GoogleFonts.inter(fontSize: 8, color: const Color(0xFF94A3B8))),
+        Text(val, style: GoogleFonts.sora(fontSize: 14, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
+        Text('Solved', style: GoogleFonts.inter(fontSize: 10, color: const Color(0xFF94A3B8))),
       ],
     );
   }
@@ -590,13 +622,20 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     final score = _readinessScore?.score ?? 0;
 
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 20, offset: const Offset(0, 10))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -605,18 +644,27 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 child: Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(color: const Color(0xFF6366F1), borderRadius: BorderRadius.circular(10)),
-                      child: const Icon(LucideIcons.target, color: Colors.white, size: 12),
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF6366F1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(LucideIcons.target, color: Colors.white, size: 18),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Placement Readiness', style: GoogleFonts.sora(fontSize: 9, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
+                          Text(
+                            'Placement Readiness',
+                            style: GoogleFonts.sora(fontSize: 17, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B)),
+                          ),
                           const SizedBox(height: 2),
-                          Text('Track your readiness. Own your future.', style: GoogleFonts.inter(fontSize: 9, color: const Color(0xFF64748B))),
+                          Text(
+                            'Track your readiness. Own your future.',
+                            style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748B)),
+                          ),
                         ],
                       ),
                     ),
@@ -628,14 +676,15 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 onTap: () => context.push('/pulse-rankings'),
                 child: Row(
                   children: [
-                    Text('View All', style: GoogleFonts.inter(fontSize: 8, fontWeight: FontWeight.w600, color: const Color(0xFF6366F1))),
-                    const Icon(LucideIcons.chevronRight, size: 12, color: Color(0xFF6366F1)),
+                    Text('View All', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFF6366F1))),
+                    const SizedBox(width: 2),
+                    const Icon(LucideIcons.chevronRight, size: 14, color: Color(0xFF6366F1)),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -645,49 +694,61 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SizedBox(
-                      width: 90, height: 90,
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          CustomPaint(
-                            painter: _GradientGaugePainter(
-                              progress: score / 100,
-                              gradientColors: const [Color(0xFF818CF8), Color(0xFF4F46E5)],
-                              trackColor: const Color(0xFFF1F5F9),
+                    Center(
+                      child: SizedBox(
+                        width: 105,
+                        height: 105,
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            CustomPaint(
+                              painter: _GradientGaugePainter(
+                                progress: score / 100,
+                                gradientColors: const [Color(0xFF818CF8), Color(0xFF4F46E5)],
+                                trackColor: const Color(0xFFEEF2FF),
+                              ),
                             ),
-                          ),
-                          Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(score.round().toString(), style: GoogleFonts.sora(fontSize: 12, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B), height: 1.0)),
-                              Text('/ 100', style: GoogleFonts.inter(fontSize: 9, color: const Color(0xFF64748B))),
-                              const SizedBox(height: 2),
-                              Text('Readiness Score', style: GoogleFonts.inter(fontSize: 8, color: const Color(0xFF64748B))),
-                            ],
-                          ),
-                        ],
+                            Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  score.round().toString(),
+                                  style: GoogleFonts.sora(fontSize: 32, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B), height: 1.0),
+                                ),
+                                Text('/ 100', style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF64748B))),
+                                const SizedBox(height: 2),
+                                Text('Readiness Score', style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF64748B))),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    Text('You\'re improving! 🔥', style: GoogleFonts.sora(fontSize: 9, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
+                    const SizedBox(height: 16),
+                    Text(
+                      'You\'re improving! 🔥',
+                      style: GoogleFonts.sora(fontSize: 15, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B)),
+                    ),
                     const SizedBox(height: 2),
-                    Text('Great job staying consistent.', style: GoogleFonts.inter(fontSize: 9, color: const Color(0xFF64748B))),
-                    const SizedBox(height: 12),
+                    Text(
+                      'Great job staying consistent.',
+                      style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748B)),
+                    ),
+                    const SizedBox(height: 14),
                     Row(
                       children: [
                         Expanded(child: _buildReadinessStat(LucideIcons.trendingUp, const Color(0xFF8B5CF6), _scoreTrend, 'vs last week')),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 6),
                         Expanded(child: _buildReadinessStat(LucideIcons.target, const Color(0xFF3B82F6), '80', 'Target')),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 6),
                         Expanded(child: _buildReadinessStat(LucideIcons.calendarDays, const Color(0xFF22C55E), '$_weeksLeft', 'Weeks Left')),
                       ],
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 16),
-              // Right side: Radar Chart
+              const SizedBox(width: 14),
+              // Right side: Radar Chart + Legend
               Expanded(
                 flex: 4,
                 child: Column(
@@ -706,10 +767,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                             final titles = ['DSA', 'Aptitude', 'Core CS', 'Soft Skills', 'Consistency'];
                             return RadarChartTitle(text: titles[index]);
                           },
-                          titleTextStyle: GoogleFonts.inter(fontSize: 8, color: const Color(0xFF1E293B)),
+                          titleTextStyle: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF334155), fontWeight: FontWeight.w500),
                           dataSets: [
                             RadarDataSet(
-                              fillColor: const Color(0xFF818CF8).withValues(alpha: 0.3),
+                              fillColor: const Color(0xFF818CF8).withValues(alpha: 0.25),
                               borderColor: const Color(0xFF6366F1),
                               entryRadius: 3,
                               dataEntries: [
@@ -724,7 +785,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                         ),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 14),
                     // Legend
                     _buildRadarLegend('DSA', comps.leetcodeMomentumPercentile.round()),
                     _buildRadarLegend('Aptitude', comps.dailyFiveAccuracyPct.round()),
@@ -746,21 +807,29 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFFF1F5F9), width: 1.5),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4, offset: const Offset(0, 2))],
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4, offset: const Offset(0, 2)),
+        ],
       ),
       child: Column(
         children: [
           Container(
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
-            child: Icon(icon, color: color, size: 12),
+            child: Icon(icon, color: color, size: 14),
           ),
           const SizedBox(height: 4),
-          Text(val, style: GoogleFonts.sora(fontSize: 9, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
+          Text(val, style: GoogleFonts.sora(fontSize: 13, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
           const SizedBox(height: 2),
-          Text(label, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.inter(fontSize: 8, color: const Color(0xFF64748B))),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.inter(fontSize: 10, color: const Color(0xFF64748B)),
+          ),
         ],
       ),
     );
@@ -768,18 +837,18 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   Widget _buildRadarLegend(String title, int val) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 6.0),
+      padding: const EdgeInsets.only(bottom: 5.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(
             children: [
-              Container(width: 6, height: 6, decoration: const BoxDecoration(color: Color(0xFF818CF8), shape: BoxShape.circle)),
+              Container(width: 7, height: 7, decoration: const BoxDecoration(color: Color(0xFF818CF8), shape: BoxShape.circle)),
               const SizedBox(width: 6),
-              Text(title, style: GoogleFonts.inter(fontSize: 9, color: const Color(0xFF1E293B), fontWeight: FontWeight.w500)),
+              Text(title, style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF334155), fontWeight: FontWeight.w500)),
             ],
           ),
-          Text(val.toString(), style: GoogleFonts.inter(fontSize: 9, color: const Color(0xFF1E293B), fontWeight: FontWeight.bold)),
+          Text(val.toString(), style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF1E293B), fontWeight: FontWeight.bold)),
         ],
       ),
     );
@@ -789,30 +858,36 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     return GestureDetector(
       onTap: () => context.push('/spark-five'),
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Image.asset('assets/images/home/notebook.png', width: 32, height: 32),
-            const SizedBox(width: 8),
+            Image.asset('assets/images/home/notebook.png', width: 44, height: 44),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Spark Five', style: GoogleFonts.sora(fontSize: 9, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
-                  const SizedBox(height: 2),
-                  Text('5 focused questions.\nSharpen daily.', style: GoogleFonts.inter(fontSize: 9, color: const Color(0xFF64748B), height: 1.2)),
-                  const SizedBox(height: 6),
+                  Text('Spark Five', style: GoogleFonts.sora(fontSize: 15, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
+                  const SizedBox(height: 4),
+                  Text('5 focused questions.\nSharpen daily.', style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF64748B), height: 1.25)),
+                  const SizedBox(height: 8),
                   Row(
                     children: [
-                      Text('Start Now', style: GoogleFonts.inter(fontSize: 8, fontWeight: FontWeight.w600, color: AppTheme.accentCoral)),
+                      Text('Start Now', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.accentCoral)),
                       const SizedBox(width: 2),
-                      const Icon(LucideIcons.arrowRight, size: 10, color: AppTheme.accentCoral),
+                      const Icon(LucideIcons.arrowRight, size: 12, color: AppTheme.accentCoral),
                     ],
                   ),
                 ],
@@ -828,30 +903,36 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     return GestureDetector(
       onTap: () => context.push('/logbook'),
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4))],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Image.asset('assets/images/home/placmentlogicon.png', width: 32, height: 32),
-            const SizedBox(width: 8),
+            Image.asset('assets/images/home/placmentlogicon.png', width: 44, height: 44),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Logbook', style: GoogleFonts.sora(fontSize: 9, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
-                  const SizedBox(height: 2),
-                  Text('Your journey,\nTracked.', style: GoogleFonts.inter(fontSize: 9, color: const Color(0xFF64748B), height: 1.2)),
-                  const SizedBox(height: 6),
+                  Text('Logbook', style: GoogleFonts.sora(fontSize: 15, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
+                  const SizedBox(height: 4),
+                  Text('Your journey,\nTracked.', style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF64748B), height: 1.25)),
+                  const SizedBox(height: 8),
                   Row(
                     children: [
-                      Text('View Logs', style: GoogleFonts.inter(fontSize: 8, fontWeight: FontWeight.w600, color: const Color(0xFF4F46E5))),
+                      Text('View Logs', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFF4F46E5))),
                       const SizedBox(width: 2),
-                      const Icon(LucideIcons.arrowRight, size: 10, color: Color(0xFF4F46E5)),
+                      const Icon(LucideIcons.arrowRight, size: 12, color: Color(0xFF4F46E5)),
                     ],
                   ),
                 ],
@@ -865,12 +946,18 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   Widget _buildLeetCodeLeaderboardList() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: const Color(0xFFF97316).withValues(alpha: 0.04), blurRadius: 20, offset: const Offset(0, 10))],
-        border: Border.all(color: const Color(0xFFFFF7ED), width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFF97316).withValues(alpha: 0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+        border: Border.all(color: const Color(0xFFFFF7ED), width: 1.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -878,18 +965,21 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: const Color(0xFFF97316), borderRadius: BorderRadius.circular(10)),
-                child: const Icon(LucideIcons.code, color: Colors.white, size: 12),
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF97316),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(LucideIcons.code, color: Colors.white, size: 18),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('LeetCode Top Solvers', style: GoogleFonts.sora(fontSize: 9, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
+                    Text('LeetCode Top Solvers', style: GoogleFonts.sora(fontSize: 17, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
                     const SizedBox(height: 2),
-                    Text('Solve more. Rank higher.', style: GoogleFonts.inter(fontSize: 9, color: const Color(0xFF64748B))),
+                    Text('Solve more. Rank higher.', style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748B))),
                   ],
                 ),
               ),
@@ -897,15 +987,15 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 onTap: () => context.push('/leetcode-arena'),
                 child: Row(
                   children: [
-                    Text('View All', style: GoogleFonts.inter(fontSize: 8, fontWeight: FontWeight.w600, color: const Color(0xFFF97316))),
+                    Text('View All', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFFF97316))),
                     const SizedBox(width: 2),
-                    const Icon(LucideIcons.chevronRight, size: 12, color: Color(0xFFF97316)),
+                    const Icon(LucideIcons.chevronRight, size: 14, color: Color(0xFFF97316)),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
           ...List.generate(
             10,
             (index) {
@@ -916,7 +1006,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               return _buildEmptyLeetCodeListItem(index + 1);
             },
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           // Bottom Banner
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -926,18 +1016,22 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             ),
             child: Row(
               children: [
-                 Container(padding: const EdgeInsets.all(6), decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.5), shape: BoxShape.circle), child: const Icon(LucideIcons.trendingUp, color: Color(0xFFF97316), size: 12)),
-                 const SizedBox(width: 10),
-                 Expanded(
-                   child: Column(
-                     crossAxisAlignment: CrossAxisAlignment.start,
-                     children: [
-                        Text('Climb the ranks!', style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
-                        Text('Solve daily. Stay consistent. Be the best.', style: GoogleFonts.inter(fontSize: 9, color: const Color(0xFF64748B))),
-                     ],
-                   ),
-                 ),
-                 const Icon(LucideIcons.barChart2, color: Color(0xFFFB923C), size: 16),
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.6), shape: BoxShape.circle),
+                  child: const Icon(LucideIcons.trendingUp, color: Color(0xFFF97316), size: 14),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Climb the ranks!', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
+                      Text('Solve daily. Stay consistent. Be the best.', style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF64748B))),
+                    ],
+                  ),
+                ),
+                const Icon(LucideIcons.barChart2, color: Color(0xFFFB923C), size: 18),
               ],
             ),
           ),
@@ -952,30 +1046,39 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     final stat3 = _readinessLeaderboard.length > 2 ? _readinessLeaderboard[2] : null;
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: const Color(0xFF4F46E5).withValues(alpha: 0.04), blurRadius: 20, offset: const Offset(0, 10))],
-        border: Border.all(color: const Color(0xFFF8FAFC), width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF4F46E5).withValues(alpha: 0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+        border: Border.all(color: const Color(0xFFF8FAFC), width: 1.5),
       ),
       child: Column(
         children: [
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: const Color(0xFF6366F1), borderRadius: BorderRadius.circular(10)),
-                child: const Icon(LucideIcons.target, color: Colors.white, size: 12),
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF6366F1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(LucideIcons.target, color: Colors.white, size: 18),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Readiness Top Performers', style: GoogleFonts.sora(fontSize: 9, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
+                    Text('Readiness Top Performers', style: GoogleFonts.sora(fontSize: 17, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
                     const SizedBox(height: 2),
-                    Text('Track your placement readiness', style: GoogleFonts.inter(fontSize: 9, color: const Color(0xFF64748B))),
+                    Text('Track your placement readiness', style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748B))),
                   ],
                 ),
               ),
@@ -983,48 +1086,56 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 onTap: () => context.push('/pulse-rankings'),
                 child: Row(
                   children: [
-                    Text('View All', style: GoogleFonts.inter(fontSize: 8, fontWeight: FontWeight.w600, color: const Color(0xFF4F46E5))),
+                    Text('View All', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFF4F46E5))),
                     const SizedBox(width: 2),
-                    const Icon(LucideIcons.chevronRight, size: 12, color: Color(0xFF4F46E5)),
+                    const Icon(LucideIcons.chevronRight, size: 14, color: Color(0xFF4F46E5)),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 28),
           // Podium
           SizedBox(
-            height: 260,
+            height: 250,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                _buildPodiumItem(stat2, 2, 110, const Color(0xFFE2E8F0), const Color(0xFF94A3B8), currentUserId),
+                _buildPodiumItem(stat2, 2, 110, const Color(0xFFF1F5F9), const Color(0xFF94A3B8), currentUserId),
                 const SizedBox(width: 8),
-                _buildPodiumItem(stat1, 1, 140, const Color(0xFFE0E7FF), const Color(0xFF6366F1), currentUserId),
+                _buildPodiumItem(stat1, 1, 140, const Color(0xFFEEF2FF), const Color(0xFF6366F1), currentUserId),
                 const SizedBox(width: 8),
-                _buildPodiumItem(stat3, 3, 90, const Color(0xFFFFEDD5), const Color(0xFFF97316), currentUserId),
+                _buildPodiumItem(stat3, 3, 90, const Color(0xFFFFF7ED), const Color(0xFFF97316), currentUserId),
               ],
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
           // Bottom Banner
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFFF1F5F9))),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFF1F5F9)),
+            ),
             child: Row(
               children: [
-                 Container(padding: const EdgeInsets.all(8), decoration: const BoxDecoration(color: Color(0xFFEEF2FF), shape: BoxShape.circle), child: const Icon(LucideIcons.trophy, color: Color(0xFF4F46E5), size: 16)),
-                 const SizedBox(width: 12),
-                 Expanded(
-                   child: Column(
-                     crossAxisAlignment: CrossAxisAlignment.start,
-                     children: [
-                        Text('Keep going, you\'re building your future!', style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
-                        Text('Consistency today, success tomorrow.', style: GoogleFonts.inter(fontSize: 9, color: const Color(0xFF64748B))),
-                     ],
-                   ),
-                 ),
-                 const Icon(LucideIcons.sparkles, color: Color(0xFFFACC15), size: 16),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: const BoxDecoration(color: Color(0xFFEEF2FF), shape: BoxShape.circle),
+                  child: const Icon(LucideIcons.trophy, color: Color(0xFF4F46E5), size: 16),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Keep going, you\'re building your future!', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
+                      Text('Consistency today, success tomorrow.', style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF64748B))),
+                    ],
+                  ),
+                ),
+                const Icon(LucideIcons.sparkles, color: Color(0xFFFACC15), size: 18),
               ],
             ),
           ),
@@ -1051,7 +1162,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               height: height,
               width: double.infinity,
               decoration: BoxDecoration(
-                gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [bgColor, bgColor.withValues(alpha: 0.1)]),
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [bgColor, bgColor.withValues(alpha: 0.2)],
+                ),
                 borderRadius: const BorderRadius.only(topLeft: Radius.circular(16), topRight: Radius.circular(16)),
               ),
               child: Column(
@@ -1060,13 +1175,22 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   const SizedBox(height: 16),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: Text(name, style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B)), textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis),
+                    child: Text(
+                      name,
+                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B)),
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                   const SizedBox(height: 2),
-                  Text(score, style: GoogleFonts.sora(fontSize: rank == 1 ? 14 : 12, fontWeight: FontWeight.bold, color: const Color(0xFF4F46E5))),
+                  Text(
+                    score,
+                    style: GoogleFonts.sora(fontSize: rank == 1 ? 18 : 15, fontWeight: FontWeight.bold, color: const Color(0xFF4F46E5)),
+                  ),
                   if (rank == 1) ...[
                     const SizedBox(height: 2),
-                    Text('Readiness Score', style: GoogleFonts.inter(fontSize: 8, color: const Color(0xFF64748B))),
+                    Text('Readiness Score', style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF64748B))),
                   ],
                 ],
               ),
@@ -1081,21 +1205,33 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(LucideIcons.crown, color: badgeColor, size: rank == 1 ? 20 : 16),
+                      Icon(LucideIcons.crown, color: badgeColor, size: rank == 1 ? 24 : 18),
                       const SizedBox(height: 4),
                       if (stat != null)
-                         AvatarWidget(name: name, avatarUrl: stat.avatarUrl, gender: stat.gender, radius: avatarRadius)
+                        AvatarWidget(name: name, avatarUrl: stat.avatarUrl, gender: stat.gender, radius: avatarRadius)
                       else
-                         Container(width: avatarRadius*2, height: avatarRadius*2, decoration: const BoxDecoration(color: Color(0xFFF1F5F9), shape: BoxShape.circle), child: Icon(LucideIcons.user, color: const Color(0xFF94A3B8), size: avatarRadius)),
+                        Container(
+                          width: avatarRadius * 2,
+                          height: avatarRadius * 2,
+                          decoration: const BoxDecoration(color: Color(0xFFF1F5F9), shape: BoxShape.circle),
+                          child: Icon(LucideIcons.user, color: const Color(0xFF94A3B8), size: avatarRadius),
+                        ),
                       const SizedBox(height: 10),
                     ],
                   ),
                   Positioned(
                     bottom: 0,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(color: badgeColor, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.white, width: 2)),
-                      child: Text(rank.toString(), style: GoogleFonts.sora(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 8)),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: badgeColor,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white, width: 2),
+                      ),
+                      child: Text(
+                        rank.toString(),
+                        style: GoogleFonts.sora(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11),
+                      ),
                     ),
                   ),
                 ],
@@ -1119,7 +1255,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: bgColor ?? Colors.transparent,
         borderRadius: BorderRadius.circular(12),
@@ -1131,16 +1267,24 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             child: _buildRankBadge(rank),
           ),
           const SizedBox(width: 10),
-          AvatarWidget(name: name, avatarUrl: avatarUrl, radius: 12),
+          AvatarWidget(name: name, avatarUrl: avatarUrl, radius: 14),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(name, style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w600, color: const Color(0xFF1E293B)), maxLines: 1, overflow: TextOverflow.ellipsis),
+            child: Text(
+              name,
+              style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFF1E293B)),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
           Row(
             children: [
-              const FaIcon(FontAwesomeIcons.fire, color: Color(0xFFF97316), size: 12),
-              const SizedBox(width: 4),
-              Text(score, style: GoogleFonts.sora(fontSize: 9, fontWeight: FontWeight.bold, color: const Color(0xFFEA580C))),
+              const FaIcon(FontAwesomeIcons.fire, color: Color(0xFFF97316), size: 14),
+              const SizedBox(width: 6),
+              Text(
+                score,
+                style: GoogleFonts.sora(fontSize: 14, fontWeight: FontWeight.bold, color: const Color(0xFFEA580C)),
+              ),
             ],
           ),
         ],
@@ -1161,15 +1305,23 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       badgeColor = const Color(0xFFD97706);
       textColor = Colors.white;
     } else {
-      return Center(child: Text(rank.toString(), style: GoogleFonts.inter(fontSize: 8, fontWeight: FontWeight.w600, color: const Color(0xFF64748B))));
+      return Center(
+        child: Text(
+          rank.toString(),
+          style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFF64748B)),
+        ),
+      );
     }
 
     return Container(
-      width: 20,
-      height: 20,
+      width: 22,
+      height: 22,
       decoration: BoxDecoration(color: badgeColor, shape: BoxShape.circle),
       child: Center(
-        child: Text(rank.toString(), style: GoogleFonts.sora(fontSize: 8, fontWeight: FontWeight.bold, color: textColor)),
+        child: Text(
+          rank.toString(),
+          style: GoogleFonts.sora(fontSize: 11, fontWeight: FontWeight.bold, color: textColor),
+        ),
       ),
     );
   }
@@ -1177,22 +1329,34 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   Widget _buildEmptyLeetCodeListItem(int rank) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       child: Row(
         children: [
           SizedBox(
             width: 24,
-            child: Center(child: Text(rank.toString(), style: GoogleFonts.inter(fontSize: 8, fontWeight: FontWeight.w600, color: const Color(0xFF64748B)))),
+            child: Center(
+              child: Text(
+                rank.toString(),
+                style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFF64748B)),
+              ),
+            ),
           ),
           const SizedBox(width: 10),
-          Container(width: 24, height: 24, decoration: const BoxDecoration(color: Color(0xFFF1F5F9), shape: BoxShape.circle), child: const Icon(LucideIcons.user, size: 12, color: Color(0xFF94A3B8))),
+          Container(
+            width: 28,
+            height: 28,
+            decoration: const BoxDecoration(color: Color(0xFFF1F5F9), shape: BoxShape.circle),
+            child: const Icon(LucideIcons.user, size: 14, color: Color(0xFF94A3B8)),
+          ),
           const SizedBox(width: 10),
-          Expanded(child: Text('-', style: GoogleFonts.inter(fontSize: 9, color: const Color(0xFF94A3B8)))),
+          Expanded(
+            child: Text('-', style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF94A3B8))),
+          ),
           Row(
             children: [
-              const FaIcon(FontAwesomeIcons.fire, color: Color(0xFFCBD5E1), size: 12),
-              const SizedBox(width: 4),
-              Text('-', style: GoogleFonts.sora(fontSize: 9, fontWeight: FontWeight.bold, color: const Color(0xFF94A3B8))),
+              const FaIcon(FontAwesomeIcons.fire, color: Color(0xFFCBD5E1), size: 14),
+              const SizedBox(width: 6),
+              Text('-', style: GoogleFonts.sora(fontSize: 14, fontWeight: FontWeight.bold, color: const Color(0xFF94A3B8))),
             ],
           ),
         ],
@@ -1211,8 +1375,8 @@ class _GradientGaugePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2;
-    const strokeWidth = 14.0;
+    final radius = (size.width / 2) - 8;
+    const strokeWidth = 12.0;
 
     final trackPaint = Paint()
       ..color = trackColor
@@ -1255,3 +1419,4 @@ class _GradientGaugePainter extends CustomPainter {
     return oldDelegate.progress != progress;
   }
 }
+

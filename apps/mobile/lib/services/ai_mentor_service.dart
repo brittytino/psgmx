@@ -52,7 +52,7 @@ class AiMentorService {
     required String userMessage,
     int maxTokens = 300,
   }) async {
-    const apiKey = SupabaseConfig.openRouterApiKey;
+    final apiKey = SupabaseConfig.openRouterApiKey;
     if (apiKey.isEmpty) {
       debugPrint('[AiMentor] No OpenRouter API key — skipping AI call');
       return null;

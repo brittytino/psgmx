@@ -100,7 +100,7 @@ class ReadinessScoreService {
     required double score,
     String? rollNo,
   }) async {
-    const apiKey = SupabaseConfig.externalPlatformApiKey;
+    final apiKey = SupabaseConfig.externalPlatformApiKey;
     if (apiKey.isEmpty) {
       debugPrint('[ReadinessScoreService] No external platform API key — skip push');
       return false;

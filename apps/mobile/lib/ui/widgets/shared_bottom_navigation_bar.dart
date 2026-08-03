@@ -40,8 +40,8 @@ class SharedBottomNavigationBar extends StatelessWidget {
             label: 'Quests'
           ),
           NavigationDestination(
-            icon: Icon(LucideIcons.calendar), 
-            label: 'Sessions'
+            icon: Icon(LucideIcons.bookOpen), 
+            label: 'Log'
           ),
           NavigationDestination(
             icon: Icon(LucideIcons.graduationCap),

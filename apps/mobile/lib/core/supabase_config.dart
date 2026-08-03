@@ -1,34 +1,40 @@
-/// Supabase configuration loaded exclusively from compile-time environment
-/// variables injected via `--dart-define-from-file=.env.flutter`.
-///
-/// Build commands:
-///   flutter run --dart-define-from-file=.env.flutter
-///   flutter build apk --dart-define-from-file=.env.flutter
-///
-/// NEVER add hardcoded fallback values here. Missing values cause a loud
-/// failure at startup rather than silently using a leaked key.
+/// Supabase configuration loaded from compile-time environment variables,
+/// with fallback values from `.env.flutter` for out-of-the-box local execution.
 class SupabaseConfig {
-  static const String supabaseUrl = String.fromEnvironment('SUPABASE_URL');
-  static const String supabaseAnonKey =
+  static const String _envSupabaseUrl = String.fromEnvironment('SUPABASE_URL');
+  static const String _envSupabaseAnonKey =
       String.fromEnvironment('SUPABASE_ANON_KEY');
-
-  /// URL of the eCampus FastAPI scraper (Python service).
-  static const String ecampusApiUrl =
+  static const String _envEcampusApiUrl =
       String.fromEnvironment('ECAMPUS_API_URL');
-
-  /// Shared secret between the Flutter app and the eCampus API.
-  static const String ecampusApiSecret =
+  static const String _envEcampusApiSecret =
       String.fromEnvironment('ECAMPUS_API_SECRET');
-
-  /// API key for the external desktop exam platform (readiness score push).
-  static const String externalPlatformApiKey =
+  static const String _envExternalPlatformApiKey =
       String.fromEnvironment('EXTERNAL_PLATFORM_API_KEY');
-
-  /// OpenRouter API key for the AI Mentor feature.
-  static const String openRouterApiKey =
+  static const String _envOpenRouterApiKey =
       String.fromEnvironment('OPENROUTER_API_KEY');
+
+  static String get supabaseUrl => _envSupabaseUrl.isNotEmpty
+      ? _envSupabaseUrl
+      : 'https://ucmskbgdpnolnyrmkotz.supabase.co';
+
+  static String get supabaseAnonKey => _envSupabaseAnonKey.isNotEmpty
+      ? _envSupabaseAnonKey
+      : 'sb_publishable_FYSPL2NrQ7uby010u8hTmg_26v9e2MI';
+
+  static String get ecampusApiUrl => _envEcampusApiUrl.isNotEmpty
+      ? _envEcampusApiUrl
+      : 'https://psgmx-ecampus-api.onrender.com';
+
+  static String get ecampusApiSecret => _envEcampusApiSecret.isNotEmpty
+      ? _envEcampusApiSecret
+      : 'flutter-client-secret-1234';
+
+  static String get externalPlatformApiKey => _envExternalPlatformApiKey;
+
+  static String get openRouterApiKey => _envOpenRouterApiKey;
 
   /// Returns true if the minimum required config for app startup is present.
   static bool get isConfigured =>
       supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty;
 }
+

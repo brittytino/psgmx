@@ -5,7 +5,7 @@ import '../providers/navigation_provider.dart';
 import '../core/utils/responsive_helper.dart';
 import 'home/home_screen.dart';
 import 'tasks/tasks_screen.dart';
-import 'sessions/placement_sessions_screen.dart';
+import 'placement_log/placement_log_screen.dart';
 import 'bunker/bunker_screen.dart';
 import 'profile/profile_screen.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -36,7 +36,7 @@ class _RootLayoutState extends State<RootLayout> {
     final screens = [
       const HomeScreen(),
       const TasksScreen(),
-      const PlacementSessionsScreen(),
+      const PlacementLogScreen(),
       const BunkerScreen(),
       const ProfileScreen(),
     ];
@@ -54,9 +54,9 @@ class _RootLayoutState extends State<RootLayout> {
         label: 'Quests'
       ),
       NavigationDestination(
-        icon: const Icon(LucideIcons.calendar), 
-        selectedIcon: Icon(LucideIcons.calendar, color: Theme.of(context).colorScheme.primary), 
-        label: 'Sessions'
+        icon: const Icon(LucideIcons.bookOpen), 
+        selectedIcon: Icon(LucideIcons.bookOpen, color: Theme.of(context).colorScheme.primary), 
+        label: 'Log'
       ),
       NavigationDestination(
         icon: const Icon(LucideIcons.graduationCap),

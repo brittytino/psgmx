@@ -10,8 +10,6 @@ import '../ui/auth/outcome_reveal_screen.dart';
 import '../ui/root_layout.dart';
 import '../ui/admin/team_management_screen.dart';
 import '../ui/admin/member_permissions_screen.dart';
-import '../ui/attendance/placement_sessions_screen.dart';
-import '../ui/attendance/new_session_screen.dart';
 import '../ui/admin/schedule_placement_session_screen.dart';
 import '../ui/daily_five/daily_five_screen.dart';
 import '../ui/admin/question_bank_screen.dart';
@@ -82,16 +80,8 @@ class AppRouter {
           builder: (context, state) => const MemberPermissionsScreen(),
         ),
         GoRoute(
-          path: '/placement-sessions',
-          builder: (context, state) => const PlacementSessionsScreen(),
-        ),
-        GoRoute(
           path: '/admin/schedule-session',
           builder: (context, state) => const SchedulePlacementSessionScreen(),
-        ),
-        GoRoute(
-          path: '/admin/new-session',
-          builder: (context, state) => const NewSessionScreen(),
         ),
         GoRoute(
           path: '/daily-five',

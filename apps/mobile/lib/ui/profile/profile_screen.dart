@@ -3,12 +3,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../providers/user_provider.dart';
 import '../widgets/avatar_widget.dart';
-import '../../models/app_user.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
-import '../../providers/leetcode_provider.dart';
-import '../../services/ecampus_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -368,114 +365,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              
-              if (widget.isAdmin) ...[
-                _buildSectionHeader('ADMIN TOOLS', theme),
-                
-                // Simulation Mode Toggle and Data Sync
-                if (context.watch<UserProvider>().isActualPlacementRep) ...[
-                  _buildDataSyncSection(theme),
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 16),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AppTheme.illusSage.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppTheme.illusSage.withValues(alpha: 0.3)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(LucideIcons.venetianMask, size: 16, color: Colors.teal),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('Simulation Mode', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.teal)),
-                                  Text('Preview app as different roles', style: GoogleFonts.inter(fontSize: 9, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6))),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: theme.dividerColor.withValues(alpha: 0.3)),
-                          ),
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<UserRole?>(
-                              isExpanded: true,
-                              value: context.watch<UserProvider>().simulatedRole,
-                              hint: Text('No Simulation (Actual Role)', style: GoogleFonts.inter(fontSize: 11)),
-                              icon: const Icon(LucideIcons.chevronDown, size: 12),
-                              items: const [
-                                DropdownMenuItem(value: null, child: Text('No Simulation (Actual Role)')),
-                                DropdownMenuItem(value: UserRole.coordinator, child: Text('Coordinator')),
-                                DropdownMenuItem(value: UserRole.teamLeader, child: Text('Team Leader')),
-                                DropdownMenuItem(value: UserRole.student, child: Text('Student')),
-                              ],
-                              onChanged: (UserRole? role) {
-                                context.read<UserProvider>().setSimulationRole(role);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Simulation role set to ${role?.name ?? 'Actual Role'}'),
-                                    backgroundColor: Colors.teal,
-                                    behavior: SnackBarBehavior.floating,
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-
-                Container(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFF8F5), // Light coral tint
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppTheme.accentCoral.withValues(alpha: 0.2)),
-                  ),
-                  child: Column(
-                    children: [
-                      _buildAdminTile('Reports: Command Center', 'View analytics and insights', LucideIcons.barChart2, theme, onTap: () => context.push('/admin/command-center')),
-                      _buildDivider(theme, isOrange: true),
-                      _buildAdminTile('Team & Role Management', 'Manage teams and permissions', LucideIcons.users, theme, onTap: () => context.push('/admin/team-management')),
-                      _buildDivider(theme, isOrange: true),
-                      _buildAdminTile('Schedule Placement Session', 'Create and manage sessions', LucideIcons.calendar, theme, onTap: () => context.push('/admin/schedule-session')),
-                      _buildDivider(theme, isOrange: true),
-                      _buildAdminTile('Export Data', 'Download reports and data', LucideIcons.download, theme, onTap: () {}),
-                    ],
-                  ),
+              _buildSectionHeader('SUPPORT', theme),
+              Container(
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: theme.dividerColor.withValues(alpha: 0.2)),
                 ),
-                const SizedBox(height: 24),
-              ] else ...[
-                _buildSectionHeader('SUPPORT', theme),
-                Container(
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surface,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: theme.dividerColor.withValues(alpha: 0.2)),
-                  ),
-                  child: Column(
-                    children: [
-                      _buildSettingsTile('Help & Support', 'Get help and contact support', LucideIcons.helpCircle, theme),
-                      _buildDivider(theme),
-                      _buildSettingsTile('About Placer', 'Learn more about the app', LucideIcons.info, theme, onTap: () => context.push('/credits')),
-                    ],
-                  ),
+                child: Column(
+                  children: [
+                    _buildSettingsTile('Help & Support', 'Get help and contact support', LucideIcons.helpCircle, theme),
+                    _buildDivider(theme),
+                    _buildSettingsTile('About Placer', 'Learn more about the app', LucideIcons.info, theme, onTap: () => context.push('/credits')),
+                  ],
                 ),
-                const SizedBox(height: 24),
-              ],
+              ),
+              const SizedBox(height: 24),
               
               // Log Out
               OutlinedButton.icon(
@@ -635,31 +540,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildAdminTile(String title, String subtitle, IconData icon, ThemeData theme, {VoidCallback? onTap}) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          children: [
-            Icon(icon, size: 16, color: AppTheme.accentCoral),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.accentCoral)),
-                  const SizedBox(height: 2),
-                  Text(subtitle, style: GoogleFonts.inter(fontSize: 9, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6))),
-                ],
-              ),
-            ),
-            Icon(LucideIcons.chevronRight, size: 12, color: AppTheme.accentCoral.withValues(alpha: 0.5)),
-          ],
-        ),
-      ),
-    );
-  }
+
 
   Widget _buildCustomTrailingTile(String title, String subtitle, IconData icon, ThemeData theme, {required Widget trailing}) {
     return Padding(
@@ -679,86 +560,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
           trailing,
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDataSyncSection(ThemeData theme) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.illusSage.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.illusSage.withValues(alpha: 0.3)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(LucideIcons.database, size: 16, color: Colors.indigo),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Data Synchronization', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.indigo)),
-                    Text('Manually trigger background syncs', style: GoogleFonts.inter(fontSize: 9, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6))),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () async {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Starting LeetCode sync...')));
-                    try {
-                      final provider = context.read<LeetCodeProvider>();
-                      await provider.refreshAllUsersFromAPI();
-                      if (!mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sync complete! Updated all records.')));
-                    } catch (e) {
-                      if (!mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Sync failed: $e')));
-                    }
-                  },
-                  icon: const Icon(LucideIcons.refreshCw, size: 12),
-                  label: const Text('Sync LeetCode'),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo.shade50, foregroundColor: Colors.indigo, elevation: 0),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () async {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Starting eCampus sync...')));
-                    try {
-                      final service = EcampusService();
-                      await service.syncAllUsers();
-                      if (!mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sync complete! Processed users.')));
-                    } catch (e) {
-                      if (!mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Sync failed: $e')));
-                    }
-                  },
-                  icon: const Icon(LucideIcons.school, size: 12),
-                  label: const Text('Sync eCampus'),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo.shade50, foregroundColor: Colors.indigo, elevation: 0),
-                ),
-              ),
-            ],
-          ),
         ],
       ),
     );
