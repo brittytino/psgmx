@@ -10,9 +10,9 @@ import { supabaseAdmin } from '@/lib/supabase/admin'
 
 export async function GET(req: NextRequest) {
   try {
-    const hod = await requireRole(req, ['hod'])
-    if (!hod) {
-      return NextResponse.json({ error: 'Unauthorized — HOD only' }, { status: 401 })
+    const actor = await requireRole(req, ['faculty', 'hod'])
+    if (!actor) {
+      return NextResponse.json({ error: 'Unauthorized — Faculty access required' }, { status: 401 })
     }
 
     // Users with role='student' but whose onboarding_complete=false and linkedin_url is set
@@ -37,9 +37,9 @@ export async function GET(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   try {
-    const hod = await requireRole(req, ['hod'])
-    if (!hod) {
-      return NextResponse.json({ error: 'Unauthorized — HOD only' }, { status: 401 })
+    const actor = await requireRole(req, ['faculty', 'hod'])
+    if (!actor) {
+      return NextResponse.json({ error: 'Unauthorized — Faculty access required' }, { status: 401 })
     }
 
     const { userId, action } = await req.json()
@@ -56,9 +56,8 @@ export async function PUT(req: NextRequest) {
 
       if (error) throw error
 
-      await supabaseAdmin.from('audit_logs')// @ts-ignore
-      .insert({
-        actor_id: hod.id,
+      await supabaseAdmin.from('audit_logs').insert({
+        actor_id: actor.id,
         action: 'alumni_approved',
         target_table: 'users',
         target_id: userId,
@@ -66,9 +65,8 @@ export async function PUT(req: NextRequest) {
     } else {
       // Reject: delete the auth user and profile
       await supabaseAdmin.auth.admin.deleteUser(userId)
-      await supabaseAdmin.from('audit_logs')// @ts-ignore
-      .insert({
-        actor_id: hod.id,
+      await supabaseAdmin.from('audit_logs').insert({
+        actor_id: actor.id,
         action: 'alumni_rejected',
         target_table: 'users',
         target_id: userId,

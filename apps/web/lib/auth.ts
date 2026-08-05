@@ -106,27 +106,24 @@ export async function requireAppRole(
 /**
  * isAdminUser
  * Returns true if the session belongs to an admin-level user:
- *   - HOD (always has full system access), OR
  *   - A student who is the Placement Representative (app_role = 'placement_rep')
  *
- * This replaces the old pattern of checking `session.role !== 'hod'` in every
- * super-admin API route.
+ * HOD is no longer a distinct admin role — HOD users are treated as faculty.
  */
 export function isAdminUser(session: SessionUser): boolean {
-  if (session.role === 'hod') return true
   if (session.role === 'student' && session.app_role === 'placement_rep') return true
   return false
 }
 
 /**
  * inviteUser
- * Invites a new faculty or HOD user via Supabase Admin API.
+ * Invites a new faculty user via Supabase Admin API.
  * Only @psgtech.ac.in emails are allowed.
  * Call this from a server action or admin API route.
  */
-export async function inviteUser(email: string, role: 'faculty' | 'hod') {
+export async function inviteUser(email: string, role: 'faculty') {
   if (!email.endsWith('@psgtech.ac.in')) {
-    throw new Error('Only @psgtech.ac.in email addresses are permitted for faculty/HOD accounts')
+    throw new Error('Only @psgtech.ac.in email addresses are permitted for faculty accounts')
   }
 
   const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {

@@ -18,12 +18,14 @@ export default function AppPage() {
         }
         
         const data = await res.json()
-        const roleLabel = data?.profile?.role_label?.toLowerCase() || 'student'
-        
+        const roleLabel = data?.profile?.role?.toLowerCase() || 'student'
+
         if (roleLabel === 'faculty' || roleLabel === 'hod') {
           router.replace('/faculty')
         } else if (roleLabel === 'alumni') {
           router.replace('/alumni')
+        } else if (roleLabel === 'student' && data?.profile?.app_role === 'placement_rep') {
+          router.replace('/super-admin')
         } else {
           router.replace('/student')
         }

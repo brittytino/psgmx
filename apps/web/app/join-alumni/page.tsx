@@ -63,7 +63,7 @@ export default function JoinAlumniPage() {
           </div>
           <h2 className="mb-2 text-[26px] font-bold text-[#101828]">Application Submitted</h2>
           <p className="text-[#475467] text-[15px] mb-8 font-medium">
-            Your request to join the MCA Alumni Network has been sent to the HOD for verification. You will receive login access once approved.
+            Your request to join the MCA Alumni Network has been sent to the faculty for verification. You will receive login access once approved.
           </p>
           <div className="flex justify-center items-center gap-2 text-[14px] font-bold text-[#FF5A1F]">
             <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>

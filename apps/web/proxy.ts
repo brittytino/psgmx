@@ -22,11 +22,10 @@ function isAndroidMobileBrowser(userAgent: string): boolean {
 // Route → allowed roles map
 // key: route prefix | value: array of allowed `role` values (from users table)
 const ROLE_GUARDS: Record<string, string[]> = {
-  '/faculty':     ['faculty', 'hod'],
-  '/hod':         ['hod'],
-  '/super-admin': ['hod', 'student'],   // fine-grained app_role=placement_rep check is enforced inside each API route
+  '/faculty':     ['faculty', 'hod'],   // hod kept so existing hod accounts can still access faculty portal
+  '/super-admin': ['student'],          // fine-grained app_role=placement_rep check enforced inside each API route
   '/alumni':      ['alumni'],
-  '/student':     ['student', 'alumni', 'faculty', 'hod'],  // broad read access
+  '/student':     ['student', 'alumni', 'faculty', 'hod'],
   '/knowledge':   ['student', 'alumni', 'faculty', 'hod'],
   '/exam':        ['student', 'faculty', 'hod'],
   '/onboarding':  ['student', 'alumni', 'faculty', 'hod'],
@@ -139,7 +138,7 @@ export async function proxy(request: NextRequest) {
       // Redirect to appropriate portal based on actual role
       const redirectUrl = request.nextUrl.clone()
 
-      if (role === 'faculty' || role === 'hod') redirectUrl.pathname = '/faculty'
+      if (role === 'faculty' || role === 'hod') redirectUrl.pathname = '/faculty'  // hod treated as faculty
       else if (role === 'alumni')               redirectUrl.pathname = '/alumni'
       else                                      redirectUrl.pathname = '/student'
       
