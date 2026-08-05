@@ -26,7 +26,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
         <div className="p-6 border-b border-border">
           <h1 className="text-xl font-bold text-electric-blue flex items-center gap-2">
             <DatabaseZap className="w-6 h-6" />
-            Super Admin
+            Placement Rep
           </h1>
         </div>
         <nav className="p-4 flex-1 space-y-2">
@@ -50,7 +50,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
           })}
         </nav>
         <div className="p-4 border-t border-border">
-          <div className="text-xs text-text-muted">Logged in as Root</div>
+          <div className="text-xs text-text-muted">Placement Representative</div>
         </div>
       </aside>
 
@@ -58,7 +58,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
       <main className="flex-1 flex flex-col h-screen overflow-hidden">
         {/* Mobile Header (minimal) */}
         <header className="md:hidden p-4 border-b border-border bg-page-bg flex items-center justify-between">
-          <div className="font-bold text-electric-blue">Super Admin</div>
+          <div className="font-bold text-electric-blue">Placement Rep</div>
         </header>
         
         <div className="flex-1 overflow-y-auto p-4 md:p-8">

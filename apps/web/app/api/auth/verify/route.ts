@@ -76,8 +76,10 @@ export async function POST(request: NextRequest) {
   let redirect = '/student' // default
   if (profile) {
     const role = profile.role
+    const appRole = profile.app_role
     if (role === 'faculty' || role === 'hod') redirect = '/faculty'
     else if (role === 'alumni') redirect = '/alumni'
+    else if (role === 'student' && appRole === 'placement_rep') redirect = '/super-admin'
     else if (role === 'student') redirect = '/student'
 
     // If onboarding not complete, send to onboarding

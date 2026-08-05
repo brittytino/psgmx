@@ -3,14 +3,14 @@
 // User management endpoint for HOD role.
 // ============================================================
 import { NextRequest, NextResponse } from 'next/server'
-import { getUserFromRequest } from '@/lib/auth'
+import { getUserFromRequest, isAdminUser } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 
 export async function GET(req: NextRequest) {
   try {
     const session = await getUserFromRequest(req)
-    if (!session?.id || session.role !== 'hod') {
-      return NextResponse.json({ error: 'Unauthorized — HOD role required' }, { status: 401 })
+    if (!session?.id || !isAdminUser(session)) {
+      return NextResponse.json({ error: 'Unauthorized — Admin access required' }, { status: 401 })
     }
 
     const { data: users, error } = await supabaseAdmin
@@ -45,8 +45,8 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const session = await getUserFromRequest(req)
-    if (!session?.id || session.role !== 'hod') {
-      return NextResponse.json({ error: 'Unauthorized — HOD role required' }, { status: 401 })
+    if (!session?.id || !isAdminUser(session)) {
+      return NextResponse.json({ error: 'Unauthorized — Admin access required' }, { status: 401 })
     }
 
     const body = await req.json()

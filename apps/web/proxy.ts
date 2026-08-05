@@ -24,7 +24,7 @@ function isAndroidMobileBrowser(userAgent: string): boolean {
 const ROLE_GUARDS: Record<string, string[]> = {
   '/faculty':     ['faculty', 'hod'],
   '/hod':         ['hod'],
-  '/super-admin': ['hod'],   // HOD acts as super-admin in this system
+  '/super-admin': ['hod', 'student'],   // fine-grained app_role=placement_rep check is enforced inside each API route
   '/alumni':      ['alumni'],
   '/student':     ['student', 'alumni', 'faculty', 'hod'],  // broad read access
   '/knowledge':   ['student', 'alumni', 'faculty', 'hod'],
@@ -111,10 +111,8 @@ export async function proxy(request: NextRequest) {
     return supabaseResponse
   }
 
-  const demoRoleCookie = request.cookies.get('psgmx_demo_role')?.value
-
-  // Redirect unauthenticated users to login (unless in local development or demo mode)
-  if (!user && !demoRoleCookie && process.env.NODE_ENV !== 'development') {
+  // Redirect unauthenticated users to login (unless in local development)
+  if (!user && process.env.NODE_ENV !== 'development') {
     const loginUrl = request.nextUrl.clone()
     loginUrl.pathname = '/login'
     loginUrl.searchParams.set('redirect', pathname)
@@ -124,9 +122,9 @@ export async function proxy(request: NextRequest) {
   // Check role-based access for guarded routes
   const requiredRoles = getRequiredRoles(pathname)
   if (requiredRoles) {
-    let role = demoRoleCookie?.toLowerCase()
+    let role: string | undefined
 
-    if (!role && user) {
+    if (user) {
       const { data: profile } = await supabase
         .from('users')
         .select('role')

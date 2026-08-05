@@ -53,20 +53,27 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid identifier or password' }, { status: 401 })
   }
 
-  // Determine redirect based on role label
+  // Determine redirect based on role and app_role
   const { data: rawProfile } = await supabaseAdmin
     .from('users')
-    .select('role_label, roles')
+    .select('role, app_role, onboarding_complete')
     .eq('id', data.user.id)
     .single()
-  const profile = rawProfile as any;
+  const profile = rawProfile as { role: string; app_role: string; onboarding_complete: boolean } | null
 
-  const roleLabel = profile?.role_label?.toLowerCase() || 'student'
   let redirectUrl = '/student'
-  
-  if (roleLabel === 'faculty' || roleLabel === 'hod') redirectUrl = '/faculty'
-  if (roleLabel === 'alumni') redirectUrl = '/alumni'
-  // Could also check profile.roles.isCoordinator, etc.
+  if (profile) {
+    const { role, app_role, onboarding_complete } = profile
+    if (!onboarding_complete) {
+      redirectUrl = '/onboarding'
+    } else if (role === 'faculty' || role === 'hod') {
+      redirectUrl = '/faculty'
+    } else if (role === 'alumni') {
+      redirectUrl = '/alumni'
+    } else if (role === 'student' && app_role === 'placement_rep') {
+      redirectUrl = '/super-admin'
+    }
+  }
 
   return NextResponse.json({
     success: true,
