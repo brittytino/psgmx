@@ -22,6 +22,19 @@ class PlacementLogService {
     return (response as List).map((r) => Company.fromMap(r)).toList();
   }
 
+  /// Returns a realtime stream of company records.
+  Stream<List<Company>> streamCompanies({String? batchId}) {
+    final stream = batchId != null
+        ? _supabase.from('companies').stream(primaryKey: ['id']).eq('batch_id', batchId)
+        : _supabase.from('companies').stream(primaryKey: ['id']);
+    
+    return stream.map((data) {
+      final list = data.map((r) => Company.fromMap(r)).toList();
+      list.sort((a, b) => b.visitDate.compareTo(a.visitDate));
+      return list;
+    });
+  }
+
   /// Creates a new company record.
   /// Requires [manage_company_records] permission (enforced by RLS).
   Future<Company> createCompanyRecord({
@@ -95,6 +108,19 @@ class PlacementLogService {
     return (response as List)
         .map((r) => PlacementLogEntry.fromMap(r))
         .toList();
+  }
+
+  /// Fetches a realtime stream of entries for a company.
+  Stream<List<PlacementLogEntry>> streamEntriesForCompany(String companyId) {
+    return _supabase
+        .from('placement_log_entries')
+        .stream(primaryKey: ['id'])
+        .eq('company_id', companyId)
+        .map((data) {
+      final list = data.map((r) => PlacementLogEntry.fromMap(r)).toList();
+      list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return list;
+    });
   }
 
   /// Adds a new personal experience entry.

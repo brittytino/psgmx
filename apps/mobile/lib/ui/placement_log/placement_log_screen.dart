@@ -1,8 +1,13 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme/app_theme.dart';
+import '../../models/company.dart';
+import '../../services/placement_log_service.dart';
 
 class PlacementLogScreen extends StatefulWidget {
   const PlacementLogScreen({super.key});
@@ -12,358 +17,157 @@ class PlacementLogScreen extends StatefulWidget {
 }
 
 class _PlacementLogScreenState extends State<PlacementLogScreen> {
-  // Mock data for the timeline
-  final List<Map<String, dynamic>> _companies = [
-    {
-      'year': '2025',
-      'name': 'Microsoft',
-      'role': 'Software Engineer',
-      'ctc': '₹18 – 24 LPA',
-      'offers': 42,
-      'date': '18 Apr 2025',
-      'isExpanded': false,
-    },
-    {
-      'year': '2025',
-      'name': 'Amazon',
-      'role': 'SDE Intern',
-      'ctc': '₹12 – 16 LPA',
-      'offers': 36,
-      'date': '10 Apr 2025',
-      'isExpanded': false,
-    },
-    {
-      'year': '2024',
-      'name': 'Google',
-      'role': 'Software Engineer',
-      'ctc': '₹20 – 28 LPA',
-      'offers': 28,
-      'date': '28 Sept 2024',
-      'isExpanded': false,
-    },
-    {
-      'year': '2024',
-      'name': 'D E Shaw',
-      'role': 'Software Development Associate',
-      'ctc': '₹15 – 20 LPA',
-      'offers': 18,
-      'date': '12 Sept 2024',
-      'isExpanded': true,
-      'experiences': [
-        {
-          'name': 'Rohan P.',
-          'role': 'SDE',
-          'batch': '2024 Batch',
-          'stars': 5,
-          'quote': 'The process was intense but extremely well-structured. Focus on DSA, problem solving speed and communicate your approach clearly.',
-        },
-        {
-          'name': 'Meera R.',
-          'role': 'SDE',
-          'batch': '2024 Batch',
-          'stars': 5,
-          'quote': 'Case round was the game changer. Practice estimation and be confident with your assumptions. Be calm and think out loud.',
-        },
-        {
-          'name': 'Karthik S.',
-          'role': 'SDE',
-          'batch': '2024 Batch',
-          'stars': 4,
-          'quote': '\'Great culture fit! They value thorough thinking over just coding speed. Revise core CS fundamentals.\'',
-        },
-      ]
-    },
-    {
-      'year': '2024',
-      'name': 'TCS Digital',
-      'role': 'System Engineer',
-      'ctc': '₹3.6 – 7 LPA',
-      'offers': 120,
-      'date': '5 Sept 2024',
-      'isExpanded': false,
-    },
-    {
-      'year': '2023',
-      'name': 'Zoho',
-      'role': 'Member Technical Staff',
-      'ctc': '₹8 – 12 LPA',
-      'offers': 22,
-      'date': '14 Oct 2023',
-      'isExpanded': false,
-    },
-  ];
+  final _service = PlacementLogService(Supabase.instance.client);
+
+  List<Company> _companies = [];
+  List<Company> _filtered = [];
+  Map<String, List<PlacementLogEntry>> _experiences = {};
+  Set<String> _expandedIds = {};
+
+  bool _isLoading = true;
+  String? _error;
+
+  final _searchCtrl = TextEditingController();
+  String _yearFilter = 'All Years';
+  List<String> _availableYears = ['All Years'];
+
+  StreamSubscription<List<Company>>? _subscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _subscribe();
+    _searchCtrl.addListener(_applyFilters);
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  void _subscribe() {
+    setState(() { _isLoading = true; _error = null; });
+    _subscription = _service.streamCompanies().listen(
+      (companies) {
+        final years = companies.map((c) => c.visitDate.year.toString()).toSet().toList();
+        years.sort((a, b) => b.compareTo(a));
+
+        if (mounted) {
+          setState(() {
+            _companies = companies;
+            _availableYears = ['All Years', ...years];
+            _isLoading = false;
+          });
+          _applyFilters();
+        }
+      },
+      onError: (e) {
+        if (mounted) setState(() { _error = e.toString(); _isLoading = false; });
+      },
+    );
+  }
+
+  Future<void> _reload() async {
+    _subscription?.cancel();
+    _subscribe();
+  }
+
+  void _applyFilters() {
+    final q = _searchCtrl.text.toLowerCase();
+    setState(() {
+      _filtered = _companies.where((c) {
+        final matchesSearch = q.isEmpty || c.name.toLowerCase().contains(q);
+        final matchesYear = _yearFilter == 'All Years' ||
+            c.visitDate.year.toString() == _yearFilter;
+        return matchesSearch && matchesYear;
+      }).toList();
+    });
+  }
+
+  Future<void> _toggleExpand(String companyId) async {
+    if (_expandedIds.contains(companyId)) {
+      setState(() => _expandedIds.remove(companyId));
+      return;
+    }
+    setState(() => _expandedIds.add(companyId));
+    if (!_experiences.containsKey(companyId)) {
+      try {
+        final entries = await _service.fetchEntriesForCompany(companyId);
+        if (mounted) setState(() => _experiences[companyId] = entries);
+      } catch (_) {}
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    return MediaQuery(
+      data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
+      child: Scaffold(
+        backgroundColor: const Color(0xFFFAFAFA),
+        body: SafeArea(
+          child: _isLoading
+              ? const Center(child: CircularProgressIndicator(color: AppTheme.accentCoral))
+              : _error != null
+                  ? _buildError()
+                  : Column(
+                      children: [
+                        _buildHeader(),
+                        _buildSearchFilters(),
+                        Expanded(child: _buildTimeline()),
+                      ],
+                    ),
+        ),
+      ),
+    );
+  }
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      body: Stack(
+  Widget _buildHeader() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SafeArea(
-            child: CustomScrollView(
-              slivers: [
-                // Header
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 24, 16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            IconButton(
-                              icon: const Icon(LucideIcons.chevronLeft, size: 16),
-                              onPressed: () => context.pop(),
-                            ),
-                            const SizedBox(width: 4),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Placement Log',
-                                  style: GoogleFonts.sora(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: theme.colorScheme.onSurface,
-                                    letterSpacing: -0.5,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Row(
-                                  children: [
-                                    Text(
-                                      'Stories. Insights. Inspiration.',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 11,
-                                        color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 4),
-                                    const Icon(LucideIcons.sparkles, size: 12, color: AppTheme.illusGold),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        OutlinedButton.icon(
-                          onPressed: () => context.push('/placement-log/add'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppTheme.accentCoral,
-                            side: const BorderSide(color: AppTheme.accentCoral),
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          ),
-                          icon: const Icon(LucideIcons.plus, size: 12),
-                          label: const Text('Add your experience'),
-                        ),
-                      ],
-                    ),
-                  ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Placement Log',
+                style: GoogleFonts.sora(
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF0F172A),
+                  letterSpacing: -0.5,
                 ),
-                
-                // Filters
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          flex: 3,
-                          child: TextField(
-                            decoration: InputDecoration(
-                              hintText: 'Search company',
-                              hintStyle: GoogleFonts.inter(fontSize: 11, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5)),
-                              prefixIcon: Icon(LucideIcons.search, size: 12, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5)),
-                              filled: true,
-                              fillColor: Colors.white,
-                              contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(24),
-                                borderSide: BorderSide(color: theme.dividerColor.withValues(alpha: 0.3)),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(24),
-                                borderSide: BorderSide(color: theme.dividerColor.withValues(alpha: 0.3)),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          flex: 2,
-                          child: _buildDropdownFilter('All Roles', null, theme),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          flex: 2,
-                          child: _buildDropdownFilter('All Years', LucideIcons.calendar, theme),
-                        ),
-                      ],
-                    ),
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Text(
+                    'Stories. Insights. Inspiration.',
+                    style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748B)),
                   ),
-                ),
-                
-                // Timeline
-                SliverPadding(
-                  padding: const EdgeInsets.only(left: 24, right: 24, top: 32, bottom: 120),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final company = _companies[index];
-                        final isFirstOfYear = index == 0 || _companies[index - 1]['year'] != company['year'];
-                        final isLast = index == _companies.length - 1;
-                        
-                        return IntrinsicHeight(
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              // Timeline column
-                              SizedBox(
-                                width: 40,
-                                child: Column(
-                                  children: [
-                                    if (isFirstOfYear)
-                                      Padding(
-                                        padding: const EdgeInsets.only(bottom: 8.0),
-                                        child: Text(
-                                          company['year'],
-                                          style: GoogleFonts.inter(
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.bold,
-                                            color: AppTheme.accentCoral,
-                                          ),
-                                        ),
-                                      )
-                                    else
-                                      const SizedBox(height: 24), // Spacer if no year label
-                                      
-                                    Container(
-                                      width: 16,
-                                      height: 16,
-                                      decoration: BoxDecoration(
-                                        color: AppTheme.accentCoral.withValues(alpha: 0.2),
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Center(
-                                        child: Container(
-                                          width: 8,
-                                          height: 8,
-                                          decoration: const BoxDecoration(
-                                            color: AppTheme.accentCoral,
-                                            shape: BoxShape.circle,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    if (!isLast)
-                                      Expanded(
-                                        child: Container(
-                                          width: 2,
-                                          color: AppTheme.accentCoral.withValues(alpha: 0.3),
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                              
-                              // Content Column
-                              Expanded(
-                                child: Padding(
-                                  padding: const EdgeInsets.only(bottom: 24.0, left: 16.0),
-                                  child: _buildCompanyCard(company, index, theme),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                      childCount: _companies.length,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          
-          // Sticky Bottom Banner
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 20,
-                    offset: const Offset(0, -10),
-                  ),
+                  const SizedBox(width: 4),
+                  const Icon(LucideIcons.sparkles, size: 12, color: AppTheme.illusGold),
                 ],
               ),
-              child: SafeArea(
-                top: false,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFAF9F6),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: theme.dividerColor.withValues(alpha: 0.3)),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                shape: BoxShape.circle,
-                                border: Border.all(color: AppTheme.accentCoral.withValues(alpha: 0.2)),
-                              ),
-                              child: const Icon(LucideIcons.lightbulb, color: AppTheme.accentCoral, size: 16),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    'Every story helps. Every insight matters.',
-                                    style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
-                                  ),
-                                  Text(
-                                    'Share your experience and help the next placer.',
-                                    style: GoogleFonts.inter(fontSize: 9, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7)),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    FilledButton.icon(
-                      onPressed: () => context.push('/placement-log/add'),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppTheme.accentCoral,
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      ),
-                      icon: const Icon(LucideIcons.plus, size: 12),
-                      label: Text('Add your experience', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
-                    ),
-                  ],
-                ),
+            ],
+          ),
+          const Spacer(),
+          // Company count badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppTheme.accentCoral.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              '${_companies.length} companies',
+              style: GoogleFonts.sora(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.accentCoral,
               ),
             ),
           ),
@@ -372,133 +176,308 @@ class _PlacementLogScreenState extends State<PlacementLogScreen> {
     );
   }
 
-  Widget _buildDropdownFilter(String value, IconData? icon, ThemeData theme) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.3)),
-      ),
+  Widget _buildSearchFilters() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            children: [
-              if (icon != null) ...[
-                Icon(icon, size: 12, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5)),
-                const SizedBox(width: 8),
-              ],
-              Text(value, style: GoogleFonts.inter(fontSize: 9, color: theme.colorScheme.onSurface)),
-            ],
+          // Search box
+          Expanded(
+            flex: 5,
+            child: SizedBox(
+              height: 42,
+              child: TextField(
+                controller: _searchCtrl,
+                style: GoogleFonts.inter(fontSize: 13),
+                decoration: InputDecoration(
+                  hintText: 'Search company',
+                  hintStyle: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF94A3B8)),
+                  prefixIcon: const Icon(LucideIcons.search, size: 14, color: Color(0xFF94A3B8)),
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppTheme.accentCoral),
+                  ),
+                ),
+              ),
+            ),
           ),
-          Icon(LucideIcons.chevronDown, size: 12, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5)),
+          const SizedBox(width: 8),
+          // Year filter
+          Container(
+            height: 42,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: _yearFilter,
+                icon: const Icon(LucideIcons.chevronDown, size: 14, color: Color(0xFF64748B)),
+                style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF1E293B)),
+                items: _availableYears.map((y) => DropdownMenuItem(value: y, child: Text(y))).toList(),
+                onChanged: (v) {
+                  if (v != null) setState(() { _yearFilter = v; _applyFilters(); });
+                },
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildCompanyCard(Map<String, dynamic> company, int index, ThemeData theme) {
-    final isExpanded = company['isExpanded'] as bool;
-    
+  Widget _buildTimeline() {
+    if (_filtered.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(40),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 72, height: 72,
+                decoration: BoxDecoration(
+                  color: AppTheme.accentCoral.withValues(alpha: 0.08),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(LucideIcons.building2, size: 32, color: AppTheme.accentCoral),
+              ),
+              const SizedBox(height: 16),
+              Text('No companies found', style: GoogleFonts.sora(fontSize: 16, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
+              const SizedBox(height: 8),
+              Text('Try adjusting your search or filters.', style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748B)), textAlign: TextAlign.center),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _reload,
+      color: AppTheme.accentCoral,
+      child: ListView.builder(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
+        itemCount: _filtered.length,
+        itemBuilder: (_, index) {
+          final company = _filtered[index];
+          final isFirstOfYear = index == 0 ||
+              _filtered[index - 1].visitDate.year != company.visitDate.year;
+          final isLast = index == _filtered.length - 1;
+          final isExpanded = _expandedIds.contains(company.id);
+
+          return IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Timeline column
+                SizedBox(
+                  width: 48,
+                  child: Column(
+                    children: [
+                      if (isFirstOfYear)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Text(
+                            company.visitDate.year.toString(),
+                            style: GoogleFonts.sora(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.accentCoral,
+                            ),
+                          ),
+                        )
+                      else
+                        const SizedBox(height: 26),
+                      Container(
+                        width: 16, height: 16,
+                        decoration: BoxDecoration(
+                          color: AppTheme.accentCoral.withValues(alpha: 0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Container(
+                            width: 8, height: 8,
+                            decoration: const BoxDecoration(color: AppTheme.accentCoral, shape: BoxShape.circle),
+                          ),
+                        ),
+                      ),
+                      if (!isLast)
+                        Expanded(
+                          child: Container(
+                            width: 2,
+                            color: AppTheme.accentCoral.withValues(alpha: 0.25),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                // Card column
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 16, left: 12),
+                    child: _CompanyCard(
+                      company: company,
+                      isExpanded: isExpanded,
+                      experiences: _experiences[company.id],
+                      onToggle: () => _toggleExpand(company.id),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildError() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(LucideIcons.wifiOff, size: 40, color: Color(0xFF94A3B8)),
+            const SizedBox(height: 12),
+            Text('Could not load placement log', style: GoogleFonts.sora(fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
+            const SizedBox(height: 8),
+            Text(_error ?? '', style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF64748B)), textAlign: TextAlign.center),
+            const SizedBox(height: 16),
+            TextButton.icon(
+              onPressed: _reload,
+              icon: const Icon(LucideIcons.refreshCw, size: 14),
+              label: Text('Retry', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+              style: TextButton.styleFrom(foregroundColor: AppTheme.accentCoral),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Company Card ──────────────────────────────────────────────────────────
+class _CompanyCard extends StatelessWidget {
+  final Company company;
+  final bool isExpanded;
+  final List<PlacementLogEntry>? experiences;
+  final VoidCallback onToggle;
+
+  const _CompanyCard({
+    required this.company,
+    required this.isExpanded,
+    required this.experiences,
+    required this.onToggle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final visitStr = DateFormat('d MMM yyyy').format(company.visitDate);
+
     return Container(
       decoration: BoxDecoration(
-        color: isExpanded ? const Color(0xFFFAF9F6) : Colors.white,
+        color: isExpanded ? const Color(0xFFFFF8F5) : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isExpanded ? AppTheme.accentCoral.withValues(alpha: 0.3) : theme.dividerColor.withValues(alpha: 0.3)),
-        boxShadow: isExpanded ? [] : [
+        border: Border.all(
+          color: isExpanded
+              ? AppTheme.accentCoral.withValues(alpha: 0.3)
+              : const Color(0xFFE2E8F0),
+        ),
+        boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
-            offset: const Offset(0, 4),
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                company['isExpanded'] = !isExpanded;
-              });
-            },
+          // ── Header row ────────────────────────────────────────────
+          InkWell(
+            borderRadius: isExpanded
+                ? const BorderRadius.vertical(top: Radius.circular(16))
+                : BorderRadius.circular(16),
+            onTap: onToggle,
             child: Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(14),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Logo placeholder
                   Container(
-                    width: 64,
-                    height: 64,
+                    width: 52, height: 52,
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: theme.dividerColor.withValues(alpha: 0.2)),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
                     ),
                     child: Center(
-                      child: Icon(
-                        LucideIcons.building2, 
-                        size: 16, 
-                        color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.3),
+                      child: Text(
+                        company.name.isNotEmpty ? company.name[0].toUpperCase() : '?',
+                        style: GoogleFonts.sora(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.accentCoral),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              company['name'],
-                              style: GoogleFonts.inter(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: theme.colorScheme.onSurface,
+                            Expanded(
+                              child: Text(
+                                company.name,
+                                style: GoogleFonts.sora(fontSize: 15, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
                               ),
                             ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: AppTheme.accentCoral.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                company['ctc'],
-                                style: GoogleFonts.inter(
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppTheme.accentCoral,
+                            if (company.packageBand != null)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.accentCoral.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  company.packageBand!,
+                                  style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.accentCoral),
                                 ),
                               ),
-                            ),
                           ],
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          company['role'],
-                          style: GoogleFonts.inter(
-                            fontSize: 11,
-                            color: theme.colorScheme.onSurface,
-                          ),
+                          company.rolesOffered.isNotEmpty ? company.rolesOffered.join(', ') : 'Multiple Roles',
+                          style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF64748B)),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 8),
                         Row(
                           children: [
-                            Icon(LucideIcons.users, size: 12, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5)),
+                            Icon(LucideIcons.calendar, size: 12, color: const Color(0xFF94A3B8)),
                             const SizedBox(width: 4),
-                            Text('${company['offers']} offers', style: GoogleFonts.inter(fontSize: 9, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6))),
-                            const SizedBox(width: 12),
-                            Text('·', style: GoogleFonts.inter(fontSize: 9, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6))),
-                            const SizedBox(width: 12),
-                            Icon(LucideIcons.calendar, size: 12, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5)),
-                            const SizedBox(width: 4),
-                            Text('Visited on ${company['date']}', style: GoogleFonts.inter(fontSize: 9, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6))),
+                            Text('Visited on $visitStr', style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF94A3B8))),
                             const Spacer(),
-                            Icon(isExpanded ? LucideIcons.chevronUp : LucideIcons.chevronDown, size: 16, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5)),
+                            Icon(
+                              isExpanded ? LucideIcons.chevronUp : LucideIcons.chevronDown,
+                              size: 16,
+                              color: const Color(0xFF94A3B8),
+                            ),
                           ],
                         ),
                       ],
@@ -508,141 +487,122 @@ class _PlacementLogScreenState extends State<PlacementLogScreen> {
               ),
             ),
           ),
-          
-          if (isExpanded && company['experiences'] != null)
-            Container(
-              margin: const EdgeInsets.all(16),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: theme.dividerColor.withValues(alpha: 0.2)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Student Experiences (${(company['experiences'] as List).length})',
-                    style: GoogleFonts.inter(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  ...(company['experiences'] as List).map((exp) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 24.0),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          CircleAvatar(
-                            radius: 20,
-                            backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                            child: const Icon(LucideIcons.user),
+
+          // ── Expanded experiences ───────────────────────────────────
+          if (isExpanded) ...[
+            Divider(height: 1, color: AppTheme.accentCoral.withValues(alpha: 0.15)),
+            Padding(
+              padding: const EdgeInsets.all(14),
+              child: experiences == null
+                  ? const Center(child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator(color: AppTheme.accentCoral, strokeWidth: 2)))
+                  : experiences!.isEmpty
+                      ? Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Text(
-                                          exp['name'],
-                                          style: GoogleFonts.inter(
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.bold,
-                                            color: theme.colorScheme.onSurface,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: AppTheme.accentCoral.withValues(alpha: 0.1),
-                                            borderRadius: BorderRadius.circular(4),
-                                          ),
-                                          child: Text(
-                                            'Placed',
-                                            style: GoogleFonts.inter(
-                                              fontSize: 8,
-                                              fontWeight: FontWeight.bold,
-                                              color: AppTheme.accentCoral,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Row(
-                                      children: List.generate(5, (starIndex) {
-                                        return Icon(
-                                          starIndex < exp['stars'] ? Icons.star : Icons.star_border,
-                                          size: 12,
-                                          color: AppTheme.accentCoral,
-                                        );
-                                      }),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 4),
-                                Row(
-                                  children: [
-                                    Text(exp['role'], style: GoogleFonts.inter(fontSize: 9, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6))),
-                                    const SizedBox(width: 8),
-                                    Text('·', style: GoogleFonts.inter(fontSize: 9, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6))),
-                                    const SizedBox(width: 8),
-                                    Text(exp['batch'], style: GoogleFonts.inter(fontSize: 9, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6))),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      '“ ',
-                                      style: GoogleFonts.sora(
-                                        fontSize: 16,
-                                        height: 1,
-                                        fontWeight: FontWeight.bold,
-                                        color: AppTheme.accentCoral.withValues(alpha: 0.3),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: Text(
-                                        exp['quote'],
-                                        style: GoogleFonts.inter(
-                                          fontSize: 11,
-                                          color: theme.colorScheme.onSurface,
-                                          height: 1.5,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
+                          child: Row(
+                            children: [
+                              const Icon(LucideIcons.messageSquare, size: 16, color: Color(0xFF94A3B8)),
+                              const SizedBox(width: 8),
+                              Text(
+                                'No student experiences shared yet.',
+                                style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF94A3B8)),
+                              ),
+                            ],
+                          ),
+                        )
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Student Experiences (${experiences!.length})',
+                              style: GoogleFonts.sora(fontSize: 13, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
                             ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }),
-                  
-                  Text(
-                    'View all experiences (${(company['experiences'] as List).length}) >',
-                    style: GoogleFonts.inter(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.accentCoral,
-                    ),
-                  ),
-                ],
-              ),
+                            const SizedBox(height: 12),
+                            ...experiences!.take(3).map((e) => _ExperienceEntry(entry: e)),
+                            if (experiences!.length > 3) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                'View all experiences (${experiences!.length}) →',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppTheme.accentCoral,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
             ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Experience Entry ──────────────────────────────────────────────────────
+class _ExperienceEntry extends StatelessWidget {
+  final PlacementLogEntry entry;
+  const _ExperienceEntry({required this.entry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CircleAvatar(
+            radius: 18,
+            backgroundColor: AppTheme.accentCoral.withValues(alpha: 0.1),
+            child: Icon(LucideIcons.user, size: 16, color: AppTheme.accentCoral),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      entry.isAnonymous == true ? 'Anonymous' : 'Student',
+                      style: GoogleFonts.sora(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFF0F172A)),
+                    ),
+                    const SizedBox(width: 8),
+                    if (entry.outcome == 'placed')
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF22C55E).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text('Placed', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, color: const Color(0xFF22C55E))),
+                      ),
+                  ],
+                ),
+                if (entry.roundName.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(entry.roundName, style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF64748B))),
+                ],
+                const SizedBox(height: 8),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('" ', style: GoogleFonts.sora(fontSize: 18, height: 0.8, fontWeight: FontWeight.bold, color: AppTheme.accentCoral.withValues(alpha: 0.3))),
+                    Expanded(
+                      child: Text(
+                        entry.experienceText,
+                        style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF334155), height: 1.5),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

@@ -14,7 +14,6 @@ import '../ui/admin/schedule_placement_session_screen.dart';
 import '../ui/daily_five/daily_five_screen.dart';
 import '../ui/admin/question_bank_screen.dart';
 import '../ui/placement_log/placement_log_screen.dart';
-import '../ui/placement_log/add_experience_screen.dart';
 import '../ui/placement_log/company_detail_screen.dart';
 import '../ui/ai_mentor/ai_mentor_screen.dart';
 import '../ui/notifications/notifications_screen.dart';
@@ -24,6 +23,7 @@ import '../ui/rankings/leetcode_arena_screen.dart';
 import '../ui/admin/command_center_screen.dart';
 import '../ui/profile/credits_screen.dart';
 import '../ui/profile/graduation_screen.dart';
+import '../ui/profile/help_support_screen.dart';
 import '../ui/exam/proctored_exam_screen.dart';
 import '../ui/splash/splash_screen.dart';
 
@@ -96,10 +96,6 @@ class AppRouter {
           builder: (context, state) => const PlacementLogScreen(),
         ),
         GoRoute(
-          path: '/placement-log/add',
-          builder: (context, state) => const AddExperienceScreen(),
-        ),
-        GoRoute(
           path: '/placement-log/company/:id',
           builder: (context, state) {
             final company = state.extra as Company;
@@ -129,6 +125,10 @@ class AppRouter {
         GoRoute(
           path: '/credits',
           builder: (context, state) => const CreditsScreen(),
+        ),
+        GoRoute(
+          path: '/help-support',
+          builder: (context, state) => const HelpSupportScreen(),
         ),
         GoRoute(
           path: '/proctored-exam',

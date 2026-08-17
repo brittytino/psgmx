@@ -1,409 +1,337 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import '../../providers/user_provider.dart';
-import '../widgets/avatar_widget.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
-import '../../core/theme/app_theme.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../core/theme/app_theme.dart';
+import '../../providers/user_provider.dart';
+import '../../providers/theme_provider.dart';
+import '../widgets/avatar_widget.dart';
 
 class ProfileScreen extends StatefulWidget {
-  final bool isAdmin; // Passed from RootLayout to determine layout (s27 vs s29)
-  
-  const ProfileScreen({super.key, this.isAdmin = true});
+  // Keep param for backwards compat but ignore it
+  final bool isAdmin;
+  const ProfileScreen({super.key, this.isAdmin = false});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  bool _isDarkMode = false;
-  bool _pushNotifications = true;
+  bool _signingOut = false;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final userProvider = context.watch<UserProvider>();
+    final user = userProvider.currentUser;
+    final themeProvider = context.watch<ThemeProvider>();
+    final isDark = themeProvider.isDarkMode;
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 24.0, bottom: 120.0), // Bottom padding for nav bar
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'You',
-                        style: GoogleFonts.sora(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.onSurface,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Text(
-                            'Your profile, your progress, your journey.',
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          const Icon(LucideIcons.sparkles, size: 12, color: AppTheme.illusGold),
-                        ],
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      _buildHeaderIconButton(LucideIcons.bell, theme, hasDot: true),
-                      const SizedBox(width: 12),
-                      _buildHeaderIconButton(LucideIcons.settings, theme),
-                    ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 32),
-              
-              // Profile Card
-              Row(
-                children: [
-                  // Avatar
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: theme.colorScheme.surface, width: 4),
-                      boxShadow: [
-                        BoxShadow(color: theme.shadowColor.withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, 4)),
-                      ],
-                    ),
-                    child: userProvider.currentUser != null
-                        ? AvatarWidget(
-                            name: userProvider.currentUser!.name,
-                            avatarUrl: userProvider.currentUser!.avatarUrl,
-                            gender: userProvider.currentUser!.gender,
-                            radius: 40,
-                          )
-                        : const CircleAvatar(radius: 40, child: Icon(LucideIcons.user, size: 16)),
-                  ),
-                  const SizedBox(width: 20),
-                  // Details
-                  Expanded(
-                    child: Column(
+    return MediaQuery(
+      data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
+      child: Scaffold(
+        backgroundColor: const Color(0xFFFAFAFA),
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 120),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // ── Header ────────────────────────────────────────────
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        Text('You',
+                            style: GoogleFonts.sora(fontSize: 26, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A), letterSpacing: -0.5)),
+                        const SizedBox(height: 4),
                         Row(
                           children: [
-                            Flexible(
-                              child: Text(
-                                userProvider.currentUser?.name ?? 'Student', 
-                                style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFFF8F5),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(widget.isAdmin ? 'Placement Rep' : 'Student', style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.bold, color: AppTheme.accentCoral)),
-                            ),
+                            Text('Your profile, your journey.',
+                                style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748B))),
+                            const SizedBox(width: 4),
+                            const Icon(LucideIcons.sparkles, size: 12, color: AppTheme.illusGold),
                           ],
                         ),
-                        const SizedBox(height: 6),
-                        Text(widget.isAdmin ? 'Admin' : 'Batch', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
-                        const SizedBox(height: 4),
-                        Text(widget.isAdmin ? 'PSG Institute' : 'PSG College of Technology', style: GoogleFonts.inter(fontSize: 9, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6))),
                       ],
                     ),
-                  ),
-                  Icon(LucideIcons.chevronRight, size: 16, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.4)),
-                ],
-              ),
-              const SizedBox(height: 32),
-              
-              // Stats Row
-              Row(
-                children: [
-                  Expanded(child: _buildStatItem('Longest Streak', '12', 'days', 2, true, LucideIcons.flame, const Color(0xFFFF7043), theme)),
-                  Container(width: 1, height: 40, color: theme.dividerColor.withValues(alpha: 0.2)),
-                  Expanded(child: _buildStatItem('Problems Solved', '248', '', 18, true, LucideIcons.fileCode2, const Color(0xFFFFB74D), theme)), // Wait, icon is code block in file
-                  Container(width: 1, height: 40, color: theme.dividerColor.withValues(alpha: 0.2)),
-                  Expanded(child: _buildStatItem('Readiness Score', '812', '', 34, true, LucideIcons.trophy, const Color(0xFFD4AF37), theme)),
-                ],
-              ),
-              const SizedBox(height: 32),
-              
-              // Lineage Card (Your Senior)
-              if (userProvider.currentUser != null)
-                FutureBuilder<Map<String, dynamic>?>(
-                  future: _fetchLineageMentor(userProvider.currentUser!.uid),
-                  builder: (context, snapshot) {
-                    if (!snapshot.hasData || snapshot.data == null) {
-                      return const SizedBox.shrink();
-                    }
-                    
-                    final mentor = snapshot.data!;
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _buildSectionHeader('YOUR SENIOR', theme),
-                        Container(
-                          padding: const EdgeInsets.all(16.0),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.surface,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: theme.dividerColor.withValues(alpha: 0.2)),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 48,
-                                height: 48,
-                                decoration: BoxDecoration(
-                                  color: AppTheme.illusSage.withValues(alpha: 0.2),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(LucideIcons.graduationCap, color: AppTheme.illusSage),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(mentor['full_name'] ?? 'Senior Student', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
-                                    if (mentor['current_role_title'] != null && mentor['current_company'] != null)
-                                      Text('${mentor['current_role_title']} @ ${mentor['current_company']}', style: GoogleFonts.inter(fontSize: 11, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6))),
-                                  ],
-                                ),
-                              ),
-                              if (mentor['linkedin_url'] != null)
-                                IconButton(
-                                  icon: const Icon(LucideIcons.link, color: Colors.blue),
-                                  onPressed: () async {
-                                    final url = Uri.tryParse(mentor['linkedin_url']);
-                                    if (url != null && await canLaunchUrl(url)) {
-                                      await launchUrl(url);
-                                    }
-                                  },
-                                ),
-                            ],
-                          ),
+                    // Notifications icon
+                    GestureDetector(
+                      onTap: () => context.push('/notifications'),
+                      child: Container(
+                        width: 40, height: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8)],
                         ),
-                        const SizedBox(height: 24),
-                      ],
-                    );
-                  },
-                ),
-              
-              // Admin Actions (Roleplay)
-              if (userProvider.isPlacementRep) ...[
-                _buildSectionHeader('ADMIN ACTIONS', theme),
-                Container(
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surface,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: theme.dividerColor.withValues(alpha: 0.2)),
-                  ),
-                  child: Column(
-                    children: [
-                      _buildSettingsTile('View as Student', 'Experience the app as a student', LucideIcons.user, theme, onTap: () {
-                         // Switch logic
-                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Switched to Student View')));
-                      }),
-                      _buildDivider(theme),
-                      _buildSettingsTile('View as Team Leader', 'Experience the app as a team leader', LucideIcons.users, theme, onTap: () {
-                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Switched to Team Leader View')));
-                      }),
-                      _buildDivider(theme),
-                      _buildSettingsTile('View as Coordinator', 'Experience the app as a coordinator', LucideIcons.shieldAlert, theme, onTap: () {
-                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Switched to Coordinator View')));
-                      }),
-                    ],
-                  ),
+                        child: const Center(child: Icon(LucideIcons.bell, size: 18, color: Color(0xFF1E293B))),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 24),
+
+                // ── Profile Card ──────────────────────────────────────
+                _ProfileCard(user: user),
+                const SizedBox(height: 24),
+
+                // ── PREFERENCES ───────────────────────────────────────
+                _buildSectionHeader('PREFERENCES'),
+                _buildCard([
+                  _SwitchTile(
+                    icon: LucideIcons.moon,
+                    iconColor: const Color(0xFF6366F1),
+                    label: 'Dark Mode',
+                    subtitle: 'Toggle app appearance',
+                    value: isDark,
+                    onChanged: (v) => themeProvider.toggleTheme(),
+                  ),
+                  _divider(),
+                  _SwitchTile(
+                    icon: LucideIcons.bell,
+                    iconColor: AppTheme.accentCoral,
+                    label: 'Push Notifications',
+                    subtitle: 'Streaks, announcements & reminders',
+                    value: user?.announcementsEnabled ?? true,
+                    onChanged: (v) => userProvider.updateAnnouncementsEnabled(v),
+                  ),
+                  _divider(),
+                  _SwitchTile(
+                    icon: LucideIcons.code,
+                    iconColor: const Color(0xFFEF4444),
+                    label: 'LeetCode Reminders',
+                    subtitle: 'Daily coding practice nudges',
+                    value: user?.leetcodeNotificationsEnabled ?? false,
+                    onChanged: (v) => userProvider.updateLeetCodeNotification(v),
+                  ),
+                ]),
+                const SizedBox(height: 20),
+
+                // ── MY PROGRESS ───────────────────────────────────────
+                _buildSectionHeader('MY PROGRESS'),
+                _buildCard([
+                  _NavTile(
+                    icon: LucideIcons.trophy,
+                    iconColor: const Color(0xFFD4AF37),
+                    label: 'Readiness Rankings',
+                    subtitle: 'See where you stand',
+                    onTap: () => context.push('/pulse-rankings'),
+                  ),
+                  _divider(),
+                  _NavTile(
+                    icon: LucideIcons.code2,
+                    iconColor: const Color(0xFFEF4444),
+                    label: 'LeetCode Arena',
+                    subtitle: 'Your coding progress & leaderboard',
+                    onTap: () => context.push('/leetcode-arena'),
+                  ),
+                  if (user?.leetcodeUsername != null && user!.leetcodeUsername!.isNotEmpty) ...[
+                    _divider(),
+                    _NavTile(
+                      icon: LucideIcons.externalLink,
+                      iconColor: const Color(0xFFEF4444),
+                      label: 'My LeetCode Profile',
+                      subtitle: user.leetcodeUsername!,
+                      onTap: () => _launchUrl('https://leetcode.com/${user.leetcodeUsername}'),
+                    ),
+                  ],
+                ]),
+                const SizedBox(height: 20),
+
+                // ── ACCOUNT ───────────────────────────────────────────
+                _buildSectionHeader('ACCOUNT'),
+                _buildCard([
+                  _NavTile(
+                    icon: LucideIcons.mail,
+                    iconColor: const Color(0xFF0EA5E9),
+                    label: 'Email',
+                    subtitle: user?.email ?? '—',
+                    showChevron: false,
+                  ),
+                  _divider(),
+                  _NavTile(
+                    icon: LucideIcons.hash,
+                    iconColor: const Color(0xFF6366F1),
+                    label: 'Register Number',
+                    subtitle: user?.regNo ?? '—',
+                    showChevron: false,
+                  ),
+                  _divider(),
+                  _NavTile(
+                    icon: LucideIcons.code,
+                    iconColor: const Color(0xFFEF4444),
+                    label: 'LeetCode Username',
+                    subtitle: user?.leetcodeUsername?.isNotEmpty == true ? user!.leetcodeUsername! : 'Not set',
+                    onTap: () => _showLeetcodeSheet(context, userProvider),
+                  ),
+                ]),
+                const SizedBox(height: 20),
+
+                // ── INFO ──────────────────────────────────────────────
+                _buildSectionHeader('INFO'),
+                _buildCard([
+                  _NavTile(
+                    icon: LucideIcons.shieldCheck,
+                    iconColor: const Color(0xFF22C55E),
+                    label: 'Data Privacy',
+                    subtitle: 'How we protect your data',
+                    onTap: () => _launchUrl('https://psgmx.in/privacy'),
+                  ),
+                  _divider(),
+                  _NavTile(
+                    icon: LucideIcons.helpCircle,
+                    iconColor: const Color(0xFF64748B),
+                    label: 'Help & Support',
+                    subtitle: 'Get help or report an issue',
+                    onTap: () => context.push('/help-support'),
+                  ),
+                  _divider(),
+                  _NavTile(
+                    icon: LucideIcons.info,
+                    iconColor: const Color(0xFF64748B),
+                    label: 'About PSGMX',
+                    subtitle: 'Version, team & credits',
+                    onTap: () => context.push('/credits'),
+                  ),
+                ]),
+                const SizedBox(height: 28),
+
+                // ── Sign Out ──────────────────────────────────────────
+                OutlinedButton.icon(
+                  onPressed: _signingOut ? null : () => _confirmSignOut(context, userProvider),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFFEF4444),
+                    side: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
+                  icon: _signingOut
+                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Color(0xFFEF4444), strokeWidth: 2))
+                      : const Icon(LucideIcons.logOut, size: 16),
+                  label: Text('Sign Out', style: GoogleFonts.sora(fontSize: 15, fontWeight: FontWeight.bold)),
+                ),
               ],
-              
-              // Sections
-              _buildSectionHeader('ACCOUNT', theme),
-              Container(
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: theme.dividerColor.withValues(alpha: 0.2)),
-                ),
-                child: Column(
-                  children: [
-                    _buildSettingsTile('Edit Profile', 'Update your personal information', LucideIcons.user, theme),
-                    _buildDivider(theme),
-                    _buildSettingsTile('Change Password', 'Keep your account secure', LucideIcons.lock, theme),
-                    _buildDivider(theme),
-                    _buildSettingsTile('Email Preferences', 'Manage what you receive', LucideIcons.mail, theme),
-                    _buildDivider(theme),
-                    _buildSettingsTile('Linked Accounts', 'Connect your accounts', LucideIcons.link, theme, showChevron: true),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-              
-              _buildSectionHeader('PREFERENCES', theme),
-              Container(
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: theme.dividerColor.withValues(alpha: 0.2)),
-                ),
-                child: Column(
-                  children: [
-                    // Theme Tile (Custom trailing)
-                    _buildCustomTrailingTile(
-                      'Theme', 'Choose light or dark theme', LucideIcons.sun, theme,
-                      trailing: Container(
-                        padding: const EdgeInsets.all(2),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFAF9F6),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: theme.dividerColor.withValues(alpha: 0.3)),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            GestureDetector(
-                              onTap: () => setState(() => _isDarkMode = false),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: !_isDarkMode ? theme.colorScheme.surface : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(6),
-                                  border: !_isDarkMode ? Border.all(color: AppTheme.accentCoral.withValues(alpha: 0.3)) : null,
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(LucideIcons.sun, size: 12, color: !_isDarkMode ? AppTheme.accentCoral : theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5)),
-                                    const SizedBox(width: 4),
-                                    Text('Light', style: GoogleFonts.inter(fontSize: 8, fontWeight: !_isDarkMode ? FontWeight.bold : FontWeight.normal, color: !_isDarkMode ? AppTheme.accentCoral : theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5))),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            GestureDetector(
-                              onTap: () => setState(() => _isDarkMode = true),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: _isDarkMode ? theme.colorScheme.surface : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(6),
-                                  border: _isDarkMode ? Border.all(color: theme.dividerColor.withValues(alpha: 0.3)) : null,
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(LucideIcons.moon, size: 12, color: _isDarkMode ? theme.colorScheme.onSurface : theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5)),
-                                    const SizedBox(width: 4),
-                                    Text('Dark', style: GoogleFonts.inter(fontSize: 8, fontWeight: _isDarkMode ? FontWeight.bold : FontWeight.normal, color: _isDarkMode ? theme.colorScheme.onSurface : theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5))),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    _buildDivider(theme),
-                    
-                    // Push Notifications (Custom trailing)
-                    _buildCustomTrailingTile(
-                      'Push Notifications', 'Manage your notification settings', LucideIcons.bell, theme,
-                      trailing: Switch(
-                        value: _pushNotifications,
-                        onChanged: (v) => setState(() => _pushNotifications = v),
-                        activeThumbColor: Colors.white,
-                        activeTrackColor: AppTheme.accentCoral,
-                        inactiveTrackColor: theme.dividerColor.withValues(alpha: 0.2),
-                      ),
-                    ),
-                    _buildDivider(theme),
-                    
-                    // Language
-                    _buildCustomTrailingTile(
-                      'Language', 'Choose your preferred language', LucideIcons.globe, theme,
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text('English', style: GoogleFonts.inter(fontSize: 9, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6))),
-                          const SizedBox(width: 4),
-                          Icon(LucideIcons.chevronRight, size: 12, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.3)),
-                        ],
-                      ),
-                    ),
-                    _buildDivider(theme),
-                    _buildSettingsTile('Data & Privacy', 'Manage your data and privacy', LucideIcons.shieldCheck, theme),
-                    
-                    if (!widget.isAdmin) ...[
-                      _buildDivider(theme),
-                      _buildSettingsTile('Help & Support', 'Get help and contact support', LucideIcons.helpCircle, theme),
-                    ],
-                  ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 8),
+      child: Text(
+        title,
+        style: GoogleFonts.inter(
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 1.2,
+          color: const Color(0xFF94A3B8),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCard(List<Widget> children) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFF1F5F9)),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 12, offset: const Offset(0, 3))],
+      ),
+      child: Column(children: children),
+    );
+  }
+
+  Widget _divider() => const Divider(height: 1, indent: 52, endIndent: 16, color: Color(0xFFF1F5F9));
+
+  Future<void> _launchUrl(String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri == null) return;
+    try {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {}
+  }
+
+  void _showLeetcodeSheet(BuildContext context, UserProvider userProvider) {
+    final ctrl = TextEditingController(text: userProvider.currentUser?.leetcodeUsername ?? '');
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: const Color(0xFFE2E8F0), borderRadius: BorderRadius.circular(2)))),
+              const SizedBox(height: 20),
+              Text('LeetCode Username', style: GoogleFonts.sora(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A))),
+              const SizedBox(height: 6),
+              Text('Link your LeetCode profile to track your progress.', style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748B))),
+              const SizedBox(height: 20),
+              TextField(
+                controller: ctrl,
+                style: GoogleFonts.inter(fontSize: 15),
+                decoration: InputDecoration(
+                  labelText: 'Username',
+                  hintText: 'e.g. john_doe',
+                  labelStyle: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF64748B)),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppTheme.accentCoral)),
                 ),
               ),
-              const SizedBox(height: 24),
-              _buildSectionHeader('SUPPORT', theme),
-              Container(
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: theme.dividerColor.withValues(alpha: 0.2)),
-                ),
-                child: Column(
-                  children: [
-                    _buildSettingsTile('Help & Support', 'Get help and contact support', LucideIcons.helpCircle, theme),
-                    _buildDivider(theme),
-                    _buildSettingsTile('About Placer', 'Learn more about the app', LucideIcons.info, theme, onTap: () => context.push('/credits')),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-              
-              // Log Out
-              OutlinedButton.icon(
-                onPressed: () {},
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppTheme.accentCoral,
-                  side: BorderSide(color: AppTheme.accentCoral.withValues(alpha: 0.3)),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  backgroundColor: theme.colorScheme.surface,
-                ),
-                icon: const Icon(LucideIcons.logOut, size: 12),
-                label: Text('Log Out', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold)),
-              ),
-              const SizedBox(height: 24),
-              
-              // App Version
+              const SizedBox(height: 20),
               Row(
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('App version 2.4.1 • You\'re all set! 🚀', style: GoogleFonts.inter(fontSize: 9, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5))),
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFFE2E8F0)),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                      child: Text('Cancel', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () async {
+                        final username = ctrl.text.trim();
+                        if (username.isEmpty) return;
+                        try {
+                          await userProvider.updateLeetCodeUsername(username);
+                          if (context.mounted) Navigator.pop(context);
+                        } catch (_) {}
+                      },
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppTheme.accentCoral,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                      child: Text('Save', style: GoogleFonts.sora(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
                 ],
               ),
+              const SizedBox(height: 8),
             ],
           ),
         ),
@@ -411,161 +339,194 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Future<Map<String, dynamic>?> _fetchLineageMentor(String currentUserId) async {
-    try {
-      final client = Supabase.instance.client;
-      final lineageResponse = await client.from('lineage_map')
-        .select('senior_user_id')
-        .eq('junior_user_id', currentUserId)
-        .maybeSingle();
-        
-      if (lineageResponse == null) return null;
-      
-      final seniorId = lineageResponse['senior_user_id'];
-      
-      final mentorResponse = await client.from('users')
-        .select('full_name, current_company, current_role_title, linkedin_url')
-        .eq('id', seniorId)
-        .eq('mentorship_open', true)
-        .maybeSingle();
-        
-      return mentorResponse;
-    } catch (e) {
-      debugPrint('Error fetching lineage mentor: $e');
-      return null;
-    }
-  }
-
-  Widget _buildHeaderIconButton(IconData icon, ThemeData theme, {bool hasDot = false}) {
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        shape: BoxShape.circle,
-        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.3)),
-      ),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Icon(icon, size: 16, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7)),
-          if (hasDot)
-            Positioned(
-              right: 0,
-              top: 0,
-              child: Container(
-                width: 6,
-                height: 6,
-                decoration: const BoxDecoration(
-                  color: AppTheme.accentCoral,
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
+  Future<void> _confirmSignOut(BuildContext context, UserProvider userProvider) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('Sign Out', style: GoogleFonts.sora(fontWeight: FontWeight.bold)),
+        content: Text('Are you sure you want to sign out?', style: GoogleFonts.inter()),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('Cancel', style: GoogleFonts.inter(color: const Color(0xFF64748B))),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text('Sign Out', style: GoogleFonts.sora(color: const Color(0xFFEF4444), fontWeight: FontWeight.bold)),
+          ),
         ],
       ),
     );
+    if (confirmed == true && mounted) {
+      setState(() => _signingOut = true);
+      try {
+        await userProvider.signOut();
+      } finally {
+        if (mounted) setState(() => _signingOut = false);
+      }
+    }
   }
+}
 
-  Widget _buildStatItem(String title, String value, String unit, int diff, bool isUp, IconData icon, Color iconColor, ThemeData theme) {
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 16, color: iconColor),
-            const SizedBox(width: 8),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: GoogleFonts.inter(fontSize: 8, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6))),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Text(value, style: GoogleFonts.sora(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.accentCoral)),
-                    if (unit.isNotEmpty) ...[
-                      const SizedBox(width: 4),
-                      Text(unit, style: GoogleFonts.inter(fontSize: 9, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6))),
-                    ],
-                  ],
-                ),
-                Row(
-                  children: [
-                    Icon(isUp ? LucideIcons.arrowUp : LucideIcons.arrowDown, size: 8, color: isUp ? Colors.green : Colors.red),
-                    Text(' $diff this week', style: GoogleFonts.inter(fontSize: 9, color: isUp ? Colors.green : Colors.red)),
-                  ],
-                ),
-              ],
-            ),
-          ],
+// ─── Profile Card ──────────────────────────────────────────────────────────
+class _ProfileCard extends StatelessWidget {
+  final dynamic user;
+  const _ProfileCard({required this.user});
+
+  @override
+  Widget build(BuildContext context) {
+    final name = user?.name ?? 'Student';
+    final reg = user?.regNo ?? '';
+    final email = user?.email ?? '';
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF1E293B), Color(0xFF334155)],
         ),
-      ],
-    );
-  }
-
-  Widget _buildSectionHeader(String title, ThemeData theme) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 4.0, bottom: 8.0),
-      child: Text(
-        title,
-        style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 1.2, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5)),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [BoxShadow(color: const Color(0xFF1E293B).withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, 8))],
       ),
-    );
-  }
-
-  Widget _buildSettingsTile(String title, String subtitle, IconData icon, ThemeData theme, {bool showChevron = true, VoidCallback? onTap}) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          children: [
-            Icon(icon, size: 16, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6)),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
-                  const SizedBox(height: 2),
-                  Text(subtitle, style: GoogleFonts.inter(fontSize: 9, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5))),
-                ],
-              ),
-            ),
-            if (showChevron)
-              Icon(LucideIcons.chevronRight, size: 12, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.3)),
-          ],
-        ),
-      ),
-    );
-  }
-
-
-
-  Widget _buildCustomTrailingTile(String title, String subtitle, IconData icon, ThemeData theme, {required Widget trailing}) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
       child: Row(
         children: [
-          Icon(icon, size: 16, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6)),
+          // Avatar
+          Container(
+            width: 64, height: 64,
+            decoration: BoxDecoration(
+              color: AppTheme.accentCoral.withValues(alpha: 0.2),
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 2),
+            ),
+            child: user?.avatarUrl != null
+                ? ClipOval(child: AvatarWidget(avatarUrl: user!.avatarUrl, name: name, gender: user!.gender))
+                : Center(
+                    child: Text(
+                      name.isNotEmpty ? name[0].toUpperCase() : 'S',
+                      style: GoogleFonts.sora(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
+                  ),
+          ),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
+                Text(name, style: GoogleFonts.sora(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                const SizedBox(height: 4),
+                Text(reg, style: GoogleFonts.inter(fontSize: 13, color: Colors.white.withValues(alpha: 0.7))),
                 const SizedBox(height: 2),
-                Text(subtitle, style: GoogleFonts.inter(fontSize: 9, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5))),
+                Text(email, style: GoogleFonts.inter(fontSize: 12, color: Colors.white.withValues(alpha: 0.5)), overflow: TextOverflow.ellipsis),
               ],
             ),
           ),
-          trailing,
         ],
       ),
     );
   }
+}
 
-  Widget _buildDivider(ThemeData theme, {bool isOrange = false}) {
-    return Divider(height: 1, indent: 52, endIndent: 16, color: isOrange ? AppTheme.accentCoral.withValues(alpha: 0.1) : theme.dividerColor.withValues(alpha: 0.1));
+// ─── Reusable Tile Widgets ─────────────────────────────────────────────────
+class _NavTile extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final String label;
+  final String subtitle;
+  final VoidCallback? onTap;
+  final bool showChevron;
+
+  const _NavTile({
+    required this.icon,
+    required this.iconColor,
+    required this.label,
+    required this.subtitle,
+    this.onTap,
+    this.showChevron = true,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            Container(
+              width: 36, height: 36,
+              decoration: BoxDecoration(color: iconColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
+              child: Icon(icon, size: 16, color: iconColor),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: const Color(0xFF1E293B))),
+                  const SizedBox(height: 1),
+                  Text(subtitle, style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF94A3B8))),
+                ],
+              ),
+            ),
+            if (showChevron)
+              const Icon(LucideIcons.chevronRight, size: 16, color: Color(0xFF94A3B8)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SwitchTile extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final String label;
+  final String subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  const _SwitchTile({
+    required this.icon,
+    required this.iconColor,
+    required this.label,
+    required this.subtitle,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: Row(
+        children: [
+          Container(
+            width: 36, height: 36,
+            decoration: BoxDecoration(color: iconColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
+            child: Icon(icon, size: 16, color: iconColor),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: const Color(0xFF1E293B))),
+                Text(subtitle, style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF94A3B8))),
+              ],
+            ),
+          ),
+          Switch(
+            value: value,
+            onChanged: onChanged,
+            activeThumbColor: AppTheme.accentCoral,
+            activeTrackColor: AppTheme.accentCoral.withValues(alpha: 0.3),
+          ),
+        ],
+      ),
+    );
   }
 }

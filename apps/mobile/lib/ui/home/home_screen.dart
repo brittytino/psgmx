@@ -190,41 +190,46 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 child: _buildHeader(firstName, Theme.of(context)),
               ),
               Expanded(
-                child: SingleChildScrollView(
-                  physics: const ClampingScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(20.0, 4.0, 20.0, 32.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Hero Banner
-                      _buildHeroBanner(),
-                      const SizedBox(height: 24),
+                child: RefreshIndicator(
+                  color: AppTheme.accentCoral,
+                  backgroundColor: Colors.white,
+                  onRefresh: _loadData,
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(20.0, 4.0, 20.0, 32.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Hero Banner
+                        _buildHeroBanner(),
+                        const SizedBox(height: 24),
 
-                      // Placement Readiness Card
-                      _buildReadinessCard(),
-                      const SizedBox(height: 24),
+                        // Placement Readiness Card
+                        _buildReadinessCard(),
+                        const SizedBox(height: 24),
 
-                      // Dual Cards (Spark Five & Logbook)
-                      Row(
-                        children: [
-                          Expanded(child: _buildSparkCard(context)),
-                          const SizedBox(width: 16),
-                          Expanded(child: _buildLogCard(context)),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
+                        // Dual Cards (Spark Five & Logbook)
+                        Row(
+                          children: [
+                            Expanded(child: _buildSparkCard(context)),
+                            const SizedBox(width: 16),
+                            Expanded(child: _buildLogCard(context)),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
 
-                      // LeetCode Progress Card
-                      _buildLeetCodeCard(),
-                      const SizedBox(height: 24),
+                        // LeetCode Progress Card
+                        _buildLeetCodeCard(),
+                        const SizedBox(height: 24),
 
-                      // Readiness Top Performers Podium
-                      _buildReadinessLeaderboardList(user?.uid ?? ''),
-                      const SizedBox(height: 24),
+                        // Readiness Top Performers Podium
+                        _buildReadinessLeaderboardList(user?.uid ?? ''),
+                        const SizedBox(height: 24),
 
-                      // LeetCode Top Solvers Medals
-                      _buildLeetCodeLeaderboardList(),
-                    ],
+                        // LeetCode Top Solvers Medals
+                        _buildLeetCodeLeaderboardList(),
+                      ],
+                    ),
                   ),
                 ),
               ),
