@@ -449,11 +449,22 @@ class _DailyFiveScreenState extends State<DailyFiveScreen> with WidgetsBindingOb
   }
 
   Widget _buildCompletionScreen(BuildContext context, ThemeData theme, DailyFiveProvider provider) {
+    // Grading now happens server-side (Section 4.2) — correctOption isn't
+    // available on this device for online-fetched questions anymore, so
+    // provider.session!.accuracyRate/correctCount can't be trusted here.
+    // Read the server-verified rate back from the freshly-refreshed streak
+    // instead (finalizeSession() re-fetches it right after grading).
+    final serverAccuracy = provider.streak?.lastAccuracyRate;
     String accuracyStr = '0%';
     int correctCount = 0;
-    if (provider.session != null) {
-      accuracyStr = '${(provider.session!.accuracyRate * 100).toStringAsFixed(0)}%';
-      correctCount = provider.session!.correctCount;
+    final totalQuestions = provider.session?.questions.length ?? 5;
+    if (serverAccuracy != null) {
+      accuracyStr = '${(serverAccuracy * 100).toStringAsFixed(0)}%';
+      correctCount = (serverAccuracy * totalQuestions).round();
+    } else if (provider.session != null) {
+      // Offline path: grading is deferred until sync, so there's no score
+      // to show yet — this branch just avoids a stale/misleading number.
+      accuracyStr = 'Pending sync';
     }
 
     return Scaffold(

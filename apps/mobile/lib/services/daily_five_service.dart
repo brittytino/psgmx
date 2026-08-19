@@ -9,8 +9,10 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:drift/drift.dart' as drift;
 
 /// Manages all Daily Five quiz operations:
-/// - Fetching today's 5 questions from the question bank (kept in memory only)
-/// - Grading answers (in memory — never persisted per question)
+/// - Fetching today's 5 server-picked questions (answer key withheld
+///   until after submission — see get_daily_five_questions RPC)
+/// - Server-side grading (submit_daily_five_answers RPC — this client no
+///   longer computes or self-reports a score)
 /// - Updating streak state via the DB RPC functions
 /// - Managing freeze spending
 class DailyFiveService {
@@ -45,7 +47,10 @@ class DailyFiveService {
             id: c.id,
             questionText: c.questionText,
             options: optsList,
-            correctOption: c.correctOption,
+            // -1 is the cache sentinel for "server didn't send the answer"
+            // (see _cacheQuestionsInDrift) — translate back to null so
+            // offline grading code treats it the same as the online path.
+            correctOption: c.correctOption == -1 ? null : c.correctOption,
             topic: c.topic,
             difficulty: c.difficulty,
             isActive: c.isActive,
@@ -57,35 +62,33 @@ class DailyFiveService {
         return DailyFiveSession(questions: selected);
       }
 
-      // Find user's batch status to determine target year
-      final userRes = await _supabase.from('users').select('batch_id, batches!inner(status)').eq('id', userId).single();
-      final batchStatus = userRes['batches']['status'] as String;
-      
-      String topicPrefix = batchStatus == 'active_senior' ? 'Year 2 -' : 'Year 1 -';
+      // Server-picked, seeded per (user_id, today) — returns exactly 5
+      // questions with correct_option stripped server-side (Section 4.2:
+      // "answer key never shipped to client pre-submission"). Previously
+      // this fetched the ENTIRE topic pool via a bare select() including
+      // correct_option, then shuffled/trimmed client-side — the full
+      // answer key was visible in the response before the student
+      // answered a single question.
+      final response = await _supabase.rpc('get_daily_five_questions', params: {
+        'p_user_id': userId,
+      });
 
-      // Fetch all active questions for the topic and shuffle in Dart
-      final response = await _supabase
-          .from('question_bank')
-          .select()
-          .eq('is_active', true)
-          .like('topic', '$topicPrefix%');
-
-      final questions = (response as List)
-          .map((r) => DailyFiveQuestion.fromMap(r))
+      final selected = (response as List)
+          .map((r) => DailyFiveQuestion.fromMap(r as Map<String, dynamic>))
           .toList();
 
-      if (questions.isEmpty) {
-        throw Exception('No active questions found in question bank for topic: $topicPrefix');
+      if (selected.isEmpty) {
+        throw Exception('No active questions found in question bank for your batch.');
       }
 
-      // Update local Drift cache with latest questions for next time we're offline
-      _cacheQuestionsInDrift(questions);
+      // Cache for offline READ availability only — correct_option is not
+      // present in this response (by design), so offline mode can display
+      // these same 5 questions but cannot self-grade them; submission
+      // while offline is queued and graded server-side once reconnected
+      // (see submitSession's offline branch).
+      _cacheQuestionsInDrift(selected);
 
-      questions.shuffle(_rng);
-
-      // Trim to 5 
-      final selected = questions.take(5).toList();
-      debugPrint('[DailyFiveService] Loaded ${selected.length} questions from Supabase');
+      debugPrint('[DailyFiveService] Loaded ${selected.length} questions via get_daily_five_questions RPC');
       return DailyFiveSession(questions: selected);
     } catch (e) {
       debugPrint('[DailyFiveService] fetchTodaysSession error: $e');
@@ -103,7 +106,10 @@ class DailyFiveService {
                 id: q.id,
                 questionText: q.questionText,
                 optionsJson: jsonEncode(q.options),
-                correctOption: q.correctOption,
+                // -1 sentinel: the Drift column is non-nullable and
+                // q.correctOption is null here by design (server strips it
+                // pre-submission) — see the read-side translation above.
+                correctOption: q.correctOption ?? -1,
                 topic: q.topic,
                 difficulty: q.difficulty,
                 isActive: drift.Value(q.isActive),
@@ -133,52 +139,6 @@ class DailyFiveService {
     }
   }
 
-  /// Called after a user completes all 5 questions.
-  ///
-  /// Calls the Postgres `increment_daily_five_streak()` RPC which handles:
-  /// - Monthly freeze reset
-  /// - Streak increment or reset
-  /// - Longest streak update
-  /// - Accuracy rate storage
-  ///
-  /// Returns the updated [DailyFiveStreak].
-  Future<DailyFiveStreak> submitCompletion({
-    required String userId,
-    required DailyFiveSession completedSession,
-  }) async {
-    final accuracyRate = completedSession.accuracyRate;
-    await _supabase.rpc('increment_daily_five_streak', params: {
-      'p_user_id': userId,
-      'p_accuracy_rate': accuracyRate,
-    });
-
-    // Audit log the completion
-    await _supabase.from('audit_logs').insert({
-      'actor_id': userId,
-      'action': 'DAILY_FIVE_COMPLETED',
-      'entity_type': 'daily_five_streaks',
-      'entity_id': null,
-      'metadata': {
-        'accuracy_rate': accuracyRate,
-        'correct_count': completedSession.correctCount,
-        'total_questions': completedSession.questions.length,
-      },
-    });
-
-    // Dynamically update readiness score
-    try {
-      await ReadinessScoreService(_supabase).computeAndStore(userId);
-    } catch (e) {
-      debugPrint('[DailyFiveService] Could not dynamically update readiness score: $e');
-    }
-
-    final updated = await fetchStreak(userId);
-    debugPrint(
-        '[DailyFiveService] Streak updated: ${updated?.currentStreak} 🔥 '
-        '(accuracy: ${(accuracyRate * 100).toStringAsFixed(0)}%)');
-    return updated!;
-  }
-
   // ── Convenience aliases (used by UI screens) ───────────────────────────────
 
   /// Alias for [fetchStreak] — used by DailyFiveScreen.
@@ -191,26 +151,37 @@ class DailyFiveService {
     return session.questions;
   }
 
-  /// Alias for [submitCompletion] with the flat accuracy-rate signature
-  /// used by [DailyFiveScreen] (which has already graded the session in-memory).
+  /// Submits the student's answers for grading.
+  ///
+  /// CHANGED: previously took a pre-computed `accuracyRate` (graded
+  /// client-side, self-reported straight into increment_daily_five_streak
+  /// — a student could call that RPC directly with accuracyRate: 1.0
+  /// regardless of what they actually answered). Now takes the raw
+  /// answers and grades server-side via submit_daily_five_answers(),
+  /// which reads correct_option as the function owner (bypassing the
+  /// column-level REVOKE that blocks students from reading it directly)
+  /// and only then calls increment_daily_five_streak with a verified rate.
   Future<DailyFiveStreak> submitSession({
     required String userId,
-    required double accuracyRate,
+    required Map<String, int> answersByQuestionId,
   }) async {
     final connectivityResult = await Connectivity().checkConnectivity();
     final isOffline = connectivityResult.contains(ConnectivityResult.none);
 
     if (isOffline) {
-      debugPrint('[DailyFiveService] Offline mode: queueing completion action');
+      debugPrint('[DailyFiveService] Offline mode: queueing answers for server-side grading on reconnect');
       await localDb.into(localDb.syncQueue).insert(SyncQueueCompanion.insert(
         actionType: 'submit_daily_five',
         payloadJson: jsonEncode({
           'user_id': userId,
-          'accuracy_rate': accuracyRate,
+          'answers': answersByQuestionId,
         }),
       ));
 
-      // Attempt to load offline streak fallback
+      // Optimistic UI: bump the locally-cached streak count, but the real
+      // accuracy is unknown until this syncs and is server-graded — no
+      // client-side score to show here anymore (there's no answer key on
+      // this device to compute one from).
       final cachedStreak = await localDb.select(localDb.offlineStreaks).get();
       if (cachedStreak.isNotEmpty) {
         final st = cachedStreak.first;
@@ -221,11 +192,10 @@ class DailyFiveService {
           freezesRemaining: st.freezesRemaining,
           freezesResetMonth: st.freezesResetMonth,
           lastCompletedDate: DateTime.now(),
-          lastAccuracyRate: accuracyRate,
+          lastAccuracyRate: null, // pending server grading
           updatedAt: DateTime.now(),
         );
       } else {
-        // Fallback optimistic streak
         return DailyFiveStreak(
           userId: userId,
           currentStreak: 1,
@@ -233,22 +203,20 @@ class DailyFiveService {
           freezesRemaining: 2,
           freezesResetMonth: 'offline',
           lastCompletedDate: DateTime.now(),
-          lastAccuracyRate: accuracyRate,
+          lastAccuracyRate: null,
           updatedAt: DateTime.now(),
         );
       }
     }
 
-    await _supabase.rpc('increment_daily_five_streak', params: {
+    // Server-side grading — see submit_daily_five_answers() in
+    // supabase/migrations/10_sprint2_anticheat.sql. It grades, updates
+    // daily_five_attempts, flags impossibly-fast completions, calls
+    // increment_daily_five_streak() internally, and writes the audit log
+    // itself, so none of that is duplicated here anymore.
+    await _supabase.rpc('submit_daily_five_answers', params: {
       'p_user_id': userId,
-      'p_accuracy_rate': accuracyRate,
-    });
-    await _supabase.from('audit_logs').insert({
-      'actor_id': userId,
-      'action': 'DAILY_FIVE_COMPLETED',
-      'entity_type': 'daily_five_streaks',
-      'entity_id': null,
-      'metadata': {'accuracy_rate': accuracyRate},
+      'p_answers': answersByQuestionId,
     });
 
     // Dynamically update readiness score
@@ -281,6 +249,14 @@ class DailyFiveService {
     return updated!;
   }
 
+  /// Reveals correct_option for today's already-submitted attempt only —
+  /// powers the post-submission "why was I wrong" AI explanation. Returns
+  /// a map of question id → correct option index.
+  Future<Map<String, int>> fetchTodaysResults(String userId) async {
+    final response = await _supabase.rpc('get_daily_five_results', params: {'p_user_id': userId});
+    return {for (final row in (response as List)) row['id'] as String: row['correct_option'] as int};
+  }
+
   /// Terminates the exam due to a proctoring violation.
   /// Marks the user as participated (0% accuracy) so they can't re-take it today,
   /// but forcefully resets their current streak to 0 as a penalty.
@@ -291,8 +267,10 @@ class DailyFiveService {
       'p_accuracy_rate': 0.0,
     });
     
-    // 2. Punish by resetting streak to 0
-    await _supabase.from('daily_five_streaks').update({'current_streak': 0}).eq('user_id', userId);
+    // 2. Punish by resetting streak to 0 — via RPC, not a direct table
+    // write (Section 4.5: no client role should have direct UPDATE on
+    // daily_five_streaks; see 10_sprint2_anticheat.sql).
+    await _supabase.rpc('reset_daily_five_streak_violation', params: {'p_user_id': userId});
     
     // 3. Log violation
     await _supabase.from('audit_logs').insert({
@@ -331,14 +309,15 @@ class DailyFiveService {
 
   // ── Question Bank Management ───────────────────────────────────────────────
 
-  /// Returns all active questions (for question bank admin screen).
-  /// Requires [publish_tasks] permission (enforced by RLS).
+  /// Returns all questions, including correct_option (for question bank
+  /// admin screen). Requires the `publish_tasks` permission or
+  /// Faculty/HOD role — enforced inside get_question_bank_full() itself,
+  /// since correct_option is column-REVOKEd for `authenticated` and a
+  /// raw select() can no longer read it at all (a bare select() here
+  /// would error the whole request for every caller, not just students).
   Future<List<DailyFiveQuestion>> fetchAllQuestions() async {
-    final response = await _supabase
-        .from('question_bank')
-        .select()
-        .order('topic');
-    return (response as List).map((r) => DailyFiveQuestion.fromMap(r)).toList();
+    final response = await _supabase.rpc('get_question_bank_full');
+    return (response as List).map((r) => DailyFiveQuestion.fromMap(r as Map<String, dynamic>)).toList();
   }
 
   /// Creates a new question in the bank.
@@ -353,6 +332,12 @@ class DailyFiveService {
     assert(options.length == 4, 'Questions must have exactly 4 options');
     assert(correctOption >= 0 && correctOption <= 3, 'Invalid correct option');
 
+    // Explicit column list on the returning select — never select()/select('*')
+    // on question_bank; correct_option is column-REVOKEd for `authenticated`
+    // (S1-style fix, Section 4.2), so a wildcard select would error even for
+    // the coordinator who just wrote it. The caller already knows
+    // correctOption locally (they just typed it in), so it's filled in below
+    // rather than re-fetched.
     final response = await _supabase.from('question_bank').insert({
       'question_text': questionText,
       'options': options,
@@ -360,7 +345,7 @@ class DailyFiveService {
       'topic': topic,
       'difficulty': difficulty,
       'created_by': createdBy,
-    }).select().single();
+    }).select('id, question_text, options, topic, difficulty, is_active').single();
 
     await _supabase.from('audit_logs').insert({
       'actor_id': createdBy,
@@ -370,7 +355,7 @@ class DailyFiveService {
       'metadata': {'topic': topic, 'difficulty': difficulty},
     });
 
-    return DailyFiveQuestion.fromMap(response);
+    return DailyFiveQuestion.fromMap({...response, 'correct_option': correctOption});
   }
 
   /// Updates an existing question.

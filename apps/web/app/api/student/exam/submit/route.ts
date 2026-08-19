@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Only students can submit exams
-    if (session.role !== 'student') {
+    if (session.roleLabel.toLowerCase() !== 'student') {
       return NextResponse.json({ error: 'Only students can submit exams' }, { status: 403 })
     }
 

@@ -13,8 +13,11 @@ class DailyFiveQuestion {
   final String questionText;
   /// Four answer choices (index 0–3 = A–D).
   final List<String> options;
-  /// 0-based index of the correct answer.
-  final int correctOption;
+  /// 0-based index of the correct answer. NEVER populated for questions
+  /// fetched online pre-submission (get_daily_five_questions RPC strips
+  /// it server-side) — only present for offline-cached questions or
+  /// question-bank management reads. Null means "unknown to this client".
+  final int? correctOption;
   final String topic;
   final String difficulty;
   /// Whether this question is active in the pool. Inactive questions are
@@ -25,7 +28,7 @@ class DailyFiveQuestion {
     required this.id,
     required this.questionText,
     required this.options,
-    required this.correctOption,
+    this.correctOption,
     required this.topic,
     required this.difficulty,
     this.isActive = true,
@@ -43,7 +46,10 @@ class DailyFiveQuestion {
       id: data['id'] as String,
       questionText: data['question_text'] as String,
       options: opts,
-      correctOption: data['correct_option'] as int,
+      // Absent entirely from get_daily_five_questions' response (answer
+      // key stripped server-side) — present when reading via
+      // get_question_bank_full() or the offline cache.
+      correctOption: data['correct_option'] as int?,
       topic: data['topic'] as String,
       difficulty: data['difficulty'] as String,
       isActive: data['is_active'] as bool? ?? true,
@@ -92,6 +98,10 @@ class DailyFiveSession {
   DailyFiveQuestion get currentQuestion => questions[currentIndex];
 
   /// Number of correct answers in a completed session.
+  /// Only meaningful when every question's [correctOption] is populated
+  /// (offline mode, which still caches the answer key locally). For the
+  /// online path, correctOption is null pre-submission by design — use
+  /// the grading result returned by submit_daily_five_answers() instead.
   int get correctCount {
     int count = 0;
     for (var i = 0; i < questions.length; i++) {

@@ -18,12 +18,24 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Band distribution for all active batches
-    const { data: bandCounts, error: bandErr } = await supabaseAdmin
-      .from('readiness_scores')
-      .select('band')
+    // Band distribution across current (latest-per-user) scores.
+    // `readiness_scores` has no `band` column — it's derived from `score`,
+    // and the table is an append-only history log (many rows per user),
+    // so this reads from the `current_readiness_scores` view (added in
+    // 09_sprint1_schema_and_features.sql) which already collapses to one
+    // row per user.
+    const { data: currentScores, error: bandErr } = await supabaseAdmin
+      .from('current_readiness_scores')
+      .select('score')
 
     if (bandErr) throw bandErr
+
+    const bandFor = (score: number) => {
+      if (score >= 80) return 'strong'
+      if (score >= 60) return 'building'
+      if (score >= 40) return 'needs_attention'
+      return 'at_risk'
+    }
 
     const bands: Record<string, number> = {
       strong: 0,
@@ -32,16 +44,14 @@ export async function GET(req: NextRequest) {
       at_risk: 0,
     }
 
-    for (const row of (bandCounts as any[]) ?? []) {
-      if (row.band && row.band in bands) {
-        bands[row.band as string]++
-      }
+    for (const row of currentScores ?? []) {
+      bands[bandFor(row.score)]++
     }
 
-    // Top 10 leaderboard by score
+    // Top 10 leaderboard by current score
     const { data: leaderboard, error: leaderboardErr } = await supabaseAdmin
-      .from('readiness_scores')
-      .select('user_id, score, band, users!inner(full_name, roll_no, batch_id)')
+      .from('current_readiness_scores')
+      .select('user_id, score, users!inner(name, reg_no, batch_id)')
       .order('score', { ascending: false })
       .limit(10)
 
@@ -51,7 +61,7 @@ export async function GET(req: NextRequest) {
     const { count: activeStudents } = await supabaseAdmin
       .from('users')
       .select('*', { count: 'exact', head: true })
-      .eq('role', 'student')
+      .eq('role_label', 'Student')
 
     return NextResponse.json({
       success: true,

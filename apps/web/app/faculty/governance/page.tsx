@@ -1,47 +1,82 @@
-/* eslint-disable react-hooks/purity */
-import React from 'react';
+import { ShieldCheck, AlertTriangle, GraduationCap, Users } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
-import { AlertCircle } from 'lucide-react';
-import FacultyGovernanceClient from './FacultyGovernanceClient';
 
 export const dynamic = 'force-dynamic';
 
-export default async function FacultyGovernance() {
+export default async function FacultyGovernancePage() {
   const supabase = await createClient();
 
-  // Fetch pending articles
-  const { data: pendingDocs } = await supabase
-    .from('knowledge_brain_articles')
-    .select('id, title, author_id, created_at')
-    .eq('approval_status', 'pending')
-    .order('created_at', { ascending: true });
-
-  const articles = (pendingDocs || []).map((doc: any) => ({
-    _id: doc.id,
-    title: doc.title,
-    authorToken: doc.author_id,
-    freshnessScore: Math.max(0, 100 - Math.floor((Date.now() - new Date(doc.created_at).getTime()) / (1000 * 60 * 60 * 24))),
-    lastReviewedAt: doc.created_at,
-  }));
+  const [
+    { count: graduatingStudents },
+    { count: pendingArticles },
+    { count: totalStudents },
+  ] = await Promise.all([
+    supabase.from('users').select('id, batches!inner(status)', { count: 'exact', head: true })
+      .eq('batches.status', 'active_senior')
+      .eq('role_label', 'Student'),
+    supabase.from('knowledge_brain_articles').select('id', { count: 'exact', head: true })
+      .eq('approval_status', 'pending'),
+    supabase.from('users').select('id', { count: 'exact', head: true }).eq('role_label', 'Student'),
+  ]);
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-[1400px] mx-auto space-y-8 pb-8">
       <div>
-        <h1 className="text-3xl font-bold text-white tracking-tight">Knowledge Moderation</h1>
-        <p className="text-text-muted mt-2">Review pending knowledge base articles submitted by students.</p>
+        <h1 className="text-[26px] font-bold text-text-main tracking-tight mb-1">Governance</h1>
+        <p className="text-[14px] text-text-muted">Department-wide health and pending reviews. HOD-only.</p>
       </div>
 
-      <div className="bg-orange-500/10 border border-orange-500/20 rounded-xl p-4 flex gap-4 items-start">
-        <AlertCircle className="w-6 h-6 text-orange-400 shrink-0 mt-1" />
-        <div>
-          <h3 className="font-bold text-orange-400">Action Required</h3>
-          <p className="text-orange-200/80 text-sm mt-1">
-            Articles listed below require your approval. Only approved articles are embedded into the AI Senior context.
-          </p>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="bg-white rounded-[20px] border border-border-light p-6">
+          <p className="text-[12px] font-bold text-text-muted uppercase tracking-wider">Total Students</p>
+          <div className="flex items-center gap-4 mt-4">
+            <p className="text-[32px] font-black text-text-main">{totalStudents ?? 0}</p>
+            <Users className="w-7 h-7 text-primary-purple" />
+          </div>
+        </div>
+
+        <div className="bg-white rounded-[20px] border border-border-light p-6">
+          <p className="text-[12px] font-bold text-text-muted uppercase tracking-wider">Pending Articles</p>
+          <div className="flex items-center gap-4 mt-4">
+            <p className="text-[32px] font-black text-text-main">{pendingArticles ?? 0}</p>
+            <AlertTriangle className={`w-7 h-7 ${(pendingArticles ?? 0) > 0 ? 'text-illus-gold' : 'text-electric-blue'}`} />
+          </div>
+        </div>
+
+        <div className="bg-white rounded-[20px] border border-border-light p-6">
+          <p className="text-[12px] font-bold text-text-muted uppercase tracking-wider">System Health</p>
+          <div className="flex items-center gap-4 mt-4">
+            <p className="text-[32px] font-black text-text-main">Good</p>
+            <ShieldCheck className="w-7 h-7 text-electric-blue" />
+          </div>
+        </div>
+
+        <div className="bg-white rounded-[20px] border border-border-light p-6">
+          <p className="text-[12px] font-bold text-text-muted uppercase tracking-wider">Graduating Cohort</p>
+          <div className="flex items-center gap-4 mt-4">
+            <p className="text-[32px] font-black text-text-main">{graduatingStudents ?? 0}</p>
+            <GraduationCap className="w-7 h-7 text-deep-violet" />
+          </div>
         </div>
       </div>
 
-      <FacultyGovernanceClient initialArticles={articles} />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white rounded-[20px] border border-border-light p-6">
+          <h2 className="text-[16px] font-bold text-text-main mb-4">Batch Graduation</h2>
+          <p className="text-[13px] text-text-muted leading-relaxed">
+            {graduatingStudents ?? 0} students are in the active-senior batch. Run the <code className="bg-page-bg px-1.5 py-0.5 rounded text-[12px]">batch-graduation</code> Edge Function
+            in staging to dry-run promoting them to alumni before doing this against production (plan Section 13/14).
+          </p>
+        </div>
+
+        <div className="bg-white rounded-[20px] border border-border-light p-6">
+          <h2 className="text-[16px] font-bold text-text-main mb-4">Pending Content Reviews</h2>
+          <p className="text-[13px] text-text-muted leading-relaxed">
+            {pendingArticles ?? 0} knowledge articles are waiting for approval. They only enter the AI Senior RAG context
+            once approved from the Knowledge Brain review queue.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

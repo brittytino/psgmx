@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/auth'
 import { buildRAGContext, formatRAGContextForPrompt } from '@/lib/ai/rag'
+import { supabaseAdmin } from '@/lib/supabase/admin'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 
 const FALLBACK_MESSAGE =
@@ -123,6 +124,13 @@ export async function POST(req: NextRequest) {
         llmUsed = 'static_fallback'
       }
     }
+
+    // Fire-and-forget: powers the faculty dashboard's "AI Senior Top
+    // Queries" widget (Section 7.2). Never block the response on this.
+    supabaseAdmin.from('ai_query_logs').insert({ user_id: session.id, query_text: query }).then(
+      () => {},
+      (err) => console.warn('[AI Senior] Failed to log query:', err)
+    )
 
     return NextResponse.json({
       success:      true,

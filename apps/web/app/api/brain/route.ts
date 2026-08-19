@@ -56,7 +56,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const session = await getUserFromRequest(req)
-    if (!session || !['student', 'alumni'].includes(session.role)) {
+    if (!session || !['student', 'alumni'].includes(session.roleLabel.toLowerCase())) {
       return NextResponse.json({ error: 'Unauthorized — students and alumni only' }, { status: 401 })
     }
 

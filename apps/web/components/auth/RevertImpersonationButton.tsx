@@ -12,7 +12,7 @@ export default function RevertImpersonationButton() {
     try {
       const res = await fetch('/api/super-admin/revert', { method: 'POST' });
       if (res.ok) {
-        router.push('/super-admin');
+        router.push('/faculty');
         router.refresh();
       } else {
         alert('Failed to revert impersonation.');

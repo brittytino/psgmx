@@ -23,8 +23,8 @@ export async function POST(req: NextRequest) {
       await supabaseAdmin.from('audit_logs').insert({
         actor_id: session.id,
         action: 'IMPERSONATE_END',
-        target_table: 'users',
-        target_id: impersonatedId,
+        entity_type: 'users',
+        entity_id: impersonatedId,
       })
     }
 

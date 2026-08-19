@@ -7,21 +7,35 @@
 import { createClient } from '@/lib/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { type NextRequest } from 'next/server'
-import type { UserRole, AppRole } from '@/../../supabase/types/database.types'
-
-export type { UserRole, AppRole }
 
 // ──────────────────────────────────────────────────────────────
 // SessionUser — the shape returned by getSessionUser()
+//
+// CORRECTED to match the live `users` table (verified by direct schema
+// introspection — see supabase/migrations/08_security_fixes_sprint0.sql
+// header). There is no `role`/`app_role` enum pair live; the real role
+// model is `role_label` (TEXT: 'Student' | 'Faculty' | 'Alumni' | 'HOD')
+// plus a `roles` JSONB of student sub-flags (isStudent, isTeamLeader,
+// isCoordinator, isPlacementRep). The previous version of this file
+// selected role/app_role/full_name/roll_no, none of which exist — every
+// caller of requireRole/requireAppRole/isAdminUser was silently failing
+// closed (always rejecting) rather than actually checking anything.
 // ──────────────────────────────────────────────────────────────
+export interface UserRoles {
+  isStudent?: boolean
+  isTeamLeader?: boolean
+  isCoordinator?: boolean
+  isPlacementRep?: boolean
+}
+
 export interface SessionUser {
   id: string
   email: string
-  role: UserRole
-  app_role: AppRole
+  roleLabel: string
+  roles: UserRoles
   batch_id: string | null
-  full_name: string
-  roll_no: string | null
+  name: string
+  reg_no: string | null
 }
 
 /**
@@ -41,13 +55,13 @@ export async function getSessionUser(): Promise<SessionUser | null> {
 
   const { data: profile, error: profileErr } = await supabase
     .from('users')
-    .select('id, email, role, app_role, batch_id, full_name, roll_no')
+    .select('id, email, role_label, roles, batch_id, name, reg_no')
     .eq('id', user.id)
     .single()
 
   if (profileErr || !profile) return null
 
-  return profile as SessionUser
+  return { ...profile, roleLabel: profile.role_label } as unknown as SessionUser
 }
 
 /**
@@ -57,6 +71,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
  * or from cookies (fallback).
  */
 export async function getUserFromRequest(req: NextRequest): Promise<SessionUser | null> {
+  void req // session comes from cookies via createClient(); kept for call-site compatibility
   const supabase = await createClient()
 
   const {
@@ -67,52 +82,86 @@ export async function getUserFromRequest(req: NextRequest): Promise<SessionUser 
 
   const { data: profile } = await supabase
     .from('users')
-    .select('id, email, role, app_role, batch_id, full_name, roll_no')
+    .select('id, email, role_label, roles, batch_id, name, reg_no')
     .eq('id', user.id)
     .single()
 
-  return profile as SessionUser | null
+  if (!profile) return null
+
+  return { ...profile, roleLabel: profile.role_label } as unknown as SessionUser
 }
 
 /**
  * requireRole
- * Utility for API routes to enforce role requirements.
+ * Utility for API routes to enforce role requirements. Matches against
+ * role_label case-insensitively so existing call sites (which pass
+ * lowercase strings like 'faculty', 'hod') keep working unchanged.
  * Returns the SessionUser if the role matches, null otherwise.
  */
 export async function requireRole(
   req: NextRequest,
-  allowedRoles: UserRole[]
+  allowedRoles: string[]
 ): Promise<SessionUser | null> {
   const user = await getUserFromRequest(req)
   if (!user) return null
-  if (!allowedRoles.includes(user.role)) return null
+  const normalized = allowedRoles.map((r) => r.toLowerCase())
+  if (!normalized.includes(user.roleLabel.toLowerCase())) return null
   return user
 }
 
 /**
  * requireAppRole
- * Utility for API routes to enforce app_role requirements.
+ * Utility for API routes to enforce a student sub-role from the `roles`
+ * JSONB flags (e.g. 'placement_rep' → roles.isPlacementRep, 'team_leader'
+ * → roles.isTeamLeader, 'coordinator' → roles.isCoordinator).
  */
 export async function requireAppRole(
   req: NextRequest,
-  allowedAppRoles: AppRole[]
+  allowedAppRoles: string[]
 ): Promise<SessionUser | null> {
   const user = await getUserFromRequest(req)
   if (!user) return null
-  if (!allowedAppRoles.includes(user.app_role)) return null
+  const flagMap: Record<string, keyof UserRoles> = {
+    placement_rep: 'isPlacementRep',
+    team_leader: 'isTeamLeader',
+    coordinator: 'isCoordinator',
+    student: 'isStudent',
+  }
+  const matches = allowedAppRoles.some((r) => {
+    const flag = flagMap[r.toLowerCase()]
+    return flag ? user.roles?.[flag] === true : false
+  })
+  if (!matches) return null
   return user
 }
 
 /**
  * isAdminUser
- * Returns true if the session belongs to an admin-level user:
- *   - A student who is the Placement Representative (app_role = 'placement_rep')
- *
- * HOD is no longer a distinct admin role — HOD users are treated as faculty.
+ * Governance-level access (impersonation, faculty/batch management) —
+ * HOD only, per plan Section 10 ("/super-admin/* folds into /faculty/*
+ * under the HOD-gated section"). Previously this checked
+ * roles.isPlacementRep, left over from a mid-refactor where /super-admin
+ * had been repurposed as a placement-rep console — that console now
+ * lives properly at /placement-rep (Section 8), so this reverts to what
+ * the locked plan actually specifies.
  */
 export function isAdminUser(session: SessionUser): boolean {
-  if (session.role === 'student' && session.app_role === 'placement_rep') return true
-  return false
+  return session.roleLabel.toLowerCase() === 'hod'
+}
+
+/**
+ * isFacultyOrHod
+ * Convenience check used for the HOD/Faculty consolidation (plan Section
+ * 10) — HOD is just role_label = 'HOD', gated as extra nav inside
+ * /faculty/*, not a separate portal.
+ */
+export function isFacultyOrHod(session: SessionUser): boolean {
+  const label = session.roleLabel.toLowerCase()
+  return label === 'faculty' || label === 'hod'
+}
+
+export function isHod(session: SessionUser): boolean {
+  return session.roleLabel.toLowerCase() === 'hod'
 }
 
 /**

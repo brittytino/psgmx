@@ -30,15 +30,15 @@ export async function GET(req: NextRequest) {
         updated_at,
         student_id,
         users (
-          full_name,
+          name,
           email,
-          roll_no
+          reg_no
         )
       `)
       .order('created_at', { ascending: false })
 
-    if (statusFilter) {
-      query = query.eq('status', statusFilter)
+    if (statusFilter && ['proposal', 'in_progress', 'completed', 'archived'].includes(statusFilter)) {
+      query = query.eq('status', statusFilter as 'proposal' | 'in_progress' | 'completed' | 'archived')
     }
 
     const { data: projects, error } = await query

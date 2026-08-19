@@ -61,26 +61,26 @@ export async function POST(request: NextRequest) {
   // Fetch user profile from the database to determine role-based redirect
   const { data: profileRaw } = await supabase
     .from('users')
-    .select('role, app_role, onboarding_complete, full_name')
+    .select('role_label, roles, onboarding_complete, name')
     .eq('id', data.user.id)
     .maybeSingle()
 
   const profile = profileRaw as {
-    role: string;
-    app_role: string;
+    role_label: string;
+    roles: Record<string, boolean> | null;
     onboarding_complete: boolean;
-    full_name: string;
+    name: string;
   } | null
 
   // Determine redirect path
   let redirect = '/student' // default
   if (profile) {
-    const role = profile.role
-    const appRole = profile.app_role
-    if (role === 'faculty' || role === 'hod') redirect = '/faculty'
-    else if (role === 'alumni') redirect = '/alumni'
-    else if (role === 'student' && appRole === 'placement_rep') redirect = '/super-admin'
-    else if (role === 'student') redirect = '/student'
+    const roleLabel = (profile.role_label || '').toLowerCase()
+    const isPlacementRep = profile.roles?.isPlacementRep === true
+    if (roleLabel === 'faculty' || roleLabel === 'hod') redirect = '/faculty'
+    else if (roleLabel === 'alumni') redirect = '/alumni'
+    else if (roleLabel === 'student' && isPlacementRep) redirect = '/placement-rep'
+    else if (roleLabel === 'student') redirect = '/student'
 
     // If onboarding not complete, send to onboarding
     if (!profile.onboarding_complete) {
@@ -98,8 +98,8 @@ export async function POST(request: NextRequest) {
     user: {
       id: data.user.id,
       email: data.user.email,
-      role: profile?.role ?? 'student',
-      full_name: profile?.full_name ?? null,
+      role: profile?.role_label ?? 'student',
+      full_name: profile?.name ?? null,
     },
   }
 
