@@ -4,6 +4,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Users, Filter, Search, MoreVertical, Plus, UploadCloud, Send, FileText, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
+import { InitialsAvatar } from '@/components/basic/InitialsAvatar';
 export default function FacultyStudentsDashboard() {
   const [activeTab, setActiveTab] = React.useState('All Students');
   const [searchQuery, setSearchQuery] = React.useState('');
@@ -241,7 +242,7 @@ export default function FacultyStudentsDashboard() {
                           <td className="py-4 px-6"><input type="checkbox" className="rounded-[4px] border-border-light" /></td>
                           <td className="py-4 px-6">
                             <div className="flex items-center gap-3">
-                              <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(student.name)}&background=random`} alt="" className="w-8 h-8 rounded-full border border-white shadow-sm" />
+                              <InitialsAvatar name={student.name} size={32} className="border border-white shadow-sm" />
                               <div>
                                 <p className="text-[13px] font-bold text-text-main group-hover:text-primary-purple transition-colors cursor-pointer">{student.name}</p>
                                 <p className="text-[11px] text-text-muted">{student.email}</p>
@@ -385,7 +386,7 @@ export default function FacultyStudentsDashboard() {
               ].map((s, i) => (
                 <div key={i} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(s.name)}&background=random`} alt="" className="w-8 h-8 rounded-full" />
+                    <InitialsAvatar name={s.name} size={32} />
                     <div>
                       <p className="text-[13px] font-bold text-text-main">{s.name}</p>
                       <p className="text-[11px] text-text-muted">Progress: {s.progress}</p>

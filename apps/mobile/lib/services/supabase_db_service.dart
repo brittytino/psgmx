@@ -251,7 +251,18 @@ class SupabaseDbService {
   }
 
   Future<List<AppUser>> getAllStudents() async {
-    final response = await _supabase.from('users').select().order('reg_no');
+    // Explicit column list — never `select('*')`/bare `select()` on `users`.
+    // `ecampus_password` is column-level REVOKEd for the authenticated role,
+    // so a bare select() here would error the whole query once that lands.
+    final response = await _supabase
+        .from('users')
+        .select(
+            'id, email, name, reg_no, team_id, batch, batch_id, gender, roles, '
+            'dob, role_label, leetcode_username, ecampus_password_set, '
+            'birthday_notifications_enabled, leetcode_notifications_enabled, '
+            'task_reminders_enabled, attendance_alerts_enabled, '
+            'announcements_enabled, created_at, updated_at')
+        .order('reg_no');
 
     return (response as List)
         .map((e) => AppUser.fromMap(e))

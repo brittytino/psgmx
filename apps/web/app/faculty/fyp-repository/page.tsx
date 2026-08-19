@@ -4,6 +4,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Folder, Plus, Download, Search, Filter, ChevronDown, MoreVertical, Shield, FileCode, CheckSquare, Target, Activity, CheckCircle, BrainCircuit, Clock } from 'lucide-react';
 import Link from 'next/link';
+import { InitialsAvatar } from '@/components/basic/InitialsAvatar';
 
 import { AnimatePresence } from 'framer-motion';
 
@@ -234,9 +235,9 @@ export default function FacultyFYPRepositoryDashboard() {
                           {project.status}
                         </div>
                         <div className="flex items-center -space-x-2">
-                          <img src="https://ui-avatars.com/api/?name=St1&background=random" className="w-8 h-8 rounded-full border-2 border-white" alt="" />
-                          <img src="https://ui-avatars.com/api/?name=St2&background=random" className="w-8 h-8 rounded-full border-2 border-white" alt="" />
-                          <img src="https://ui-avatars.com/api/?name=St3&background=random" className="w-8 h-8 rounded-full border-2 border-white" alt="" />
+                          <InitialsAvatar name="St1" size={32} className="border-2 border-white" />
+                          <InitialsAvatar name="St2" size={32} className="border-2 border-white" />
+                          <InitialsAvatar name="St3" size={32} className="border-2 border-white" />
                           {project.members > 3 && (
                             <div className="w-8 h-8 rounded-full border-2 border-white bg-page-bg text-text-muted text-[10px] font-bold flex items-center justify-center z-10">
                               +{project.members - 3}

@@ -4,6 +4,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { BookOpen, Plus, FileText, Database, Code, Share2, Box, Eye, Bookmark, MoreVertical, Search, Filter, ChevronDown, CheckCircle, Clock, AlertCircle, Target } from 'lucide-react';
 import Link from 'next/link';
+import { InitialsAvatar } from '@/components/basic/InitialsAvatar';
 
 import { AnimatePresence } from 'framer-motion';
 
@@ -197,7 +198,7 @@ export default function FacultyKnowledgeBrainDashboard() {
                           <MoreVertical className="w-4 h-4 cursor-pointer hover:text-text-main" />
                         </div>
                         <div className="flex items-center gap-2 mt-auto">
-                          <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(article.reviewer)}&background=random`} alt="" className="w-7 h-7 rounded-full" />
+                          <InitialsAvatar name={article.reviewer} size={28} />
                           <div className="text-right">
                             <p className="text-[12px] font-bold text-text-main">{article.reviewer}</p>
                             <p className="text-[10px] font-semibold text-text-muted">{article.state ? article.state : 'Reviewed'} {article.reviewDate}</p>
@@ -237,7 +238,7 @@ export default function FacultyKnowledgeBrainDashboard() {
               ].map((prof, i) => (
                 <div key={i} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(prof.name)}&background=random`} alt="" className="w-10 h-10 rounded-full" />
+                    <InitialsAvatar name={prof.name} size={40} />
                     <div>
                       <p className="text-[14px] font-bold text-text-main">{prof.name}</p>
                       <p className="text-[12px] text-text-muted">{prof.count}</p>

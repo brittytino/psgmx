@@ -7,16 +7,21 @@ export const dynamic = 'force-dynamic';
 export default async function FacultyPage() {
   const supabase = await createClient();
   
+  // Explicit column list — never select('*') on `users` (see
+  // 08_security_fixes_sprint0.sql: ecampus_password is column-level
+  // REVOKEd for the authenticated role). Also fixed the pre-existing
+  // filter/mapping (`role`/`full_name` don't exist live; the live columns
+  // are `role_label`/`name`) since this was already non-functional.
   const { data: facultyDocs } = await supabase
     .from('users')
-    .select('*')
-    .eq('role', 'faculty')
+    .select('id, email, name, role_label, created_at')
+    .eq('role_label', 'Faculty')
     .order('created_at', { ascending: false });
 
   const faculties = (facultyDocs || []).map((doc: any) => ({
     _id: doc.id,
     username: doc.email,
-    fullName: doc.full_name || '',
+    fullName: doc.name || '',
     email: doc.email || '',
     status: 'active',
     createdAt: doc.created_at

@@ -4,6 +4,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { BrainCircuit, Calendar, ChevronDown, Users, Clock, Star, TrendingUp, ExternalLink, PenTool, Sparkles, MessageSquare, MoreVertical } from 'lucide-react';
 import Link from 'next/link';
+import { InitialsAvatar } from '@/components/basic/InitialsAvatar';
 
 import { AnimatePresence } from 'framer-motion';
 
@@ -287,7 +288,7 @@ export default function FacultyAIInsightsDashboard() {
               <div key={i} className="flex items-start justify-between">
                 <div className="flex items-start gap-3">
                   <div className="relative">
-                    <img src={`https://ui-avatars.com/api/?name=${interaction.student}&background=random`} alt="" className="w-8 h-8 rounded-full" />
+                    <InitialsAvatar name={interaction.student} size={32} />
                     <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-primary-purple rounded-full border-2 border-white flex items-center justify-center"><BrainCircuit className="w-[8px] h-[8px] text-white" /></div>
                   </div>
                   <div>

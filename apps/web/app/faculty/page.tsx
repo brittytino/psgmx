@@ -4,6 +4,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Users, BookOpen, Target, ClipboardList, FileText, Calendar, ChevronRight, ChevronDown, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+import { InitialsAvatar } from '@/components/basic/InitialsAvatar';
 
 import { AnimatePresence } from 'framer-motion';
 
@@ -309,10 +310,7 @@ export default function FacultyDashboardHome() {
               { action: 'Mentorship session with 25MX205', time: '1 day ago', bg: 'bg-[#FCA5A5]' },
             ].map((item, i) => (
               <div key={i} className="flex items-start gap-3">
-                <div className={`w-8 h-8 rounded-full ${item.bg} border-2 border-white shadow-sm shrink-0 flex items-center justify-center text-white text-[10px] font-bold overflow-hidden`}>
-                  {/* Generic avatar simulation */}
-                  <img src="https://ui-avatars.com/api/?name=Student&background=random&color=fff" alt="Avatar" className="w-full h-full object-cover" />
-                </div>
+                <InitialsAvatar name="Student" size={32} className="border-2 border-white shadow-sm" />
                 <div>
                   <p className="text-[13px] font-bold text-text-main leading-snug">{item.action}</p>
                   <p className="text-[11px] font-semibold text-text-muted mt-0.5">{item.time}</p>

@@ -4,6 +4,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Target, Plus, Search, Filter, Phone, Mail, BookOpen, Clock, HeartHandshake, FileText, ChevronRight, Activity, CheckCircle, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
+import { InitialsAvatar } from '@/components/basic/InitialsAvatar';
 
 import { AnimatePresence } from 'framer-motion';
 
@@ -136,7 +137,7 @@ export default function FacultyRecoveryHubDashboard() {
                   filteredCases.map((case_) => (
                     <motion.div layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} key={case_.id} className="p-4 rounded-[16px] border border-border-light hover:border-border-light transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white">
                       <div className="flex items-center gap-4">
-                        <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(case_.name)}&background=random`} alt="" className="w-10 h-10 rounded-full" />
+                        <InitialsAvatar name={case_.name} size={40} />
                         <div>
                           <h4 className="text-[14px] font-bold text-text-main">{case_.name}</h4>
                           <p className="text-[12px] text-text-muted mt-0.5">{case_.issue}</p>

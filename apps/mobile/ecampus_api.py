@@ -33,6 +33,11 @@ SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
 SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "")
 API_SECRET = os.environ.get("API_SECRET", "change-me-to-a-long-random-string")
 
+# Custom eCampus passwords are stored encrypted in `user_ecampus_credentials`.
+# The encryption key is a DB-level setting (app.ecampus_encryption_key) —
+# this service never holds it; decryption happens inside the
+# get_ecampus_password/get_ecampus_passwords_bulk RPCs.
+
 _supabase: Client | None = None
 
 
@@ -423,11 +428,26 @@ def _get_user_dob(rollno: str) -> date:
     return dob_value
 
 
+def _get_custom_ecampus_password(rollno: str) -> str | None:
+    """Return the student's custom eCampus password, decrypted, or None.
+
+    Reads from `user_ecampus_credentials` (encrypted at rest) via the
+    `get_ecampus_password` SECURITY DEFINER RPC — never from a plaintext
+    column on `users`. Decryption (and the encryption key) live entirely
+    in Postgres; this service never handles the key.
+    """
+    result = _get_supabase().rpc(
+        "get_ecampus_password", {"p_reg_no": rollno}
+    ).execute()
+    pwd = (result.data or "").strip() if isinstance(result.data, str) else None
+    return pwd or None
+
+
 def _resolve_ecampus_password(rollno: str) -> str:
     """Return the eCampus login password to use for *rollno*.
 
     Priority order:
-    1. Custom password in ``users.ecampus_password``  (student changed it)
+    1. Custom password in ``user_ecampus_credentials`` (student changed it)
     2. DOB-derived password from ``users.dob``
     3. DOB-derived password from ``whitelist.dob``  (with write-back)
 
@@ -435,20 +455,20 @@ def _resolve_ecampus_password(rollno: str) -> str:
     """
     sb = _get_supabase()
 
-    # 1 + 2 — check users table (service_role reads ecampus_password freely)
+    custom_pwd = _get_custom_ecampus_password(rollno)
+    if custom_pwd:
+        log.info(f"[creds] {rollno} – using custom eCampus password")
+        return custom_pwd
+
+    # 2 — DOB from users table
     user_row = (
         sb.table("users")
-        .select("ecampus_password, dob")
+        .select("dob")
         .eq("reg_no", rollno)
         .maybe_single()
         .execute()
     )
     if user_row.data:
-        custom_pwd = (user_row.data.get("ecampus_password") or "").strip()
-        if custom_pwd:
-            log.info(f"[creds] {rollno} – using custom eCampus password")
-            return custom_pwd
-
         user_dob = user_row.data.get("dob")
         if user_dob:
             dob = _parse_dob_value(user_dob)
@@ -932,23 +952,11 @@ def _get_placement_rep_rollno() -> tuple[str, str]:
     none is configured.
     """
     sb = _get_supabase()
-    rows = (
-        sb.table("users")
-        .select("reg_no, dob, ecampus_password")
-        .not_.is_("reg_no", "null")
-        .execute()
-    ).data or []
-
-    for row in rows:
-        # roles is stored as JSONB; read it via a direct filter isn't possible
-        # with the Python SDK easily, so we fetch all and filter in Python.
-        # For a large user-base, add .filter("roles->>'isPlacementRep'", "eq", "true")
-        pass
 
     # Re-query with explicit role filter (Supabase RPC approach via PostgREST)
     role_rows = (
         sb.table("users")
-        .select("reg_no, dob, ecampus_password, roles")
+        .select("reg_no, dob, roles")
         .not_.is_("reg_no", "null")
         .execute()
     ).data or []
@@ -959,7 +967,7 @@ def _get_placement_rep_rollno() -> tuple[str, str]:
             reg_no = row.get("reg_no", "").strip()
             if not reg_no:
                 continue
-            custom_pwd = (row.get("ecampus_password") or "").strip()
+            custom_pwd = _get_custom_ecampus_password(reg_no)
             if custom_pwd:
                 return reg_no, custom_pwd
             dob_raw = row.get("dob")
@@ -1038,11 +1046,10 @@ def _get_whitelist_students_with_dob() -> list[dict]:
         .execute()
     ).data or []
 
-    # Fetch custom passwords AND DOBs from users table in one call.
-    # service_role can read ecampus_password; authenticated clients cannot.
+    # Fetch DOBs from users table in one call.
     users_rows = (
         sb.table("users")
-        .select("reg_no, dob, ecampus_password")
+        .select("reg_no, dob")
         .not_.is_("reg_no", "null")
         .execute()
     ).data or []
@@ -1050,6 +1057,15 @@ def _get_whitelist_students_with_dob() -> list[dict]:
     users_map: dict[str, dict] = {
         r["reg_no"]: r for r in users_rows if r.get("reg_no")
     }
+
+    # Custom passwords, decrypted server-side via the bulk RPC — one round
+    # trip for the whole batch instead of a plaintext column read.
+    custom_pwd_map: dict[str, str] = {}
+    bulk_result = sb.rpc("get_ecampus_passwords_bulk", {}).execute()
+    for r in bulk_result.data or []:
+        pwd = (r.get("password") or "").strip()
+        if r.get("reg_no") and pwd:
+            custom_pwd_map[r["reg_no"]] = pwd
 
     merged: list[dict] = []
     writeback_rows: list[dict] = []
@@ -1060,7 +1076,7 @@ def _get_whitelist_students_with_dob() -> list[dict]:
             continue
 
         u = users_map.get(reg_no, {})
-        custom_pwd = (u.get("ecampus_password") or "").strip()
+        custom_pwd = custom_pwd_map.get(reg_no, "")
 
         # Resolve password: custom > users DOB > whitelist DOB
         if custom_pwd:

@@ -293,15 +293,15 @@ class UserProvider with ChangeNotifier {
   /// Pass a non-empty [password] to store it.  Pass `null` or an empty string
   /// to clear it (the backend will then fall back to the DOB-derived password).
   ///
-  /// The password is stored server-side only and is NEVER read back to the app.
+  /// The password is stored encrypted, server-side only, via the
+  /// `set_ecampus_password` RPC and is NEVER read back to the app.
   /// Only [ecampusPasswordSet] (a boolean flag) is updated in the local model.
   Future<void> updateEcampusPassword(String? password) async {
     if (_currentUser == null) return;
     final isSet = password != null && password.trim().isNotEmpty;
-    await Supabase.instance.client.from('users').update({
-      'ecampus_password': isSet ? password.trim() : null,
-      'ecampus_password_set': isSet,
-    }).eq('id', _currentUser!.uid);
+    await Supabase.instance.client.rpc('set_ecampus_password', params: {
+      'p_password': isSet ? password.trim() : null,
+    });
     _currentUser = _currentUser!.copyWith(ecampusPasswordSet: isSet);
     notifyListeners();
   }

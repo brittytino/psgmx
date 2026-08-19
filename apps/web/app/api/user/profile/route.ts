@@ -15,9 +15,16 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Explicit column list — never select('*') on `users`. ecampus_password
+    // is column-level REVOKEd for the authenticated role, so a wildcard
+    // select here would error the whole request.
     const { data: profile, error } = await supabase
       .from('users')
-      .select('*')
+      .select('id, email, name, reg_no, team_id, batch, batch_id, gender, roles, ' +
+        'dob, role_label, leetcode_username, ecampus_password_set, ' +
+        'birthday_notifications_enabled, leetcode_notifications_enabled, ' +
+        'task_reminders_enabled, attendance_alerts_enabled, ' +
+        'announcements_enabled, created_at, updated_at')
       .eq('id', user.id)
       .single()
 
