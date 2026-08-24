@@ -87,6 +87,30 @@ class ReadinessScoreService {
     return result..sort((a, b) => b.score.compareTo(a.score));
   }
 
+  /// Returns the top readiness scores across all users in the system.
+  Future<List<ReadinessScore>> fetchGlobalTopScores({int limit = 10}) async {
+    try {
+      final response = await _supabase
+          .from('readiness_scores')
+          .select('*, users!inner(name, gender, avatar_url)')
+          .order('computed_at', ascending: false);
+
+      final seen = <String>{};
+      final result = <ReadinessScore>[];
+      for (final row in response as List) {
+        final userId = row['user_id'] as String;
+        if (seen.add(userId)) {
+          result.add(ReadinessScore.fromMap(row));
+        }
+      }
+      result.sort((a, b) => b.score.compareTo(a.score));
+      return result.take(limit).toList();
+    } catch (e) {
+      debugPrint('[ReadinessScoreService] fetchGlobalTopScores error: $e');
+      return [];
+    }
+  }
+
   // ── External Platform Push ─────────────────────────────────────────────────
 
   /// Pushes the latest readiness score for [userId] to the external desktop

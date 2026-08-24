@@ -17,11 +17,13 @@ import '../models/daily_five.dart';
 class AiMentorService {
   static const String _openRouterBaseUrl = 'https://openrouter.ai/api/v1/chat/completions';
 
-  /// Ordered list of free OpenRouter models to try.
+  /// Ordered list of free OpenRouter models to try as fallbacks.
   static const List<String> _modelChain = [
-    'meta-llama/llama-3.3-8b-instruct:free',
-    'google/gemma-3-12b-it:free',
-    'mistralai/mistral-7b-instruct:free',
+    'nvidia/nemotron-3-ultra-550b-a55b:free',
+    'poolside/laguna-s-2.1:free',
+    'google/gemma-4-26b-a4b-it:free',
+    'liquid/lfm-2.5-2.6b:free',
+    'openai/gpt-oss-20b:free',
   ];
 
   /// Pre-written fallback tips for wrong Daily Five answers, by topic.

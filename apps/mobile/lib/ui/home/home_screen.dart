@@ -16,6 +16,7 @@ import '../../services/readiness_score_service.dart';
 import '../../models/readiness_score.dart';
 import '../../models/leetcode_stats.dart';
 import '../../providers/daily_five_provider.dart';
+import '../../providers/navigation_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -75,6 +76,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           readinessService.fetchBatchLatestScores(user.batchId!)
         else
           Future.value(<ReadinessScore>[]),
+        readinessService.fetchGlobalTopScores(limit: 10),
       ]);
 
       _currentStreak = dailyFiveProvider.streak?.currentStreak ?? 0;
@@ -100,11 +102,18 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       final allLeetcodeUsers = results[4] as List<LeetCodeStats>;
       _leetcodeLeaderboard = allLeetcodeUsers.take(10).toList();
 
-      _readinessLeaderboard = (results[5] as List<ReadinessScore>?) ?? [];
-      _readinessLeaderboard.sort((a, b) => b.score.compareTo(a.score));
-      if (_readinessLeaderboard.length > 10) {
-        _readinessLeaderboard = _readinessLeaderboard.sublist(0, 10);
+      final batchScores = (results[5] as List<ReadinessScore>?) ?? [];
+      final globalScores = (results[6] as List<ReadinessScore>?) ?? [];
+
+      final seen = <String>{};
+      final combined = <ReadinessScore>[];
+      for (final s in [...batchScores, ...globalScores]) {
+        if (seen.add(s.userId)) {
+          combined.add(s);
+        }
       }
+      combined.sort((a, b) => b.score.compareTo(a.score));
+      _readinessLeaderboard = combined.take(10).toList();
     } catch (e) {
       debugPrint('[HomeScreen] Error loading data: $e');
     } finally {
@@ -292,13 +301,17 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                '$greeting, $name! 👋',
-                style: GoogleFonts.sora(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF0F172A),
-                  letterSpacing: -0.5,
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  '$greeting, $name! 👋',
+                  style: GoogleFonts.sora(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF0F172A),
+                    letterSpacing: -0.5,
+                  ),
                 ),
               ),
               const SizedBox(height: 4),
@@ -809,7 +822,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   Widget _buildReadinessStat(IconData icon, Color color, String val, String label) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -826,14 +839,19 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             child: Icon(icon, color: color, size: 14),
           ),
           const SizedBox(height: 4),
-          Text(val, style: GoogleFonts.sora(fontSize: 13, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(val, style: GoogleFonts.sora(fontSize: 13, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
+          ),
           const SizedBox(height: 2),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.inter(fontSize: 10, color: const Color(0xFF64748B)),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              style: GoogleFonts.inter(fontSize: 10, color: const Color(0xFF64748B)),
+            ),
           ),
         ],
       ),
@@ -886,7 +904,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 children: [
                   Text('Spark Five', style: GoogleFonts.sora(fontSize: 15, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
                   const SizedBox(height: 4),
-                  Text('5 focused questions.\nSharpen daily.', style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF64748B), height: 1.25)),
+                  Text('5 focused questions', style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF64748B), height: 1.25)),
                   const SizedBox(height: 8),
                   Row(
                     children: [
@@ -906,7 +924,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   Widget _buildLogCard(BuildContext context) {
     return GestureDetector(
-      onTap: () => context.push('/logbook'),
+      onTap: () {
+        context.read<NavigationProvider>().setIndex(2);
+      },
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -1180,18 +1200,23 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   const SizedBox(height: 16),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: Text(
-                      name,
-                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B)),
-                      textAlign: TextAlign.center,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        name,
+                        style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B)),
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 2),
-                  Text(
-                    score,
-                    style: GoogleFonts.sora(fontSize: rank == 1 ? 18 : 15, fontWeight: FontWeight.bold, color: const Color(0xFF4F46E5)),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      score,
+                      style: GoogleFonts.sora(fontSize: rank == 1 ? 18 : 15, fontWeight: FontWeight.bold, color: const Color(0xFF4F46E5)),
+                    ),
                   ),
                   if (rank == 1) ...[
                     const SizedBox(height: 2),
