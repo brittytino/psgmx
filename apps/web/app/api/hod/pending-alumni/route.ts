@@ -15,15 +15,15 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized — Faculty access required' }, { status: 401 })
     }
 
-    // Users with role='student' but whose onboarding_complete=false and linkedin_url is set
-    // indicates an alumni self-registration pending approval.
-    // TODO: Add a dedicated `pending_alumni_approval` boolean column if this grows complex.
+    // Users with role_label='Student' whose onboarding isn't complete indicate
+    // a pending self-registration. (linkedin_url doesn't exist on the live
+    // `users` table, so that earlier signal is dropped — see plan Section
+    // 12 discussion of columns that don't exist.)
     const { data: pendingAlumni, error } = await supabaseAdmin
       .from('users')
-      .select('id, email, full_name, roll_no, batch_id, linkedin_url, created_at')
-      .eq('role', 'student')
+      .select('id, email, name, reg_no, batch_id, created_at')
+      .eq('role_label', 'Student')
       .eq('onboarding_complete', false)
-      .not('linkedin_url', 'is', null)
       .order('created_at', { ascending: true })
 
     if (error) throw error
@@ -50,8 +50,7 @@ export async function PUT(req: NextRequest) {
     if (action === 'approve') {
       const { error } = await supabaseAdmin
         .from('users')
-        // @ts-ignore
-      .update({ role: 'alumni', onboarding_complete: true } as any)
+        .update({ role_label: 'Alumni', onboarding_complete: true })
         .eq('id', userId)
 
       if (error) throw error
@@ -59,18 +58,18 @@ export async function PUT(req: NextRequest) {
       await supabaseAdmin.from('audit_logs').insert({
         actor_id: actor.id,
         action: 'alumni_approved',
-        target_table: 'users',
-        target_id: userId,
-      } as any)
+        entity_type: 'users',
+        entity_id: userId,
+      })
     } else {
       // Reject: delete the auth user and profile
       await supabaseAdmin.auth.admin.deleteUser(userId)
       await supabaseAdmin.from('audit_logs').insert({
         actor_id: actor.id,
         action: 'alumni_rejected',
-        target_table: 'users',
-        target_id: userId,
-      } as any)
+        entity_type: 'users',
+        entity_id: userId,
+      })
     }
 
     return NextResponse.json({ success: true, message: `Alumni ${action}d.` })

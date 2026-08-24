@@ -18,10 +18,10 @@ export async function GET(req: NextRequest) {
       .select(`
         id,
         email,
-        full_name,
-        roll_no,
-        role,
-        app_role,
+        name,
+        reg_no,
+        role_label,
+        roles,
         batch_id,
         created_at,
         batches (
@@ -50,14 +50,31 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { userId, role, app_role } = body
+    const { userId, roleLabel, subRole } = body
 
-    if (!userId || !role) {
-      return NextResponse.json({ error: 'userId and role are required' }, { status: 400 })
+    if (!userId || !roleLabel) {
+      return NextResponse.json({ error: 'userId and roleLabel are required' }, { status: 400 })
     }
 
-    const updatePayload: Record<string, any> = { role, updated_at: new Date().toISOString() }
-    if (app_role) updatePayload.app_role = app_role
+    const updatePayload: { role_label: string; updated_at: string; roles?: Record<string, boolean> } = {
+      role_label: roleLabel,
+      updated_at: new Date().toISOString(),
+    }
+
+    // Sub-role flags (placement_rep / team_leader / coordinator) live inside
+    // the `roles` JSONB, so merge rather than overwrite.
+    if (subRole) {
+      const { data: existing } = await supabaseAdmin.from('users').select('roles').eq('id', userId).single()
+      const flagMap: Record<string, string> = {
+        placement_rep: 'isPlacementRep',
+        team_leader: 'isTeamLeader',
+        coordinator: 'isCoordinator',
+      }
+      const flag = flagMap[subRole]
+      if (flag) {
+        updatePayload.roles = { ...(existing?.roles as Record<string, boolean> || {}), [flag]: true }
+      }
+    }
 
     const { data: updatedUser, error } = await supabaseAdmin
       .from('users')
@@ -75,9 +92,9 @@ export async function POST(req: NextRequest) {
     await supabaseAdmin.from('audit_logs').insert({
       actor_id: session.id,
       action: 'USER_ROLE_UPDATE',
-      target_table: 'users',
-      target_id: userId,
-      metadata: { new_role: role, new_app_role: app_role },
+      entity_type: 'users',
+      entity_id: userId,
+      metadata: { new_role_label: roleLabel, new_sub_role: subRole },
     })
 
     return NextResponse.json({ success: true, user: updatedUser })

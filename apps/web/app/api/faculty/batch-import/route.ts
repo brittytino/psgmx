@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json()
     const { students, batch_id } = body as {
-      students: Array<{ email: string; full_name: string; roll_no: string }>
+      students: Array<{ email: string; name: string; reg_no: string }>
       batch_id: string
     }
 
@@ -35,13 +35,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Batch not found' }, { status: 404 })
     }
 
-    const results: Array<{ roll_no: string; status: string; error?: string }> = []
+    const results: Array<{ reg_no: string; status: string; error?: string }> = []
 
     for (const student of students) {
-      const { email, full_name, roll_no } = student
+      const { email, name, reg_no } = student
 
-      if (!email || !full_name || !roll_no) {
-        results.push({ roll_no: roll_no ?? 'unknown', status: 'skipped', error: 'Missing required fields' })
+      if (!email || !name || !reg_no) {
+        results.push({ reg_no: reg_no ?? 'unknown', status: 'skipped', error: 'Missing required fields' })
         continue
       }
 
@@ -50,51 +50,52 @@ export async function POST(req: NextRequest) {
         const { data: authUser, error: authErr } = await supabaseAdmin.auth.admin.createUser({
           email: email.toLowerCase().trim(),
           email_confirm: false,
-          user_metadata: { full_name, roll_no: roll_no.trim().toUpperCase() },
+          user_metadata: { name, reg_no: reg_no.trim().toUpperCase() },
         })
 
         if (authErr || !authUser.user) {
-          results.push({ roll_no, status: 'failed', error: authErr?.message ?? 'Auth creation failed' })
+          results.push({ reg_no, status: 'failed', error: authErr?.message ?? 'Auth creation failed' })
           continue
         }
 
-        // Insert profile
-        const { error: insertErr } = await supabaseAdmin.from('users')// @ts-ignore
-      .insert({
+        // Insert profile. `batch` (legacy G1/G2 text field, still NOT NULL
+        // on the live schema alongside `batch_id`) defaults to 'G1' — pass
+        // an explicit `batch` in the request body to override.
+        const { error: insertErr } = await supabaseAdmin.from('users').insert({
           id: authUser.user.id,
           email: email.toLowerCase().trim(),
-          full_name,
-          roll_no: roll_no.trim().toUpperCase(),
+          name,
+          reg_no: reg_no.trim().toUpperCase(),
           batch_id,
-          role: 'student',
-          app_role: 'student',
+          batch: (body as { batch?: string }).batch || 'G1',
+          role_label: 'Student',
+          roles: { isStudent: true, isTeamLeader: false, isCoordinator: false, isPlacementRep: false },
           onboarding_complete: false,
-        } as any)
+        })
 
         if (insertErr) {
           // Clean up auth user if profile insert failed
           await supabaseAdmin.auth.admin.deleteUser(authUser.user.id).catch(() => {})
-          results.push({ roll_no, status: 'failed', error: insertErr.message })
+          results.push({ reg_no, status: 'failed', error: insertErr.message })
           continue
         }
 
-        results.push({ roll_no, status: 'created' })
+        results.push({ reg_no, status: 'created' })
 
       } catch (err) {
-        results.push({ roll_no, status: 'failed', error: String(err) })
+        results.push({ reg_no, status: 'failed', error: String(err) })
       }
     }
 
     const created = results.filter(r => r.status === 'created').length
     const failed = results.filter(r => r.status === 'failed').length
 
-    await supabaseAdmin.from('audit_logs')// @ts-ignore
-      .insert({
+    await supabaseAdmin.from('audit_logs').insert({
       actor_id: faculty.id,
       action: 'batch_import',
-      target_table: 'users',
-      metadata: { batch_id, batch_code: (batch as any).batch_code, total: students.length, created, failed },
-    } as any)
+      entity_type: 'users',
+      metadata: { batch_id, batch_code: (batch as { batch_code: string }).batch_code, total: students.length, created, failed },
+    })
 
     return NextResponse.json({ success: true, created, failed, results })
   } catch (error) {

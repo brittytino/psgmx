@@ -9,7 +9,7 @@ import { revalidatePath } from 'next/cache'
 export async function POST(req: NextRequest) {
   try {
     const session = await getUserFromRequest(req)
-    if (!session?.id || !['faculty', 'hod'].includes(session.role)) {
+    if (!session?.id || !['faculty', 'hod'].includes(session.roleLabel.toLowerCase())) {
       return NextResponse.json({ error: 'Unauthorized — Faculty or HOD required' }, { status: 401 })
     }
 

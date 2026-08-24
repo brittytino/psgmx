@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
 
     const { data: targetUser, error } = await supabaseAdmin
       .from('users')
-      .select('id, full_name, email, role')
+      .select('id, name, email, role_label')
       .eq('id', targetUserId)
       .single()
 
@@ -44,14 +44,14 @@ export async function POST(req: NextRequest) {
     await supabaseAdmin.from('audit_logs').insert({
       actor_id: session.id,
       action: 'IMPERSONATE_START',
-      target_table: 'users',
-      target_id: targetUserId,
-      metadata: { target_email: targetUser.email, target_role: targetUser.role },
+      entity_type: 'users',
+      entity_id: targetUserId,
+      metadata: { target_email: targetUser.email, target_role: targetUser.role_label },
     })
 
     return NextResponse.json({
       success: true,
-      message: `Now impersonating ${targetUser.full_name}`,
+      message: `Now impersonating ${targetUser.name}`,
       targetUser,
     })
   } catch (err) {

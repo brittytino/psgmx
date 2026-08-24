@@ -52,12 +52,13 @@ export default function CollaborationMarketplace() {
 
       const { data: profileData } = await supabase
         .from("users")
-        .select("role")
+        .select("role_label")
         .eq("id", authData.user.id)
         .single();
       const profile: any = profileData;
+      const roleLabel = (profile?.role_label || "").toLowerCase();
 
-      if (!profile || (profile.role !== "alumni" && profile.role !== "faculty" && profile.role !== "hod")) {
+      if (!profile || (roleLabel !== "alumni" && roleLabel !== "faculty" && roleLabel !== "hod")) {
         router.push("/");
         return;
       }

@@ -1,368 +1,985 @@
 // ============================================================
-// PSGMX — supabase/types/database.types.ts (v2)
-// Auto-generated types for the PSGMX Supabase schema.
-// Re-generate with: supabase gen types typescript --local > supabase/types/database.types.ts
+// PSGMX — supabase/types/database.types.ts
+// Regenerated from a live schema introspection (service_role probe against
+// the actual Supabase project) plus the tables added in
+// 08_security_fixes_sprint0.sql / 09_sprint1_schema_and_features.sql that
+// do not exist yet until those migrations are run.
+//
+// The previous version of this file was hand-written against
+// supabase/migrations/00_initial_schema.sql, which was NEVER applied to
+// production — it used role/app_role/full_name/roll_no columns that do
+// not exist live, causing 'never'-typed errors across the app.
+//
+// Re-generate properly after running the migrations:
+//   supabase gen types typescript --project-id ucmskbgdpnolnyrmkotz --schema public > supabase/types/database.types.ts
 // ============================================================
-
-export type UserRole   = 'student' | 'alumni' | 'faculty' | 'hod'
-export type AppRole    = 'student' | 'team_leader' | 'coordinator' | 'placement_rep'
-export type BatchStatus = 'active_junior' | 'active_senior' | 'graduated'
-export type ApprovalStatus = 'pending' | 'approved' | 'rejected'
-export type AttendanceStatus = 'present' | 'absent' | 'excused'
-export type ExamStatus = 'draft' | 'published' | 'active' | 'completed'
-export type ProctoringLevel = 'standard' | 'strict'
-export type PostType = 'job' | 'project' | 'mentorship'
-export type PostVisibility = 'lineage_only' | 'batch' | 'department'
-export type ReadinessBand = 'strong' | 'building' | 'needs_attention' | 'at_risk'
 
 export interface Database {
   public: {
     Tables: {
-      batches: {
-        Row: {
-          id:          string
-          batch_code:  string
-          start_date:  string
-          end_date:    string
-          status:      BatchStatus
-          created_at:  string
-        }
-        Insert: Omit<Database['public']['Tables']['batches']['Row'], 'id' | 'created_at'> & {
-          id?: string; created_at?: string
-        }
-        Update: Partial<Database['public']['Tables']['batches']['Insert']>
-      }
 
       users: {
         Row: {
-          id:                             string
-          email:                          string
-          full_name:                      string
-          roll_no:                        string | null
-          batch_id:                       string | null
-          role:                           UserRole
-          app_role:                       AppRole
-          team_id:                        string | null
-          avatar_url:                     string | null
-          linkedin_url:                   string | null
-          current_company:                string | null
-          current_role_title:             string | null
-          mentorship_open:                boolean
-          onboarding_complete:            boolean
-          gender:                         string | null
-          dob:                            string | null
-          role_label:                     string
-          leetcode_username:              string | null
-          ecampus_password:               string | null
-          ecampus_password_set:           boolean
-          birthday_notifications_enabled: boolean
-          leetcode_notifications_enabled: boolean
-          task_reminders_enabled:         boolean
-          attendance_alerts_enabled:      boolean
-          announcements_enabled:          boolean
-          created_at:                     string
-          updated_at:                     string
+          id: string
+          email: string
+          reg_no: string
+          name: string
+          team_id: string | null
+          batch: string
+          gender: string | null
+          roles: Record<string, unknown>
+          leetcode_username: string | null
+          dob: string | null
+          birthday_notifications_enabled: boolean | null
+          leetcode_notifications_enabled: boolean | null
+          task_reminders_enabled: boolean | null
+          attendance_alerts_enabled: boolean | null
+          announcements_enabled: boolean | null
+          created_at: string
+          updated_at: string
+          ecampus_password: string | null
+          ecampus_password_set: boolean
+          batch_id: string | null
+          role_label: string
+          onboarding_complete: boolean
+          show_birthday_publicly: boolean
+          mentorship_open: boolean
         }
-        Insert: Omit<Database['public']['Tables']['users']['Row'], 'created_at' | 'updated_at'> & {
-          created_at?: string; updated_at?: string
+        Insert: Omit<Database['public']['Tables']['users']['Row'], 'team_id' | 'gender' | 'leetcode_username' | 'dob' | 'birthday_notifications_enabled' | 'leetcode_notifications_enabled' | 'task_reminders_enabled' | 'attendance_alerts_enabled' | 'announcements_enabled' | 'created_at' | 'updated_at' | 'ecampus_password' | 'ecampus_password_set' | 'batch_id' | 'role_label' | 'onboarding_complete' | 'show_birthday_publicly' | 'mentorship_open'> & {
+          team_id?: string | null
+          gender?: string | null
+          leetcode_username?: string | null
+          dob?: string | null
+          birthday_notifications_enabled?: boolean | null
+          leetcode_notifications_enabled?: boolean | null
+          task_reminders_enabled?: boolean | null
+          attendance_alerts_enabled?: boolean | null
+          announcements_enabled?: boolean | null
+          created_at?: string
+          updated_at?: string
+          ecampus_password?: string | null
+          ecampus_password_set?: boolean
+          batch_id?: string | null
+          role_label?: string
+          onboarding_complete?: boolean
+          show_birthday_publicly?: boolean
+          mentorship_open?: boolean
         }
         Update: Partial<Database['public']['Tables']['users']['Insert']>
+        Relationships: []
+      }
+
+      batches: {
+        Row: {
+          id: string
+          batch_code: string
+          start_year: number
+          end_year: number
+          status: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['batches']['Row'], 'id' | 'created_at' | 'updated_at'> & {
+          id?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['batches']['Insert']>
+        Relationships: []
       }
 
       teams: {
         Row: {
-          id:           string
-          batch_id:     string
-          team_name:    string
-          target_size:  number
-          created_at:   string
+          id: string
+          batch_id: string
+          team_name: string
+          team_leader_id: string | null
+          target_size: number
+          created_at: string
+          updated_at: string
         }
-        Insert: Omit<Database['public']['Tables']['teams']['Row'], 'id' | 'created_at'> & {
-          id?: string; created_at?: string
+        Insert: Omit<Database['public']['Tables']['teams']['Row'], 'id' | 'team_leader_id' | 'target_size' | 'created_at' | 'updated_at'> & {
+          id?: string
+          team_leader_id?: string | null
+          target_size?: number
+          created_at?: string
+          updated_at?: string
         }
         Update: Partial<Database['public']['Tables']['teams']['Insert']>
+        Relationships: []
       }
 
       user_permissions: {
         Row: {
-          id:          string
-          user_id:     string
-          permission:  string
-          granted_by:  string | null
-          granted_at:  string
+          user_id: string
+          permission_key: string
+          granted_by: string | null
+          granted_at: string
         }
-        Insert: Omit<Database['public']['Tables']['user_permissions']['Row'], 'id' | 'granted_at'> & {
-          id?: string; granted_at?: string
+        Insert: Omit<Database['public']['Tables']['user_permissions']['Row'], 'granted_by' | 'granted_at'> & {
+          granted_by?: string | null
+          granted_at?: string
         }
         Update: Partial<Database['public']['Tables']['user_permissions']['Insert']>
+        Relationships: []
       }
 
-      lineage_map: {
+      whitelist: {
         Row: {
-          id:              string
-          junior_user_id:  string
-          senior_user_id:  string
-          roll_suffix:     string
+          email: string
+          name: string | null
+          reg_no: string | null
+          batch: string | null
+          team_id: string | null
+          gender: string | null
+          dob: string | null
+          leetcode_username: string | null
+          roles: Record<string, unknown> | null
+          created_at: string | null
         }
-        Insert: Omit<Database['public']['Tables']['lineage_map']['Row'], 'id'> & { id?: string }
-        Update: Partial<Database['public']['Tables']['lineage_map']['Insert']>
+        Insert: Omit<Database['public']['Tables']['whitelist']['Row'], 'name' | 'reg_no' | 'batch' | 'team_id' | 'gender' | 'dob' | 'leetcode_username' | 'roles' | 'created_at'> & {
+          name?: string | null
+          reg_no?: string | null
+          batch?: string | null
+          team_id?: string | null
+          gender?: string | null
+          dob?: string | null
+          leetcode_username?: string | null
+          roles?: Record<string, unknown> | null
+          created_at?: string | null
+        }
+        Update: Partial<Database['public']['Tables']['whitelist']['Insert']>
+        Relationships: []
       }
 
-      placement_sessions: {
+      app_config: {
         Row: {
-          id:            string
-          batch_id:      string
-          scheduled_by:  string
-          session_date:  string
-          session_time:  string
-          topic:         string
-          target_scope:  'batch' | 'teams'
-          created_at:    string
+          id: string
+          min_required_version: string
+          latest_version: string
+          force_update: boolean
+          update_message: string | null
+          github_release_url: string | null
+          android_download_url: string | null
+          ios_download_url: string | null
+          emergency_block: boolean
+          emergency_message: string | null
+          created_at: string
+          updated_at: string
+          updated_by: string | null
         }
-        Insert: Omit<Database['public']['Tables']['placement_sessions']['Row'], 'id' | 'created_at'> & {
-          id?: string; created_at?: string
+        Insert: Omit<Database['public']['Tables']['app_config']['Row'], 'id' | 'min_required_version' | 'latest_version' | 'force_update' | 'update_message' | 'github_release_url' | 'android_download_url' | 'ios_download_url' | 'emergency_block' | 'emergency_message' | 'created_at' | 'updated_at' | 'updated_by'> & {
+          id?: string
+          min_required_version?: string
+          latest_version?: string
+          force_update?: boolean
+          update_message?: string | null
+          github_release_url?: string | null
+          android_download_url?: string | null
+          ios_download_url?: string | null
+          emergency_block?: boolean
+          emergency_message?: string | null
+          created_at?: string
+          updated_at?: string
+          updated_by?: string | null
         }
-        Update: Partial<Database['public']['Tables']['placement_sessions']['Insert']>
+        Update: Partial<Database['public']['Tables']['app_config']['Insert']>
+        Relationships: []
       }
 
-      placement_attendance: {
+      announcements: {
         Row: {
-          id:          string
-          session_id:  string
-          student_id:  string
-          status:      AttendanceStatus
-          marked_by:   string
-          note:        string | null
-          marked_at:   string
+          id: string
+          title: string
+          message: string
+          is_priority: boolean
+          expiry_date: string | null
+          created_by: string | null
+          created_at: string
         }
-        Insert: Omit<Database['public']['Tables']['placement_attendance']['Row'], 'id' | 'marked_at'> & {
-          id?: string; marked_at?: string
+        Insert: Omit<Database['public']['Tables']['announcements']['Row'], 'id' | 'is_priority' | 'expiry_date' | 'created_by' | 'created_at'> & {
+          id?: string
+          is_priority?: boolean
+          expiry_date?: string | null
+          created_by?: string | null
+          created_at?: string
         }
-        Update: Partial<Database['public']['Tables']['placement_attendance']['Insert']>
+        Update: Partial<Database['public']['Tables']['announcements']['Insert']>
+        Relationships: []
       }
 
-      question_bank: {
+      audit_logs: {
         Row: {
-          id:             string
-          question_text:  string
-          option_a:       string
-          option_b:       string
-          option_c:       string
-          option_d:       string
-          correct_option: 'a' | 'b' | 'c' | 'd'
-          topic:          string
-          difficulty:     'easy' | 'medium' | 'hard'
-          is_active:      boolean
-          created_by:     string | null
-          created_at:     string
+          id: string
+          actor_id: string
+          action: string
+          entity_type: string
+          entity_id: string | null
+          metadata: Record<string, unknown> | null
+          created_at: string
         }
-        Insert: Omit<Database['public']['Tables']['question_bank']['Row'], 'id' | 'created_at'> & {
-          id?: string; created_at?: string
+        Insert: Omit<Database['public']['Tables']['audit_logs']['Row'], 'id' | 'entity_id' | 'metadata' | 'created_at'> & {
+          id?: string
+          entity_id?: string | null
+          metadata?: Record<string, unknown> | null
+          created_at?: string
         }
-        Update: Partial<Database['public']['Tables']['question_bank']['Insert']>
+        Update: Partial<Database['public']['Tables']['audit_logs']['Insert']>
+        Relationships: []
       }
 
-      daily_five_streaks: {
+      notifications: {
         Row: {
-          user_id:                  string
-          current_streak:           number
-          longest_streak:           number
-          freezes_remaining:        number
-          freezes_reset_month:      number | null
-          last_completed_date:      string | null
-          total_days_completed:     number
-          running_accuracy_rate:    number
-          total_questions_answered: number
-          total_questions_correct:  number
-          updated_at:               string
+          id: string
+          title: string
+          message: string
+          notification_type: string
+          tone: string | null
+          target_audience: string
+          generated_at: string
+          valid_until: string | null
+          created_by: string | null
+          is_active: boolean
         }
-        Insert: Partial<Database['public']['Tables']['daily_five_streaks']['Row']> & { user_id: string }
-        Update: Partial<Database['public']['Tables']['daily_five_streaks']['Row']>
+        Insert: Omit<Database['public']['Tables']['notifications']['Row'], 'id' | 'tone' | 'generated_at' | 'valid_until' | 'created_by' | 'is_active'> & {
+          id?: string
+          tone?: string | null
+          generated_at?: string
+          valid_until?: string | null
+          created_by?: string | null
+          is_active?: boolean
+        }
+        Update: Partial<Database['public']['Tables']['notifications']['Insert']>
+        Relationships: []
       }
 
-      leetcode_stats: {
+      notification_reads: {
         Row: {
-          user_id:              string
-          username:             string | null
-          total_solved:         number
-          easy_solved:          number
-          medium_solved:        number
-          hard_solved:          number
-          batch_easy_solved:    number
-          batch_medium_solved:  number
-          batch_hard_solved:    number
-          batch_weighted_score: number
-          batch_percentile:     number
-          weekly_solved:        number
-          ranking:              number | null
-          synced_at:            string
+          id: string
+          notification_id: string
+          user_id: string
+          read_at: string
+          dismissed_at: string | null
         }
-        Insert: Partial<Database['public']['Tables']['leetcode_stats']['Row']> & { user_id: string }
-        Update: Partial<Database['public']['Tables']['leetcode_stats']['Row']>
-      }
-
-      daily_tasks: {
-        Row: {
-          id:            string
-          batch_id:      string
-          task_date:     string
-          task_type:     'leetcode' | 'core_subject'
-          title:         string
-          description:   string | null
-          reference_url: string | null
-          subject:       string | null
-          published_by:  string
-          created_at:    string
+        Insert: Omit<Database['public']['Tables']['notification_reads']['Row'], 'id' | 'read_at' | 'dismissed_at'> & {
+          id?: string
+          read_at?: string
+          dismissed_at?: string | null
         }
-        Insert: Omit<Database['public']['Tables']['daily_tasks']['Row'], 'id' | 'created_at'> & {
-          id?: string; created_at?: string
-        }
-        Update: Partial<Database['public']['Tables']['daily_tasks']['Insert']>
-      }
-
-      task_completions: {
-        Row: {
-          id:           string
-          task_id:      string
-          student_id:   string
-          completed:    boolean
-          completed_at: string | null
-          verified_by:  string | null
-          verified_at:  string | null
-        }
-        Insert: Omit<Database['public']['Tables']['task_completions']['Row'], 'id'> & { id?: string }
-        Update: Partial<Database['public']['Tables']['task_completions']['Insert']>
+        Update: Partial<Database['public']['Tables']['notification_reads']['Insert']>
+        Relationships: []
       }
 
       companies: {
         Row: {
-          id:                   string
-          batch_id:             string
-          company_name:         string
-          visit_date:           string
-          roles_offered:        string[] | null
-          package_band_min:     number | null
-          package_band_max:     number | null
-          eligibility_criteria: string | null
-          rounds:               string[] | null
-          logged_by:            string
-          created_at:           string
+          id: string
+          batch_id: string
+          name: string
+          visit_date: string
+          roles_offered: string[]
+          package_band: string | null
+          eligibility: string | null
+          rounds: Record<string, unknown>
+          created_by: string
+          created_at: string
+          updated_at: string
         }
-        Insert: Omit<Database['public']['Tables']['companies']['Row'], 'id' | 'created_at'> & {
-          id?: string; created_at?: string
+        Insert: Omit<Database['public']['Tables']['companies']['Row'], 'id' | 'package_band' | 'eligibility' | 'created_at' | 'updated_at'> & {
+          id?: string
+          package_band?: string | null
+          eligibility?: string | null
+          created_at?: string
+          updated_at?: string
         }
         Update: Partial<Database['public']['Tables']['companies']['Insert']>
+        Relationships: []
       }
 
       placement_log_entries: {
         Row: {
-          id:               string
-          company_id:       string
-          student_id:       string
-          round_name:       string
-          experience_text:  string
-          is_anonymous:     boolean
-          approval_status:  ApprovalStatus
-          approved_by:      string | null
-          approved_at:      string | null
-          kb_article_id:    string | null
-          created_at:       string
+          id: string
+          company_id: string
+          user_id: string
+          round_name: string
+          experience_text: string
+          is_moderated: boolean
+          moderated_by: string | null
+          approval_status: 'pending' | 'approved' | 'rejected'
+          created_at: string
+          updated_at: string
         }
-        Insert: Omit<Database['public']['Tables']['placement_log_entries']['Row'], 'id' | 'created_at'> & {
-          id?: string; created_at?: string
+        Insert: Omit<Database['public']['Tables']['placement_log_entries']['Row'], 'id' | 'is_moderated' | 'moderated_by' | 'approval_status' | 'created_at' | 'updated_at'> & {
+          id?: string
+          is_moderated?: boolean
+          moderated_by?: string | null
+          approval_status?: 'pending' | 'approved' | 'rejected'
+          created_at?: string
+          updated_at?: string
         }
         Update: Partial<Database['public']['Tables']['placement_log_entries']['Insert']>
+        Relationships: []
+      }
+
+      placement_sessions: {
+        Row: {
+          id: string
+          batch_id: string
+          scheduled_by: string
+          session_datetime: string
+          topic: string
+          description: string | null
+          target_team_ids: string[] | null
+          created_at: string
+          updated_at: string
+          session_type: string | null
+          session_mode: string | null
+          duration_minutes: number | null
+          location: string | null
+          is_locked: boolean | null
+        }
+        Insert: Omit<Database['public']['Tables']['placement_sessions']['Row'], 'id' | 'description' | 'target_team_ids' | 'created_at' | 'updated_at' | 'session_type' | 'session_mode' | 'duration_minutes' | 'location' | 'is_locked'> & {
+          id?: string
+          description?: string | null
+          target_team_ids?: string[] | null
+          created_at?: string
+          updated_at?: string
+          session_type?: string | null
+          session_mode?: string | null
+          duration_minutes?: number | null
+          location?: string | null
+          is_locked?: boolean | null
+        }
+        Update: Partial<Database['public']['Tables']['placement_sessions']['Insert']>
+        Relationships: []
+      }
+
+      placement_attendance: {
+        Row: {
+          session_id: string
+          user_id: string
+          status: string
+          marked_by: string
+          marked_at: string
+          notes: string | null
+        }
+        Insert: Omit<Database['public']['Tables']['placement_attendance']['Row'], 'marked_at' | 'notes'> & {
+          marked_at?: string
+          notes?: string | null
+        }
+        Update: Partial<Database['public']['Tables']['placement_attendance']['Insert']>
+        Relationships: []
+      }
+
+      placement_attendance_summary: {
+        Row: {
+          user_id: string | null
+          batch_id: string | null
+          eligible_sessions: number | null
+          attended_sessions: number | null
+          attendance_pct: number | null
+        }
+        Insert: Omit<Database['public']['Tables']['placement_attendance_summary']['Row'], 'user_id' | 'batch_id' | 'eligible_sessions' | 'attended_sessions' | 'attendance_pct'> & {
+          user_id?: string | null
+          batch_id?: string | null
+          eligible_sessions?: number | null
+          attended_sessions?: number | null
+          attendance_pct?: number | null
+        }
+        Update: Partial<Database['public']['Tables']['placement_attendance_summary']['Insert']>
+        Relationships: []
+      }
+
+      attendance_records: {
+        Row: {
+          id: string
+          user_id: string
+          date: string
+          team_id: string
+          status: string
+          marked_by: string | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['attendance_records']['Row'], 'id' | 'marked_by' | 'notes' | 'created_at' | 'updated_at'> & {
+          id?: string
+          marked_by?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['attendance_records']['Insert']>
+        Relationships: []
+      }
+
+      scheduled_attendance_dates: {
+        Row: {
+          id: string
+          date: string
+          is_working_day: boolean
+          scheduled_by: string | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['scheduled_attendance_dates']['Row'], 'id' | 'is_working_day' | 'scheduled_by' | 'notes' | 'created_at' | 'updated_at'> & {
+          id?: string
+          is_working_day?: boolean
+          scheduled_by?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['scheduled_attendance_dates']['Insert']>
+        Relationships: []
+      }
+
+      student_attendance_summary: {
+        Row: {
+          student_id: string | null
+          user_id: string | null
+          email: string | null
+          reg_no: string | null
+          name: string | null
+          team_id: string | null
+          batch: string | null
+          present_count: number | null
+          absent_count: number | null
+          total_working_days: number | null
+          attendance_percentage: number | null
+        }
+        Insert: Omit<Database['public']['Tables']['student_attendance_summary']['Row'], 'student_id' | 'user_id' | 'email' | 'reg_no' | 'name' | 'team_id' | 'batch' | 'present_count' | 'absent_count' | 'total_working_days' | 'attendance_percentage'> & {
+          student_id?: string | null
+          user_id?: string | null
+          email?: string | null
+          reg_no?: string | null
+          name?: string | null
+          team_id?: string | null
+          batch?: string | null
+          present_count?: number | null
+          absent_count?: number | null
+          total_working_days?: number | null
+          attendance_percentage?: number | null
+        }
+        Update: Partial<Database['public']['Tables']['student_attendance_summary']['Insert']>
+        Relationships: []
+      }
+
+      defaulter_flags: {
+        Row: {
+          id: string
+          user_id: string
+          defaulter_status: boolean
+          defaulter_reason: string
+          consecutive_absences: number
+          attendance_percentage: number | null
+          detected_at: string
+          resolved_at: string | null
+          resolved_by: string | null
+          notes: string | null
+          updated_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['defaulter_flags']['Row'], 'id' | 'defaulter_status' | 'defaulter_reason' | 'consecutive_absences' | 'attendance_percentage' | 'detected_at' | 'resolved_at' | 'resolved_by' | 'notes' | 'updated_at'> & {
+          id?: string
+          defaulter_status?: boolean
+          defaulter_reason?: string
+          consecutive_absences?: number
+          attendance_percentage?: number | null
+          detected_at?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['defaulter_flags']['Insert']>
+        Relationships: []
+      }
+
+      daily_tasks: {
+        Row: {
+          id: string
+          date: string
+          topic_type: string
+          title: string
+          reference_link: string | null
+          subject: string | null
+          uploaded_by: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['daily_tasks']['Row'], 'id' | 'reference_link' | 'subject' | 'created_at' | 'updated_at'> & {
+          id?: string
+          reference_link?: string | null
+          subject?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['daily_tasks']['Insert']>
+        Relationships: []
+      }
+
+      task_completions: {
+        Row: {
+          id: string
+          user_id: string
+          task_date: string
+          completed: boolean
+          completed_at: string | null
+          verified_by: string | null
+          verified_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['task_completions']['Row'], 'id' | 'completed' | 'completed_at' | 'verified_by' | 'verified_at' | 'created_at' | 'updated_at'> & {
+          id?: string
+          completed?: boolean
+          completed_at?: string | null
+          verified_by?: string | null
+          verified_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['task_completions']['Insert']>
+        Relationships: []
+      }
+
+      daily_five_streaks: {
+        Row: {
+          user_id: string
+          current_streak: number
+          longest_streak: number
+          freezes_remaining: number
+          freezes_reset_month: string
+          last_completed_date: string | null
+          last_accuracy_rate: number | null
+          updated_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['daily_five_streaks']['Row'], 'current_streak' | 'longest_streak' | 'freezes_remaining' | 'freezes_reset_month' | 'last_completed_date' | 'last_accuracy_rate' | 'updated_at'> & {
+          current_streak?: number
+          longest_streak?: number
+          freezes_remaining?: number
+          freezes_reset_month?: string
+          last_completed_date?: string | null
+          last_accuracy_rate?: number | null
+          updated_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['daily_five_streaks']['Insert']>
+        Relationships: []
+      }
+
+      leetcode_stats: {
+        Row: {
+          username: string
+          total_solved: number | null
+          easy_solved: number | null
+          medium_solved: number | null
+          hard_solved: number | null
+          ranking: number | null
+          weekly_score: number | null
+          profile_picture: string | null
+          last_updated: string | null
+          created_at: string | null
+        }
+        Insert: Omit<Database['public']['Tables']['leetcode_stats']['Row'], 'total_solved' | 'easy_solved' | 'medium_solved' | 'hard_solved' | 'ranking' | 'weekly_score' | 'profile_picture' | 'last_updated' | 'created_at'> & {
+          total_solved?: number | null
+          easy_solved?: number | null
+          medium_solved?: number | null
+          hard_solved?: number | null
+          ranking?: number | null
+          weekly_score?: number | null
+          profile_picture?: string | null
+          last_updated?: string | null
+          created_at?: string | null
+        }
+        Update: Partial<Database['public']['Tables']['leetcode_stats']['Insert']>
+        Relationships: []
+      }
+
+      question_bank: {
+        Row: {
+          id: string
+          question_text: string
+          options: Record<string, unknown>
+          correct_option: number
+          topic: string
+          difficulty: string
+          created_by: string | null
+          created_at: string
+          updated_at: string
+          is_active: boolean
+        }
+        Insert: Omit<Database['public']['Tables']['question_bank']['Row'], 'id' | 'created_by' | 'created_at' | 'updated_at' | 'is_active'> & {
+          id?: string
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+          is_active?: boolean
+        }
+        Update: Partial<Database['public']['Tables']['question_bank']['Insert']>
+        Relationships: []
+      }
+
+      ecampus_attendance: {
+        Row: {
+          id: string
+          reg_no: string
+          data: Record<string, unknown>
+          synced_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['ecampus_attendance']['Row'], 'id' | 'synced_at'> & {
+          id?: string
+          synced_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['ecampus_attendance']['Insert']>
+        Relationships: []
+      }
+
+      ecampus_cgpa: {
+        Row: {
+          id: string
+          reg_no: string
+          data: Record<string, unknown>
+          synced_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['ecampus_cgpa']['Row'], 'id' | 'synced_at'> & {
+          id?: string
+          synced_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['ecampus_cgpa']['Insert']>
+        Relationships: []
+      }
+
+      ecampus_ca_marks: {
+        Row: {
+          id: string
+          reg_no: string
+          data: Record<string, unknown>
+          synced_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['ecampus_ca_marks']['Row'], 'id' | 'synced_at'> & {
+          id?: string
+          synced_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['ecampus_ca_marks']['Insert']>
+        Relationships: []
+      }
+
+      ecampus_ca_timetable: {
+        Row: {
+          id: string
+          reg_no: string
+          data: Record<string, unknown>
+          synced_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['ecampus_ca_timetable']['Row'], 'id' | 'synced_at'> & {
+          id?: string
+          synced_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['ecampus_ca_timetable']['Insert']>
+        Relationships: []
+      }
+
+      ca_timetable_global: {
+        Row: {
+          id: number
+          data: Record<string, unknown>
+          synced_at: string
+          synced_by: string | null
+        }
+        Insert: Omit<Database['public']['Tables']['ca_timetable_global']['Row'], 'id' | 'synced_at' | 'synced_by'> & {
+          id?: number
+          synced_at?: string
+          synced_by?: string | null
+        }
+        Update: Partial<Database['public']['Tables']['ca_timetable_global']['Insert']>
+        Relationships: []
+      }
+
+      attendance_days: {
+        Row: {
+          date: string
+          is_working_day: boolean
+          decided_by: string | null
+          reason: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['attendance_days']['Row'], 'is_working_day' | 'decided_by' | 'reason' | 'created_at' | 'updated_at'> & {
+          is_working_day?: boolean
+          decided_by?: string | null
+          reason?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['attendance_days']['Insert']>
+        Relationships: []
+      }
+
+      ecampus_bunked_subjects: {
+        Row: {
+          id: string
+          reg_no: string
+          course_code: string
+          course_title: string | null
+          total_hours: number
+          total_present: number
+          percentage: number | null
+          can_bunk: number
+          need_attend: number
+          synced_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['ecampus_bunked_subjects']['Row'], 'id' | 'course_title' | 'total_hours' | 'total_present' | 'percentage' | 'can_bunk' | 'need_attend' | 'synced_at'> & {
+          id?: string
+          course_title?: string | null
+          total_hours?: number
+          total_present?: number
+          percentage?: number | null
+          can_bunk?: number
+          need_attend?: number
+          synced_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['ecampus_bunked_subjects']['Insert']>
+        Relationships: []
+      }
+
+      otp_rate_log: {
+        Row: {
+          id: string
+          email: string
+          sent_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['otp_rate_log']['Row'], 'id' | 'sent_at'> & {
+          id?: string
+          sent_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['otp_rate_log']['Insert']>
+        Relationships: []
       }
 
       readiness_scores: {
         Row: {
-          user_id:          string
-          score:            number
-          daily_five_score: number
-          leetcode_score:   number
-          mock_exam_score:  number
-          session_score:    number
-          band:             ReadinessBand
-          computed_at:      string
+          id: string
+          user_id: string
+          score: number
+          computed_at: string
+          components_json: Record<string, unknown>
         }
-        Insert: Omit<Database['public']['Tables']['readiness_scores']['Row'], 'band'> & { band?: ReadinessBand }
+        Insert: Omit<Database['public']['Tables']['readiness_scores']['Row'], 'id' | 'computed_at'> & {
+          id?: string
+          computed_at?: string
+        }
         Update: Partial<Database['public']['Tables']['readiness_scores']['Insert']>
+        Relationships: []
       }
 
-      readiness_score_history: {
+      v_ecampus_attendance_summary: {
         Row: {
-          id:               string
-          user_id:          string
-          score:            number
-          daily_five_score: number | null
-          leetcode_score:   number | null
-          mock_exam_score:  number | null
-          session_score:    number | null
-          snapshot_date:    string
+          reg_no: string | null
+          name: string | null
+          total_hours: number | null
+          total_present: number | null
+          overall_pct: number | null
+          can_bunk: number | null
+          need_attend: number | null
+          synced_at: string | null
         }
-        Insert: Omit<Database['public']['Tables']['readiness_score_history']['Row'], 'id'> & { id?: string }
-        Update: Partial<Database['public']['Tables']['readiness_score_history']['Insert']>
+        Insert: Omit<Database['public']['Tables']['v_ecampus_attendance_summary']['Row'], 'reg_no' | 'name' | 'total_hours' | 'total_present' | 'overall_pct' | 'can_bunk' | 'need_attend' | 'synced_at'> & {
+          reg_no?: string | null
+          name?: string | null
+          total_hours?: number | null
+          total_present?: number | null
+          overall_pct?: number | null
+          can_bunk?: number | null
+          need_attend?: number | null
+          synced_at?: string | null
+        }
+        Update: Partial<Database['public']['Tables']['v_ecampus_attendance_summary']['Insert']>
+        Relationships: []
+      }
+
+      v_ecampus_cgpa_summary: {
+        Row: {
+          reg_no: string | null
+          name: string | null
+          cgpa: number | null
+          total_credits: number | null
+          latest_semester: string | null
+          total_semesters: number | null
+          synced_at: string | null
+        }
+        Insert: Omit<Database['public']['Tables']['v_ecampus_cgpa_summary']['Row'], 'reg_no' | 'name' | 'cgpa' | 'total_credits' | 'latest_semester' | 'total_semesters' | 'synced_at'> & {
+          reg_no?: string | null
+          name?: string | null
+          cgpa?: number | null
+          total_credits?: number | null
+          latest_semester?: string | null
+          total_semesters?: number | null
+          synced_at?: string | null
+        }
+        Update: Partial<Database['public']['Tables']['v_ecampus_cgpa_summary']['Insert']>
+        Relationships: []
+      }
+
+
+      user_ecampus_credentials: {
+        Row: {
+          user_id:            string
+          encrypted_password: string
+          updated_at:         string
+        }
+        Insert: Database['public']['Tables']['user_ecampus_credentials']['Row']
+        Update: Partial<Database['public']['Tables']['user_ecampus_credentials']['Insert']>
+        Relationships: []
       }
 
       knowledge_brain_articles: {
         Row: {
-          id:                      string
-          title:                   string
-          content:                 string
-          summary:                 string | null
-          author_id:               string | null
-          source:                  'web' | 'flutter_placement_log'
-          placement_log_entry_id:  string | null
-          tags:                    string[] | null
-          company_name:            string | null
-          batch_year:              string | null
-          approval_status:         ApprovalStatus
-          approved_by:             string | null
-          approved_at:             string | null
-          view_count:              number
-          search_vector:           string | null  // tsvector (treated as text in JS)
-          created_at:              string
-          updated_at:              string
+          id:              string
+          author_id:       string
+          title:           string
+          summary:         string | null
+          content:         string
+          tags:            string[]
+          company_name:    string | null
+          source:          string | null
+          batch_year:      string | null
+          view_count:      number
+          approval_status: 'pending' | 'approved' | 'rejected'
+          search_vector:   unknown | null
+          reviewed_by:     string | null
+          reviewed_at:     string | null
+          created_at:      string
+          updated_at:      string
         }
-        Insert: Omit<Database['public']['Tables']['knowledge_brain_articles']['Row'], 'id' | 'created_at' | 'updated_at' | 'search_vector'> & {
-          id?: string; created_at?: string; updated_at?: string
+        Insert: Omit<Database['public']['Tables']['knowledge_brain_articles']['Row'], 'id' | 'summary' | 'tags' | 'company_name' | 'source' | 'batch_year' | 'view_count' | 'approval_status' | 'search_vector' | 'reviewed_by' | 'reviewed_at' | 'created_at' | 'updated_at'> & {
+          id?: string; summary?: string | null; tags?: string[]; company_name?: string | null
+          source?: string | null; batch_year?: string | null; view_count?: number
+          approval_status?: 'pending' | 'approved' | 'rejected'
+          search_vector?: unknown | null; reviewed_by?: string | null; reviewed_at?: string | null
+          created_at?: string; updated_at?: string
         }
         Update: Partial<Database['public']['Tables']['knowledge_brain_articles']['Insert']>
+        Relationships: []
       }
 
       knowledge_embeddings: {
         Row: {
           id:          string
           article_id:  string
-          chunk_index: number
           chunk_text:  string
-          embedding:   number[] | null  // vector(384) — gte-small
+          chunk_index: number
+          embedding:   number[] | null
           created_at:  string
         }
-        Insert: Omit<Database['public']['Tables']['knowledge_embeddings']['Row'], 'id' | 'created_at'> & {
-          id?: string; created_at?: string
+        Insert: Omit<Database['public']['Tables']['knowledge_embeddings']['Row'], 'id' | 'chunk_index' | 'embedding' | 'created_at'> & {
+          id?: string; chunk_index?: number; embedding?: number[] | null; created_at?: string
         }
         Update: Partial<Database['public']['Tables']['knowledge_embeddings']['Insert']>
+        Relationships: []
+      }
+
+      ai_query_logs: {
+        Row: {
+          id:         string
+          user_id:    string | null
+          query_text: string
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['ai_query_logs']['Row'], 'id' | 'user_id' | 'created_at'> & {
+          id?: string; user_id?: string | null; created_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['ai_query_logs']['Insert']>
+        Relationships: []
+      }
+
+      lineage_map: {
+        Row: {
+          id:             string
+          student_id:     string
+          senior_user_id: string | null
+          senior_quote:   string | null
+          assigned_at:    string
+          assigned_by:    string | null
+        }
+        Insert: Omit<Database['public']['Tables']['lineage_map']['Row'], 'id' | 'senior_user_id' | 'senior_quote' | 'assigned_at' | 'assigned_by'> & {
+          id?: string; senior_user_id?: string | null; senior_quote?: string | null
+          assigned_at?: string; assigned_by?: string | null
+        }
+        Update: Partial<Database['public']['Tables']['lineage_map']['Insert']>
+        Relationships: []
+      }
+
+      fyp_projects: {
+        Row: {
+          id:                 string
+          batch_id:           string | null
+          student_id:         string
+          title:              string
+          description:        string | null
+          guide_name:         string | null
+          team_members_count: number
+          status:             'proposal' | 'in_progress' | 'completed' | 'archived'
+          repository_url:     string | null
+          created_at:         string
+          updated_at:         string
+        }
+        Insert: Omit<Database['public']['Tables']['fyp_projects']['Row'], 'id' | 'batch_id' | 'description' | 'guide_name' | 'team_members_count' | 'status' | 'repository_url' | 'created_at' | 'updated_at'> & {
+          id?: string; batch_id?: string | null; description?: string | null; guide_name?: string | null
+          team_members_count?: number; status?: 'proposal' | 'in_progress' | 'completed' | 'archived'
+          repository_url?: string | null; created_at?: string; updated_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['fyp_projects']['Insert']>
+        Relationships: []
+      }
+
+      fyp_progress_logs: {
+        Row: {
+          id:         string
+          project_id: string
+          student_id: string
+          note:       string
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['fyp_progress_logs']['Row'], 'id' | 'created_at'> & {
+          id?: string; created_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['fyp_progress_logs']['Insert']>
+        Relationships: []
+      }
+
+      fyp_feedback: {
+        Row: {
+          id:         string
+          project_id: string
+          faculty_id: string
+          comment:    string
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['fyp_feedback']['Row'], 'id' | 'created_at'> & {
+          id?: string; created_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['fyp_feedback']['Insert']>
+        Relationships: []
       }
 
       mock_exams: {
         Row: {
-          id:                string
-          title:             string
-          description:       string | null
-          target_batch_id:   string | null
-          created_by:        string
-          scheduled_at:      string
-          duration_minutes:  number
-          total_marks:       number
-          proctoring_level:  ProctoringLevel
-          status:            ExamStatus
-          created_at:        string
+          id:               string
+          title:            string
+          description:      string | null
+          duration_minutes: number
+          total_marks:      number
+          exam_date:        string | null
+          batch_id:         string | null
+          created_by:       string | null
+          created_at:       string
         }
-        Insert: Omit<Database['public']['Tables']['mock_exams']['Row'], 'id' | 'created_at'> & {
-          id?: string; created_at?: string
+        Insert: Omit<Database['public']['Tables']['mock_exams']['Row'], 'id' | 'description' | 'duration_minutes' | 'total_marks' | 'exam_date' | 'batch_id' | 'created_by' | 'created_at'> & {
+          id?: string; description?: string | null; duration_minutes?: number; total_marks?: number; exam_date?: string | null
+          batch_id?: string | null; created_by?: string | null; created_at?: string
         }
         Update: Partial<Database['public']['Tables']['mock_exams']['Insert']>
+        Relationships: []
       }
 
       mock_exam_questions: {
@@ -370,124 +987,119 @@ export interface Database {
           id:             string
           exam_id:        string
           question_text:  string
-          question_type:  'mcq' | 'coding' | 'short_answer'
           option_a:       string | null
           option_b:       string | null
           option_c:       string | null
           option_d:       string | null
-          correct_option: string | null
+          correct_option: 'A' | 'B' | 'C' | 'D'
           marks:          number
           order_index:    number
+          created_at:     string
         }
-        Insert: Omit<Database['public']['Tables']['mock_exam_questions']['Row'], 'id'> & { id?: string }
+        Insert: Omit<Database['public']['Tables']['mock_exam_questions']['Row'], 'id' | 'option_a' | 'option_b' | 'option_c' | 'option_d' | 'marks' | 'order_index' | 'created_at'> & {
+          id?: string; option_a?: string | null; option_b?: string | null; option_c?: string | null; option_d?: string | null
+          marks?: number; order_index?: number; created_at?: string
+        }
         Update: Partial<Database['public']['Tables']['mock_exam_questions']['Insert']>
+        Relationships: []
       }
 
       mock_exam_results: {
         Row: {
-          id:                  string
-          exam_id:             string
-          student_id:          string
-          score:               number
-          raw_marks:           number
-          submitted_at:        string
-          time_taken_seconds:  number | null
-          proctoring_flags:    Array<{ type: string; timestamp: string }>
+          id:               string
+          exam_id:          string
+          student_id:       string
+          session_token:    string
+          started_at:       string | null
+          submitted_at:     string | null
+          score:            number | null
+          raw_marks:        number | null
+          out_of:           number | null
+          total_questions:  number | null
+          proctoring_flags: unknown
+          status:           'in_progress' | 'submitted' | 'auto_submitted' | 'voided'
+          voided_by:        string | null
+          created_at:       string
         }
-        Insert: Omit<Database['public']['Tables']['mock_exam_results']['Row'], 'id' | 'submitted_at'> & {
-          id?: string; submitted_at?: string
+        Insert: Omit<Database['public']['Tables']['mock_exam_results']['Row'], 'id' | 'session_token' | 'started_at' | 'submitted_at' | 'score' | 'raw_marks' | 'out_of' | 'total_questions' | 'proctoring_flags' | 'status' | 'voided_by' | 'created_at'> & {
+          id?: string; session_token?: string; started_at?: string | null; submitted_at?: string | null
+          score?: number | null; raw_marks?: number | null; out_of?: number | null; total_questions?: number | null; proctoring_flags?: unknown
+          status?: 'in_progress' | 'submitted' | 'auto_submitted' | 'voided'; voided_by?: string | null; created_at?: string
         }
         Update: Partial<Database['public']['Tables']['mock_exam_results']['Insert']>
+        Relationships: []
       }
 
-      announcements: {
+      user_feedback: {
         Row: {
-          id:         string
-          batch_id:   string | null
-          title:      string
-          body:       string
-          posted_by:  string
-          is_pinned:  boolean
-          created_at: string
+          id:            string
+          user_id:       string
+          category:      string
+          feedback_text: string
+          rating:        number | null
+          created_at:    string
         }
-        Insert: Omit<Database['public']['Tables']['announcements']['Row'], 'id' | 'created_at'> & {
-          id?: string; created_at?: string
+        Insert: Omit<Database['public']['Tables']['user_feedback']['Row'], 'id' | 'category' | 'rating' | 'created_at'> & {
+          id?: string; category?: string; rating?: number | null; created_at?: string
         }
-        Update: Partial<Database['public']['Tables']['announcements']['Insert']>
-      }
-
-      notifications: {
-        Row: {
-          id:             string
-          user_id:        string
-          type:           string
-          title:          string
-          body:           string
-          is_read:        boolean
-          reference_id:   string | null
-          reference_type: string | null
-          created_at:     string
-        }
-        Insert: Omit<Database['public']['Tables']['notifications']['Row'], 'id' | 'created_at'> & {
-          id?: string; created_at?: string
-        }
-        Update: Partial<Database['public']['Tables']['notifications']['Insert']>
+        Update: Partial<Database['public']['Tables']['user_feedback']['Insert']>
+        Relationships: []
       }
 
       collaboration_posts: {
         Row: {
           id:          string
-          posted_by:   string
-          post_type:   PostType
+          post_type:   'job' | 'project' | 'mentorship'
           title:       string
           description: string
-          visibility:  PostVisibility
+          visibility:  'lineage_only' | 'batch' | 'department'
           is_active:   boolean
+          posted_by:   string
           created_at:  string
         }
-        Insert: Omit<Database['public']['Tables']['collaboration_posts']['Row'], 'id' | 'created_at'> & {
-          id?: string; created_at?: string
+        Insert: Omit<Database['public']['Tables']['collaboration_posts']['Row'], 'id' | 'visibility' | 'is_active' | 'created_at'> & {
+          id?: string; visibility?: 'lineage_only' | 'batch' | 'department'; is_active?: boolean; created_at?: string
         }
         Update: Partial<Database['public']['Tables']['collaboration_posts']['Insert']>
+        Relationships: []
       }
 
-      lineage_messages: {
+      current_readiness_scores: {
         Row: {
-          id:           string
-          sender_id:    string
-          receiver_id:  string
-          message_text: string
-          is_read:      boolean
-          sent_at:      string
+          user_id:         string
+          score:           number
+          components_json: Record<string, unknown> | null
+          computed_at:     string
         }
-        Insert: Omit<Database['public']['Tables']['lineage_messages']['Row'], 'id' | 'sent_at'> & {
-          id?: string; sent_at?: string
-        }
-        Update: Partial<Database['public']['Tables']['lineage_messages']['Insert']>
+        Insert: Database['public']['Tables']['current_readiness_scores']['Row']
+        Update: Partial<Database['public']['Tables']['current_readiness_scores']['Row']>
+        Relationships: []
       }
 
-      audit_logs: {
-        Row: {
-          id:           string
-          actor_id:     string | null
-          action:       string
-          target_table: string | null
-          target_id:    string | null
-          metadata:     Record<string, unknown> | null
-          created_at:   string
-        }
-        Insert: Omit<Database['public']['Tables']['audit_logs']['Row'], 'id' | 'created_at'> & {
-          id?: string; created_at?: string
-        }
-        Update: Partial<Database['public']['Tables']['audit_logs']['Insert']>
-      }
     }
 
+    Views: {
+      [_ in never]: never
+    }
+
+    // NOTE: existence of these RPCs is only partially verified. A blind
+    // no-args probe returned 404 for most of them, but that test is
+    // inconclusive for functions that require arguments (confirmed by
+    // update_leetcode_username_unified, which DOES exist live with args —
+    // the same blind probe also 404'd for it). Treat any function below
+    // NOT marked "confirmed live" as unverified, not proven absent.
     Functions: {
+      update_leetcode_username_unified: { Args: { p_user_id: string; p_new_username: string }; Returns: Record<string, unknown> } // confirmed live
+      set_ecampus_password:             { Args: { p_password: string | null }; Returns: void } // added in 08_security_fixes_sprint0.sql
+      send_birthday_notifications:      { Args: Record<string, never>; Returns: number } // added in 09_sprint1_schema_and_features.sql
+      knowledge_semantic_search: { // added in 09_sprint1_schema_and_features.sql
+        Args: { query_embedding: number[]; match_threshold?: number; match_count?: number }
+        Returns: Array<{ id: string; article_id: string; chunk_text: string; title: string; similarity: number }>
+      }
+      // Unverified — present in the never-applied supabase/migrations/02_functions.sql:
       get_user_role:                      { Args: { p_user_id: string }; Returns: { role: string; app_role: string }[] }
       get_batch_for_user:                 { Args: { p_user_id: string }; Returns: string }
       compute_readiness_score:            { Args: { p_user_id: string }; Returns: Record<string, unknown> }
-      update_leetcode_username_unified:   { Args: { p_user_id: string; p_new_username: string }; Returns: Record<string, unknown> }
       recompute_batch_leetcode_percentiles: { Args: { p_batch_id: string }; Returns: number }
       submit_exam_server_side: {
         Args: {
@@ -500,10 +1112,6 @@ export interface Database {
         Returns: Record<string, unknown>
       }
       graduate_batch: { Args: { p_batch_id: string }; Returns: Record<string, unknown> }
-      knowledge_semantic_search: {
-        Args: { query_embedding: number[]; match_threshold?: number; match_count?: number }
-        Returns: Array<{ id: string; article_id: string; chunk_text: string; title: string; similarity: number }>
-      }
     }
   }
 }

@@ -1,11 +1,13 @@
 'use client';
 
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Award, BrainCircuit, BookOpen, ClipboardList, Users, ArrowRight, Calendar, TrendingUp, Flame, FileText, Building2, Star, ChevronRight } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Award, BrainCircuit, BookOpen, ClipboardList, Users, ArrowRight, Calendar, Flame, FileText, Building2, Star, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client';
+import { InitialsAvatar } from '@/components/basic/InitialsAvatar';
 
-const StatCard = ({ title, value, trend, trendUp, icon: Icon, color, delay, sparkPath }: any) => (
+const StatCard = ({ title, value, trend, icon: Icon, color, delay }: any) => (
   <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay }} className="bg-white rounded-[20px] p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-border-light relative overflow-hidden flex flex-col justify-between h-[140px]">
     <div className="flex items-center gap-3">
       <div className={`w-10 h-10 rounded-full ${color} flex items-center justify-center shadow-sm`}>
@@ -16,38 +18,170 @@ const StatCard = ({ title, value, trend, trendUp, icon: Icon, color, delay, spar
     <div className="flex items-end justify-between mt-auto">
       <div>
         <h3 className="text-[32px] font-black text-text-main leading-none mb-1">{value}</h3>
-        <p className={`text-[11px] font-bold ${trendUp ? 'text-electric-blue' : 'text-deep-violet'}`}>{trend}</p>
-      </div>
-      <div className="w-24 h-8">
-        <svg viewBox="0 0 100 30" className={`w-full h-full fill-none ${trendUp ? 'stroke-primary-purple' : 'stroke-deep-violet'}`} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-          <path d={sparkPath} />
-        </svg>
+        <p className="text-[11px] font-bold text-text-muted">{trend}</p>
       </div>
     </div>
   </motion.div>
 );
 
+const COMPONENT_LABELS: Record<string, string> = {
+  daily_five_accuracy_pct: 'Daily Five Accuracy',
+  daily_five_adherence_pct: 'Daily Five Adherence',
+  placement_attendance_pct: 'Session Attendance',
+  task_completion_rate_pct: 'Task Completion',
+  leetcode_momentum_percentile: 'LeetCode Momentum',
+};
+
+interface DashboardData {
+  userName: string;
+  batchId: string | null;
+  batchCode: string;
+  score: number | null;
+  components: Record<string, number | null>;
+  streak: number;
+  articlesCount: number;
+  examsTakenCount: number;
+  recentArticles: { id: string; title: string; tag: string; authorName: string; authorRole: string }[];
+  upcomingExams: { id: string; title: string; examDate: string; durationMinutes: number }[];
+  senior: { name: string; quote: string | null } | null;
+  leaderboard: { userId: string; name: string; score: number; isYou: boolean }[];
+  recentCompanies: { id: string; name: string; role: string; visitDate: string }[];
+}
+
 export default function StudentDashboard() {
-  const readinessScore = 72;
-  const readinessComponents = [
-    { label: 'Daily Five Engagement', value: 21, max: 30, color: 'bg-primary-purple' },
-    { label: 'LeetCode Progress', value: 16, max: 25, color: 'bg-electric-blue' },
-    { label: 'Mock Exam Performance', value: 28, max: 35, color: 'bg-illus-gold' },
-    { label: 'Session Attendance', value: 7, max: 10, color: 'bg-deep-violet' },
-  ];
+  const [data, setData] = React.useState<DashboardData | null>(null);
+  const [loading, setLoading] = React.useState(true);
 
-  const upcomingExams = [
-    { name: 'Data Structures — Full Mock', date: 'Jan 20, 2025', duration: '90 min', type: 'MCQ + Coding', daysLeft: 4 },
-    { name: 'Aptitude Assessment — Q3', date: 'Jan 28, 2025', duration: '60 min', type: 'MCQ', daysLeft: 12 },
-  ];
+  const [aiQuery, setAiQuery] = React.useState('');
+  const [aiResponse, setAiResponse] = React.useState('');
+  const [isAiLoading, setIsAiLoading] = React.useState(false);
 
-  const recentArticles = [
-    { title: "How I cracked Zoho's 5-round process", author: 'Alumni 23MX201', tag: 'PLACEMENT EXPERIENCE' },
-    { title: 'Dynamic Programming - A Pattern-First Guide', author: 'Faculty · Dr. Arunkumar', tag: 'TECHNICAL GUIDE' },
-    { title: "What TCS Digital's aptitude test actually tests", author: 'Alumni 22MX115', tag: 'COMPANY SPECIFIC' },
-  ];
+  React.useEffect(() => {
+    let cancelled = false;
+    const supabase = createClient();
 
-  const today = new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    async function load() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setLoading(false); return; }
+
+      const { data: me } = await supabase
+        .from('users')
+        .select('name, batch_id')
+        .eq('id', user.id)
+        .single();
+
+      const batchId = me?.batch_id ?? null;
+
+      const [
+        { data: batch },
+        { data: scoreRow },
+        { data: streakRow },
+        { data: articles },
+        { data: exams },
+        { data: lineage },
+        { data: leaderboardRows },
+        { data: companies },
+      ] = await Promise.all([
+        batchId ? supabase.from('batches').select('batch_code').eq('id', batchId).single() : Promise.resolve({ data: null }),
+        supabase.from('current_readiness_scores').select('score, components_json').eq('user_id', user.id).maybeSingle(),
+        supabase.from('daily_five_streaks').select('current_streak').eq('user_id', user.id).maybeSingle(),
+        supabase
+          .from('knowledge_brain_articles')
+          .select('id, title, tags, created_at, author_id, users!knowledge_brain_articles_author_id_fkey(name, role_label)')
+          .eq('approval_status', 'approved')
+          .order('created_at', { ascending: false })
+          .limit(3),
+        supabase
+          .from('mock_exam_results')
+          .select('id, status, mock_exams(id, title, exam_date, duration_minutes)')
+          .eq('student_id', user.id),
+        supabase
+          .from('lineage_map')
+          .select('senior_quote, users!lineage_map_senior_user_id_fkey(name)')
+          .eq('student_id', user.id)
+          .maybeSingle(),
+        batchId
+          ? supabase
+              .from('current_readiness_scores')
+              .select('user_id, score, users!inner(name, batch_id)')
+              .eq('users.batch_id', batchId)
+              .order('score', { ascending: false })
+              .limit(5)
+          : Promise.resolve({ data: [] }),
+        supabase.from('companies').select('id, name, roles_offered, visit_date').order('visit_date', { ascending: false }).limit(2),
+      ]);
+
+      const { count: articlesCount } = await supabase
+        .from('knowledge_brain_articles')
+        .select('id', { count: 'exact', head: true })
+        .eq('approval_status', 'approved');
+
+      const examResultsList = (exams || []) as any[];
+      const examsTakenCount = examResultsList.filter((e) => e.status === 'submitted').length;
+      const upcomingExams = examResultsList
+        .filter((e) => e.status === 'in_progress' && e.mock_exams?.exam_date && new Date(e.mock_exams.exam_date) > new Date())
+        .map((e) => ({
+          id: e.mock_exams.id,
+          title: e.mock_exams.title,
+          examDate: e.mock_exams.exam_date,
+          durationMinutes: e.mock_exams.duration_minutes,
+        }));
+
+      if (cancelled) return;
+
+      setData({
+        userName: me?.name || 'Scholar',
+        batchId,
+        batchCode: (batch as any)?.batch_code || '',
+        score: scoreRow?.score ?? null,
+        components: (scoreRow?.components_json as Record<string, number | null>) ?? {},
+        streak: streakRow?.current_streak ?? 0,
+        articlesCount: articlesCount ?? 0,
+        examsTakenCount,
+        recentArticles: (articles || []).map((a: any) => ({
+          id: a.id,
+          title: a.title,
+          tag: (a.tags && a.tags[0]) || 'GENERAL',
+          authorName: a.users?.name || 'Unknown',
+          authorRole: a.users?.role_label || '',
+        })),
+        upcomingExams,
+        senior: lineage?.users
+          ? { name: (lineage.users as any).name, quote: lineage.senior_quote }
+          : null,
+        leaderboard: (leaderboardRows || []).map((r: any) => ({
+          userId: r.user_id,
+          name: r.users?.name || 'Student',
+          score: r.score,
+          isYou: r.user_id === user.id,
+        })),
+        recentCompanies: (companies || []).map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          role: Array.isArray(c.roles_offered) ? c.roles_offered[0] || '' : (c.roles_offered || ''),
+          visitDate: c.visit_date,
+        })),
+      });
+      setLoading(false);
+    }
+
+    load();
+    return () => { cancelled = true; };
+  }, []);
+
+  const handleAiAsk = async () => {
+    if (!aiQuery.trim()) return;
+    setIsAiLoading(true);
+    try {
+      const res = await fetch('/api/ai-senior', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: aiQuery }) });
+      const resData = await res.json();
+      setAiResponse(resData.success ? resData.answer : 'Sorry, I encountered an error. Please try again.');
+    } catch {
+      setAiResponse('Connection failed. Please try again.');
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
 
   const getBand = (score: number) => {
     if (score >= 80) return { label: 'STRONG', color: 'bg-electric-blue text-white' };
@@ -56,25 +190,21 @@ export default function StudentDashboard() {
     return { label: 'AT RISK', color: 'bg-deep-violet text-white' };
   };
 
+  if (loading) {
+    return (
+      <div className="max-w-[1400px] mx-auto space-y-8 pb-8 animate-pulse">
+        <div className="h-10 w-72 bg-border-light rounded-lg" />
+        <div className="h-64 bg-white border border-border-light rounded-[24px]" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[0, 1, 2, 3].map((i) => <div key={i} className="h-[140px] bg-white border border-border-light rounded-[20px]" />)}
+        </div>
+      </div>
+    );
+  }
+
+  const readinessScore = data?.score ?? 0;
   const band = getBand(readinessScore);
-
-  const [aiQuery, setAiQuery] = React.useState('');
-  const [aiResponse, setAiResponse] = React.useState('');
-  const [isAiLoading, setIsAiLoading] = React.useState(false);
-
-  const handleAiAsk = async () => {
-    if (!aiQuery.trim()) return;
-    setIsAiLoading(true);
-    try {
-      const res = await fetch('/api/ai-senior', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: aiQuery }) });
-      const data = await res.json();
-      setAiResponse(data.success ? data.answer : 'Sorry, I encountered an error. Please try again.');
-    } catch {
-      setAiResponse('Connection failed. Please try again.');
-    } finally {
-      setIsAiLoading(false);
-    }
-  };
+  const componentEntries = Object.entries(data?.components || {}).filter(([, v]) => v !== null) as [string, number][];
 
   return (
     <div className="max-w-[1400px] mx-auto space-y-8 pb-8">
@@ -83,7 +213,7 @@ export default function StudentDashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <motion.h1 initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="text-[26px] font-bold text-text-main tracking-tight mb-1">
-            Welcome back, Scholar 👋
+            Welcome back, {data?.userName?.split(' ')[0] || 'Scholar'} 👋
           </motion.h1>
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }} className="text-[14px] text-text-muted">
             Here's your placement readiness snapshot for today.
@@ -115,7 +245,7 @@ export default function StudentDashboard() {
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-[44px] font-black text-text-main leading-none">{readinessScore}</span>
+              <span className="text-[44px] font-black text-text-main leading-none">{Math.round(readinessScore)}</span>
               <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">/ 100</span>
               <span className={`mt-2 text-[9px] font-bold px-2 py-0.5 rounded-full ${band.color}`}>{band.label}</span>
             </div>
@@ -129,42 +259,35 @@ export default function StudentDashboard() {
                 Full Analysis <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
-            {readinessComponents.map((comp, i) => (
-              <motion.div key={comp.label} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 + i * 0.1 }}>
+            {componentEntries.length === 0 && (
+              <p className="text-[13px] text-text-muted">No score components yet — this fills in once your Daily Five, LeetCode, attendance, and task activity starts syncing.</p>
+            )}
+            {componentEntries.map(([key, value], i) => (
+              <motion.div key={key} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 + i * 0.1 }}>
                 <div className="flex justify-between items-center mb-1.5">
-                  <span className="text-[13px] font-semibold text-text-muted">{comp.label}</span>
-                  <span className="text-[13px] font-black text-text-main">{comp.value}<span className="text-text-muted font-semibold">/{comp.max}</span></span>
+                  <span className="text-[13px] font-semibold text-text-muted">{COMPONENT_LABELS[key] || key}</span>
+                  <span className="text-[13px] font-black text-text-main">{Math.round(value)}%</span>
                 </div>
                 <div className="h-2 bg-border-light rounded-full overflow-hidden">
                   <motion.div
                     initial={{ width: 0 }}
-                    animate={{ width: `${(comp.value / comp.max) * 100}%` }}
+                    animate={{ width: `${Math.min(value, 100)}%` }}
                     transition={{ delay: 0.3 + i * 0.1, duration: 0.8, ease: 'easeOut' }}
-                    className={`h-full rounded-full ${comp.color}`}
+                    className="h-full rounded-full bg-primary-purple"
                   />
                 </div>
               </motion.div>
             ))}
-          </div>
-
-          {/* Right: 90-day trend */}
-          <div className="hidden xl:flex flex-col items-center gap-2 shrink-0">
-            <span className="text-[11px] font-bold text-text-muted uppercase tracking-wider">90-Day Trend</span>
-            <svg viewBox="0 0 120 60" className="w-32 h-16 fill-none stroke-primary-purple" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M0,55 C15,50 20,45 30,40 C40,35 45,42 55,35 C65,28 70,20 80,18 C90,16 100,12 120,8" />
-            </svg>
-            <TrendingUp className="w-4 h-4 text-electric-blue" />
-            <span className="text-[11px] font-bold text-electric-blue">↑ 8 pts this month</span>
           </div>
         </div>
       </motion.div>
 
       {/* 4 Stat Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="Readiness Score" value={readinessScore} trend="↑ 8 pts this month" trendUp icon={Award} color="bg-primary-purple" delay={0.1} sparkPath="M0,25 C20,25 30,15 50,15 C70,15 80,5 100,5" />
-        <StatCard title="Current Streak" value="14" trend="Days via Flutter App" trendUp icon={Flame} color="bg-deep-violet" delay={0.2} sparkPath="M0,20 C20,18 30,10 50,8 C70,6 80,4 100,2" />
-        <StatCard title="Exams Taken" value="5" trend="↑ 2 this semester" trendUp icon={ClipboardList} color="bg-illus-gold" delay={0.3} sparkPath="M0,25 C20,20 40,15 60,18 C80,22 90,8 100,5" />
-        <StatCard title="Articles Read" value="23" trend="Keep exploring" trendUp icon={BookOpen} color="bg-electric-blue" delay={0.4} sparkPath="M0,22 C15,20 30,18 50,14 C70,10 85,8 100,5" />
+        <StatCard title="Readiness Score" value={Math.round(readinessScore)} trend={band.label} icon={Award} color="bg-primary-purple" delay={0.1} />
+        <StatCard title="Current Streak" value={data?.streak ?? 0} trend="Days via Flutter App" icon={Flame} color="bg-deep-violet" delay={0.2} />
+        <StatCard title="Exams Taken" value={data?.examsTakenCount ?? 0} trend="Lifetime" icon={ClipboardList} color="bg-illus-gold" delay={0.3} />
+        <StatCard title="Articles Approved" value={data?.articlesCount ?? 0} trend="Across the Knowledge Brain" icon={BookOpen} color="bg-electric-blue" delay={0.4} />
       </div>
 
       {/* Main Grid */}
@@ -180,26 +303,32 @@ export default function StudentDashboard() {
                 <ClipboardList className="w-5 h-5 text-primary-purple" />
                 <h3 className="text-[16px] font-bold text-text-main">Upcoming Mock Exams</h3>
               </div>
-              <span className="text-[13px] font-bold text-primary-purple">{upcomingExams.length} Scheduled</span>
+              <span className="text-[13px] font-bold text-primary-purple">{data?.upcomingExams.length ?? 0} Scheduled</span>
             </div>
             <div className="p-6 space-y-4">
-              {upcomingExams.map((exam, i) => (
-                <div key={i} className="flex items-center justify-between p-4 rounded-[16px] border border-border-light hover:border-primary-purple/30 transition-colors group">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-[12px] bg-page-bg flex flex-col items-center justify-center shrink-0">
-                      <span className="text-[16px] font-black text-primary-purple leading-none">{exam.daysLeft}</span>
-                      <span className="text-[8px] font-bold text-text-muted uppercase">days</span>
+              {(data?.upcomingExams.length ?? 0) === 0 && (
+                <p className="text-[13px] text-text-muted text-center py-4">No exams scheduled right now — check back soon.</p>
+              )}
+              {data?.upcomingExams.map((exam) => {
+                const daysLeft = Math.max(0, Math.ceil((new Date(exam.examDate).getTime() - Date.now()) / 86400000));
+                return (
+                  <div key={exam.id} className="flex items-center justify-between p-4 rounded-[16px] border border-border-light hover:border-primary-purple/30 transition-colors group">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-[12px] bg-page-bg flex flex-col items-center justify-center shrink-0">
+                        <span className="text-[16px] font-black text-primary-purple leading-none">{daysLeft}</span>
+                        <span className="text-[8px] font-bold text-text-muted uppercase">days</span>
+                      </div>
+                      <div>
+                        <h4 className="text-[14px] font-bold text-text-main mb-0.5">{exam.title}</h4>
+                        <p className="text-[11px] font-semibold text-text-muted">{new Date(exam.examDate).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })} · {exam.durationMinutes} min</p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="text-[14px] font-bold text-text-main mb-0.5">{exam.name}</h4>
-                      <p className="text-[11px] font-semibold text-text-muted">{exam.date} · {exam.duration} · {exam.type}</p>
-                    </div>
+                    <Link href="/student/exams" className="px-4 py-2 bg-primary-purple text-white rounded-[10px] text-[12px] font-bold opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                      Details →
+                    </Link>
                   </div>
-                  <Link href="/student/exams" className="px-4 py-2 bg-primary-purple text-white rounded-[10px] text-[12px] font-bold opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                    Details →
-                  </Link>
-                </div>
-              ))}
+                );
+              })}
               <Link href="/student/exams" className="w-full py-3.5 bg-white/40 backdrop-blur-md border border-white/20 text-primary-purple rounded-[12px] text-[13px] font-bold flex items-center justify-center gap-2 hover:bg-page-bg transition-colors">
                 View All Exams <ArrowRight className="w-4 h-4" />
               </Link>
@@ -244,15 +373,18 @@ export default function StudentDashboard() {
               </div>
             </div>
             <div className="p-6 space-y-4">
-              {recentArticles.map((article, i) => (
-                <div key={i} className="flex items-start gap-4 p-4 rounded-[16px] border border-border-light hover:border-primary-purple/30 transition-colors cursor-pointer group">
+              {(data?.recentArticles.length ?? 0) === 0 && (
+                <p className="text-[13px] text-text-muted text-center py-4">No approved articles yet — be the first to contribute.</p>
+              )}
+              {data?.recentArticles.map((article) => (
+                <div key={article.id} className="flex items-start gap-4 p-4 rounded-[16px] border border-border-light hover:border-primary-purple/30 transition-colors cursor-pointer group">
                   <div className="w-10 h-10 rounded-[10px] bg-page-bg flex items-center justify-center shrink-0">
                     <FileText className="w-4 h-4 text-primary-purple" />
                   </div>
                   <div className="flex-1">
                     <span className="text-[9px] font-bold text-primary-purple uppercase tracking-wider">{article.tag}</span>
                     <h4 className="text-[14px] font-bold text-text-main mt-0.5 mb-1 group-hover:text-primary-purple transition-colors">{article.title}</h4>
-                    <p className="text-[11px] font-semibold text-text-muted">{article.author} · Approved by Faculty ✓</p>
+                    <p className="text-[11px] font-semibold text-text-muted">{article.authorRole} · {article.authorName} · Approved ✓</p>
                   </div>
                   <ArrowRight className="w-4 h-4 text-text-muted opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-1" />
                 </div>
@@ -273,46 +405,21 @@ export default function StudentDashboard() {
               <Users className="w-5 h-5 text-primary-purple" />
               <h3 className="text-[16px] font-bold text-text-main">Your Senior</h3>
             </div>
-            <div className="flex flex-col items-center text-center gap-3">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary-purple to-deep-violet flex items-center justify-center text-white text-xl font-black shadow-lg">
-                R
-              </div>
-              <div>
-                <h4 className="text-[15px] font-black text-text-main">Riya Menon</h4>
-                <p className="text-[12px] text-text-muted">Batch 23MX · Class of 2025</p>
-                <p className="text-[12px] font-semibold text-primary-purple mt-1">Software Engineer @ Zoho</p>
-              </div>
-              <p className="text-[12px] text-text-muted text-center">"Stay consistent. The score takes care of itself."</p>
-              <div className="flex gap-2 w-full">
-                <a href="#" className="flex-1 py-2 bg-primary-purple text-white rounded-[10px] text-[12px] font-bold text-center hover:bg-deep-violet transition-colors">LinkedIn</a>
-                <Link href="/student/lineage" className="flex-1 py-2 bg-page-bg text-primary-purple rounded-[10px] text-[12px] font-bold text-center hover:bg-border-light transition-colors">View Lineage</Link>
-              </div>
-            </div>
-          </div>
-
-          {/* Next Exam Countdown */}
-          <div className="bg-white rounded-[20px] border border-border-light shadow-[0_2px_12px_rgba(0,0,0,0.02)] p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <ClipboardList className="w-5 h-5 text-illus-gold" />
-              <h3 className="text-[14px] font-bold text-text-main">Next Exam</h3>
-            </div>
-            <div className="text-center">
-              <div className="flex items-center justify-center gap-3 mb-3">
-                <div className="text-center">
-                  <span className="text-[36px] font-black text-primary-purple leading-none">4</span>
-                  <p className="text-[9px] font-bold text-text-muted uppercase">Days</p>
+            {data?.senior ? (
+              <div className="flex flex-col items-center text-center gap-3">
+                <InitialsAvatar name={data.senior.name} size={64} className="text-xl shadow-lg" />
+                <div>
+                  <h4 className="text-[15px] font-black text-text-main">{data.senior.name}</h4>
                 </div>
-                <span className="text-[24px] font-black text-border-light">:</span>
-                <div className="text-center">
-                  <span className="text-[36px] font-black text-primary-purple leading-none">08</span>
-                  <p className="text-[9px] font-bold text-text-muted uppercase">Hours</p>
-                </div>
+                {data.senior.quote && <p className="text-[12px] text-text-muted text-center">"{data.senior.quote}"</p>}
+                <Link href="/student/lineage" className="w-full py-2 bg-page-bg text-primary-purple rounded-[10px] text-[12px] font-bold text-center hover:bg-border-light transition-colors">View Lineage</Link>
               </div>
-              <p className="text-[13px] font-bold text-text-main mb-4">Data Structures — Full Mock</p>
-              <Link href="/student/exams" className="block w-full py-2.5 bg-primary-purple text-white rounded-[10px] text-[13px] font-bold hover:bg-deep-violet transition-colors">
-                Prepare Now →
-              </Link>
-            </div>
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-[13px] text-text-muted mb-3">No senior assigned yet.</p>
+                <Link href="/student/lineage" className="text-[12px] font-bold text-primary-purple hover:underline">View Lineage Program</Link>
+              </div>
+            )}
           </div>
 
           {/* Batch Leaderboard Mini */}
@@ -322,23 +429,21 @@ export default function StudentDashboard() {
                 <Star className="w-5 h-5 text-illus-gold" />
                 <h3 className="text-[14px] font-bold text-text-main">Batch Leaderboard</h3>
               </div>
-              <span className="text-[10px] font-bold text-text-muted bg-page-bg px-2 py-1 rounded-lg">25MX</span>
+              {data?.batchCode && <span className="text-[10px] font-bold text-text-muted bg-page-bg px-2 py-1 rounded-lg">{data.batchCode}</span>}
             </div>
-            <div className="space-y-3">
-              {[
-                { rank: 1, token: '25MX089', score: 91, isYou: false },
-                { rank: 2, token: '25MX156', score: 87, isYou: false },
-                { rank: 3, token: '25MX301', score: 72, isYou: true },
-                { rank: 4, token: '25MX044', score: 68, isYou: false },
-                { rank: 5, token: '25MX212', score: 65, isYou: false },
-              ].map((s) => (
-                <div key={s.rank} className={`flex items-center gap-3 p-2.5 rounded-[10px] transition-colors ${s.isYou ? 'bg-primary-purple/10 border border-primary-purple/20' : 'hover:bg-page-bg'}`}>
-                  <span className={`text-[13px] font-black w-5 text-center ${s.rank <= 3 ? 'text-illus-gold' : 'text-text-muted'}`}>{s.rank}</span>
-                  <span className={`text-[13px] font-bold flex-1 ${s.isYou ? 'text-primary-purple' : 'text-text-main'}`}>{s.token} {s.isYou && '(You)'}</span>
-                  <span className="text-[13px] font-black text-text-main">{s.score}</span>
-                </div>
-              ))}
-            </div>
+            {(data?.leaderboard.length ?? 0) === 0 ? (
+              <p className="text-[13px] text-text-muted text-center py-4">No scores yet in your batch.</p>
+            ) : (
+              <div className="space-y-3">
+                {data?.leaderboard.map((s, i) => (
+                  <div key={s.userId} className={`flex items-center gap-3 p-2.5 rounded-[10px] transition-colors ${s.isYou ? 'bg-primary-purple/10 border border-primary-purple/20' : 'hover:bg-page-bg'}`}>
+                    <span className={`text-[13px] font-black w-5 text-center ${i < 3 ? 'text-illus-gold' : 'text-text-muted'}`}>{i + 1}</span>
+                    <span className={`text-[13px] font-bold flex-1 ${s.isYou ? 'text-primary-purple' : 'text-text-main'}`}>{s.name} {s.isYou && '(You)'}</span>
+                    <span className="text-[13px] font-black text-text-main">{Math.round(s.score)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
             <p className="text-[10px] text-text-muted mt-3 text-center">Full leaderboard available in Flutter app</p>
           </div>
 
@@ -348,17 +453,17 @@ export default function StudentDashboard() {
               <Building2 className="w-5 h-5 text-primary-purple" />
               <h3 className="text-[14px] font-bold text-text-main">Recent Drives</h3>
             </div>
-            {[
-              { company: 'Zoho Corporation', role: 'Software Engineer', date: 'Jan 8, 2025' },
-              { company: 'TCS Digital', role: 'Systems Engineer', date: 'Dec 20, 2024' },
-            ].map((d, i) => (
-              <div key={i} className="flex items-center gap-3 mb-3 last:mb-0">
+            {(data?.recentCompanies.length ?? 0) === 0 && (
+              <p className="text-[13px] text-text-muted">No drives recorded yet.</p>
+            )}
+            {data?.recentCompanies.map((d) => (
+              <div key={d.id} className="flex items-center gap-3 mb-3 last:mb-0">
                 <div className="w-8 h-8 rounded-lg bg-page-bg flex items-center justify-center text-[13px] font-black text-primary-purple shrink-0">
-                  {d.company[0]}
+                  {d.name[0]}
                 </div>
                 <div>
-                  <p className="text-[13px] font-bold text-text-main">{d.company}</p>
-                  <p className="text-[11px] text-text-muted">{d.role} · {d.date}</p>
+                  <p className="text-[13px] font-bold text-text-main">{d.name}</p>
+                  <p className="text-[11px] text-text-muted">{d.role} · {new Date(d.visitDate).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
                 </div>
               </div>
             ))}

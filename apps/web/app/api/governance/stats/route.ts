@@ -10,14 +10,14 @@ import { supabaseAdmin } from '@/lib/supabase/admin'
 export async function GET(req: NextRequest) {
   try {
     const session = await getUserFromRequest(req)
-    if (!session?.id || !['faculty', 'hod'].includes(session.role)) {
+    if (!session?.id || !['faculty', 'hod'].includes(session.roleLabel.toLowerCase())) {
       return NextResponse.json({ error: 'Unauthorized — Faculty or HOD required' }, { status: 401 })
     }
 
     const [articlesRes, pendingLogRes, usersRes, auditRes] = await Promise.all([
       supabaseAdmin.from('knowledge_brain_articles').select('id, approval_status', { count: 'exact' }),
       supabaseAdmin.from('placement_log_entries').select('id', { count: 'exact' }).eq('approval_status', 'pending'),
-      supabaseAdmin.from('users').select('id, role', { count: 'exact' }),
+      supabaseAdmin.from('users').select('id, role_label', { count: 'exact' }),
       supabaseAdmin.from('audit_logs').select('id, action, created_at').order('created_at', { ascending: false }).limit(10),
     ])
 

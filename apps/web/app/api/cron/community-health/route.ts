@@ -10,7 +10,10 @@ export const dynamic = 'force-dynamic'
 export async function GET() {
   try {
     const [scoresRes, streaksRes, logsRes] = await Promise.all([
-      supabaseAdmin.from('readiness_scores').select('band'),
+      // readiness_scores has no `band` column — it's derived from `score`.
+      // current_readiness_scores collapses the append-only history log
+      // (many rows per user) down to one row per user.
+      supabaseAdmin.from('current_readiness_scores').select('score'),
       supabaseAdmin.from('daily_five_streaks').select('current_streak'),
       supabaseAdmin.from('audit_logs').select('id', { count: 'exact' }),
     ])
@@ -22,10 +25,15 @@ export async function GET() {
       at_risk: 0,
     }
 
+    const bandFor = (score: number): keyof typeof bands => {
+      if (score >= 80) return 'strong'
+      if (score >= 60) return 'building'
+      if (score >= 40) return 'needs_attention'
+      return 'at_risk'
+    }
+
     scoresRes.data?.forEach(s => {
-      if (s.band in bands) {
-        bands[s.band as keyof typeof bands]++
-      }
+      bands[bandFor(s.score)]++
     })
 
     const totalStreaks = streaksRes.data?.reduce((acc, curr) => acc + (curr.current_streak > 0 ? 1 : 0), 0) ?? 0

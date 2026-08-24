@@ -15,20 +15,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await req.json()
-    const { linkedin_url, avatar_url } = body
-
     const supabase = await createClient()
 
-    // Update user profile with onboarding data
-    const updateData: Record<string, unknown> = { onboarding_complete: true }
-    if (linkedin_url) updateData.linkedin_url = linkedin_url
-    if (avatar_url) updateData.avatar_url = avatar_url
-
+    // Update user profile with onboarding data.
+    // Note: linkedin_url/avatar_url are not columns on the live `users`
+    // table — previously this endpoint always failed outright (unknown
+    // columns error the whole PostgREST update), so onboarding_complete
+    // never got set either. Only writing what actually exists.
     const { error } = await supabase
       .from('users')
-      // @ts-ignore
-      .update(updateData as any)
+      .update({ onboarding_complete: true })
       .eq('id', session.id)
 
     if (error) {
@@ -36,7 +32,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to save profile' }, { status: 500 })
     }
 
-    const redirect = session.role === 'alumni' ? '/alumni' : `/${session.role}`
+    const roleLabel = session.roleLabel.toLowerCase()
+    const redirect = roleLabel === 'alumni' ? '/alumni' : `/${roleLabel}`
 
     return NextResponse.json({ success: true, redirect })
   } catch (error) {

@@ -5,6 +5,7 @@
 // ============================================================
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import type { Database } from '../../supabase/types/database.types'
 
 // ── Platform detection ──────────────────────────────────────
 // Returns true for Android *phone* browsers (not tablets, not bots).
@@ -20,10 +21,18 @@ function isAndroidMobileBrowser(userAgent: string): boolean {
 }
 
 // Route → allowed roles map
-// key: route prefix | value: array of allowed `role` values (from users table)
+// key: route prefix | value: array of allowed `role_label` values (lowercased)
+// or a special 'placement_rep' token checked against roles.isPlacementRep.
+// More specific prefixes MUST come before their parent prefix, since
+// getRequiredRoles() below returns the first match found.
 const ROLE_GUARDS: Record<string, string[]> = {
+  // HOD-only sub-screens folded in under /faculty/* (plan Section 10) —
+  // must be listed before the general '/faculty' guard.
+  '/faculty/batch-management':   ['hod'],
+  '/faculty/faculty-management': ['hod'],
+  '/faculty/governance':         ['hod'],
   '/faculty':     ['faculty', 'hod'],   // hod kept so existing hod accounts can still access faculty portal
-  '/super-admin': ['student'],          // fine-grained app_role=placement_rep check enforced inside each API route
+  '/placement-rep': ['placement_rep'],  // student with roles.isPlacementRep = true (Section 8)
   '/alumni':      ['alumni'],
   '/student':     ['student', 'alumni', 'faculty', 'hod'],
   '/knowledge':   ['student', 'alumni', 'faculty', 'hod'],
@@ -72,7 +81,7 @@ export async function proxy(request: NextRequest) {
 
   let supabaseResponse = NextResponse.next({ request })
 
-  const supabase = createServerClient(
+  const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost',
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'dummy',
     {
@@ -118,30 +127,43 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
-  // Check role-based access for guarded routes
+  // Check role-based access for guarded routes.
+  // NOTE: `role`/`app_role` columns do not exist on the live `users` table
+  // — the real role model is `role_label` (TEXT) + `roles` (JSONB student
+  // sub-flags, e.g. isPlacementRep). See supabase/migrations/
+  // 08_security_fixes_sprint0.sql header for how this was verified.
   const requiredRoles = getRequiredRoles(pathname)
   if (requiredRoles) {
-    let role: string | undefined
+    let role = 'student'
+    let isPlacementRep = false
+    let onboardingComplete = true
 
     if (user) {
       const { data: profile } = await supabase
         .from('users')
-        .select('role')
+        .select('role_label, roles, onboarding_complete')
         .eq('id', user.id)
         .single()
-      role = profile?.role?.toLowerCase()
+      role = (profile?.role_label ?? 'student').toLowerCase()
+      isPlacementRep = (profile?.roles as Record<string, boolean> | null)?.isPlacementRep === true
+      onboardingComplete = profile?.onboarding_complete ?? false
     }
 
-    role = role ?? 'student'
+    if (user && !onboardingComplete && pathname !== '/onboarding' && !pathname.startsWith('/onboarding/')) {
+      return NextResponse.redirect(new URL('/onboarding', request.url))
+    }
 
-    if (!requiredRoles.includes(role) && process.env.NODE_ENV !== 'development') {
+    const allowed = requiredRoles.includes(role) || (requiredRoles.includes('placement_rep') && role === 'student' && isPlacementRep)
+
+    if (!allowed && process.env.NODE_ENV !== 'development') {
       // Redirect to appropriate portal based on actual role
       const redirectUrl = request.nextUrl.clone()
 
-      if (role === 'faculty' || role === 'hod') redirectUrl.pathname = '/faculty'  // hod treated as faculty
-      else if (role === 'alumni')               redirectUrl.pathname = '/alumni'
-      else                                      redirectUrl.pathname = '/student'
-      
+      if (role === 'faculty' || role === 'hod')  redirectUrl.pathname = '/faculty'  // hod treated as faculty
+      else if (role === 'alumni')                redirectUrl.pathname = '/alumni'
+      else if (role === 'student' && isPlacementRep) redirectUrl.pathname = '/placement-rep'
+      else                                        redirectUrl.pathname = '/student'
+
       // Prevent infinite redirect loops if we are already on the target path
       if (request.nextUrl.pathname === redirectUrl.pathname) {
         return supabaseResponse

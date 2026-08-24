@@ -52,7 +52,7 @@ export async function PUT(req: NextRequest) {
     const body = await req.json()
     const { name, linkedin_url, avatar_url, current_company, current_role_title, mentorship_open } = body
 
-    const updateData: Record<string, unknown> = {}
+    const updateData: { name?: string } = {}
     if (name !== undefined) updateData.name = name
     // (Other fields can be added if you alter the table to add them later)
 
@@ -62,8 +62,7 @@ export async function PUT(req: NextRequest) {
 
     const { error } = await supabase
       .from('users')
-      // @ts-expect-error Supabase types are out of sync with new schema
-      .update(updateData as any)
+      .update(updateData)
       .eq('id', user.id)
 
     if (error) throw error

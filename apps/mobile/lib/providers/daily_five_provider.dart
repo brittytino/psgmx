@@ -103,7 +103,10 @@ class DailyFiveProvider with ChangeNotifier {
     }
   }
 
-  /// Calls the RPC to update streak, then refreshes local streak state.
+  /// Calls the RPC to grade + update streak, then refreshes local streak
+  /// state. Grading now happens server-side (see DailyFiveService.
+  /// submitSession) — this just packages the selected answers by
+  /// question id; it no longer computes or reports a score itself.
   /// NOTE: The readiness score is automatically recomputed by a Supabase
   /// database trigger that fires on daily_five_streaks UPDATE.
   /// Do NOT call the Edge Function or RPC from here — the trigger handles it.
@@ -113,14 +116,39 @@ class DailyFiveProvider with ChangeNotifier {
     notifyListeners();
 
     try {
+      final answers = <String, int>{};
+      for (var i = 0; i < _session!.questions.length; i++) {
+        final selected = _session!.selectedAnswers[i];
+        if (selected != null) answers[_session!.questions[i].id] = selected;
+      }
+
       final updatedStreak = await _service.submitSession(
         userId: userId,
-        accuracyRate: _session!.accuracyRate,
+        answersByQuestionId: answers,
       );
       _streak = updatedStreak;
       // The readiness score is updated automatically by:
       //   trigger: trig_daily_five_streaks_readiness on daily_five_streaks
       // No action needed here.
+
+      // Now that the attempt is submitted, it's safe to reveal correct
+      // answers for the "why was I wrong" explanation (ai_mentor_service
+      // .explainWrongAnswer needs question.correctOption). Best-effort —
+      // if offline (queued for later sync) there's nothing to reveal yet.
+      try {
+        final results = await _service.fetchTodaysResults(userId);
+        final revealed = _session!.questions
+            .map((q) => results.containsKey(q.id)
+                ? DailyFiveQuestion(
+                    id: q.id, questionText: q.questionText, options: q.options,
+                    correctOption: results[q.id], topic: q.topic,
+                    difficulty: q.difficulty, isActive: q.isActive)
+                : q)
+            .toList();
+        _session = _session!.copyWith(questions: revealed);
+      } catch (e) {
+        debugPrint('[DailyFiveProvider] Could not reveal results (likely offline/pending sync): $e');
+      }
     } catch (e) {
       _error = 'Failed to submit: $e';
       debugPrint('[DailyFiveProvider] finalizeSession error: $e');

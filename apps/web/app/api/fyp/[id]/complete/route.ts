@@ -29,7 +29,7 @@ export async function POST(
       return NextResponse.json({ error: 'Project not found' }, { status: 404 })
     }
 
-    if (project.student_id !== session.id && !['faculty', 'hod'].includes(session.role)) {
+    if (project.student_id !== session.id && !['faculty', 'hod'].includes(session.roleLabel.toLowerCase())) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 

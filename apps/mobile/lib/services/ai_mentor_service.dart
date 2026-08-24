@@ -109,13 +109,21 @@ class AiMentorService {
   ///
   /// Called ONLY in the Daily Five results window while the session is still
   /// in memory. Never stores the question or answer in the DB.
+  ///
+  /// [question.correctOption] must be populated — the caller is expected
+  /// to have already revealed it via DailyFiveService.fetchTodaysResults()
+  /// (only possible post-submission; see get_daily_five_results RPC).
   Future<String> explainWrongAnswer({
     required DailyFiveQuestion question,
     required int userAnswerIndex,
     required String topic,
   }) async {
+    final correctOption = question.correctOption;
+    if (correctOption == null) {
+      throw StateError('correctOption not revealed yet — call fetchTodaysResults() after submission first');
+    }
     final userAnswer = question.options[userAnswerIndex];
-    final correctAnswer = question.options[question.correctOption];
+    final correctAnswer = question.options[correctOption];
 
     const systemPrompt =
         'You are a concise placement-prep tutor for MCA students. '
