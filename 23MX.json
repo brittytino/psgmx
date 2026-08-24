@@ -1,0 +1,3024 @@
+{
+  "batch": "23MX",
+  "program": "MCA",
+  "source_workbook": "Placement-Log 23MX.xlsx",
+  "description": "Cross-checked placement log against the Final List sheet. Company placement records are retained as recorded; discrepancies are explicitly flagged rather than silently corrected.",
+  "cross_check": {
+    "company_records_in_placement_log": 75,
+    "placement_records_in_company_log": 46,
+    "unique_students_marked_placed_in_company_log": 46,
+    "final_list_student_records": 86,
+    "final_list_status_counts": {
+      "placed": 42,
+      "unplaced": 24,
+      "arrear": 18,
+      "placed + arrear": 2
+    },
+    "final_list_placed_students_including_placed_plus_arrear": 44,
+    "company_log_records_matching_final_placed_status": 42,
+    "companies_with_company_log_placements_matching_final_list": 12,
+    "mismatches": [
+      {
+        "company": "Wavicle Data Solutions, Coimbatore",
+        "student_id": "23MX117",
+        "name": "Mirudhubasini RC",
+        "final_list_status": "Unplaced"
+      },
+      {
+        "company": "Saama Technologies , Coimbatore",
+        "student_id": "23MX124",
+        "name": "Shivashankar S",
+        "final_list_status": "Unplaced"
+      },
+      {
+        "company": "Annalect India, Bangalore",
+        "student_id": "23MX215",
+        "name": "MARIAN A",
+        "final_list_status": "Unplaced"
+      },
+      {
+        "company": "FocusR Technologies,Chennai",
+        "student_id": "23MX321",
+        "name": "prevarshini R J",
+        "final_list_status": "Unplaced"
+      }
+    ],
+    "final_placed_students_missing_from_company_log": [
+      {
+        "student_id": "23MX305",
+        "name": "Ganga sowbhakya Lakshmi M",
+        "placement_status": "Placed + Arrear"
+      },
+      {
+        "student_id": "23MX315",
+        "name": "Nishanth T",
+        "placement_status": "Placed"
+      }
+    ]
+  },
+  "companies": [
+    {
+      "serial_no": 1,
+      "company_name": "CATERPILLAR CODEATHON",
+      "job_offer": "INTERN + FTE",
+      "criteria": "NO CRITERIA",
+      "job_description": "SOFTWARE ENGINEER",
+      "salary_package": "14 LPA",
+      "date_announced": "2/6/2024",
+      "date_of_interview": "05/07/24 - 07/07/24",
+      "number_of_rounds": "3-( MCQ prelims,  Hackathon round, F2F interview)",
+      "students_selected_for_interview_mca": [
+        {
+          "student_id": "23MX332",
+          "name": "Yohesh Babu K R",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX103",
+          "name": "Aparna R",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX127",
+          "name": "Sudharsana Amuthan",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX121",
+          "name": "Reethika S",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX230",
+          "name": "VISHNU PRIYA K",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX324",
+          "name": "Siva Poopathi M",
+          "final_list_status": "Unplaced"
+        }
+      ],
+      "students_placed_mca": [
+        {
+          "student_id": "23MX332",
+          "name": "Yohesh Babu K R",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX103",
+          "name": "Aparna R",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX127",
+          "name": "Sudharsana Amuthan",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX121",
+          "name": "Reethika S",
+          "final_list_status": "Placed"
+        }
+      ],
+      "number_selected_for_interview_mca": 6,
+      "number_placed_mca": 4
+    },
+    {
+      "serial_no": 2,
+      "company_name": "TheMathCompany TRIATHLON",
+      "job_offer": "INTERN + FTE",
+      "criteria": "ABOVE 7.5 CGPA (PG)",
+      "job_description": "TRAINEE ANALYST",
+      "salary_package": "5.5LPA ",
+      "date_announced": "7/7/2024",
+      "date_of_interview": "-",
+      "number_of_rounds": "3 ( APTITUDE, COMMUNICATION, CASE STUDY - ALL ONLINE)",
+      "students_selected_for_interview_mca": [],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 0,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 3,
+      "company_name": "GOOGLE",
+      "job_offer": "FTE",
+      "criteria": "NO CRITERIA",
+      "job_description": "SOFTWARE ENGINEER",
+      "salary_package": "37 LPA",
+      "date_announced": "5/7/2024",
+      "date_of_interview": "-",
+      "number_of_rounds": 5.0,
+      "students_selected_for_interview_mca": [],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 0,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 4,
+      "company_name": "COMMVAULT",
+      "job_offer": "FTE",
+      "criteria": "ABOVE 7.0 CGPA (PG)",
+      "job_description": "SDE",
+      "salary_package": "33 LPA",
+      "date_announced": "10/7/2024",
+      "date_of_interview": "-",
+      "number_of_rounds": "-",
+      "students_selected_for_interview_mca": [],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 0,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 5,
+      "company_name": "PHONEPE",
+      "job_offer": "INTERN + FTE",
+      "criteria": "ABOVE 6, NO ARREARS",
+      "job_description": "Software Engineering In Testing",
+      "salary_package": "23 LPA ",
+      "date_announced": "9/7/2024",
+      "date_of_interview": "20/07/2024",
+      "number_of_rounds": "4 - ( Coding, Techincal interview, HR interview, 2nd HR interview )",
+      "students_selected_for_interview_mca": [
+        {
+          "student_id": "23MX230",
+          "name": "VISHNU PRIYA K",
+          "final_list_status": "Placed"
+        }
+      ],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 1,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 6,
+      "company_name": "THOROGOOD ASSOCIATES",
+      "job_offer": "INTERN + FTE",
+      "criteria": "ABOVE 7.5 CGPA (UG & PG) ",
+      "job_description": "Data And AI Consultant",
+      "salary_package": "15LPA ",
+      "date_announced": "13/07/2024",
+      "date_of_interview": "-",
+      "number_of_rounds": "3 - ( Advanced Aptitude round along with essay writing, \nHR interview, interview at Thorogood campus in Bangalore",
+      "students_selected_for_interview_mca": [],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 0,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 7,
+      "company_name": "SOCIETE GENERAL CAMPUS DRIVE",
+      "job_offer": "INTERN + FTE",
+      "criteria": "ABOVE 7 CGPA (10,12,UG,PG)",
+      "job_description": "Software Engineer",
+      "salary_package": "12 LPA",
+      "date_announced": "15/07/2024",
+      "date_of_interview": "-",
+      "number_of_rounds": "2 - ( Online coding round, F2F interview )",
+      "students_selected_for_interview_mca": [],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 0,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 8,
+      "company_name": "V2K AI  COIMBATORE",
+      "job_offer": "INTERN + FTE",
+      "criteria": "NO CRITERIA",
+      "job_description": "Software Engineer",
+      "salary_package": "20LPA",
+      "date_announced": "16/07/2024",
+      "date_of_interview": "-",
+      "number_of_rounds": "3 - ( Coding round, Application development / Hackathon, Interview )",
+      "students_selected_for_interview_mca": [],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 0,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 9,
+      "company_name": "INFOSYS LIMITED BANGALORE",
+      "job_offer": "FTE",
+      "criteria": "ABOVE 60 / 6 CGPA  ( 10,12,UG,PG)",
+      "job_description": "Specialist Programmer",
+      "salary_package": "9.5 LPA",
+      "date_announced": "16/07/2024",
+      "date_of_interview": null,
+      "number_of_rounds": "2 ( online coding round, F2F interview at any one company locations )",
+      "students_selected_for_interview_mca": [
+        {
+          "student_id": "23MX326",
+          "name": "Srividhya S",
+          "final_list_status": "Placed"
+        }
+      ],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 1,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 10,
+      "company_name": "ACCENTURE BANGALORE",
+      "job_offer": "FTE",
+      "criteria": "NO CRITERIA",
+      "job_description": "Associate Software Engineer & \nAdvanced Associate Software Engineer",
+      "salary_package": "4.5 LPA - 6.5LPA ",
+      "date_announced": "18/07/2024",
+      "date_of_interview": "7/10/2024",
+      "number_of_rounds": "First Round: Aptitude\nSecond Round: Coding 2 qns\nThird Round: Communication Round \nFourth Round: Interview ",
+      "students_selected_for_interview_mca": [
+        {
+          "student_id": "23MX101",
+          "name": "ABU SUFIYAN THAMEEM I",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX110",
+          "name": "Hemanth Kumar V",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX116",
+          "name": "MANASA DEVI KRISHNA T",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX118",
+          "name": "MOHAN B",
+          "final_list_status": "Unplaced"
+        },
+        {
+          "student_id": "23MX122",
+          "name": "ROHITH S",
+          "final_list_status": "Unplaced"
+        },
+        {
+          "student_id": "23MX129",
+          "name": "Y S TEJO ROKE",
+          "final_list_status": "Unplaced"
+        },
+        {
+          "student_id": "23MX205",
+          "name": "FRANKLIN T",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX207",
+          "name": "Harikishore G",
+          "final_list_status": "Unplaced"
+        },
+        {
+          "student_id": "23MX209",
+          "name": "JANANI MV",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX211",
+          "name": "Kavin Rathinam M",
+          "final_list_status": "Unplaced"
+        },
+        {
+          "student_id": "23MX213",
+          "name": "LOKESH P",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX214",
+          "name": "MAHALAKSHMI R",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX216",
+          "name": "Merlin Yazhini A T",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX217",
+          "name": "Mutharasan M P",
+          "final_list_status": "Unplaced"
+        },
+        {
+          "student_id": "23MX222",
+          "name": "Priya Dharshini S",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX223",
+          "name": "PRIYADHARSHINI A",
+          "final_list_status": "Unplaced"
+        },
+        {
+          "student_id": "23MX224",
+          "name": "Sanjay Karthick V",
+          "final_list_status": "Unplaced"
+        },
+        {
+          "student_id": "23MX314",
+          "name": "Nagarjuna N",
+          "final_list_status": "Unplaced"
+        },
+        {
+          "student_id": "23MX319",
+          "name": "Pon Akilan N",
+          "final_list_status": "Arrear"
+        },
+        {
+          "student_id": "23MX320",
+          "name": "Praveen Y",
+          "final_list_status": "Placed + Arrear"
+        },
+        {
+          "student_id": "23MX330",
+          "name": "vignesh M",
+          "final_list_status": "Placed"
+        }
+      ],
+      "students_placed_mca": [
+        {
+          "student_id": "23MX101",
+          "name": "ABU SUFIYAN THAMEEM I",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX110",
+          "name": "Hemanth Kumar V",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX116",
+          "name": "MANASA DEVI KRISHNA T",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX205",
+          "name": "FRANKLIN T",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX216",
+          "name": "Merlin Yazhini A T",
+          "final_list_status": "Placed"
+        }
+      ],
+      "number_selected_for_interview_mca": 21,
+      "number_placed_mca": 5
+    },
+    {
+      "serial_no": 11,
+      "company_name": "IBM India Pvt. Ltd., Bangalore (India Systems Development Lab)",
+      "job_offer": "INTERN + FTE",
+      "criteria": "ABOVE 7 CGPA (PG)",
+      "job_description": "Software Engineer",
+      "salary_package": "12 LPA",
+      "date_announced": "22/07/2024",
+      "date_of_interview": "13/08/2024",
+      "number_of_rounds": "2 - ( Online coding test, Interview )",
+      "students_selected_for_interview_mca": [
+        {
+          "student_id": "23MX115",
+          "name": "Kavin S",
+          "final_list_status": "Placed"
+        }
+      ],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 1,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 12,
+      "company_name": "CATERPILLAR ENGINEERING INDIA PVT LTD ( CAT DIGITAL)",
+      "job_offer": "INTERN + FTE",
+      "criteria": "ABOVE 7.5 CGPA (PG)",
+      "job_description": "Developer /  \nproject management /\n product manangement",
+      "salary_package": "14 LPA",
+      "date_announced": "31/07/2024",
+      "date_of_interview": "06/08/24",
+      "number_of_rounds": "4 ( MCQ test, Coding round, Group discussion, F2F interview )",
+      "students_selected_for_interview_mca": [
+        {
+          "student_id": "23MX302",
+          "name": "Bharathi B",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX322",
+          "name": "Rahul G",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX126",
+          "name": "Sri Meenakshi Dharshaa R",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX119",
+          "name": "Nivedhitha Maheswari S",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX225",
+          "name": "Siva Ganesh M",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX218",
+          "name": "PREM BALAJI N",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX115",
+          "name": "Kavin S",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX214",
+          "name": "MAHALAKSHMI R",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX107",
+          "name": "Edison S",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX210",
+          "name": "Jessica J",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX118",
+          "name": "MOHAN B",
+          "final_list_status": "Unplaced"
+        },
+        {
+          "student_id": "23MX318",
+          "name": "Padmaja M",
+          "final_list_status": "Placed"
+        }
+      ],
+      "students_placed_mca": [
+        {
+          "student_id": "23MX302",
+          "name": "Bharathi B",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX322",
+          "name": "Rahul G",
+          "final_list_status": "Placed"
+        }
+      ],
+      "number_selected_for_interview_mca": 12,
+      "number_placed_mca": 2
+    },
+    {
+      "serial_no": 13,
+      "company_name": "Zoho Corporation, Chennai",
+      "job_offer": "FTE",
+      "criteria": "NO CRITERIA",
+      "job_description": "Software Developer",
+      "salary_package": "8.4 LPA , 7 LPA ,5.6 LPA",
+      "date_announced": "1/8/2024",
+      "date_of_interview": "-",
+      "number_of_rounds": "4 ( written aptitude and C technincal questions, \ncoding, advanced coding, HR interview )",
+      "students_selected_for_interview_mca": [
+        {
+          "student_id": "23MX115",
+          "name": "Kavin S",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX228",
+          "name": "Vijay Keerthy S",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX211",
+          "name": "Kavin Rathinam M",
+          "final_list_status": "Unplaced"
+        }
+      ],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 3,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 13,
+      "company_name": "Zoho Corporation, Chennai ( 2nd time)",
+      "job_offer": "FTE",
+      "criteria": "NO CRITERIA",
+      "job_description": "Software Developer",
+      "salary_package": "8.4 LPA , 7 LPA ,5.6 LPA",
+      "date_announced": "1/8/2024",
+      "date_of_interview": "-",
+      "number_of_rounds": "4 ( written aptitude and C technincal questions, \ncoding, advanced coding, HR interview )",
+      "students_selected_for_interview_mca": [
+        {
+          "student_id": "23MX228",
+          "name": "Vijay Keerthy S",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX211",
+          "name": "Kavin Rathinam M",
+          "final_list_status": "Unplaced"
+        }
+      ],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 2,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 14,
+      "company_name": "Tech Mahindra Ltd., Bangalore",
+      "job_offer": "FTE",
+      "criteria": "ABOVE 7.0 ( 10,12 UG, PG )",
+      "job_description": "Developer / Supercoder",
+      "salary_package": "3.3 LPA - 5.5 LPA",
+      "date_announced": "1/8/2024",
+      "date_of_interview": null,
+      "number_of_rounds": null,
+      "students_selected_for_interview_mca": [],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 0,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 15,
+      "company_name": "Quantiphi Analytics , Bangalore",
+      "job_offer": "INTERN + FTE",
+      "criteria": "ABOVE 7.0 ( 10,12 UG, PG ) \nand no history of arrears",
+      "job_description": "ENGINEER",
+      "salary_package": "6 LPA ",
+      "date_announced": "7/8/2024",
+      "date_of_interview": "13/08/2024",
+      "number_of_rounds": "4 - ( online coding test which had aptitude,OS,JS,networks, DBMS \n+ 3 coding questions\nsecond round was F2F interview / first techincal round\n Third round was Second technical round\nFourth round was HR round\n",
+      "students_selected_for_interview_mca": [
+        {
+          "student_id": "23MX109",
+          "name": "HEMALATHA K",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX125",
+          "name": "Shri Karthick V",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX101",
+          "name": "ABU SUFIYAN THAMEEM I",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX225",
+          "name": "Siva Ganesh M",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX218",
+          "name": "PREM BALAJI N",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX105",
+          "name": "Brindha.S.V",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX205",
+          "name": "FRANKLIN T",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX216",
+          "name": "Merlin Yazhini A T",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX109",
+          "name": "HEMALATHA K",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX202",
+          "name": "Dharani V",
+          "final_list_status": "Placed"
+        }
+      ],
+      "students_placed_mca": [
+        {
+          "student_id": "23MX109",
+          "name": "HEMALATHA K",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX125",
+          "name": "Shri Karthick V",
+          "final_list_status": "Placed"
+        }
+      ],
+      "number_selected_for_interview_mca": 10,
+      "number_placed_mca": 2
+    },
+    {
+      "serial_no": 16,
+      "company_name": "Logbase Technologies, Coimbatore",
+      "job_offer": "FTE",
+      "criteria": "70 % ( UG & PG )",
+      "job_description": "Full stack developer",
+      "salary_package": "7 LPA",
+      "date_announced": "12/8/2024",
+      "date_of_interview": "23/08/2024",
+      "number_of_rounds": "\n5 - ( Aptitude and coding snippets + 3 coding questions, \nF2F interview, \nhackathon + 2 Coding questions round, \nPresentation, HR round ) \n",
+      "students_selected_for_interview_mca": [
+        {
+          "student_id": "23MX213",
+          "name": "LOKESH P",
+          "final_list_status": "Placed"
+        }
+      ],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 1,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 17,
+      "company_name": "Deloitte Consulting India Pvt. Ltd., Hyderabad ( USI )",
+      "job_offer": "FTE",
+      "criteria": "ABOVE 6.0 , No arrears",
+      "job_description": "Associate Analyst",
+      "salary_package": "7.6 LPA",
+      "date_announced": "13/08/2024",
+      "date_of_interview": "26/08/2024",
+      "number_of_rounds": "2 - ( online aptitude, english comprehension, coding \nand then F2F interview)",
+      "students_selected_for_interview_mca": [
+        {
+          "student_id": "23MX101",
+          "name": "ABU SUFIYAN THAMEEM I",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX201",
+          "name": "Ahalya L",
+          "final_list_status": "Placed"
+        }
+      ],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 2,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 18,
+      "company_name": "Vanenburg Software (India) Private Limited, Coimbatore",
+      "job_offer": "INTERN + FTE",
+      "criteria": "ABOVE 7.0 CGPA",
+      "job_description": "Associate Software Engineer ",
+      "salary_package": "8 LPA",
+      "date_announced": null,
+      "date_of_interview": "\n10/09/2024 \n11/09/2024",
+      "number_of_rounds": "1. Online Test/ pen & paper Aptitude, English Skills and Technical \n2. Technical Interview- to test coding skills. \n3. Techno Managerial cum HR Interview",
+      "students_selected_for_interview_mca": [
+        {
+          "student_id": "23MX101",
+          "name": "ABU SUFIYAN THAMEEM I",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX118",
+          "name": "MOHAN B",
+          "final_list_status": "Unplaced"
+        },
+        {
+          "student_id": "23MX126",
+          "name": "Sri Meenakshi Dharshaa R",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX225",
+          "name": "Siva Ganesh M",
+          "final_list_status": "Placed"
+        }
+      ],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 4,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 19,
+      "company_name": "RND Softech Pvt Ltd",
+      "job_offer": "INTERN + FTE",
+      "criteria": "ABOVE 80 % / 8 CGPA",
+      "job_description": "ENGINEER",
+      "salary_package": "8 LPA - 10 LPA",
+      "date_announced": "23/08/24",
+      "date_of_interview": null,
+      "number_of_rounds": "2 ( 1st round - 20 mcqs based on DSA and ML. \n\n2nd round - self intro plus sharing of experience.  )",
+      "students_selected_for_interview_mca": [
+        {
+          "student_id": "23MX115",
+          "name": "Kavin S",
+          "final_list_status": "Placed"
+        }
+      ],
+      "students_placed_mca": [
+        {
+          "student_id": "23MX115",
+          "name": "Kavin S",
+          "final_list_status": "Placed"
+        }
+      ],
+      "number_selected_for_interview_mca": 1,
+      "number_placed_mca": 1
+    },
+    {
+      "serial_no": 20,
+      "company_name": "Tata Consultancy Services ( TCS NQT )",
+      "job_offer": "FTE",
+      "criteria": "ABOVE 60% / 6.0 CGPA",
+      "job_description": "NInja\nDigital\nPrime",
+      "salary_package": "\nPrime  11.5 LPA\n\nDigital 7.6 LPA\n\nNinja  3.5 LPA",
+      "date_announced": "17/08/24",
+      "date_of_interview": "06/12/2024",
+      "number_of_rounds": null,
+      "students_selected_for_interview_mca": [
+        {
+          "student_id": "23MX314",
+          "name": "Nagarjuna N",
+          "final_list_status": "Unplaced"
+        },
+        {
+          "student_id": "23MX329",
+          "name": "Veeramahalakshmi M",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX111",
+          "name": "KAJALAKSHMI S",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX327",
+          "name": "Sruthi P",
+          "final_list_status": "Unplaced"
+        },
+        {
+          "student_id": "23MX218",
+          "name": "PREM BALAJI N",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX222",
+          "name": "Priya Dharshini S",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX219",
+          "name": "Nandhini R",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX124",
+          "name": "Shivashankar S",
+          "final_list_status": "Unplaced"
+        },
+        {
+          "student_id": "23MX102",
+          "name": "Amarnath S",
+          "final_list_status": "Unplaced"
+        },
+        {
+          "student_id": "23MX316",
+          "name": "Nithish P",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX221",
+          "name": "NIVED S",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX330",
+          "name": "vignesh M",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX225",
+          "name": "Siva Ganesh M",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX201",
+          "name": "Ahalya L",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX107",
+          "name": "Edison S",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX320",
+          "name": "Praveen Y",
+          "final_list_status": "Placed + Arrear"
+        },
+        {
+          "student_id": "23MX122",
+          "name": "ROHITH S",
+          "final_list_status": "Unplaced"
+        },
+        {
+          "student_id": "23MX202",
+          "name": "Dharani V",
+          "final_list_status": "Placed"
+        }
+      ],
+      "students_placed_mca": [
+        {
+          "student_id": "23MX329",
+          "name": "Veeramahalakshmi M",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX218",
+          "name": "PREM BALAJI N",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX222",
+          "name": "Priya Dharshini S",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX219",
+          "name": "Nandhini R",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX316",
+          "name": "Nithish P",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX221",
+          "name": "NIVED S",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX330",
+          "name": "vignesh M",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX225",
+          "name": "Siva Ganesh M",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX201",
+          "name": "Ahalya L",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX107",
+          "name": "Edison S",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX320",
+          "name": "Praveen Y",
+          "final_list_status": "Placed + Arrear"
+        },
+        {
+          "student_id": "23MX202",
+          "name": "Dharani V",
+          "final_list_status": "Placed"
+        }
+      ],
+      "number_selected_for_interview_mca": 18,
+      "number_placed_mca": 12
+    },
+    {
+      "serial_no": 21,
+      "company_name": "Western DIgital, Bangalore",
+      "job_offer": "INTERN + FTE",
+      "criteria": "ABOVE 7.5 CGPA  (UG, PG )",
+      "job_description": "JD 1:  Professional 1, \nInformation Technology\nAutomation + bot engineering Professional 1, \nInformation Technology\nIntern Python Developer\nInformation Technology :\nSERVICENOW (SNOW) DEVELOPER\n\nJD 2: IT- CI & AS: Engg\n",
+      "salary_package": "14 LPA",
+      "date_announced": "23/08/2024",
+      "date_of_interview": "-",
+      "number_of_rounds": "-",
+      "students_selected_for_interview_mca": [],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 0,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 22,
+      "company_name": "LTIMIndtree Limited , Bangalore",
+      "job_offer": "FTE",
+      "criteria": "ABOVE 60% / 6.0 CGPA ( 10,12,UG,PG)",
+      "job_description": "Graduate Engineer Trainee",
+      "salary_package": "4.1 LPA",
+      "date_announced": "21/08/2024",
+      "date_of_interview": "21/10/2024",
+      "number_of_rounds": "1st round included \nAptitude + Technical MCQs + Communication Assessment \n\n2nd Round - Technical HR\n\n3rd Round - Final HR\n(General questions)",
+      "students_selected_for_interview_mca": [
+        {
+          "student_id": "23MX105",
+          "name": "Brindha.S.V",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX220",
+          "name": "Nidhin P S",
+          "final_list_status": "Placed"
+        }
+      ],
+      "students_placed_mca": [
+        {
+          "student_id": "23MX105",
+          "name": "Brindha.S.V",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX220",
+          "name": "Nidhin P S",
+          "final_list_status": "Placed"
+        }
+      ],
+      "number_selected_for_interview_mca": 2,
+      "number_placed_mca": 2
+    },
+    {
+      "serial_no": 23,
+      "company_name": "UNO MINDS",
+      "job_offer": "INTERNSHIP WITHOUT STIPEND",
+      "criteria": "NO CRITERIA",
+      "job_description": null,
+      "salary_package": null,
+      "date_announced": "24/08/2024",
+      "date_of_interview": null,
+      "number_of_rounds": null,
+      "students_selected_for_interview_mca": [],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 0,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 24,
+      "company_name": "THE MATHCOMPANY CAMPUS DRIVE",
+      "job_offer": "FTE",
+      "criteria": null,
+      "job_description": "Trainee Analyst",
+      "salary_package": "5.5 LPA \n",
+      "date_announced": "5/8/2024",
+      "date_of_interview": "19/08/2024",
+      "number_of_rounds": "3 ( APTITUDE, COMMUNICATION, CASE STUDY - ALL ONLINE)",
+      "students_selected_for_interview_mca": [],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 0,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 25,
+      "company_name": "SOCIETE GENERAL HACKATHON",
+      "job_offer": "FTE",
+      "criteria": "NO CRITERIA",
+      "job_description": "Trainee Analyst",
+      "salary_package": "12 LPA",
+      "date_announced": "8/7/2024",
+      "date_of_interview": null,
+      "number_of_rounds": "2 - ( First Hackathon round in which 3 problem statements were given, \nhad to submit demo along with github link, second round \nwas ppt presentation about the application developed ) ",
+      "students_selected_for_interview_mca": [
+        {
+          "student_id": "23MX109",
+          "name": "HEMALATHA K",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX204",
+          "name": "Divyashri M",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX222",
+          "name": "Priya Dharshini S",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX201",
+          "name": "Ahalya L",
+          "final_list_status": "Placed"
+        }
+      ],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 4,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 26,
+      "company_name": "C5I AI COIMBATORE",
+      "job_offer": "FTE",
+      "criteria": "NO CRITERIA",
+      "job_description": "Application Developers",
+      "salary_package": "7 LPA",
+      "date_announced": "29/08/2024",
+      "date_of_interview": "18/09/2024",
+      "number_of_rounds": "Round 1: create a chatbot and ppt on it using \nthe requirements and tools given by the company\n\nRound 2: Group discussion \n\nRound 3: Technical interview \n\nRound 4: HR interview",
+      "students_selected_for_interview_mca": [
+        {
+          "student_id": "23MX318",
+          "name": "Padmaja M",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX328",
+          "name": "Valli V Narayanan",
+          "final_list_status": "Placed"
+        }
+      ],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 2,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 27,
+      "company_name": "VISA BANGALORE",
+      "job_offer": "FTE",
+      "criteria": "70 % ( UG & PG )",
+      "job_description": "Software engineer",
+      "salary_package": "34 LPA",
+      "date_announced": "1/09/2024",
+      "date_of_interview": "17/09/2024",
+      "number_of_rounds": "Round 1 - Online Coding Test\n\nRound 2 : Technical Interview \n\nRound 3 : Technical Interview \n\nRound 4 : Managerial Interview \n",
+      "students_selected_for_interview_mca": [
+        {
+          "student_id": "23MX117",
+          "name": "Mirudhubasini RC",
+          "final_list_status": "Unplaced"
+        }
+      ],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 1,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 28,
+      "company_name": "ZScaler",
+      "job_offer": "INTERNSHIP",
+      "criteria": "70 % ( UG & PG )",
+      "job_description": "Intern - software development",
+      "salary_package": "75 TPM ",
+      "date_announced": "14/09/2024",
+      "date_of_interview": "-",
+      "number_of_rounds": "-",
+      "students_selected_for_interview_mca": [],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 0,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 29,
+      "company_name": "CEI  INDIA PVT LTD",
+      "job_offer": "INTERN + FTE",
+      "criteria": "60 % ( UG & PG )",
+      "job_description": "Trainee Software Engineer",
+      "salary_package": "5 LPA",
+      "date_announced": "18/09/2024",
+      "date_of_interview": "06/11/2024",
+      "number_of_rounds": "Round 1-Written test\nRound-2 Technical interview\nRound 3- HR interview\n",
+      "students_selected_for_interview_mca": [
+        {
+          "student_id": "23MX110",
+          "name": "Hemanth Kumar V",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX126",
+          "name": "Sri Meenakshi Dharshaa R",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX209",
+          "name": "JANANI MV",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX214",
+          "name": "MAHALAKSHMI R",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX223",
+          "name": "PRIYADHARSHINI A",
+          "final_list_status": "Unplaced"
+        }
+      ],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 5,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 30,
+      "company_name": "INCTURE TECHNOLOGIES",
+      "job_offer": "INTERN + FTE",
+      "criteria": "65% (10th, 12th, UG,PG)",
+      "job_description": "Associate Software Engineer - Trainee",
+      "salary_package": "8 LPA\n",
+      "date_announced": "21/09/2024",
+      "date_of_interview": "28/09/2024",
+      "number_of_rounds": "Round -1: Aptitude+ coding\n\nRound-2 : System Design\n\nRound 3: Technical Interview\n\nRound 4: HR Interview",
+      "students_selected_for_interview_mca": [
+        {
+          "student_id": "23MX210",
+          "name": "Jessica J",
+          "final_list_status": "Placed"
+        }
+      ],
+      "students_placed_mca": [
+        {
+          "student_id": "23MX210",
+          "name": "Jessica J",
+          "final_list_status": "Placed"
+        }
+      ],
+      "number_selected_for_interview_mca": 1,
+      "number_placed_mca": 1
+    },
+    {
+      "serial_no": 31,
+      "company_name": "LOYALITICS CONSULTING, BANGALORE",
+      "job_offer": "FTE",
+      "criteria": "NO CRITERIA",
+      "job_description": "Engineer",
+      "salary_package": "6 LPA",
+      "date_announced": "25/09/2024",
+      "date_of_interview": null,
+      "number_of_rounds": null,
+      "students_selected_for_interview_mca": [],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 0,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 32,
+      "company_name": "CROSSBOW LABS LLP, BANGALORE",
+      "job_offer": "FTE",
+      "criteria": "NO CRITERIA",
+      "job_description": "Engineer",
+      "salary_package": "7 LPA",
+      "date_announced": "2/10/2024",
+      "date_of_interview": null,
+      "number_of_rounds": null,
+      "students_selected_for_interview_mca": [],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 0,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 33,
+      "company_name": "CAPGEMINI TECHNOLOGY SERVICES, BANGALORE",
+      "job_offer": "FTE",
+      "criteria": "NO CRITERIA",
+      "job_description": "ANALYST - ₹ 4.3L PA\n\nAnalyst (Differential offering\n at the Analyst level - ₹ 5.8L PA\n\nSenior Analyst -  ₹ 7.5L PA",
+      "salary_package": "4.3 LPA - 7.5 LPA",
+      "date_announced": "05/10/2024",
+      "date_of_interview": "16/11/2024",
+      "number_of_rounds": "Assessment 1\nTechnical MCQ and Written English Test (WET) \n\nAssessment 2\nCoding Assessment\n\nAssessment 3\nSpoken English Assessment\nMode-Virtual\n\nF2F interview",
+      "students_selected_for_interview_mca": [
+        {
+          "student_id": "23MX315",
+          "name": "Nishanth T",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX118",
+          "name": "MOHAN B",
+          "final_list_status": "Unplaced"
+        },
+        {
+          "student_id": "23MX328",
+          "name": "Valli V Narayanan",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX129",
+          "name": "Y S TEJO ROKE",
+          "final_list_status": "Unplaced"
+        },
+        {
+          "student_id": "23MX111",
+          "name": "KAJALAKSHMI S",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX306",
+          "name": "Goutham H",
+          "final_list_status": "Unplaced"
+        },
+        {
+          "student_id": "23MX122",
+          "name": "ROHITH S",
+          "final_list_status": "Unplaced"
+        },
+        {
+          "student_id": "23MX304",
+          "name": "Dhanush Surya S",
+          "final_list_status": "Arrear"
+        }
+      ],
+      "students_placed_mca": [
+        {
+          "student_id": "23MX328",
+          "name": "Valli V Narayanan",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX111",
+          "name": "KAJALAKSHMI S",
+          "final_list_status": "Placed"
+        }
+      ],
+      "number_selected_for_interview_mca": 8,
+      "number_placed_mca": 2
+    },
+    {
+      "serial_no": 34,
+      "company_name": "FLEX TECHNOLOGIES",
+      "job_offer": "INTERN + FTE",
+      "criteria": "ABOVE 80% / 8 CGPA ",
+      "job_description": "Associate Software Engineer - IT",
+      "salary_package": "₹ 5.2L PA",
+      "date_announced": "04/10/2024",
+      "date_of_interview": "26/11/2024",
+      "number_of_rounds": "Round 1: Online Test (MCQs)\nRound 2 : Technical Round 1\nRound 3 :  Technical Round 2\nRound 4: HR round",
+      "students_selected_for_interview_mca": [
+        {
+          "student_id": "23MX330",
+          "name": "vignesh M",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX204",
+          "name": "Divyashri M",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX315",
+          "name": "Nishanth T",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX225",
+          "name": "Siva Ganesh M",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX201",
+          "name": "Ahalya L",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX120",
+          "name": "NIVETHA S",
+          "final_list_status": "Placed"
+        }
+      ],
+      "students_placed_mca": [
+        {
+          "student_id": "23MX204",
+          "name": "Divyashri M",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX120",
+          "name": "NIVETHA S",
+          "final_list_status": "Placed"
+        }
+      ],
+      "number_selected_for_interview_mca": 6,
+      "number_placed_mca": 2
+    },
+    {
+      "serial_no": 35,
+      "company_name": "Wavicle Data Solutions, Coimbatore",
+      "job_offer": "FTE",
+      "criteria": "No Minimum criteria for marks but \nshould have no standing arrears\n\nHistory of Backlogs allowed",
+      "job_description": "Engineer",
+      "salary_package": "6LPA - 8LPA",
+      "date_announced": "09/10/2024",
+      "date_of_interview": "29/10/2024",
+      "number_of_rounds": "1. Round 1: Written test \n\n2. Round 2: Group discussion\n\n3. Round 3: Technical interview .\n\n4. Round 4: Managerial interview ",
+      "students_selected_for_interview_mca": [
+        {
+          "student_id": "23MX205",
+          "name": "FRANKLIN T",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX209",
+          "name": "JANANI MV",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX213",
+          "name": "LOKESH P",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX214",
+          "name": "MAHALAKSHMI R",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX117",
+          "name": "Mirudhubasini RC",
+          "final_list_status": "Unplaced"
+        },
+        {
+          "student_id": "23MX119",
+          "name": "Nivedhitha Maheswari S",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX126",
+          "name": "Sri Meenakshi Dharshaa R",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX326",
+          "name": "Srividhya S",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX230",
+          "name": "VISHNU PRIYA K",
+          "final_list_status": "Placed"
+        }
+      ],
+      "students_placed_mca": [
+        {
+          "student_id": "23MX209",
+          "name": "JANANI MV",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX213",
+          "name": "LOKESH P",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX214",
+          "name": "MAHALAKSHMI R",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX117",
+          "name": "Mirudhubasini RC",
+          "final_list_status": "Unplaced"
+        },
+        {
+          "student_id": "23MX119",
+          "name": "Nivedhitha Maheswari S",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX126",
+          "name": "Sri Meenakshi Dharshaa R",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX230",
+          "name": "VISHNU PRIYA K",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX326",
+          "name": "Srividhya S",
+          "final_list_status": "Placed"
+        }
+      ],
+      "number_selected_for_interview_mca": 9,
+      "number_placed_mca": 8
+    },
+    {
+      "serial_no": 36,
+      "company_name": "Ankercloud Technologies,Bangalore",
+      "job_offer": "FTE",
+      "criteria": "NO CRITERIA",
+      "job_description": "Engineer",
+      "salary_package": "6 LPA ",
+      "date_announced": "13/10/2024",
+      "date_of_interview": null,
+      "number_of_rounds": null,
+      "students_selected_for_interview_mca": [],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 0,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 37,
+      "company_name": "Mobicip Technologies Pvt. Ltd., Bangalore",
+      "job_offer": "INTERN + FTE",
+      "criteria": "70% / 7 CGPA in UG and PG",
+      "job_description": "Engineer",
+      "salary_package": "\n\n 8 LPA",
+      "date_announced": "16/10/2024",
+      "date_of_interview": "27/11/2024",
+      "number_of_rounds": null,
+      "students_selected_for_interview_mca": [
+        {
+          "student_id": "23MX321",
+          "name": "prevarshini R J",
+          "final_list_status": "Unplaced"
+        },
+        {
+          "student_id": "23MX211",
+          "name": "Kavin Rathinam M",
+          "final_list_status": "Unplaced"
+        },
+        {
+          "student_id": "23MX104",
+          "name": "Bhuvaneshwari S",
+          "final_list_status": "Unplaced"
+        },
+        {
+          "student_id": "23MX129",
+          "name": "Y S TEJO ROKE",
+          "final_list_status": "Unplaced"
+        }
+      ],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 4,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 38,
+      "company_name": "Commonwealth Bank of Australia, Bangalore",
+      "job_offer": "FTE",
+      "criteria": "70% / 7 CGPA in UG and PG",
+      "job_description": "Graduate Software Engineer",
+      "salary_package": "₹ 10L - 12L PA",
+      "date_announced": "17/10/2024",
+      "date_of_interview": "-",
+      "number_of_rounds": "-",
+      "students_selected_for_interview_mca": [],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 0,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 39,
+      "company_name": "Insight Global, Inc, Hyderabad",
+      "job_offer": "INTERNSHIP",
+      "criteria": "80% / 8 CGPA in UG and PG",
+      "job_description": "intern ",
+      "salary_package": "6 LPA",
+      "date_announced": "18/10/2024",
+      "date_of_interview": null,
+      "number_of_rounds": null,
+      "students_selected_for_interview_mca": [],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 0,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 40,
+      "company_name": "MSG Global Solutions India Pvt Ltd, Bangalore",
+      "job_offer": "INTERN + FTE",
+      "criteria": "70% / 7 CGPA in UG and PG",
+      "job_description": "Multiple Profiles",
+      "salary_package": "\n6.5 LPA \n",
+      "date_announced": "20/10/2024",
+      "date_of_interview": null,
+      "number_of_rounds": null,
+      "students_selected_for_interview_mca": [],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 0,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 41,
+      "company_name": "Kovai.co., Coimbatore",
+      "job_offer": "INTERN + FTE",
+      "criteria": "60% / 6 CGPA in UG and PG",
+      "job_description": "Intern – Product Management\n\nIntern – Data Scientist",
+      "salary_package": "6 LPA",
+      "date_announced": "29/10/2024",
+      "date_of_interview": null,
+      "number_of_rounds": "Telephonic Interview \nTechnical Interview \nMachine Test\nPersonal Interview",
+      "students_selected_for_interview_mca": [],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 0,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 42,
+      "company_name": "Ford Motor Pvt Ltd., Chennai",
+      "job_offer": "FTE",
+      "criteria": "60% / 6 CGPA in UG and PG",
+      "job_description": "GET",
+      "salary_package": "6.3L - 9L PA",
+      "date_announced": "04/11/2024",
+      "date_of_interview": "22/11/2024",
+      "number_of_rounds": "Round 1:\nOnline assignment with 3 sections\n1. Aptitude\n2. Technical\n3. Code\nRound 2:\nInterview + HR",
+      "students_selected_for_interview_mca": [
+        {
+          "student_id": "23MX318",
+          "name": "Padmaja M",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX228",
+          "name": "Vijay Keerthy S",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX120",
+          "name": "NIVETHA S",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX122",
+          "name": "ROHITH S",
+          "final_list_status": "Unplaced"
+        },
+        {
+          "student_id": "23MX315",
+          "name": "Nishanth T",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX204",
+          "name": "Divyashri M",
+          "final_list_status": "Placed"
+        }
+      ],
+      "students_placed_mca": [
+        {
+          "student_id": "23MX318",
+          "name": "Padmaja M",
+          "final_list_status": "Placed"
+        },
+        {
+          "student_id": "23MX228",
+          "name": "Vijay Keerthy S",
+          "final_list_status": "Placed"
+        }
+      ],
+      "number_selected_for_interview_mca": 6,
+      "number_placed_mca": 2
+    },
+    {
+      "serial_no": 43,
+      "company_name": "ICU Medical India LLP, Chennai",
+      "job_offer": "INTERNSHIP",
+      "criteria": "70% / 7 CGPA in UG and PG",
+      "job_description": "Engineer",
+      "salary_package": "25T PM",
+      "date_announced": "12/11/2024",
+      "date_of_interview": null,
+      "number_of_rounds": null,
+      "students_selected_for_interview_mca": [],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 0,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 44,
+      "company_name": "EPAM Systems India Private Limited, Bangalore",
+      "job_offer": "INTERN + FTE",
+      "criteria": "70% / 7 CGPA in UG and PG",
+      "job_description": "Sofware Engineer",
+      "salary_package": "\n\n8LPA\n\n",
+      "date_announced": "12/11/2024",
+      "date_of_interview": null,
+      "number_of_rounds": null,
+      "students_selected_for_interview_mca": [],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 0,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 45,
+      "company_name": "Codewalla Software Development Pvt. Ltd., Pune",
+      "job_offer": "FTE",
+      "criteria": "75 % or 7.5 CGPA in 10th, 12th, UG, PG",
+      "job_description": "Software Development Engineer - Intern / \nSoftware Development Engineer - Trainee",
+      "salary_package": "9 LPA",
+      "date_announced": "13/11/2024",
+      "date_of_interview": null,
+      "number_of_rounds": null,
+      "students_selected_for_interview_mca": [],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 0,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 46,
+      "company_name": "Hyundai Motor India Limited, Chennai",
+      "job_offer": "FTE",
+      "criteria": "60 % or 6 CGPA in 10th, 12th, UG, PG",
+      "job_description": "GET and PGET",
+      "salary_package": "8 LPA - 9.25 LPA",
+      "date_announced": "15/11/2024",
+      "date_of_interview": "-",
+      "number_of_rounds": "-",
+      "students_selected_for_interview_mca": [],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 0,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 47,
+      "company_name": "Justo Global, Coimbatore",
+      "job_offer": "INTERNSHIP",
+      "criteria": "80% / 8 CGPA in UG and PG",
+      "job_description": "Intern Developers",
+      "salary_package": "7  - 13 LPA.",
+      "date_announced": "19/11/2024",
+      "date_of_interview": null,
+      "number_of_rounds": null,
+      "students_selected_for_interview_mca": [],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 0,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 48,
+      "company_name": "Ernst & Young Services Pvt Ltd,Bangalore",
+      "job_offer": "FTE",
+      "criteria": "NO CRITERIA",
+      "job_description": "Associate Consultant",
+      "salary_package": "\n9.2L PA",
+      "date_announced": "21/11/2024",
+      "date_of_interview": "-",
+      "number_of_rounds": "-",
+      "students_selected_for_interview_mca": [],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 0,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 49,
+      "company_name": "Mobicip Technologies Pvt. Ltd., Bangalore ( new role )",
+      "job_offer": "INTERN + FTE",
+      "criteria": "NO CRITERIA",
+      "job_description": "Technical Support Engineer",
+      "salary_package": "5 LPA",
+      "date_announced": "28/11/2024",
+      "date_of_interview": "19/12/2024",
+      "number_of_rounds": null,
+      "students_selected_for_interview_mca": [
+        {
+          "student_id": "23MX129",
+          "name": "Y S TEJO ROKE",
+          "final_list_status": "Unplaced"
+        },
+        {
+          "student_id": "23MX306",
+          "name": "Goutham H",
+          "final_list_status": "Unplaced"
+        },
+        {
+          "student_id": "23MX327",
+          "name": "Sruthi P",
+          "final_list_status": "Unplaced"
+        }
+      ],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 3,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 50,
+      "company_name": "Kumaran System Pvt.Ltd, Chennai",
+      "job_offer": "INTERN + FTE",
+      "criteria": "60% / 6 CGPA in UG and PG",
+      "job_description": "Software Developer",
+      "salary_package": "7 LPA",
+      "date_announced": "2024-03-12T00:00:00",
+      "date_of_interview": null,
+      "number_of_rounds": null,
+      "students_selected_for_interview_mca": [],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 0,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 51,
+      "company_name": "AtoB Pvt.Ltd, Bangalore",
+      "job_offer": "INTERN + FTE",
+      "criteria": "80% / 8 CGPA in UG and PG",
+      "job_description": "Software Engineer",
+      "salary_package": "27 LPA",
+      "date_announced": "2024-03-12T00:00:00",
+      "date_of_interview": null,
+      "number_of_rounds": null,
+      "students_selected_for_interview_mca": [],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 0,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 52,
+      "company_name": "L7 Informatics India Pvt Ltd, Bengalore",
+      "job_offer": "INTERN + FTE",
+      "criteria": "NO CRITERIA",
+      "job_description": "Software Engineer",
+      "salary_package": " 6.5L PA",
+      "date_announced": "2024-06-12T00:00:00",
+      "date_of_interview": "21/12/2024",
+      "number_of_rounds": 3.0,
+      "students_selected_for_interview_mca": [
+        {
+          "student_id": "23MX106",
+          "name": "Dhatchani R",
+          "final_list_status": "Unplaced"
+        }
+      ],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 1,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 53,
+      "company_name": "Computer Age Management Services Pvt Ltd",
+      "job_offer": "FTE",
+      "criteria": "NO CRITERIA",
+      "job_description": "PGET",
+      "salary_package": "6 LPA",
+      "date_announced": "2024-12-12T00:00:00",
+      "date_of_interview": null,
+      "number_of_rounds": null,
+      "students_selected_for_interview_mca": [],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 0,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 54,
+      "company_name": "Turing, Bangalore",
+      "job_offer": "FTE",
+      "criteria": "60 % or 6 CGPA in 10th, 12th, UG, PG",
+      "job_description": "Multiple Profiles",
+      "salary_package": "7.5 LPA",
+      "date_announced": "17/12/2024",
+      "date_of_interview": null,
+      "number_of_rounds": null,
+      "students_selected_for_interview_mca": [],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 0,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 55,
+      "company_name": "Gyansys infotech PVT LTD Bangalore",
+      "job_offer": "INTERN + FTE",
+      "criteria": "NO CRITERIA",
+      "job_description": "Engineer",
+      "salary_package": "6 LPA",
+      "date_announced": "23/12/2024",
+      "date_of_interview": null,
+      "number_of_rounds": null,
+      "students_selected_for_interview_mca": [],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 0,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 56,
+      "company_name": "BNP Paribas Bangalore ( Hackathon )",
+      "job_offer": "NA",
+      "criteria": "NA",
+      "job_description": "NA",
+      "salary_package": "NA ",
+      "date_announced": null,
+      "date_of_interview": "18/01/2025",
+      "number_of_rounds": null,
+      "students_selected_for_interview_mca": [
+        {
+          "student_id": "23MX202",
+          "name": "Dharani V",
+          "final_list_status": "Placed"
+        }
+      ],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 1,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 57,
+      "company_name": "Bouteous X Accolite, Bangalore",
+      "job_offer": "INTERN + FTE",
+      "criteria": "60 % or 6 CGPA in 10th, 12th, UG, PG",
+      "job_description": "Software Engineer",
+      "salary_package": "8LPA",
+      "date_announced": "2025-03-01T00:00:00",
+      "date_of_interview": null,
+      "number_of_rounds": null,
+      "students_selected_for_interview_mca": [],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 0,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 58,
+      "company_name": "Intellect Design Arena, Chennai",
+      "job_offer": "INTERN + FTE",
+      "criteria": "60% / 6 CGPA in  PG",
+      "job_description": "Associate Consultant \n(Java Full Stack Developer)",
+      "salary_package": "4LPA",
+      "date_announced": "24/12/2024",
+      "date_of_interview": null,
+      "number_of_rounds": null,
+      "students_selected_for_interview_mca": [],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 0,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 59,
+      "company_name": "Kalvium, Coimbatore",
+      "job_offer": "INTERN + FTE",
+      "criteria": "NO CRITERIA",
+      "job_description": "Program Architect",
+      "salary_package": "10LPA",
+      "date_announced": "2025-06-01T00:00:00",
+      "date_of_interview": null,
+      "number_of_rounds": null,
+      "students_selected_for_interview_mca": [],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 0,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 60,
+      "company_name": "Saama Technologies , Coimbatore",
+      "job_offer": "INTERN + FTE",
+      "criteria": "70% 0r 7CGPA in PG",
+      "job_description": "Engineer",
+      "salary_package": "4.2lpa",
+      "date_announced": "25/01/25",
+      "date_of_interview": "31/01/2025",
+      "number_of_rounds": 4.0,
+      "students_selected_for_interview_mca": [
+        {
+          "student_id": "23MX224",
+          "name": "Sanjay Karthick V",
+          "final_list_status": "Unplaced"
+        },
+        {
+          "student_id": "23MX124",
+          "name": "Shivashankar S",
+          "final_list_status": "Unplaced"
+        }
+      ],
+      "students_placed_mca": [
+        {
+          "student_id": "23MX124",
+          "name": "Shivashankar S",
+          "final_list_status": "Unplaced"
+        }
+      ],
+      "number_selected_for_interview_mca": 2,
+      "number_placed_mca": 1
+    },
+    {
+      "serial_no": 61,
+      "company_name": "Ivanti Technology India, Bangalore",
+      "job_offer": "INTERNSHIP",
+      "criteria": "80% / 8 CGPA in UG and PG",
+      "job_description": "Engineer",
+      "salary_package": "5 LPA",
+      "date_announced": "2025-01-02T00:00:00",
+      "date_of_interview": null,
+      "number_of_rounds": null,
+      "students_selected_for_interview_mca": [],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 0,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 62,
+      "company_name": "Virtusa , Chennai",
+      "job_offer": "INTERN + FTE",
+      "criteria": "80% / 8 CGPA in UG and PG",
+      "job_description": "Associate Software Engineer ",
+      "salary_package": "5 LPA",
+      "date_announced": "2025-02-02T00:00:00",
+      "date_of_interview": null,
+      "number_of_rounds": null,
+      "students_selected_for_interview_mca": [],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 0,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 63,
+      "company_name": "Mindgate Solutions, Pvt.Ltd, Chennai",
+      "job_offer": "FTE",
+      "criteria": "70% 0r 7CGPA in PG",
+      "job_description": "Trainee Developer",
+      "salary_package": "5LPA",
+      "date_announced": "2025-07-02T00:00:00",
+      "date_of_interview": null,
+      "number_of_rounds": null,
+      "students_selected_for_interview_mca": [],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 0,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 64,
+      "company_name": "Cotiviti India Pvt. Ltd., Pune",
+      "job_offer": "INTERN + FTE",
+      "criteria": "70% 0r 7CGPA in PG",
+      "job_description": "Engineer",
+      "salary_package": "5.5 LPA",
+      "date_announced": "17/02/2025",
+      "date_of_interview": null,
+      "number_of_rounds": null,
+      "students_selected_for_interview_mca": [],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 0,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 65,
+      "company_name": "Annalect India, Bangalore",
+      "job_offer": "INTERN + FTE",
+      "criteria": "65% / 6.5 CGPA in  PG",
+      "job_description": "Graduate Trainee (GT) – Media Services",
+      "salary_package": "4.5 LPA",
+      "date_announced": "27/02/2025",
+      "date_of_interview": "19/04/2025",
+      "number_of_rounds": "Aptitude , Technical Interview",
+      "students_selected_for_interview_mca": [
+        {
+          "student_id": "23MX215",
+          "name": "MARIAN A",
+          "final_list_status": "Unplaced"
+        }
+      ],
+      "students_placed_mca": [
+        {
+          "student_id": "23MX215",
+          "name": "MARIAN A",
+          "final_list_status": "Unplaced"
+        }
+      ],
+      "number_selected_for_interview_mca": 1,
+      "number_placed_mca": 1
+    },
+    {
+      "serial_no": 66,
+      "company_name": "Goldman Sachs Technology Division, Bangalore",
+      "job_offer": "FTE",
+      "criteria": "NO CRITERIA",
+      "job_description": "Software Engineer",
+      "salary_package": "30 LPA",
+      "date_announced": "2025-04-04T00:00:00",
+      "date_of_interview": null,
+      "number_of_rounds": null,
+      "students_selected_for_interview_mca": [],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 0,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 67,
+      "company_name": "IRIS Business Services Limited ,Mumbai",
+      "job_offer": "INTERN + FTE",
+      "criteria": "70% 0r 7CGPA in PG",
+      "job_description": "Software Engineer",
+      "salary_package": "3.8L - 8L PA",
+      "date_announced": "2025-12-03T00:00:00",
+      "date_of_interview": null,
+      "number_of_rounds": null,
+      "students_selected_for_interview_mca": [],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 0,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 68,
+      "company_name": "Light Mechanics Pvt Ltd, Bangalore",
+      "job_offer": "FTE",
+      "criteria": "NO CRITERIA",
+      "job_description": "Engineer",
+      "salary_package": "3 LPA",
+      "date_announced": "21/03/2025",
+      "date_of_interview": null,
+      "number_of_rounds": null,
+      "students_selected_for_interview_mca": [],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 0,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 69,
+      "company_name": "NCompass TechStudio, Chennai",
+      "job_offer": "INTERN + FTE",
+      "criteria": "70% 0r 7CGPA in PG",
+      "job_description": "Software Developer",
+      "salary_package": "6.5L PA",
+      "date_announced": "19/03/2025",
+      "date_of_interview": null,
+      "number_of_rounds": null,
+      "students_selected_for_interview_mca": [],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 0,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 70,
+      "company_name": "FocusR Technologies,Chennai",
+      "job_offer": "FTE",
+      "criteria": "70% / 7 CGPA in UG and PG",
+      "job_description": "Trainee Consultant / Trainee Developer.",
+      "salary_package": "4 LPA",
+      "date_announced": "10/04/2025",
+      "date_of_interview": "21/04/2025",
+      "number_of_rounds": "Aptitude , Group Discussion , Technical Interview",
+      "students_selected_for_interview_mca": [
+        {
+          "student_id": "23MX321",
+          "name": "prevarshini R J",
+          "final_list_status": "Unplaced"
+        }
+      ],
+      "students_placed_mca": [
+        {
+          "student_id": "23MX321",
+          "name": "prevarshini R J",
+          "final_list_status": "Unplaced"
+        }
+      ],
+      "number_selected_for_interview_mca": 1,
+      "number_placed_mca": 1
+    },
+    {
+      "serial_no": 71,
+      "company_name": "Nibana Solutions Pvt.Ltd, Chennai",
+      "job_offer": "INTERN + FTE",
+      "criteria": "70% 0r 7CGPA in PG",
+      "job_description": "Software Engineer",
+      "salary_package": "6 - 7 LPA",
+      "date_announced": "03/04/2025",
+      "date_of_interview": null,
+      "number_of_rounds": null,
+      "students_selected_for_interview_mca": [],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 0,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 72,
+      "company_name": "Zeetaminds Technologies Pvt Ltd, Chennai",
+      "job_offer": "INTERN + FTE",
+      "criteria": "70% / 7 CGPA in UG and PG",
+      "job_description": "Software Developer",
+      "salary_package": "6 LPA",
+      "date_announced": "04/04/2025",
+      "date_of_interview": null,
+      "number_of_rounds": null,
+      "students_selected_for_interview_mca": [],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 0,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 73,
+      "company_name": "Testpress, Chennai",
+      "job_offer": "INTERN + FTE",
+      "criteria": "70% 0r 7CGPA in PG",
+      "job_description": "Software Engineer",
+      "salary_package": "3.3 LPA",
+      "date_announced": "19/04/2025",
+      "date_of_interview": null,
+      "number_of_rounds": null,
+      "students_selected_for_interview_mca": [],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 0,
+      "number_placed_mca": 0
+    },
+    {
+      "serial_no": 74,
+      "company_name": "Sandhata Technologies Pvt.Ltd, Chennai",
+      "job_offer": "INTERN + FTE",
+      "criteria": "70% 0r 7CGPA in PG",
+      "job_description": "Software Engineer",
+      "salary_package": "5 LPA",
+      "date_announced": "24/04/2025",
+      "date_of_interview": null,
+      "number_of_rounds": null,
+      "students_selected_for_interview_mca": [],
+      "students_placed_mca": [],
+      "number_selected_for_interview_mca": 0,
+      "number_placed_mca": 0
+    }
+  ],
+  "final_list_students": [
+    {
+      "serial_no": 3,
+      "student_id": "23MX103",
+      "name": "Aparna R",
+      "cgpa_sem2": 9.44,
+      "placement_status": "Placed",
+      "psg_ct_company": "COMPANY",
+      "intern_company": "Caterpillar India Engineering Solutions PVT LTD, Chennai",
+      "intern_date_of_joining": "2025-01-06T00:00:00"
+    },
+    {
+      "serial_no": 4,
+      "student_id": "23MX104",
+      "name": "Bhuvaneshwari S",
+      "cgpa_sem2": 7.529,
+      "placement_status": "Unplaced",
+      "psg_ct_company": "COMPANY",
+      "intern_company": "PSG Hospitals, Coimbatore",
+      "intern_date_of_joining": "2024-12-16T00:00:00"
+    },
+    {
+      "serial_no": 5,
+      "student_id": "23MX105",
+      "name": "Brindha.S.V",
+      "cgpa_sem2": 7.529,
+      "placement_status": "Placed",
+      "psg_ct_company": "COMPANY",
+      "intern_company": "PSG Hospitals, Coimbatore",
+      "intern_date_of_joining": "2024-12-16T00:00:00"
+    },
+    {
+      "serial_no": 6,
+      "student_id": "23MX106",
+      "name": "Dhatchani R",
+      "cgpa_sem2": 7.73,
+      "placement_status": "Unplaced",
+      "psg_ct_company": "COMPANY",
+      "intern_company": "Steerwise, Coimbatore",
+      "intern_date_of_joining": "2024-12-04T00:00:00"
+    },
+    {
+      "serial_no": 14,
+      "student_id": "23MX115",
+      "name": "Kavin S",
+      "cgpa_sem2": 9.1,
+      "placement_status": "Placed",
+      "psg_ct_company": "COMPANY",
+      "intern_company": "RND Softech, Coimbatore",
+      "intern_date_of_joining": "2024-12-02T00:00:00"
+    },
+    {
+      "serial_no": 15,
+      "student_id": "23MX116",
+      "name": "MANASA DEVI KRISHNA T",
+      "cgpa_sem2": 8.397,
+      "placement_status": "Placed",
+      "psg_ct_company": "COMPANY",
+      "intern_company": "PSG Software solutions, Coimbatore",
+      "intern_date_of_joining": "2024-12-23T00:00:00"
+    },
+    {
+      "serial_no": 18,
+      "student_id": "23MX119",
+      "name": "Nivedhitha Maheswari S",
+      "cgpa_sem2": null,
+      "placement_status": "Placed",
+      "psg_ct_company": "COMPANY",
+      "intern_company": "Wavicle Data Solutions, Nava India, Coimbatore",
+      "intern_date_of_joining": "2024-12-02T00:00:00"
+    },
+    {
+      "serial_no": 20,
+      "student_id": "23MX121",
+      "name": "Reethika S",
+      "cgpa_sem2": 8.8,
+      "placement_status": "Placed",
+      "psg_ct_company": "COMPANY",
+      "intern_company": "Caterpillar India Engineering Solutions PVT LTD, Bangalore",
+      "intern_date_of_joining": "2025-01-06T00:00:00"
+    },
+    {
+      "serial_no": 23,
+      "student_id": "23MX124",
+      "name": "Shivashankar S",
+      "cgpa_sem2": 7.382,
+      "placement_status": "Unplaced",
+      "psg_ct_company": "COMPANY",
+      "intern_company": "Vyoog informations pvt ltd, Coimabtore",
+      "intern_date_of_joining": "2024-12-18T00:00:00"
+    },
+    {
+      "serial_no": 25,
+      "student_id": "23MX126",
+      "name": "Sri Meenakshi Dharshaa R",
+      "cgpa_sem2": null,
+      "placement_status": "Placed",
+      "psg_ct_company": "COMPANY",
+      "intern_company": "Wavicle Data Solutions, Nava India, Coimbatore",
+      "intern_date_of_joining": "2024-12-02T00:00:00"
+    },
+    {
+      "serial_no": 26,
+      "student_id": "23MX127",
+      "name": "Sudharsana Amuthan",
+      "cgpa_sem2": 8.95,
+      "placement_status": "Placed",
+      "psg_ct_company": "COMPANY",
+      "intern_company": "Caterpillar India Engineering Solutions PVT LTD, Chennai",
+      "intern_date_of_joining": "2025-01-06T00:00:00"
+    },
+    {
+      "serial_no": 27,
+      "student_id": "23MX129",
+      "name": "Y S TEJO ROKE",
+      "cgpa_sem2": 7.61,
+      "placement_status": "Unplaced",
+      "psg_ct_company": "COMPANY",
+      "intern_company": "PSG Hospitals, Coimbatore",
+      "intern_date_of_joining": "2024-12-16T00:00:00"
+    },
+    {
+      "serial_no": 29,
+      "student_id": "23MX202",
+      "name": "Dharani V",
+      "cgpa_sem2": 8.05,
+      "placement_status": "Placed",
+      "psg_ct_company": "COMPANY",
+      "intern_company": "Finsight Analytics LLP, Coimbatore",
+      "intern_date_of_joining": "2024-12-12T00:00:00"
+    },
+    {
+      "serial_no": 35,
+      "student_id": "23MX208",
+      "name": "Janani A",
+      "cgpa_sem2": "RA",
+      "placement_status": "Arrear",
+      "psg_ct_company": "COMPANY",
+      "intern_company": "PSG Software solutions, Coimbatore",
+      "intern_date_of_joining": "2024-12-23T00:00:00"
+    },
+    {
+      "serial_no": 36,
+      "student_id": "23MX209",
+      "name": "JANANI MV",
+      "cgpa_sem2": 8.4,
+      "placement_status": "Placed",
+      "psg_ct_company": "COMPANY",
+      "intern_company": "Wavicle Data Solutions, Nava India, Coimbatore",
+      "intern_date_of_joining": "2024-12-02T00:00:00"
+    },
+    {
+      "serial_no": 37,
+      "student_id": "23MX210",
+      "name": "Jessica J",
+      "cgpa_sem2": 7.95,
+      "placement_status": "Placed",
+      "psg_ct_company": "COMPANY",
+      "intern_company": "Incture Technology, Bangalore",
+      "intern_date_of_joining": "2025-01-03T00:00:00"
+    },
+    {
+      "serial_no": 40,
+      "student_id": "23MX213",
+      "name": "LOKESH P",
+      "cgpa_sem2": 8.47,
+      "placement_status": "Placed",
+      "psg_ct_company": "COMPANY",
+      "intern_company": "Wavicle Data Solutions, Nava India, Coimbatore",
+      "intern_date_of_joining": "2024-12-02T00:00:00"
+    },
+    {
+      "serial_no": 41,
+      "student_id": "23MX214",
+      "name": "MAHALAKSHMI R",
+      "cgpa_sem2": 9.088,
+      "placement_status": "Placed",
+      "psg_ct_company": "COMPANY",
+      "intern_company": "Wavicle Data Solutions, Nava India, Coimbatore",
+      "intern_date_of_joining": "2024-12-02T00:00:00"
+    },
+    {
+      "serial_no": 43,
+      "student_id": "23MX216",
+      "name": "Merlin Yazhini A T",
+      "cgpa_sem2": 7.92,
+      "placement_status": "Placed",
+      "psg_ct_company": "COMPANY",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 50,
+      "student_id": "23MX223",
+      "name": "PRIYADHARSHINI A",
+      "cgpa_sem2": 7.77,
+      "placement_status": "Unplaced",
+      "psg_ct_company": "COMPANY",
+      "intern_company": "Vyoog informations pvt ltd, Coimabtore",
+      "intern_date_of_joining": "2024-12-18T00:00:00"
+    },
+    {
+      "serial_no": 56,
+      "student_id": "23MX230",
+      "name": "VISHNU PRIYA K",
+      "cgpa_sem2": null,
+      "placement_status": "Placed",
+      "psg_ct_company": "COMPANY",
+      "intern_company": "Wavicle Data Solutions, Nava India, Coimbatore",
+      "intern_date_of_joining": "2024-12-02T00:00:00"
+    },
+    {
+      "serial_no": 58,
+      "student_id": "23MX302",
+      "name": "Bharathi B",
+      "cgpa_sem2": 9.5,
+      "placement_status": "Placed",
+      "psg_ct_company": "COMPANY",
+      "intern_company": "Caterpillar India Engineering Solutions PVT LTD, Bangalore",
+      "intern_date_of_joining": "2025-01-06T00:00:00"
+    },
+    {
+      "serial_no": 61,
+      "student_id": "23MX305",
+      "name": "Ganga sowbhakya Lakshmi M",
+      "cgpa_sem2": "RA",
+      "placement_status": "Placed + Arrear",
+      "psg_ct_company": "COMPANY",
+      "intern_company": "Neuralgo, Coimbatore",
+      "intern_date_of_joining": "2024-12-02T00:00:00"
+    },
+    {
+      "serial_no": 65,
+      "student_id": "23MX310",
+      "name": "Kishore Kumar T",
+      "cgpa_sem2": "RA",
+      "placement_status": "Arrear",
+      "psg_ct_company": "COMPANY",
+      "intern_company": "PSG Hospitals, Coimbatore",
+      "intern_date_of_joining": "2024-12-16T00:00:00"
+    },
+    {
+      "serial_no": 69,
+      "student_id": "23MX314",
+      "name": "Nagarjuna N",
+      "cgpa_sem2": 6.83,
+      "placement_status": "Unplaced",
+      "psg_ct_company": "COMPANY",
+      "intern_company": "PSG Hospitals, Coimbatore",
+      "intern_date_of_joining": "2024-12-16T00:00:00"
+    },
+    {
+      "serial_no": 70,
+      "student_id": "23MX315",
+      "name": "Nishanth T",
+      "cgpa_sem2": 8.426,
+      "placement_status": "Placed",
+      "psg_ct_company": "COMPANY",
+      "intern_company": "Jungroo Learning, Hyderabad",
+      "intern_date_of_joining": "2024-12-18T00:00:00"
+    },
+    {
+      "serial_no": 71,
+      "student_id": "23MX316",
+      "name": "Nithish P",
+      "cgpa_sem2": null,
+      "placement_status": "Placed",
+      "psg_ct_company": "COMPANY",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 76,
+      "student_id": "23MX321",
+      "name": "prevarshini R J",
+      "cgpa_sem2": 7.691,
+      "placement_status": "Unplaced",
+      "psg_ct_company": "COMPANY",
+      "intern_company": "TeamUP, Coimbatore",
+      "intern_date_of_joining": "2024-12-21T00:00:00"
+    },
+    {
+      "serial_no": 77,
+      "student_id": "23MX322",
+      "name": "Rahul G",
+      "cgpa_sem2": 9.294,
+      "placement_status": "Placed",
+      "psg_ct_company": "COMPANY",
+      "intern_company": "Caterpillar India Engineering Solutions PVT LTD, Chennai",
+      "intern_date_of_joining": "2025-01-06T00:00:00"
+    },
+    {
+      "serial_no": 78,
+      "student_id": "23MX323",
+      "name": "Sharulya P",
+      "cgpa_sem2": "RA",
+      "placement_status": "Arrear",
+      "psg_ct_company": "COMPANY",
+      "intern_company": "TeamUP, Coimbatore",
+      "intern_date_of_joining": "2024-12-21T00:00:00"
+    },
+    {
+      "serial_no": 81,
+      "student_id": "23MX326",
+      "name": "Srividhya S",
+      "cgpa_sem2": null,
+      "placement_status": "Placed",
+      "psg_ct_company": "COMPANY",
+      "intern_company": "Wavicle Data Solutions, Nava India, Coimbatore",
+      "intern_date_of_joining": "2024-12-02T00:00:00"
+    },
+    {
+      "serial_no": 82,
+      "student_id": "23MX327",
+      "name": "Sruthi P",
+      "cgpa_sem2": 7.23,
+      "placement_status": "Unplaced",
+      "psg_ct_company": "COMPANY",
+      "intern_company": "Spagylo Tech Private Limited, KCT IT Park, Coimbatore",
+      "intern_date_of_joining": "2024-12-09T00:00:00"
+    },
+    {
+      "serial_no": 83,
+      "student_id": "23MX328",
+      "name": "Valli V Narayanan",
+      "cgpa_sem2": 8.397,
+      "placement_status": "Placed",
+      "psg_ct_company": "COMPANY",
+      "intern_company": "Shamla Technologies, Coimbatore ",
+      "intern_date_of_joining": "2024-12-16T00:00:00"
+    },
+    {
+      "serial_no": 87,
+      "student_id": "23MX332",
+      "name": "Yohesh Babu K R",
+      "cgpa_sem2": 9.69,
+      "placement_status": "Placed",
+      "psg_ct_company": "COMPANY",
+      "intern_company": "Caterpillar India Engineering Solutions PVT LTD, Bangalore",
+      "intern_date_of_joining": "2025-01-06T00:00:00"
+    },
+    {
+      "serial_no": 1,
+      "student_id": "23MX101",
+      "name": "ABU SUFIYAN THAMEEM I",
+      "cgpa_sem2": 8.67,
+      "placement_status": "Placed",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 2,
+      "student_id": "23MX102",
+      "name": "Amarnath S",
+      "cgpa_sem2": 6.97,
+      "placement_status": "Unplaced",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 7,
+      "student_id": "23MX107",
+      "name": "Edison S",
+      "cgpa_sem2": 7.573,
+      "placement_status": "Placed",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 8,
+      "student_id": "23MX109",
+      "name": "HEMALATHA K",
+      "cgpa_sem2": 8.632,
+      "placement_status": "Placed",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 9,
+      "student_id": "23MX110",
+      "name": "Hemanth Kumar V",
+      "cgpa_sem2": 8.397,
+      "placement_status": "Placed",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 10,
+      "student_id": "23MX111",
+      "name": "KAJALAKSHMI S",
+      "cgpa_sem2": 7.617,
+      "placement_status": "Placed",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 11,
+      "student_id": "23MX112",
+      "name": "Kalpanapriya S",
+      "cgpa_sem2": 7.33,
+      "placement_status": "Unplaced",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 12,
+      "student_id": "23MX113",
+      "name": "G.Karthi",
+      "cgpa_sem2": null,
+      "placement_status": "Unplaced",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 13,
+      "student_id": "23MX114",
+      "name": "Karthik T",
+      "cgpa_sem2": "RA",
+      "placement_status": "Arrear",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 16,
+      "student_id": "23MX117",
+      "name": "Mirudhubasini RC",
+      "cgpa_sem2": 9.14,
+      "placement_status": "Unplaced",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 17,
+      "student_id": "23MX118",
+      "name": "MOHAN B",
+      "cgpa_sem2": 8.529,
+      "placement_status": "Unplaced",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 19,
+      "student_id": "23MX120",
+      "name": "NIVETHA S",
+      "cgpa_sem2": 8.665,
+      "placement_status": "Placed",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 21,
+      "student_id": "23MX122",
+      "name": "ROHITH S",
+      "cgpa_sem2": 7.33,
+      "placement_status": "Unplaced",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 22,
+      "student_id": "23MX123",
+      "name": "S.P.Saran",
+      "cgpa_sem2": "RA",
+      "placement_status": "Arrear",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 24,
+      "student_id": "23MX125",
+      "name": "Shri Karthick V",
+      "cgpa_sem2": 8.544,
+      "placement_status": "Placed",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 28,
+      "student_id": "23MX201",
+      "name": "Ahalya L",
+      "cgpa_sem2": 8.808,
+      "placement_status": "Placed",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 30,
+      "student_id": "23MX203",
+      "name": "Dheepak B",
+      "cgpa_sem2": "RA",
+      "placement_status": "Arrear",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 31,
+      "student_id": "23MX204",
+      "name": "Divyashri M",
+      "cgpa_sem2": 8.46,
+      "placement_status": "Placed",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 32,
+      "student_id": "23MX205",
+      "name": "FRANKLIN T",
+      "cgpa_sem2": 8.73,
+      "placement_status": "Placed",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 33,
+      "student_id": "23MX206",
+      "name": "Gnanaprakash R",
+      "cgpa_sem2": "RA",
+      "placement_status": "Arrear",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 34,
+      "student_id": "23MX207",
+      "name": "Harikishore G",
+      "cgpa_sem2": 6.9,
+      "placement_status": "Unplaced",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 38,
+      "student_id": "23MX211",
+      "name": "Kavin Rathinam M",
+      "cgpa_sem2": 7.588,
+      "placement_status": "Unplaced",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 42,
+      "student_id": "23MX215",
+      "name": "MARIAN A",
+      "cgpa_sem2": 7.82,
+      "placement_status": "Unplaced",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 44,
+      "student_id": "23MX217",
+      "name": "Mutharasan M P",
+      "cgpa_sem2": 7.7,
+      "placement_status": "Unplaced",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 45,
+      "student_id": "23MX218",
+      "name": "PREM BALAJI N",
+      "cgpa_sem2": null,
+      "placement_status": "Placed",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 46,
+      "student_id": "23MX219",
+      "name": "Nandhini R",
+      "cgpa_sem2": 7.34,
+      "placement_status": "Placed",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 47,
+      "student_id": "23MX220",
+      "name": "Nidhin P S",
+      "cgpa_sem2": 7.397,
+      "placement_status": "Placed",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 48,
+      "student_id": "23MX221",
+      "name": "NIVED S",
+      "cgpa_sem2": 7.75,
+      "placement_status": "Placed",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 49,
+      "student_id": "23MX222",
+      "name": "Priya Dharshini S",
+      "cgpa_sem2": 8.338,
+      "placement_status": "Placed",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 51,
+      "student_id": "23MX224",
+      "name": "Sanjay Karthick V",
+      "cgpa_sem2": 7.603,
+      "placement_status": "Unplaced",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 52,
+      "student_id": "23MX225",
+      "name": "Siva Ganesh M",
+      "cgpa_sem2": 8.07,
+      "placement_status": "Placed",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 53,
+      "student_id": "23MX226",
+      "name": "Sivaraman B",
+      "cgpa_sem2": null,
+      "placement_status": "Unplaced",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 54,
+      "student_id": "23MX227",
+      "name": "T varun",
+      "cgpa_sem2": "RA",
+      "placement_status": "Arrear",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 55,
+      "student_id": "23MX228",
+      "name": "Vijay Keerthy S",
+      "cgpa_sem2": 8.13,
+      "placement_status": "Placed",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 57,
+      "student_id": "23MX301",
+      "name": "Arun A",
+      "cgpa_sem2": "RA",
+      "placement_status": "Arrear",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 59,
+      "student_id": "23MX303",
+      "name": "Dhanush G",
+      "cgpa_sem2": "RA",
+      "placement_status": "Arrear",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 60,
+      "student_id": "23MX304",
+      "name": "Dhanush Surya S",
+      "cgpa_sem2": "RA",
+      "placement_status": "Arrear",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 62,
+      "student_id": "23MX306",
+      "name": "Goutham H",
+      "cgpa_sem2": 7.57,
+      "placement_status": "Unplaced",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 63,
+      "student_id": "23MX307",
+      "name": "Hari Krishna",
+      "cgpa_sem2": "RA",
+      "placement_status": "Arrear",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 64,
+      "student_id": "23MX308",
+      "name": "Harish R",
+      "cgpa_sem2": "RA",
+      "placement_status": "Arrear",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 66,
+      "student_id": "23MX311",
+      "name": "Lakshanya S",
+      "cgpa_sem2": "RA",
+      "placement_status": "Arrear",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 67,
+      "student_id": "23MX312",
+      "name": "Mahika",
+      "cgpa_sem2": "RA",
+      "placement_status": "Arrear",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 68,
+      "student_id": "23MX313",
+      "name": "Muthu Raja G",
+      "cgpa_sem2": "RA",
+      "placement_status": "Arrear",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 72,
+      "student_id": "23MX317",
+      "name": "P Naresh Kumar",
+      "cgpa_sem2": 7.32,
+      "placement_status": "Unplaced",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 73,
+      "student_id": "23MX318",
+      "name": "Padmaja M",
+      "cgpa_sem2": 8.882,
+      "placement_status": "Placed",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 74,
+      "student_id": "23MX319",
+      "name": "Pon Akilan N",
+      "cgpa_sem2": "RA",
+      "placement_status": "Arrear",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 75,
+      "student_id": "23MX320",
+      "name": "Praveen Y",
+      "cgpa_sem2": "RA",
+      "placement_status": "Placed + Arrear",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 79,
+      "student_id": "23MX324",
+      "name": "Siva Poopathi M",
+      "cgpa_sem2": null,
+      "placement_status": "Unplaced",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 80,
+      "student_id": "23MX325",
+      "name": "Sreehari K",
+      "cgpa_sem2": 7.39,
+      "placement_status": "Unplaced",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 84,
+      "student_id": "23MX329",
+      "name": "Veeramahalakshmi M",
+      "cgpa_sem2": 8.058,
+      "placement_status": "Placed",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 85,
+      "student_id": "23MX330",
+      "name": "vignesh M",
+      "cgpa_sem2": 8.07,
+      "placement_status": "Placed",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    },
+    {
+      "serial_no": 86,
+      "student_id": "23MX331",
+      "name": "Vineesh S",
+      "cgpa_sem2": "RA",
+      "placement_status": "Arrear",
+      "psg_ct_company": "PSG CT",
+      "intern_company": "-",
+      "intern_date_of_joining": "-"
+    }
+  ]
+}
