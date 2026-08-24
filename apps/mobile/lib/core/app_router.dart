@@ -24,6 +24,7 @@ import '../ui/admin/command_center_screen.dart';
 import '../ui/profile/credits_screen.dart';
 import '../ui/profile/graduation_screen.dart';
 import '../ui/profile/help_support_screen.dart';
+import '../ui/settings/settings_screen.dart';
 import '../ui/exam/proctored_exam_screen.dart';
 import '../ui/splash/splash_screen.dart';
 
@@ -70,6 +71,10 @@ class AppRouter {
         GoRoute(
           path: '/notifications',
           builder: (context, state) => const NotificationsScreen(),
+        ),
+        GoRoute(
+          path: '/settings',
+          builder: (context, state) => const SettingsScreen(),
         ),
         GoRoute(
           path: '/admin/team-management',

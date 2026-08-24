@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/user_provider.dart';
-import '../../providers/theme_provider.dart';
 import '../widgets/avatar_widget.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -25,8 +24,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final userProvider = context.watch<UserProvider>();
     final user = userProvider.currentUser;
-    final themeProvider = context.watch<ThemeProvider>();
-    final isDark = themeProvider.isDarkMode;
 
     return MediaQuery(
       data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
@@ -59,19 +56,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ],
                     ),
-                    // Notifications icon
-                    GestureDetector(
-                      onTap: () => context.push('/notifications'),
-                      child: Container(
-                        width: 40, height: 40,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
-                          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8)],
+                    Row(
+                      children: [
+                        // Settings icon
+                        GestureDetector(
+                          onTap: () => context.push('/settings'),
+                          child: Container(
+                            width: 40, height: 40,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8)],
+                            ),
+                            child: const Center(child: Icon(LucideIcons.settings, size: 18, color: Color(0xFF1E293B))),
+                          ),
                         ),
-                        child: const Center(child: Icon(LucideIcons.bell, size: 18, color: Color(0xFF1E293B))),
-                      ),
+                        const SizedBox(width: 10),
+                        // Notifications icon
+                        GestureDetector(
+                          onTap: () => context.push('/notifications'),
+                          child: Container(
+                            width: 40, height: 40,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8)],
+                            ),
+                            child: const Center(child: Icon(LucideIcons.bell, size: 18, color: Color(0xFF1E293B))),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -80,38 +96,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 // ── Profile Card ──────────────────────────────────────
                 _ProfileCard(user: user),
                 const SizedBox(height: 24),
-
-                // ── PREFERENCES ───────────────────────────────────────
-                _buildSectionHeader('PREFERENCES'),
-                _buildCard([
-                  _SwitchTile(
-                    icon: LucideIcons.moon,
-                    iconColor: const Color(0xFF6366F1),
-                    label: 'Dark Mode',
-                    subtitle: 'Toggle app appearance',
-                    value: isDark,
-                    onChanged: (v) => themeProvider.toggleTheme(),
-                  ),
-                  _divider(),
-                  _SwitchTile(
-                    icon: LucideIcons.bell,
-                    iconColor: AppTheme.accentCoral,
-                    label: 'Push Notifications',
-                    subtitle: 'Streaks, announcements & reminders',
-                    value: user?.announcementsEnabled ?? true,
-                    onChanged: (v) => userProvider.updateAnnouncementsEnabled(v),
-                  ),
-                  _divider(),
-                  _SwitchTile(
-                    icon: LucideIcons.code,
-                    iconColor: const Color(0xFFEF4444),
-                    label: 'LeetCode Reminders',
-                    subtitle: 'Daily coding practice nudges',
-                    value: user?.leetcodeNotificationsEnabled ?? false,
-                    onChanged: (v) => userProvider.updateLeetCodeNotification(v),
-                  ),
-                ]),
-                const SizedBox(height: 20),
 
                 // ── MY PROGRESS ───────────────────────────────────────
                 _buildSectionHeader('MY PROGRESS'),
@@ -397,18 +381,10 @@ class _ProfileCard extends StatelessWidget {
           Container(
             width: 64, height: 64,
             decoration: BoxDecoration(
-              color: AppTheme.accentCoral.withValues(alpha: 0.2),
               shape: BoxShape.circle,
               border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 2),
             ),
-            child: user?.avatarUrl != null
-                ? ClipOval(child: AvatarWidget(avatarUrl: user!.avatarUrl, name: name, gender: user!.gender))
-                : Center(
-                    child: Text(
-                      name.isNotEmpty ? name[0].toUpperCase() : 'S',
-                      style: GoogleFonts.sora(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
-                    ),
-                  ),
+            child: AvatarWidget(avatarUrl: user?.avatarUrl, name: name, gender: user?.gender, radius: 30),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -476,56 +452,6 @@ class _NavTile extends StatelessWidget {
               const Icon(LucideIcons.chevronRight, size: 16, color: Color(0xFF94A3B8)),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _SwitchTile extends StatelessWidget {
-  final IconData icon;
-  final Color iconColor;
-  final String label;
-  final String subtitle;
-  final bool value;
-  final ValueChanged<bool> onChanged;
-
-  const _SwitchTile({
-    required this.icon,
-    required this.iconColor,
-    required this.label,
-    required this.subtitle,
-    required this.value,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: Row(
-        children: [
-          Container(
-            width: 36, height: 36,
-            decoration: BoxDecoration(color: iconColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
-            child: Icon(icon, size: 16, color: iconColor),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: const Color(0xFF1E293B))),
-                Text(subtitle, style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF94A3B8))),
-              ],
-            ),
-          ),
-          Switch(
-            value: value,
-            onChanged: onChanged,
-            activeThumbColor: AppTheme.accentCoral,
-            activeTrackColor: AppTheme.accentCoral.withValues(alpha: 0.3),
-          ),
-        ],
       ),
     );
   }
