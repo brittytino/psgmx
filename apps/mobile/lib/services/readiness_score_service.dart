@@ -1,8 +1,6 @@
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/readiness_score.dart';
-import '../core/supabase_config.dart';
 
 /// Computes, stores, and retrieves the student readiness score.
 ///
@@ -111,49 +109,4 @@ class ReadinessScoreService {
     }
   }
 
-  // ── External Platform Push ─────────────────────────────────────────────────
-
-  /// Pushes the latest readiness score for [userId] to the external desktop
-  /// exam platform via an authenticated POST request.
-  ///
-  /// The external platform uses this number (alongside its own major-test
-  /// scores) to compute the combined faculty-facing score. PSGMX only ever
-  /// sends this one value — it never receives anything back.
-  Future<bool> pushScoreToExternalPlatform({
-    required String userId,
-    required double score,
-    String? rollNo,
-  }) async {
-    final apiKey = SupabaseConfig.externalPlatformApiKey;
-    if (apiKey.isEmpty) {
-      debugPrint('[ReadinessScoreService] No external platform API key — skip push');
-      return false;
-    }
-
-    try {
-      final response = await http
-          .post(
-            Uri.parse('https://exam-platform.example.com/api/readiness'), // TODO: real URL
-            headers: {
-              'Authorization': 'Bearer $apiKey',
-              'Content-Type': 'application/json',
-            },
-            body: '{"student_id":"$userId","roll_no":"${rollNo ?? ''}","readiness_score":$score}',
-          )
-          .timeout(const Duration(seconds: 15));
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        debugPrint(
-            '[ReadinessScoreService] ✅ Score pushed to external platform');
-        return true;
-      } else {
-        debugPrint(
-            '[ReadinessScoreService] External platform returned ${response.statusCode}');
-        return false;
-      }
-    } catch (e) {
-      debugPrint('[ReadinessScoreService] pushScoreToExternalPlatform error: $e');
-      return false;
-    }
-  }
 }

@@ -20,20 +20,43 @@ class _ReadinessScoreWidgetState extends State<ReadinessScoreWidget> {
   List<ReadinessScore>? _history;
   ReadinessScore? _latest;
   bool _isLoading = true;
+  String? _error;
+  UserProvider? _userProvider;
+  String? _loadedForUid;
 
   @override
   void initState() {
     super.initState();
     _service = ReadinessScoreService(Supabase.instance.client);
-    _loadData();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _userProvider = context.watch<UserProvider>();
+    final uid = _userProvider?.currentUser?.uid;
+    if (uid != null && uid != _loadedForUid) {
+      _loadedForUid = uid;
+      _loadData();
+    }
   }
 
   Future<void> _loadData() async {
-    setState(() => _isLoading = true);
+    final user = _userProvider?.currentUser;
+    if (user == null) {
+      setState(() {
+        _isLoading = false;
+        _error = null;
+      });
+      return;
+    }
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
     try {
-      final user = context.read<UserProvider>().currentUser!;
       final history = await _service.fetchScoreHistory(user.uid, limit: 14);
-      
+
       if (mounted) {
         setState(() {
           _history = history;
@@ -43,20 +66,32 @@ class _ReadinessScoreWidgetState extends State<ReadinessScoreWidget> {
       }
     } catch (e) {
       debugPrint('Error loading readiness score: $e');
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _error = e.toString();
+        });
+      }
     }
   }
 
   Future<void> _forceCompute() async {
-    setState(() => _isLoading = true);
+    final user = _userProvider?.currentUser;
+    if (user == null) return;
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
     try {
-      final user = context.read<UserProvider>().currentUser!;
       await _service.computeAndStore(user.uid);
       await _loadData();
     } catch (e) {
       debugPrint('Error computing score: $e');
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() {
+          _isLoading = false;
+          _error = e.toString();
+        });
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Computation failed: $e')));
       }
     }
@@ -75,6 +110,26 @@ class _ReadinessScoreWidgetState extends State<ReadinessScoreWidget> {
       );
     }
     
+    if (_error != null) {
+      return PremiumCard(
+        child: Column(
+          children: [
+            const Icon(Icons.wifi_off, size: 16, color: Colors.grey),
+            const SizedBox(height: AppSpacing.md),
+            Text('Could not load your Readiness Score.', textAlign: TextAlign.center, style: theme.textTheme.bodyMedium),
+            const SizedBox(height: 4),
+            Text(_error!, textAlign: TextAlign.center, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+            const SizedBox(height: AppSpacing.md),
+            OutlinedButton.icon(
+              onPressed: _loadData,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
     if (_latest == null) {
       return PremiumCard(
         child: Column(

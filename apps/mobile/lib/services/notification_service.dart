@@ -294,6 +294,8 @@ class NotificationService extends ChangeNotifier {
       for (var data in response as List) {
         final reads = data['notification_reads'] as List?;
         final hasRead = reads?.isNotEmpty == true;
+        final isDismissed = reads?.any((r) => r['dismissed_at'] != null) == true;
+        if (isDismissed) continue;
 
         notifications.add(AppNotification(
           id: data['id'] ?? '',
