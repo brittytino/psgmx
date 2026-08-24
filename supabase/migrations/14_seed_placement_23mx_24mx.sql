@@ -1000,8 +1000,7 @@ BEGIN
     ARRAY['Data And AI Consultant'],
     '15LPA',
     'ABOVE 7.5 CGPA (UG & PG) ',
-    '[{"name": "Selection Process", "description": "3 - ( Advanced Aptitude round along with essay writing, 
-HR interview, interview at Thorogood campus in Bangalore"}]'::JSONB,
+    '[{"name": "Selection Process", "description": "3 - ( Advanced Aptitude round along with essay writing,  HR interview, interview at Thorogood campus in Bangalore"}]'::JSONB,
     admin_user_id
   );
 
@@ -1054,10 +1053,7 @@ HR interview, interview at Thorogood campus in Bangalore"}]'::JSONB,
 Advanced Associate Software Engineer'],
     '4.5 LPA - 6.5LPA',
     'NO CRITERIA',
-    '[{"name": "Selection Process", "description": "First Round: Aptitude
-Second Round: Coding 2 qns
-Third Round: Communication Round 
-Fourth Round: Interview "}]'::JSONB,
+    '[{"name": "Selection Process", "description": "First Round: Aptitude Second Round: Coding 2 qns Third Round: Communication Round  Fourth Round: Interview "}]'::JSONB,
     admin_user_id
   );
 
@@ -1098,8 +1094,7 @@ project management /
     ARRAY['Software Developer'],
     '8.4 LPA , 7 LPA ,5.6 LPA',
     'NO CRITERIA',
-    '[{"name": "Selection Process", "description": "4 ( written aptitude and C technincal questions, 
-coding, advanced coding, HR interview )"}]'::JSONB,
+    '[{"name": "Selection Process", "description": "4 ( written aptitude and C technincal questions,  coding, advanced coding, HR interview )"}]'::JSONB,
     admin_user_id
   );
 
@@ -1112,8 +1107,7 @@ coding, advanced coding, HR interview )"}]'::JSONB,
     ARRAY['Software Developer'],
     '8.4 LPA , 7 LPA ,5.6 LPA',
     'NO CRITERIA',
-    '[{"name": "Selection Process", "description": "4 ( written aptitude and C technincal questions, 
-coding, advanced coding, HR interview )"}]'::JSONB,
+    '[{"name": "Selection Process", "description": "4 ( written aptitude and C technincal questions,  coding, advanced coding, HR interview )"}]'::JSONB,
     admin_user_id
   );
 
@@ -1140,12 +1134,7 @@ coding, advanced coding, HR interview )"}]'::JSONB,
     '6 LPA',
     'ABOVE 7.0 ( 10,12 UG, PG ) 
 and no history of arrears',
-    '[{"name": "Selection Process", "description": "4 - ( online coding test which had aptitude,OS,JS,networks, DBMS 
-+ 3 coding questions
-second round was F2F interview / first techincal round
- Third round was Second technical round
-Fourth round was HR round
-"}]'::JSONB,
+    '[{"name": "Selection Process", "description": "4 - ( online coding test which had aptitude,OS,JS,networks, DBMS  + 3 coding questions second round was F2F interview / first techincal round  Third round was Second technical round Fourth round was HR round "}]'::JSONB,
     admin_user_id
   );
 
@@ -1158,12 +1147,7 @@ Fourth round was HR round
     ARRAY['Full stack developer'],
     '7 LPA',
     '70 % ( UG & PG )',
-    '[{"name": "Selection Process", "description": "
-5 - ( Aptitude and coding snippets + 3 coding questions, 
-F2F interview, 
-hackathon + 2 Coding questions round, 
-Presentation, HR round ) 
-"}]'::JSONB,
+    '[{"name": "Selection Process", "description": " 5 - ( Aptitude and coding snippets + 3 coding questions,  F2F interview,  hackathon + 2 Coding questions round,  Presentation, HR round )  "}]'::JSONB,
     admin_user_id
   );
 
@@ -1176,8 +1160,7 @@ Presentation, HR round )
     ARRAY['Associate Analyst'],
     '7.6 LPA',
     'ABOVE 6.0 , No arrears',
-    '[{"name": "Selection Process", "description": "2 - ( online aptitude, english comprehension, coding 
-and then F2F interview)"}]'::JSONB,
+    '[{"name": "Selection Process", "description": "2 - ( online aptitude, english comprehension, coding  and then F2F interview)"}]'::JSONB,
     admin_user_id
   );
 
@@ -1190,9 +1173,7 @@ and then F2F interview)"}]'::JSONB,
     ARRAY['Associate Software Engineer '],
     '8 LPA',
     'ABOVE 7.0 CGPA',
-    '[{"name": "Selection Process", "description": "1. Online Test/ pen & paper Aptitude, English Skills and Technical 
-2. Technical Interview- to test coding skills. 
-3. Techno Managerial cum HR Interview"}]'::JSONB,
+    '[{"name": "Selection Process", "description": "1. Online Test/ pen & paper Aptitude, English Skills and Technical  2. Technical Interview- to test coding skills.  3. Techno Managerial cum HR Interview"}]'::JSONB,
     admin_user_id
   );
 
@@ -1205,9 +1186,7 @@ and then F2F interview)"}]'::JSONB,
     ARRAY['ENGINEER'],
     '8 LPA - 10 LPA',
     'ABOVE 80 % / 8 CGPA',
-    '[{"name": "Selection Process", "description": "2 ( 1st round - 20 mcqs based on DSA and ML. 
-
-2nd round - self intro plus sharing of experience.  )"}]'::JSONB,
+    '[{"name": "Selection Process", "description": "2 ( 1st round - 20 mcqs based on DSA and ML.   2nd round - self intro plus sharing of experience.  )"}]'::JSONB,
     admin_user_id
   );
 
@@ -1261,13 +1240,7 @@ JD 2: IT- CI & AS: Engg
     ARRAY['Graduate Engineer Trainee'],
     '4.1 LPA',
     'ABOVE 60% / 6.0 CGPA ( 10,12,UG,PG)',
-    '[{"name": "Selection Process", "description": "1st round included 
-Aptitude + Technical MCQs + Communication Assessment 
-
-2nd Round - Technical HR
-
-3rd Round - Final HR
-(General questions)"}]'::JSONB,
+    '[{"name": "Selection Process", "description": "1st round included  Aptitude + Technical MCQs + Communication Assessment   2nd Round - Technical HR  3rd Round - Final HR (General questions)"}]'::JSONB,
     admin_user_id
   );
 
@@ -1306,9 +1279,7 @@ Aptitude + Technical MCQs + Communication Assessment
     ARRAY['Trainee Analyst'],
     '12 LPA',
     'NO CRITERIA',
-    '[{"name": "Selection Process", "description": "2 - ( First Hackathon round in which 3 problem statements were given, 
-had to submit demo along with github link, second round 
-was ppt presentation about the application developed ) "}]'::JSONB,
+    '[{"name": "Selection Process", "description": "2 - ( First Hackathon round in which 3 problem statements were given,  had to submit demo along with github link, second round  was ppt presentation about the application developed ) "}]'::JSONB,
     admin_user_id
   );
 
@@ -1321,14 +1292,7 @@ was ppt presentation about the application developed ) "}]'::JSONB,
     ARRAY['Application Developers'],
     '7 LPA',
     'NO CRITERIA',
-    '[{"name": "Selection Process", "description": "Round 1: create a chatbot and ppt on it using 
-the requirements and tools given by the company
-
-Round 2: Group discussion 
-
-Round 3: Technical interview 
-
-Round 4: HR interview"}]'::JSONB,
+    '[{"name": "Selection Process", "description": "Round 1: create a chatbot and ppt on it using  the requirements and tools given by the company  Round 2: Group discussion   Round 3: Technical interview   Round 4: HR interview"}]'::JSONB,
     admin_user_id
   );
 
@@ -1341,14 +1305,7 @@ Round 4: HR interview"}]'::JSONB,
     ARRAY['Software engineer'],
     '34 LPA',
     '70 % ( UG & PG )',
-    '[{"name": "Selection Process", "description": "Round 1 - Online Coding Test
-
-Round 2 : Technical Interview 
-
-Round 3 : Technical Interview 
-
-Round 4 : Managerial Interview 
-"}]'::JSONB,
+    '[{"name": "Selection Process", "description": "Round 1 - Online Coding Test  Round 2 : Technical Interview   Round 3 : Technical Interview   Round 4 : Managerial Interview  "}]'::JSONB,
     admin_user_id
   );
 
@@ -1374,10 +1331,7 @@ Round 4 : Managerial Interview
     ARRAY['Trainee Software Engineer'],
     '5 LPA',
     '60 % ( UG & PG )',
-    '[{"name": "Selection Process", "description": "Round 1-Written test
-Round-2 Technical interview
-Round 3- HR interview
-"}]'::JSONB,
+    '[{"name": "Selection Process", "description": "Round 1-Written test Round-2 Technical interview Round 3- HR interview "}]'::JSONB,
     admin_user_id
   );
 
@@ -1390,13 +1344,7 @@ Round 3- HR interview
     ARRAY['Associate Software Engineer - Trainee'],
     '8 LPA',
     '65% (10th, 12th, UG,PG)',
-    '[{"name": "Selection Process", "description": "Round -1: Aptitude+ coding
-
-Round-2 : System Design
-
-Round 3: Technical Interview
-
-Round 4: HR Interview"}]'::JSONB,
+    '[{"name": "Selection Process", "description": "Round -1: Aptitude+ coding  Round-2 : System Design  Round 3: Technical Interview  Round 4: HR Interview"}]'::JSONB,
     admin_user_id
   );
 
@@ -1440,17 +1388,7 @@ Analyst (Differential offering
 Senior Analyst -  ₹ 7.5L PA'],
     '4.3 LPA - 7.5 LPA',
     'NO CRITERIA',
-    '[{"name": "Selection Process", "description": "Assessment 1
-Technical MCQ and Written English Test (WET) 
-
-Assessment 2
-Coding Assessment
-
-Assessment 3
-Spoken English Assessment
-Mode-Virtual
-
-F2F interview"}]'::JSONB,
+    '[{"name": "Selection Process", "description": "Assessment 1 Technical MCQ and Written English Test (WET)   Assessment 2 Coding Assessment  Assessment 3 Spoken English Assessment Mode-Virtual  F2F interview"}]'::JSONB,
     admin_user_id
   );
 
@@ -1463,10 +1401,7 @@ F2F interview"}]'::JSONB,
     ARRAY['Associate Software Engineer - IT'],
     '₹ 5.2L PA',
     'ABOVE 80% / 8 CGPA ',
-    '[{"name": "Selection Process", "description": "Round 1: Online Test (MCQs)
-Round 2 : Technical Round 1
-Round 3 :  Technical Round 2
-Round 4: HR round"}]'::JSONB,
+    '[{"name": "Selection Process", "description": "Round 1: Online Test (MCQs) Round 2 : Technical Round 1 Round 3 :  Technical Round 2 Round 4: HR round"}]'::JSONB,
     admin_user_id
   );
 
@@ -1482,13 +1417,7 @@ Round 4: HR round"}]'::JSONB,
 should have no standing arrears
 
 History of Backlogs allowed',
-    '[{"name": "Selection Process", "description": "1. Round 1: Written test 
-
-2. Round 2: Group discussion
-
-3. Round 3: Technical interview .
-
-4. Round 4: Managerial interview "}]'::JSONB,
+    '[{"name": "Selection Process", "description": "1. Round 1: Written test   2. Round 2: Group discussion  3. Round 3: Technical interview .  4. Round 4: Managerial interview "}]'::JSONB,
     admin_user_id
   );
 
@@ -1568,10 +1497,7 @@ History of Backlogs allowed',
 Intern – Data Scientist'],
     '6 LPA',
     '60% / 6 CGPA in UG and PG',
-    '[{"name": "Selection Process", "description": "Telephonic Interview 
-Technical Interview 
-Machine Test
-Personal Interview"}]'::JSONB,
+    '[{"name": "Selection Process", "description": "Telephonic Interview  Technical Interview  Machine Test Personal Interview"}]'::JSONB,
     admin_user_id
   );
 
@@ -1584,13 +1510,7 @@ Personal Interview"}]'::JSONB,
     ARRAY['GET'],
     '6.3L - 9L PA',
     '60% / 6 CGPA in UG and PG',
-    '[{"name": "Selection Process", "description": "Round 1:
-Online assignment with 3 sections
-1. Aptitude
-2. Technical
-3. Code
-Round 2:
-Interview + HR"}]'::JSONB,
+    '[{"name": "Selection Process", "description": "Round 1: Online assignment with 3 sections 1. Aptitude 2. Technical 3. Code Round 2: Interview + HR"}]'::JSONB,
     admin_user_id
   );
 

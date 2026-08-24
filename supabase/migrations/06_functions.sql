@@ -13,6 +13,9 @@
 -- Role / permission helpers
 -- ──────────────────────────────────────────────────────────────
 
+-- Enable pgcrypto extension for pgp_sym_decrypt
+CREATE EXTENSION IF NOT EXISTS "pgcrypto" WITH SCHEMA extensions;
+
 CREATE OR REPLACE FUNCTION has_role(user_id UUID, role_name TEXT)
 RETURNS BOOLEAN AS $$
 DECLARE
@@ -980,7 +983,7 @@ BEGIN
     END IF;
 
     INSERT INTO user_ecampus_credentials (user_id, encrypted_password, updated_at)
-    VALUES (auth.uid(), pgp_sym_encrypt(btrim(p_password), v_key), now())
+    VALUES (auth.uid(), extensions.pgp_sym_encrypt(btrim(p_password), v_key), now())
     ON CONFLICT (user_id) DO UPDATE SET encrypted_password = EXCLUDED.encrypted_password, updated_at = now();
 
     UPDATE users SET ecampus_password_set = true WHERE id = auth.uid();
@@ -1001,7 +1004,7 @@ BEGIN
     SELECT encrypted_password INTO v_encrypted FROM user_ecampus_credentials WHERE user_id = v_user_id;
     IF v_encrypted IS NULL THEN RETURN NULL; END IF;
 
-    RETURN pgp_sym_decrypt(v_encrypted, _ecampus_encryption_key());
+    RETURN extensions.pgp_sym_decrypt(v_encrypted, _ecampus_encryption_key());
 END;
 $$;
 
@@ -1009,7 +1012,7 @@ CREATE OR REPLACE FUNCTION get_ecampus_passwords_bulk()
 RETURNS TABLE(reg_no TEXT, password TEXT)
 LANGUAGE sql SECURITY DEFINER SET search_path = public
 AS $$
-    SELECT u.reg_no, pgp_sym_decrypt(c.encrypted_password, _ecampus_encryption_key())
+    SELECT u.reg_no, extensions.pgp_sym_decrypt(c.encrypted_password, _ecampus_encryption_key())
     FROM user_ecampus_credentials c JOIN users u ON u.id = c.user_id
     WHERE u.reg_no IS NOT NULL;
 $$;
