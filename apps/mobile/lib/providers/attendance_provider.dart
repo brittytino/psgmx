@@ -64,8 +64,8 @@ class AttendanceProvider extends ChangeNotifier {
           .from('users')
           .select()
           .eq('team_id', teamId)
-          .eq('role', 'student')
-          .order('roll_no');
+          .eq('role_label', 'Student')
+          .order('reg_no');
 
       final List<dynamic> whitelistStudents = whiteListResponse as List;
       final List<String> emails =
@@ -91,8 +91,8 @@ class AttendanceProvider extends ChangeNotifier {
         return AppUser(
           uid: emailToUid[email] ?? email, // Real UID or fallback to email
           email: email,
-          regNo: e['roll_no'] ?? e['reg_no'],
-          name: e['full_name'] ?? e['name'],
+          regNo: e['reg_no'],
+          name: e['name'],
           teamId: e['team_id'],
           batch: e['batch'],
           roles: e['roles'] != null
@@ -128,8 +128,8 @@ class AttendanceProvider extends ChangeNotifier {
       final whiteListResponse = await _supabaseService.client
           .from('users')
           .select()
-          .eq('role', 'student')
-          .order('roll_no');
+          .eq('role_label', 'Student')
+          .order('reg_no');
 
       final List<dynamic> whitelistStudents = whiteListResponse as List;
       final List<String> emails =
@@ -155,8 +155,8 @@ class AttendanceProvider extends ChangeNotifier {
         return AppUser(
           uid: emailToUid[email] ?? email,
           email: email,
-          regNo: e['roll_no'] ?? e['reg_no'],
-          name: e['full_name'] ?? e['name'],
+          regNo: e['reg_no'],
+          name: e['name'],
           teamId: e['team_id'],
           batch: e['batch'],
           roles: e['roles'] != null

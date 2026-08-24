@@ -76,10 +76,7 @@ class AppUser {
   /// Set of capability flags fetched from `user_permissions`.
   /// Use [hasPermission] for clean guard checks in the UI.
   final Set<UserPermission> permissionFlags;
-  
-  /// Base database role ('student', 'alumni', 'faculty', 'hod')
-  final String baseRole;
-  
+
   /// Whether the user's batch has graduated
   final bool isGraduatedBatch;
 
@@ -126,7 +123,6 @@ class AppUser {
     this.announcementsEnabled = true,
     this.ecampusPasswordSet = false,
     this.onboardingComplete = false,
-    this.baseRole = 'student',
     this.isGraduatedBatch = false,
   })  : permissionFlags = permissionFlags ?? const {},
         createdAt = createdAt ?? DateTime.now(),
@@ -142,7 +138,7 @@ class AppUser {
   bool get isCoordinator => roles.isCoordinator;
   bool get isPlacementRep => roles.isPlacementRep;
   bool get hasAdminAccess => roles.hasAnyAdminRole();
-  bool get isAlumni => baseRole == 'alumni';
+  bool get isAlumni => roleLabel == 'Alumni';
 
   factory AppUser.fromMap(Map<String, dynamic> data) {
     var rolesData = data['roles'];
@@ -168,8 +164,8 @@ class AppUser {
     return AppUser(
       uid: data['id'] ?? '',
       email: data['email'] ?? '',
-      regNo: data['roll_no'] ?? data['reg_no'] ?? '',
-      name: data['full_name'] ?? data['name'] as String? ?? 'Unknown',
+      regNo: data['reg_no'] ?? '',
+      name: data['name'] as String? ?? 'Unknown',
       avatarUrl: data['avatar_url'] as String?,
       gender: data['gender'] as String?,
       teamId: data['team_id'] as String?,
@@ -177,7 +173,6 @@ class AppUser {
       roles: roles,
       batchId: data['batch_id'] as String?,
       roleLabel: data['role_label'] as String? ?? 'Student',
-      baseRole: data['role'] as String? ?? 'student',
       permissionFlags: permissions,
       isGraduatedBatch: data['batches']?['status'] == 'graduated',
       createdAt: data['created_at'] != null
@@ -209,8 +204,8 @@ class AppUser {
     return {
       'id': uid,
       'email': email,
-      'roll_no': regNo,
-      'full_name': name,
+      'reg_no': regNo,
+      'name': name,
       'avatar_url': avatarUrl,
       'gender': gender,
       'team_id': teamId,
@@ -218,7 +213,6 @@ class AppUser {
       'roles': roles.toJson(),
       'batch_id': batchId,
       'role_label': roleLabel,
-      'role': baseRole,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
       'leetcode_username': leetcodeUsername,
@@ -251,7 +245,6 @@ class AppUser {
     bool? ecampusPasswordSet,
     bool? onboardingComplete,
     String? teamId,
-    String? baseRole,
     bool? isGraduatedBatch,
   }) {
     return AppUser(
@@ -266,7 +259,6 @@ class AppUser {
       roles: roles ?? this.roles,
       batchId: batchId ?? this.batchId,
       roleLabel: roleLabel ?? this.roleLabel,
-      baseRole: baseRole ?? this.baseRole,
       isGraduatedBatch: isGraduatedBatch ?? this.isGraduatedBatch,
       permissionFlags: permissionFlags ?? this.permissionFlags,
       createdAt: createdAt,

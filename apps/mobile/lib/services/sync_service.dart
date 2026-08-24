@@ -40,9 +40,13 @@ class SyncService {
           final payload = jsonDecode(action.payloadJson) as Map<String, dynamic>;
           
           if (action.actionType == 'submit_daily_five') {
-            await _supabase.rpc('submit_daily_five', params: {
+            // Matches the payload queued by DailyFiveService.submitSession()
+            // ({'user_id', 'answers'}) and the server-side-grading RPC it
+            // calls when online — submit_daily_five_answers(p_user_id,
+            // p_answers), not the old client-graded submit_daily_five RPC.
+            await _supabase.rpc('submit_daily_five_answers', params: {
               'p_user_id': payload['user_id'],
-              'p_accuracy_rate': payload['accuracy_rate'],
+              'p_answers': payload['answers'],
             });
             await (_db.delete(_db.syncQueue)..where((t) => t.id.equals(action.id))).go();
           } else if (action.actionType == 'mark_attendance') {

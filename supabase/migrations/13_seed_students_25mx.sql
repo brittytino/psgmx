@@ -1,0 +1,175 @@
+-- ============================================================
+-- PSGMX — 13_seed_students_25mx.sql
+-- ============================================================
+-- Whitelist entries for the 25MX batch (the current, fully-onboarded
+-- batch) — pre-registers each student so their first OTP login can create
+-- their `users` row via the handle_new_user() trigger.
+--
+-- Reused verbatim from the fuller version of this seed embedded in the old
+-- apps/mobile/database/01_MASTER_SETUP.sql (includes the `gender` column
+-- that the stale sql/25mx_students.sql fork had dropped).
+--
+-- Run AFTER 12_seed_daily_content.sql.
+-- ============================================================
+
+INSERT INTO public.whitelist (email, name, reg_no, gender, batch, team_id, dob, leetcode_username, roles) VALUES
+-- ========================================
+-- BATCH G1: Students 101-132 and 201-232
+-- ========================================
+('25mx101@psgtech.ac.in', 'BALAJI K', '25MX101', 'Male', 'G1', 'T20', '2005-10-22', 'V8HjERH7Hj', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx102@psgtech.ac.in', 'Balasubramaniam S', '25MX102', 'Male', 'G1', 'T04', '2003-07-05', 'Bala_subramaniam', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx103@psgtech.ac.in', 'BarathVikraman S K', '25MX103', 'Male', 'G1', 'T17', '2002-06-26', 'barathvikramansk', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx104@psgtech.ac.in', 'DEEPIKAA B S', '25MX104', 'Female', 'G1', 'T13', '2004-11-21', 'DeepikaaBathirappan', '{"isStudent": true, "isTeamLeader": true, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx105@psgtech.ac.in', 'Divya R', '25MX105', 'Female', 'G1', 'T21', '2004-03-11', 'Divya_ravi11', '{"isStudent": true, "isTeamLeader": true, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx106@psgtech.ac.in', 'Divyadharshini K', '25MX106', 'Female', 'G1', 'T09', '2004-04-28', 'DivyadharshiniCSD', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx107@psgtech.ac.in', 'Shree Nivetha', '25MX107', 'Female', 'G1', 'T11', '2004-09-08', 'Shree_Nivetha', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx108@psgtech.ac.in', 'Gobbika J M', '25MX108', 'Female', 'G1', 'T04', '2004-12-17', 'Gobbika_', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx109@psgtech.ac.in', 'GOPINATH R G', '25MX109', 'Male', 'G1', 'T08', '2005-01-24', 'GOPINATH_R_G', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx110@psgtech.ac.in', 'Harikesan D J', '25MX110', 'Male', 'G1', 'T20', '2004-09-04', 'Harikesan', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx111@psgtech.ac.in', 'Jarjila Denet J', '25MX111', 'Female', 'G1', 'T07', '2004-05-09', 'jarjiladenet', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx112@psgtech.ac.in', 'Kaavya R', '25MX112', 'Female', 'G1', 'T21', '2002-09-17', 'kaavya17', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx113@psgtech.ac.in', 'Kaleel ur rahman H', '25MX113', 'Male', 'G1', 'T19', '2005-04-20', 'Kaleel-ur-rahman', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx114@psgtech.ac.in', 'Kavin M', '25MX114', 'Male', 'G1', 'T14', '2002-06-26', 'kavinsde', '{"isStudent": true, "isTeamLeader": true, "isCoordinator": true, "isPlacementRep": false}'),
+('25mx115@psgtech.ac.in', 'Krishna Priya M S', '25MX115', 'Female', 'G1', 'T15', '2004-08-29', 'krishna_priya29_', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx116@psgtech.ac.in', 'Miruna M V', '25MX116', 'Female', 'G1', 'T06', '2005-06-13', 'mirunavjn', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx117@psgtech.ac.in', 'Mohankumar P', '25MX117', 'Male', 'G1', 'T10', '2005-04-20', 'mohankumarpmj', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx118@psgtech.ac.in', 'OVIYA S', '25MX118', 'Female', 'G1', 'T04', '2004-10-04', 's_oviya', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx119@psgtech.ac.in', 'Pon Akilesh', '25MX119', 'Unknown', 'G1', 'T13', '2003-11-03', 'RemarkableCry10', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx120@psgtech.ac.in', 'R Sibidharan', '25MX120', 'Male', 'G1', 'T03', '2004-09-27', 'Sibidharan27', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx121@psgtech.ac.in', 'Sathish M', '25MX121', 'Male', 'G1', 'T01', '2005-05-21', 'SathishM29', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx122@psgtech.ac.in', 'K R Shaarukesh', '25MX122', 'Male', 'G1', 'T21', '2004-06-12', 'shaarukesh12', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx123@psgtech.ac.in', 'Sri Monika J', '25MX123', 'Female', 'G1', 'T08', '2005-04-20', 'srimonikaa', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx124@psgtech.ac.in', 'Srinithi J', '25MX124', 'Female', 'G1', 'T16', '2005-03-09', 'Srinithi_J', '{"isStudent": true, "isTeamLeader": true, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx125@psgtech.ac.in', 'STEPHINA SMILY C', '25MX125', 'Female', 'G1', 'T12', '2004-08-19', '477j3te85r', '{"isStudent": true, "isTeamLeader": true, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx126@psgtech.ac.in', 'Surya Krishna S', '25MX126', 'Male', 'G1', 'T09', '2004-12-21', 's1P8DF0azg', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx127@psgtech.ac.in', 'Swarna Rathna A', '25MX127', 'Female', 'G1', 'T18', '2004-09-15', 'SwarnaRathnaAngusamy', '{"isStudent": true, "isTeamLeader": true, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx128@psgtech.ac.in', 'Sweatha A M', '25MX128', 'Female', 'G1', 'T07', '2002-11-17', 'sweathaangappan', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx129@psgtech.ac.in', 'Thirupathi B', '25MX129', 'Unknown', 'G1', 'T10', '2003-09-02', 'thiru_2903', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx130@psgtech.ac.in', 'Vishal Karthikeyan P', '25MX130', 'Male', 'G1', 'T05', '2003-06-12', 'Vishal_Karthikeyan_P', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx201@psgtech.ac.in', 'Anuvarshini', '25MX201', 'Female', 'G1', 'T17', '2004-05-11', 'Anu_varshini_11', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": true, "isPlacementRep": false}'),
+('25mx202@psgtech.ac.in', 'Arjun Vishwas B', '25MX202', 'Male', 'G1', 'T19', '2004-07-15', 'arjun_lee', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx203@psgtech.ac.in', 'Badhrinarayanan S K', '25MX203', 'Male', 'G1', 'T06', '2004-04-11', 'Badhri660', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx204@psgtech.ac.in', 'Chinnaya K', '25MX204', 'Male', 'G1', 'T15', '2004-09-17', 'CHINNAYA_K', '{"isStudent": true, "isTeamLeader": true, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx205@psgtech.ac.in', 'G Deepika Raja Lakshaya', '25MX205', 'Female', 'G1', 'T01', '2004-08-22', 'Deepika_200-4', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx206@psgtech.ac.in', 'Devibala N', '25MX206', 'Female', 'G1', 'T07', '2003-01-22', 'Devibala_N', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx207@psgtech.ac.in', 'Dheepthi R R', '25MX207', 'Female', 'G1', 'T10', '2004-10-25', 'Dheepthi_ramakrishnan', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx208@psgtech.ac.in', 'Dinakaran T', '25MX208', 'Male', 'G1', 'T02', '2003-06-16', 'Dhina_08', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx209@psgtech.ac.in', 'Divakar', '25MX209', 'Male', 'G1', 'T11', '2005-03-02', 'divakar-ui', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx210@psgtech.ac.in', 'Gayathri', '25MX210', 'Female', 'G1', 'T03', '2005-01-22', 'Abc123abx', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx211@psgtech.ac.in', 'Joshna K', '25MX211', 'Female', 'G1', 'T18', '2004-04-13', 'Joshna_1304', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx212@psgtech.ac.in', 'Kartheesvaran S', '25MX212', 'Male', 'G1', 'T17', '2003-07-16', 'Kartheesvaran', '{"isStudent": true, "isTeamLeader": true, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx213@psgtech.ac.in', 'Mowlidharan', '25MX213', 'Male', 'G1', 'T02', '2004-12-05', NULL, '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx214@psgtech.ac.in', 'Nagakeerthanaa N', '25MX214', 'Female', 'G1', 'T14', '2004-07-04', 'Nagakeerthanaa2004', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx215@psgtech.ac.in', 'Preethi S', '25MX215', 'Female', 'G1', 'T17', '2005-07-13', 'preethi_somu', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx216@psgtech.ac.in', 'Priyadharshini S', '25MX216', 'Female', 'G1', 'T05', '2004-09-15', 'Priyadharshini-Kumar', '{"isStudent": true, "isTeamLeader": true, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx217@psgtech.ac.in', 'RGA Sakthivel Mallaiah', '25MX217', 'Male', 'G1', 'T11', '2004-06-23', 'Mallaiah23', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx218@psgtech.ac.in', 'Reena Carolin S', '25MX218', 'Female', 'G1', 'T09', '2003-03-01', 'Reena_carolin', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx219@psgtech.ac.in', 'Saran K', '25MX219', 'Male', 'G1', 'T16', '2004-05-17', 'Saran_111', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx220@psgtech.ac.in', 'Saravanavel P', '25MX220', 'Male', 'G1', 'T14', '2004-08-06', 'Sachine800', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx221@psgtech.ac.in', 'Shairaaj V S', '25MX221', 'Male', 'G1', 'T15', '2005-04-08', 'Shairaajvs', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx222@psgtech.ac.in', 'Shanmuga Priya S', '25MX222', 'Female', 'G1', 'T05', '2005-05-17', 'shanmugapriya17', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx223@psgtech.ac.in', 'Shanmugappriya K', '25MX223', 'Female', 'G1', 'T13', '2004-12-07', 'Shanmugappriya_0712', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx224@psgtech.ac.in', 'Sriram S S', '25MX224', 'Male', 'G1', 'T18', '2003-03-20', 'Sriram_203', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx225@psgtech.ac.in', 'Sriram V', '25MX225', 'Male', 'G1', 'T16', '2004-02-18', 'sriramvardaraj16', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx226@psgtech.ac.in', 'Sudharsanan G', '25MX226', 'Male', 'G1', 'T12', '2005-02-21', '_sudhar_sanan_', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx227@psgtech.ac.in', 'Sudherson V', '25MX227', 'Male', 'G1', 'T03', '2002-09-24', '3z9WJQnMWw', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx228@psgtech.ac.in', 'Supreeth K R', '25MX228', 'Male', 'G1', 'T06', '2005-04-10', 'supreeth_10', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx229@psgtech.ac.in', 'Surya L', '25MX229', 'Male', 'G1', 'T02', '2004-10-30', 'uWbraHi4Uq', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx230@psgtech.ac.in', 'Thamizhthilaga S D S', '25MX230', 'Female', 'G1', 'T18', '2003-07-18', 'thamizh_03', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx231@psgtech.ac.in', 'Vaishnavi S', '25MX231', 'Female', 'G1', 'T01', '2005-08-27', 'vaishnavis2708', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx232@psgtech.ac.in', 'Vishaly S', '25MX232', 'Female', 'G1', 'T04', '2005-04-12', 'Vishaly_Senthilkumar', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+
+-- ========================================
+-- BATCH G2: Students 301-363
+-- ========================================
+('25mx301@psgtech.ac.in', 'Abishek S', '25MX301', 'Male', 'G2', 'T01', '2004-06-24', '_coder_abi_', '{"isStudent": true, "isTeamLeader": true, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx304@psgtech.ac.in', 'Aravindh Kannan M S', '25MX304', 'Male', 'G2', 'T07', '2003-05-24', 'aravindh245', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx305@psgtech.ac.in', 'Bhuvisha Sri Priya P', '25MX305', 'Female', 'G2', 'T08', '2004-11-28', 'bhuvishasripriya', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx306@psgtech.ac.in', 'Chittesh', '25MX306', 'Male', 'G2', 'T06', '2004-03-01', 'chittesh', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx307@psgtech.ac.in', 'Darunya Sri M', '25MX307', 'Female', 'G2', 'T19', '2004-09-11', 'Darunya_Sri', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx308@psgtech.ac.in', 'Dayananda J', '25MX308', 'Male', 'G2', 'T02', '2005-05-26', 'DayanandaJ', '{"isStudent": true, "isTeamLeader": true, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx309@psgtech.ac.in', 'Deepa M', '25MX309', 'Female', 'G2', 'T12', '2004-01-18', 'PPuHO8lVwI', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx310@psgtech.ac.in', 'Dhakshanamoorthy S', '25MX310', 'Male', 'G2', 'T13', '2004-04-28', 'Dhakshanamoorthy', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx311@psgtech.ac.in', 'Dinesh Kumar', '25MX311', 'Male', 'G2', 'T14', '2004-08-15', 'Devansh_Kumar', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx312@psgtech.ac.in', 'Dinesh Kumar S', '25MX312', 'Male', 'G2', 'T09', '2001-05-17', 'Dinesh_rrr', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx313@psgtech.ac.in', 'G Lalit Chandran', '25MX313', 'Male', 'G2', 'T03', '2004-04-20', 'lalitchandran2004', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx314@psgtech.ac.in', 'Hari Anand B', '25MX314', 'Male', 'G2', 'T03', '2003-05-22', 'HariBalaji', '{"isStudent": true, "isTeamLeader": true, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx315@psgtech.ac.in', 'Induja E', '25MX315', 'Female', 'G2', 'T02', '2004-12-23', 'indujaee', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx316@psgtech.ac.in', 'Jackson Solomon Raj M', '25MX316', 'Male', 'G2', 'T16', '2003-08-07', 'naanthandaleo', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx317@psgtech.ac.in', 'Janani T G', '25MX317', 'Female', 'G2', 'T16', '2004-10-21', 'u00mGgJrMX', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx318@psgtech.ac.in', 'Jeeva Silviya J', '25MX318', 'Female', 'G2', 'T04', '2004-05-20', 'jeevasilviya', '{"isStudent": true, "isTeamLeader": true, "isCoordinator": true, "isPlacementRep": false}'),
+('25mx319@psgtech.ac.in', 'Jessica A', '25MX319', 'Female', 'G2', 'T14', '2004-12-09', 'Jessica96', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx320@psgtech.ac.in', 'Joshnie T', '25MX320', 'Female', 'G2', 'T10', '2004-07-04', 'joshnie47', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx321@psgtech.ac.in', 'Karthick K', '25MX321', 'Male', 'G2', 'T15', '2004-10-05', 'Karthick0531', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx322@psgtech.ac.in', 'Kasbiya M', '25MX322', 'Female', 'G2', 'T18', '2005-04-04', 'kasbiya_l', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx323@psgtech.ac.in', 'Keerthanaa J', '25MX323', 'Female', 'G2', 'T05', '2005-05-29', 'Kize_Bright', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx324@psgtech.ac.in', 'Kevin Johnson A A', '25MX324', 'Male', 'G2', 'T21', '2004-11-01', 'Kevin_0104', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx325@psgtech.ac.in', 'Kirsaan F', '25MX325', 'Female', 'G2', 'T20', '2004-08-27', 'ClyHz34SHz', '{"isStudent": true, "isTeamLeader": true, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx326@psgtech.ac.in', 'Meyappan R', '25MX326', 'Male', 'G2', 'T19', '2004-06-06', 'Meyappan_R', '{"isStudent": true, "isTeamLeader": true, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx327@psgtech.ac.in', 'Mithra N', '25MX327', 'Female', 'G2', 'T06', '2004-09-13', 'im_mithra', '{"isStudent": true, "isTeamLeader": true, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx328@psgtech.ac.in', 'Mithulesh N', '25MX328', 'Male', 'G2', 'T05', '2004-09-13', 'Mithulesh_N', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx329@psgtech.ac.in', 'Mohana Priya M', '25MX329', 'Female', 'G2', 'T13', '2004-07-19', 'mohanapriya19', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx330@psgtech.ac.in', 'Monish P', '25MX330', 'Male', 'G2', 'T14', '2005-02-25', '9AIYYQsbfu', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx331@psgtech.ac.in', 'Mugundhan K P', '25MX331', 'Male', 'G2', 'T12', '2001-12-15', 'Mukunth06', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx332@psgtech.ac.in', 'Muthu Sailappan', '25MX332', 'Male', 'G2', 'T01', '2004-05-22', 'muthusailappan', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx333@psgtech.ac.in', 'Naga Sruthi M', '25MX333', 'Female', 'G2', 'T08', '2004-08-20', 'Nagasruthimanivannan', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx334@psgtech.ac.in', 'Nandhithasri', '25MX334', 'Female', 'G2', 'T03', '2005-01-03', 'nandhithasri315', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx335@psgtech.ac.in', 'Naveen Pranab T', '25MX335', 'Male', 'G2', 'T21', '2004-06-03', 'Naveenpranab', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx336@psgtech.ac.in', 'Nitheesh Muthu Krishnan C', '25MX336', 'Male', 'G2', 'T07', '2005-07-05', 'nitheeshmk5', '{"isStudent": true, "isTeamLeader": true, "isCoordinator": true, "isPlacementRep": false}'),
+('25mx337@psgtech.ac.in', 'Nithyashree C', '25MX337', 'Female', 'G2', 'T19', '2004-06-29', 'Nithyashree_C', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx338@psgtech.ac.in', 'Poorani R', '25MX338', 'Female', 'G2', 'T16', '2005-03-24', 'PooraniMohan24', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx339@psgtech.ac.in', 'Prabhakar O S', '25MX339', 'Male', 'G2', 'T12', '2004-11-08', 'prabha6769', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx340@psgtech.ac.in', 'Puratchiyan R', '25MX340', 'Male', 'G2', 'T11', '2004-10-29', 'Puratchiyan', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx341@psgtech.ac.in', 'Radhu Dharsan K M', '25MX341', 'Male', 'G2', 'T04', '2005-01-06', 'fkenq9S0hw', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx342@psgtech.ac.in', 'Rohithmaheshwaran K', '25MX342', 'Male', 'G2', 'T07', '2005-05-21', 'Mahesh__rdr', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx343@psgtech.ac.in', 'Sabarish P', '25MX343', 'Male', 'G2', 'T20', '2004-08-19', 'SABARISH_P', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx344@psgtech.ac.in', 'Satya Pramodh R', '25MX344', 'Unknown', 'G2', 'T17', '2004-07-19', 'SATYA_PRAMODH', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx345@psgtech.ac.in', 'Shri Sanjay M', '25MX345', 'Male', 'G2', 'T05', '2005-07-26', 'M_Shri_sanjay26', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx346@psgtech.ac.in', 'Siddarth M R', '25MX346', 'Male', 'G2', 'T17', '2004-09-12', 'sidddarthvasi2604', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx347@psgtech.ac.in', 'Sivapradeesh M', '25MX347', 'Male', 'G2', 'T11', '2003-03-16', 'Sivapradeesh_M', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx348@psgtech.ac.in', 'S S Soban', '25MX348', 'Male', 'G2', 'T01', '2001-12-21', 'sobanss2001', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx349@psgtech.ac.in', 'Sowmiya', '25MX349', 'Female', 'G2', 'T08', '2003-03-03', 'sowmiya_3', '{"isStudent": true, "isTeamLeader": true, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx350@psgtech.ac.in', 'Srivikashni S', '25MX350', 'Female', 'G2', 'T09', '2004-09-06', 'SRIVIKASHNI', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx351@psgtech.ac.in', 'Suriya C S', '25MX351', 'Female', 'G2', 'T06', '2004-09-29', 'suriyaCSD', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx352@psgtech.ac.in', 'Tamilini S', '25MX352', 'Female', 'G2', 'T09', '2004-10-29', 'oi8UIWVPvT', '{"isStudent": true, "isTeamLeader": true, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx353@psgtech.ac.in', 'Thrisha R', '25MX353', 'Female', 'G2', 'T10', '2004-02-23', 'Thrishaa123', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx354@psgtech.ac.in', 'Tino Britty J', '25MX354', 'Male', 'G2', 'T18', '2004-07-08', 'britty04', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": true}'),
+('25mx355@psgtech.ac.in', 'Vaishali S', '25MX355', 'Female', 'G2', 'T20', '2005-01-02', '__Vaishu_7__', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx356@psgtech.ac.in', 'Vignesh M', '25MX356', 'Male', 'G2', 'T08', '2004-01-31', 'Vix-codes', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx357@psgtech.ac.in', 'Vijaya Sree K', '25MX357', 'Female', 'G2', 'T15', '2004-10-31', '12_zoya', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx358@psgtech.ac.in', 'Vikram Sethupathy S', '25MX358', 'Male', 'G2', 'T10', '2004-11-17', 'lemonspice17', '{"isStudent": true, "isTeamLeader": true, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx359@psgtech.ac.in', 'Vishnuvardani K S', '25MX359', 'Female', 'G2', 'T02', '2004-12-24', 'vishnuvardani_2004', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx360@psgtech.ac.in', 'Yaswanth R T', '25MX360', 'Male', 'G2', 'T11', '2004-07-01', 'yash_3237', '{"isStudent": true, "isTeamLeader": true, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx361@psgtech.ac.in', 'Sanjana M', '25MX361', 'Female', 'G2', 'T12', '2004-04-29', 'sanjana_m29', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx362@psgtech.ac.in', 'Narayanasamy', '25MX362', 'Male', 'G2', 'T13', '2004-08-09', 'Narayana_1080', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'),
+('25mx363@psgtech.ac.in', 'Tharun S', '25MX363', 'Male', 'G2', 'T14', '2003-04-12', 'Tectonic_', '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}')
+ON CONFLICT (email) DO UPDATE SET
+    name = EXCLUDED.name,
+    reg_no = EXCLUDED.reg_no,
+    gender = EXCLUDED.gender,
+    batch = EXCLUDED.batch,
+    team_id = EXCLUDED.team_id,
+    dob = EXCLUDED.dob,
+    leetcode_username = EXCLUDED.leetcode_username,
+    roles = EXCLUDED.roles;
+
+-- Link every 25MX whitelist row to the 25MX batch row.
+UPDATE whitelist
+SET batch_id = (SELECT id FROM batches WHERE batch_code = '25MX')
+WHERE reg_no LIKE '25MX%';
+
+-- Seed leetcode_stats stubs so the background fetcher picks these up.
+INSERT INTO public.leetcode_stats (username, total_solved, easy_solved, medium_solved, hard_solved, ranking)
+SELECT leetcode_username, 0, 0, 0, 0, 0
+FROM public.whitelist
+WHERE leetcode_username IS NOT NULL AND leetcode_username != ''
+ON CONFLICT (username) DO NOTHING;
+
+DO $$
+DECLARE
+    whitelist_count INT;
+BEGIN
+    SELECT COUNT(*) INTO whitelist_count FROM public.whitelist;
+    RAISE NOTICE '✅ 13_seed_students_25mx.sql complete — % whitelist entries.', whitelist_count;
+    RAISE NOTICE 'NEXT: run 14_seed_placement_23mx_24mx.sql';
+END $$;

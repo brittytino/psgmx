@@ -35,7 +35,7 @@ export default function FacultyFYPRepositoryDashboard() {
               id: p.id,
               title: p.title,
               domain: 'FYP Project',
-              rollId: p.users?.roll_no ?? 'Student',
+              rollId: p.users?.reg_no ?? 'Student',
               guide: p.guide_name ?? 'Faculty',
               members: p.team_members_count ?? 1,
               batch: 'Active Batch',

@@ -23,7 +23,7 @@ export async function GET(request: Request) {
         tags, 
         source,
         created_at,
-        users!author_id(full_name, avatar_url, role)
+        users!author_id(name, avatar_url, role_label)
       `)
       .eq('approval_status', 'approved')
       .or(`title.ilike.%${q}%,summary.ilike.%${q}%`)
@@ -44,9 +44,9 @@ export async function GET(request: Request) {
       source: item.source,
       createdAt: item.created_at,
       author: item.users ? {
-        name: item.users.full_name,
+        name: item.users.name,
         avatar: item.users.avatar_url,
-        role: item.users.role,
+        role: item.users.role_label,
       } : null
     }));
     

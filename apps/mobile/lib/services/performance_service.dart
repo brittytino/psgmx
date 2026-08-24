@@ -342,14 +342,14 @@ class PerformanceService {
     try {
       final response = await _supabase
           .from('readiness_scores')
-          .select('score, users!inner(full_name, batch_id)')
+          .select('score, users!inner(name, batch_id)')
           .eq('users.batch_id', batchId)
           .order('score', ascending: false)
           .limit(20);
 
       return (response as List).map((row) {
         return {
-          'full_name': row['users']?['full_name'],
+          'full_name': row['users']?['name'],
           'score': row['score'],
         };
       }).toList();
@@ -364,14 +364,14 @@ class PerformanceService {
     try {
       final response = await _supabase
           .from('leetcode_stats')
-          .select('batch_weighted_score, batch_percentile, users!inner(full_name, batch_id)')
+          .select('batch_weighted_score, batch_percentile, users!inner(name, batch_id)')
           .eq('users.batch_id', batchId)
           .order('batch_weighted_score', ascending: false)
           .limit(20);
 
       return (response as List).map((row) {
         return {
-          'full_name': row['users']?['full_name'],
+          'full_name': row['users']?['name'],
           'batch_weighted_score': row['batch_weighted_score'],
           'batch_percentile': row['batch_percentile'],
         };

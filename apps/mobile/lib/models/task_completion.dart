@@ -124,8 +124,8 @@ class UserTaskStatus {
   factory UserTaskStatus.fromMap(Map<String, dynamic> data) {
     return UserTaskStatus(
       odId: data['user_id'] ?? data['id'] ?? '',
-      name: data['full_name'] ?? data['name'] ?? '',
-      regNo: data['roll_no'] ?? data['reg_no'] ?? '',
+      name: data['name'] ?? '',
+      regNo: data['reg_no'] ?? '',
       teamId: data['team_id'],
       completed: data['completed'] ?? false,
       completedAt: data['completed_at'] != null

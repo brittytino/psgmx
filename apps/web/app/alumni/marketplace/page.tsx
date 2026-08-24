@@ -14,7 +14,7 @@ type Post = {
   is_active: boolean;
   created_at: string;
   posted_by: string;
-  poster?: { full_name: string; avatar_url: string | null };
+  poster?: { name: string; avatar_url: string | null };
 };
 
 const TYPE_CONFIG = {
@@ -67,7 +67,7 @@ export default function CollaborationMarketplace() {
 
       const { data: postsData } = await supabase
         .from("collaboration_posts")
-        .select("*, users!posted_by(full_name, avatar_url)")
+        .select("*, users!posted_by(name, avatar_url)")
         .eq("is_active", true)
         .order("created_at", { ascending: false })
         .limit(50);
@@ -99,7 +99,7 @@ export default function CollaborationMarketplace() {
         visibility:  formVisibility,
         is_active:   true,
       } as any)
-      .select("*, users!posted_by(full_name, avatar_url)")
+      .select("*, users!posted_by(name, avatar_url)")
       .single();
     
     const data: any = insertData;
@@ -243,7 +243,7 @@ export default function CollaborationMarketplace() {
                       <p className="text-sm text-gray-500 line-clamp-3">{post.description}</p>
                       {post.poster && (
                         <p className="text-xs text-gray-400 mt-3">
-                          Posted by <span className="font-medium text-gray-600">{post.poster.full_name}</span>
+                          Posted by <span className="font-medium text-gray-600">{post.poster.name}</span>
                         </p>
                       )}
                     </div>

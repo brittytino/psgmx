@@ -131,8 +131,8 @@ class TaskCompletionService {
       // Get all team members with their completion status
       final response = await _supabase.from('users').select('''
             id,
-            full_name,
-            roll_no,
+            name,
+            reg_no,
             team_id,
             task_completions(
               id,
@@ -142,7 +142,7 @@ class TaskCompletionService {
               verified_by, 
               verified_at
             )
-          ''').eq('team_id', teamId).order('roll_no');
+          ''').eq('team_id', teamId).order('reg_no');
 
       final results = <UserTaskStatus>[];
       for (var row in response as List) {
@@ -159,10 +159,10 @@ class TaskCompletionService {
           try {
             final verifierResponse = await _supabase
                 .from('users')
-                .select('full_name')
+                .select('name')
                 .eq('id', todayCompletion['verified_by'])
                 .single();
-            verifiedByFullName = verifierResponse['full_name'];
+            verifiedByFullName = verifierResponse['name'];
           } catch (e) {
             debugPrint('[TaskCompletionService] Error getting verifier name: $e');
           }
@@ -170,8 +170,8 @@ class TaskCompletionService {
 
         results.add(UserTaskStatus(
           odId: row['id'] ?? '',
-          name: row['full_name'] ?? '',
-          regNo: row['roll_no'] ?? '',
+          name: row['name'] ?? '',
+          regNo: row['reg_no'] ?? '',
           teamId: row['team_id'],
           completed: todayCompletion?['completed'] ?? false,
           completedAt: todayCompletion?['completed_at'] != null
@@ -204,7 +204,7 @@ class TaskCompletionService {
       final countResponse = await _supabase
           .from('users')
           .select('id')
-          .eq('role', 'student')
+          .eq('role_label', 'Student')
           .count(CountOption.exact);
       final totalCount = countResponse.count;
 
@@ -239,10 +239,10 @@ class TaskCompletionService {
       // 1. All users students
       final allStudentsResponse = await _supabase
           .from('users')
-          .select('id, roll_no, full_name, team_id, email')
-          .eq('role', 'student')
+          .select('id, reg_no, name, team_id, email')
+          .eq('role_label', 'Student')
           .order('team_id')
-          .order('roll_no');
+          .order('reg_no');
 
 
 
@@ -261,14 +261,14 @@ class TaskCompletionService {
       // 3. Build result including every student
       final results = <UserTaskStatus>[];
       for (var row in allStudentsResponse as List) {
-        final rollNo = row['roll_no'] as String? ?? '';
+        final rollNo = row['reg_no'] as String? ?? '';
         final userId = row['id'] as String? ?? '';
         final completion =
             userId.isNotEmpty ? completionsByUserId[userId] : null;
 
         results.add(UserTaskStatus(
           odId: userId,
-          name: row['full_name'] as String? ?? '',
+          name: row['name'] as String? ?? '',
           regNo: rollNo,
           teamId: row['team_id'],
           completed: completion?['completed'] == true,
