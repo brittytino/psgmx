@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_dimens.dart';
 import '../../core/utils/version_comparator.dart';
 import '../../providers/user_provider.dart';
-import '../../providers/theme_provider.dart';
+
 import '../../services/notification_service.dart';
 import '../../services/update_service.dart';
 import '../widgets/premium_card.dart';
@@ -136,22 +136,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                 const SizedBox(height: AppSpacing.lg),
 
-                // Appearance Section
-                _buildSectionHeader(context, 'Appearance', Icons.palette),
-                const SizedBox(height: AppSpacing.sm),
-                Consumer<ThemeProvider>(
-                  builder: (context, themeProvider, child) {
-                    return PremiumCard(
-                      child: Column(
-                        children: [
-                          _buildThemeSelector(context, themeProvider),
-                        ],
-                      ),
-                    );
-                  },
-                ),
 
-                const SizedBox(height: AppSpacing.lg),
 
                 // Support Section
                 _buildSectionHeader(context, 'Support', Icons.help),
@@ -300,131 +285,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildThemeSelector(BuildContext context, ThemeProvider themeProvider) {
-    final isDark = themeProvider.themeMode == ThemeMode.dark;
-    final isSystem = themeProvider.themeMode == ThemeMode.system;
-    
-    return Padding(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      child: Row(
-        children: [
-          // Sun Icon (Light Mode)
-          Container(
-            padding: const EdgeInsets.all(AppSpacing.sm),
-            decoration: BoxDecoration(
-              color: !isDark && !isSystem
-                  ? Theme.of(context).colorScheme.primaryContainer
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(AppRadius.md),
-            ),
-            child: Icon(
-              Icons.light_mode,
-              color: !isDark && !isSystem
-                  ? Theme.of(context).colorScheme.primary
-                  : Theme.of(context).colorScheme.onSurfaceVariant,
-              size: 16,
-            ),
-          ),
-          
-          const SizedBox(width: AppSpacing.md),
-          
-          // Toggle Switch
-          Expanded(
-            child: Center(
-              child: Container(
-                height: 40,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surfaceContainer,
-                  borderRadius: BorderRadius.circular(AppRadius.pill),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // System Option
-                    _buildThemeToggleOption(
-                      context,
-                      label: 'System',
-                      isSelected: isSystem,
-                      onTap: () => themeProvider.setThemeMode(ThemeMode.system),
-                    ),
-                    // Light Option
-                    _buildThemeToggleOption(
-                      context,
-                      label: 'Light',
-                      isSelected: !isDark && !isSystem,
-                      onTap: () => themeProvider.setThemeMode(ThemeMode.light),
-                    ),
-                    // Dark Option
-                    _buildThemeToggleOption(
-                      context,
-                      label: 'Dark',
-                      isSelected: isDark && !isSystem,
-                      onTap: () => themeProvider.setThemeMode(ThemeMode.dark),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          
-          const SizedBox(width: AppSpacing.md),
-          
-          // Moon Icon (Dark Mode)
-          Container(
-            padding: const EdgeInsets.all(AppSpacing.sm),
-            decoration: BoxDecoration(
-              color: isDark && !isSystem
-                  ? Theme.of(context).colorScheme.primaryContainer
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(AppRadius.md),
-            ),
-            child: Icon(
-              Icons.dark_mode,
-              color: isDark && !isSystem
-                  ? Theme.of(context).colorScheme.primary
-                  : Theme.of(context).colorScheme.onSurfaceVariant,
-              size: 16,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildThemeToggleOption(
-    BuildContext context, {
-    required String label,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeInOut,
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.xs,
-        ),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? Theme.of(context).colorScheme.primary
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(AppRadius.pill),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected
-                ? Theme.of(context).colorScheme.onPrimary
-                : Theme.of(context).colorScheme.onSurfaceVariant,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-            fontSize: 11,
-          ),
-        ),
-      ),
-    );
-  }
 
   Widget _buildActionTile(
     BuildContext context, {
