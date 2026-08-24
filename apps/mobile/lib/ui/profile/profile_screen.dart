@@ -72,21 +72,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             child: const Center(child: Icon(LucideIcons.settings, size: 18, color: Color(0xFF1E293B))),
                           ),
                         ),
-                        const SizedBox(width: 10),
-                        // Notifications icon
-                        GestureDetector(
-                          onTap: () => context.push('/notifications'),
-                          child: Container(
-                            width: 40, height: 40,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: const Color(0xFFE2E8F0)),
-                              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8)],
-                            ),
-                            child: const Center(child: Icon(LucideIcons.bell, size: 18, color: Color(0xFF1E293B))),
-                          ),
-                        ),
                       ],
                     ),
                   ],
@@ -96,37 +81,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 // ── Profile Card ──────────────────────────────────────
                 _ProfileCard(user: user),
                 const SizedBox(height: 24),
-
-                // ── MY PROGRESS ───────────────────────────────────────
-                _buildSectionHeader('MY PROGRESS'),
-                _buildCard([
-                  _NavTile(
-                    icon: LucideIcons.trophy,
-                    iconColor: const Color(0xFFD4AF37),
-                    label: 'Readiness Rankings',
-                    subtitle: 'See where you stand',
-                    onTap: () => context.push('/pulse-rankings'),
-                  ),
-                  _divider(),
-                  _NavTile(
-                    icon: LucideIcons.code2,
-                    iconColor: const Color(0xFFEF4444),
-                    label: 'LeetCode Arena',
-                    subtitle: 'Your coding progress & leaderboard',
-                    onTap: () => context.push('/leetcode-arena'),
-                  ),
-                  if (user?.leetcodeUsername != null && user!.leetcodeUsername!.isNotEmpty) ...[
-                    _divider(),
-                    _NavTile(
-                      icon: LucideIcons.externalLink,
-                      iconColor: const Color(0xFFEF4444),
-                      label: 'My LeetCode Profile',
-                      subtitle: user.leetcodeUsername!,
-                      onTap: () => _launchUrl('https://leetcode.com/${user.leetcodeUsername}'),
-                    ),
-                  ],
-                ]),
-                const SizedBox(height: 20),
 
                 // ── ACCOUNT ───────────────────────────────────────────
                 _buildSectionHeader('ACCOUNT'),

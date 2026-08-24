@@ -926,6 +926,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     return GestureDetector(
       onTap: () {
         context.read<NavigationProvider>().setIndex(2);
+        if (GoRouterState.of(context).uri.toString() != '/') {
+          context.go('/');
+        }
       },
       child: Container(
         padding: const EdgeInsets.all(16),
