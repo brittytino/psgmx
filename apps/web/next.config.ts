@@ -8,12 +8,6 @@ const nextConfig: NextConfig = {
     root: path.resolve(__dirname),
   },
 
-  // Tell Next.js to only import what's actually used from these large libraries
-  // instead of loading their entire module graph during compilation
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-
   async headers() {
     return [
       {

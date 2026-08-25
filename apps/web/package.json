@@ -7,7 +7,6 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:source": "node tests/verify-source.js",
     "test:api": "vitest run --reporter=verbose",
     "test:e2e": "playwright test",
     "test": "bash tests/run-all-tests.sh"

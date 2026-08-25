@@ -4,6 +4,7 @@
 *.pyc
 *.swp
 .DS_Store
+__pycache__/
 .atom/
 .buildlog/
 .history

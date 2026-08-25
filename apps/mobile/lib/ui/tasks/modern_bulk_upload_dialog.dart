@@ -207,7 +207,7 @@ class _ModernBulkUploadDialogState extends State<ModernBulkUploadDialog> {
       final templateBytes = uploadService.generateExcelTemplate();
 
       // Save template
-      final String? path = await FilePicker.saveFile(
+      final Uri? path = await FilePicker.saveFile(
         dialogTitle: 'Save Excel Template',
         fileName: 'PSGMX_Task_Upload_Template.xlsx',
         bytes: templateBytes,
@@ -625,12 +625,20 @@ class _SelectedFileCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  '${(file.size / 1024).toStringAsFixed(2)} KB',
-                  style: GoogleFonts.inter(
-                    fontSize: 9,
-                    color: colorScheme.onSurfaceVariant,
-                  ),
+                FutureBuilder<int>(
+                  future: file.length(),
+                  builder: (context, snapshot) {
+                    final sizeText = snapshot.hasData
+                        ? '${(snapshot.data! / 1024).toStringAsFixed(2)} KB'
+                        : '';
+                    return Text(
+                      sizeText,
+                      style: GoogleFonts.inter(
+                        fontSize: 9,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    );
+                  },
                 ),
               ],
             ),

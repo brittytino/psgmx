@@ -638,7 +638,6 @@ class _CaTimetableCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final headers = timetable.headers;
     final rows = timetable.rows;
 
     return Container(
