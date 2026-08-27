@@ -96,9 +96,9 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
           ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
         run: |
+          APP_API_URL="${APP_API_URL:-https://psgmx.tech}"
           test -n "$SUPABASE_URL" || { echo "Missing SUPABASE_URL secret"; exit 1; }
           test -n "$SUPABASE_ANON_KEY" || { echo "Missing SUPABASE_ANON_KEY secret"; exit 1; }
-          test -n "$APP_API_URL" || { echo "Missing APP_API_URL repository variable"; exit 1; }
           test -n "$ANDROID_KEYSTORE_BASE64" || { echo "Missing ANDROID_KEYSTORE_BASE64 secret"; exit 1; }
           test -n "$ANDROID_KEY_ALIAS" || { echo "Missing ANDROID_KEY_ALIAS secret"; exit 1; }
           test -n "$ANDROID_KEY_PASSWORD" || { echo "Missing ANDROID_KEY_PASSWORD secret"; exit 1; }
@@ -111,6 +111,7 @@ jobs:
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           APP_API_URL: ${{ vars.APP_API_URL }}
         run: |
+          APP_API_URL="${APP_API_URL:-https://psgmx.tech}"
           umask 077
           printf 'SUPABASE_URL=%s\nSUPABASE_ANON_KEY=%s\nAPP_API_URL=%s\n' \
             "$SUPABASE_URL" "$SUPABASE_ANON_KEY" "$APP_API_URL" > .env.flutter
