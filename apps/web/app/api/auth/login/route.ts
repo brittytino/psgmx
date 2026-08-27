@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import { dashboardPath } from '@/lib/staff-auth'
 
 export async function POST(request: NextRequest) {
   let body: { identifier?: string; password?: string }
@@ -61,19 +62,10 @@ export async function POST(request: NextRequest) {
     .single()
   const profile = rawProfile as { role_label: string; roles: Record<string, boolean> | null; onboarding_complete: boolean } | null
 
-  let redirectUrl = '/student'
-  if (profile) {
-    const roleLabel = (profile.role_label || '').toLowerCase()
-    const isPlacementRep = profile.roles?.isPlacementRep === true
-    if (!profile.onboarding_complete) {
-      redirectUrl = '/onboarding'
-    } else if (roleLabel === 'faculty' || roleLabel === 'hod') {
-      redirectUrl = '/faculty'
-    } else if (roleLabel === 'alumni') {
-      redirectUrl = '/alumni'
-    } else if (roleLabel === 'student' && isPlacementRep) {
-      redirectUrl = '/placement-rep'
-    }
+  let redirectUrl = dashboardPath(profile?.role_label, profile?.roles)
+  if (profile && !profile.onboarding_complete) {
+    const role = (profile.role_label || '').toLowerCase()
+    if (role !== 'faculty' && role !== 'hod') redirectUrl = '/onboarding'
   }
 
   return NextResponse.json({

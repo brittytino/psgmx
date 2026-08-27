@@ -4,8 +4,8 @@
 // ============================================================
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { supabaseAdmin } from '@/lib/supabase/admin'
 import { getSessionUser } from '@/lib/auth'
+import { dashboardPath } from '@/lib/staff-auth'
 
 export async function GET(req: NextRequest) {
   try {
@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
     const { data: profile, error } = await supabase
       .from('users')
       .select('id, email, name, reg_no, team_id, batch, batch_id, gender, roles, ' +
-        'dob, role_label, leetcode_username, ecampus_password_set, ' +
+        'dob, role_label, onboarding_complete, leetcode_username, ecampus_password_set, ' +
         'avatar_url, linkedin_url, github_url, current_company, current_role_title, ' +
         'skills, mentorship_open, arrears, ' +
         'birthday_notifications_enabled, leetcode_notifications_enabled, ' +
@@ -84,6 +84,9 @@ export async function PUT(req: NextRequest) {
     if (current_company !== undefined) updateData.current_company = current_company
     if (current_role_title !== undefined) updateData.current_role_title = current_role_title
     if (mentorship_open !== undefined) updateData.mentorship_open = mentorship_open
+    if (body.completeOnboarding === true || fullName !== undefined || linkedin !== undefined) {
+      updateData.onboarding_complete = true
+    }
 
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json({ error: 'No fields to update' }, { status: 400 })
@@ -97,7 +100,11 @@ export async function PUT(req: NextRequest) {
 
     if (error) throw error
 
-    return NextResponse.json({ success: true, message: 'Profile updated' })
+    return NextResponse.json({
+      success: true,
+      message: 'Profile updated',
+      redirect: dashboardPath(user.roleLabel, user.roles),
+    })
   } catch {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }

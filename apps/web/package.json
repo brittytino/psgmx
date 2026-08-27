@@ -11,7 +11,8 @@
     "test:coverage": "vitest run --coverage",
     "test:api": "bash tests/run-all-tests.sh",
     "test:e2e": "playwright test",
-    "test": "npm run test:unit"
+    "test": "npm run test:unit",
+    "seed:faculty": "node scripts/seed-faculty-auth.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",

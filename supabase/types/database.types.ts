@@ -146,9 +146,10 @@ export interface Database {
           dob: string | null
           leetcode_username: string | null
           roles: Record<string, unknown> | null
+          role_label: string
           created_at: string | null
         }
-        Insert: Omit<Database['public']['Tables']['whitelist']['Row'], 'name' | 'reg_no' | 'personal_email' | 'college_email' | 'batch' | 'batch_id' | 'team_id' | 'team_uuid' | 'gender' | 'dob' | 'leetcode_username' | 'roles' | 'created_at'> & {
+        Insert: Omit<Database['public']['Tables']['whitelist']['Row'], 'name' | 'reg_no' | 'personal_email' | 'college_email' | 'batch' | 'batch_id' | 'team_id' | 'team_uuid' | 'gender' | 'dob' | 'leetcode_username' | 'roles' | 'role_label' | 'created_at'> & {
           name?: string | null
           reg_no?: string | null
           personal_email?: string | null
@@ -161,6 +162,7 @@ export interface Database {
           dob?: string | null
           leetcode_username?: string | null
           roles?: Record<string, unknown> | null
+          role_label?: string
           created_at?: string | null
         }
         Update: Partial<Database['public']['Tables']['whitelist']['Insert']>

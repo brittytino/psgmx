@@ -6,6 +6,7 @@
 // ============================================================
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/auth'
+import { dashboardPath } from '@/lib/staff-auth'
 import { createClient } from '@/lib/supabase/server'
 
 export async function POST(req: NextRequest) {
@@ -32,8 +33,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to save profile' }, { status: 500 })
     }
 
-    const roleLabel = session.roleLabel.toLowerCase()
-    const redirect = roleLabel === 'alumni' ? '/alumni' : `/${roleLabel}`
+    const redirect = dashboardPath(session.roleLabel, session.roles)
 
     return NextResponse.json({ success: true, redirect })
   } catch (error) {

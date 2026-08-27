@@ -2,6 +2,8 @@ import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { normalizeEmail } from '@/lib/auth-input'
 import { checkRateLimit } from '@/lib/limiter'
+import { isStaffEmail, isStaticOtpEnabled } from '@/lib/staff-auth'
+import { provisionStaffByEmail } from '@/lib/staff-provision'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { logEvent, requestId } from '@/lib/observability'
 
@@ -34,12 +36,17 @@ export async function POST(request: NextRequest) {
   }
 
   const since = new Date(Date.now() - 10 * 60 * 1000).toISOString()
-  const [{ data: alias }, { count }] = await Promise.all([
+  const [aliasResult, whitelistRows, rateResult] = await Promise.all([
     supabaseAdmin
       .from('whitelist_email_aliases')
       .select('email')
       .eq('email', email)
       .maybeSingle(),
+    Promise.all([
+      supabaseAdmin.from('whitelist').select('email').eq('email', email).maybeSingle(),
+      supabaseAdmin.from('whitelist').select('email').eq('personal_email', email).maybeSingle(),
+      supabaseAdmin.from('whitelist').select('email').eq('college_email', email).maybeSingle(),
+    ]),
     supabaseAdmin
       .from('otp_rate_log')
       .select('id', { count: 'exact', head: true })
@@ -47,10 +54,32 @@ export async function POST(request: NextRequest) {
       .gte('sent_at', since),
   ])
 
-  // Keep the response intentionally indistinguishable for unknown addresses.
-  if (!alias) return NextResponse.json({ success: true, message: GENERIC_MESSAGE })
-  if ((count ?? 0) >= 3) {
+  const whitelistHit = whitelistRows.find((row) => row.data)?.data
+  const rostered = Boolean(aliasResult.data || whitelistHit) || isStaffEmail(email)
+  if (!rostered) return NextResponse.json({ success: true, message: GENERIC_MESSAGE })
+  if ((rateResult.count ?? 0) >= 3) {
     return NextResponse.json({ error: 'Too many codes requested. Try again in ten minutes.' }, { status: 429 })
+  }
+
+  if (isStaffEmail(email)) {
+    try {
+      await provisionStaffByEmail(email)
+    } catch (error) {
+      logEvent('error', 'otp_staff_provision_failed', {
+        trace_id: traceId,
+        email_domain: email.split('@')[1],
+        message: error instanceof Error ? error.message : 'unknown',
+      })
+      if (isStaticOtpEnabled()) {
+        return NextResponse.json({ error: 'The code could not be sent. Please try again.' }, { status: 503 })
+      }
+    }
+  }
+
+  if (isStaffEmail(email) && isStaticOtpEnabled()) {
+    await supabaseAdmin.from('otp_rate_log').insert({ email })
+    logEvent('info', 'otp_static_ready', { trace_id: traceId, email_domain: email.split('@')[1] })
+    return NextResponse.json({ success: true, message: GENERIC_MESSAGE }, { headers: { 'x-request-id': traceId } })
   }
 
   const auth = createClient(

@@ -22,9 +22,10 @@ export default function OnboardingPage() {
       .then(res => res.json())
       .then(data => {
         if (data.success && data.profile) {
-          // If already completed, redirect to home (which will route properly)
-          if (data.profile.linkedin && data.profile.skills && data.profile.skills.length > 0) {
-            router.push('/');
+          if (data.profile.onboarding_complete) {
+            const role = (data.profile.role_label || '').toLowerCase()
+            router.push(role === 'faculty' || role === 'hod' ? '/faculty' : role === 'alumni' ? '/alumni' : '/student')
+            return
           }
           setForm({
             fullName: data.profile.fullName || '',
@@ -43,12 +44,13 @@ export default function OnboardingPage() {
     
     try {
       const skillsArray = form.skills.split(',').map(s => s.trim()).filter(s => s);
-      await fetch('/api/user/profile', {
+      const response = await fetch('/api/user/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, skills: skillsArray })
+        body: JSON.stringify({ ...form, skills: skillsArray, completeOnboarding: true })
       });
-      router.push('/');
+      const result = await response.json()
+      router.push(result.redirect || '/student');
     } catch (e) {
       console.error(e);
     } finally {

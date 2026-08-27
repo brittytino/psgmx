@@ -105,8 +105,8 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
     async function load() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const [{ data: profile }, { count }, { data: notifs }] = await Promise.all([
-        supabase.from('users').select('name, email, role_label').eq('id', user.id).single(),
+      const [{ data: profileRows }, { count }, { data: notifs }] = await Promise.all([
+        supabase.rpc('get_my_profile'),
         supabase.from('knowledge_brain_articles').select('id', { count: 'exact', head: true }).eq('approval_status', 'pending'),
         supabase
           .from('notifications')
@@ -116,6 +116,7 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
           .limit(5),
       ]);
       if (cancelled) return;
+      const profile = Array.isArray(profileRows) ? profileRows[0] : profileRows
       if (profile) setMe({ name: profile.name, email: profile.email, isHod: (profile.role_label || '').toLowerCase() === 'hod' });
       setPendingArticles(count ?? 0);
       setNotifications((notifs || []).map((n) => ({ id: n.id, title: n.title, message: n.message, generatedAt: n.generated_at })));

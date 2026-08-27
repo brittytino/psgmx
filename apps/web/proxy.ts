@@ -147,7 +147,9 @@ export async function proxy(request: NextRequest) {
     }
 
     if (user && !onboardingComplete && pathname !== '/onboarding' && !pathname.startsWith('/onboarding/')) {
-      return NextResponse.redirect(new URL('/onboarding', request.url))
+      if (role !== 'faculty' && role !== 'hod') {
+        return NextResponse.redirect(new URL('/onboarding', request.url))
+      }
     }
 
     const allowed = requiredRoles.includes(role) || (requiredRoles.includes('placement_rep') && role === 'student' && isPlacementRep)
