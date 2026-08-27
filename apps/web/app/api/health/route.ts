@@ -24,6 +24,22 @@ export async function GET() {
     checks.supabase = { status: 'error', latencyMs: Date.now() - supabaseStart, error: String(err) }
   }
 
+  const configStart = Date.now()
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('app_config')
+      .select('rollout_stage')
+      .limit(1)
+      .maybeSingle()
+    checks.rolloutConfig = {
+      status: error || !data?.rollout_stage ? 'error' : 'ok',
+      latencyMs: Date.now() - configStart,
+      error: error?.message,
+    }
+  } catch (err) {
+    checks.rolloutConfig = { status: 'error', latencyMs: Date.now() - configStart, error: String(err) }
+  }
+
   const allOk = Object.values(checks).every(c => c.status === 'ok')
 
   return NextResponse.json({

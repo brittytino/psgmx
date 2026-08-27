@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../core/utils/responsive_helper.dart';
-import 'home/home_screen.dart';
+import 'today/today_screen.dart';
 import 'tasks/tasks_screen.dart';
 import 'placement_log/placement_log_screen.dart';
 import 'bunker/bunker_screen.dart';
@@ -19,7 +19,6 @@ class RootLayout extends StatefulWidget {
 }
 
 class _RootLayoutState extends State<RootLayout> {
-
   @override
   Widget build(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
@@ -30,44 +29,44 @@ class _RootLayoutState extends State<RootLayout> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-
-
     // Dynamic Screen List based on ACTIVE Role (respects simulation)
-    final screens = [
-      const HomeScreen(),
+    final showPlacementLog = user.isActiveSenior;
+    final screens = <Widget>[
+      const TodayScreen(),
       const TasksScreen(),
-      const PlacementLogScreen(),
+      if (showPlacementLog) const PlacementLogScreen(),
       const BunkerScreen(),
       const ProfileScreen(),
     ];
 
     // Dynamic Navigation Items based on ACTIVE Role (respects simulation)
-    final navItems = [
+    final navItems = <NavigationDestination>[
       NavigationDestination(
-        icon: const Icon(LucideIcons.home), 
-        selectedIcon: Icon(LucideIcons.home, color: Theme.of(context).colorScheme.primary), 
-        label: 'Home'
-      ),
+          icon: const Icon(LucideIcons.home),
+          selectedIcon: Icon(LucideIcons.home,
+              color: Theme.of(context).colorScheme.primary),
+          label: 'Today'),
+      if (showPlacementLog)
+        NavigationDestination(
+            icon: const Icon(LucideIcons.calendarCheck),
+            selectedIcon: Icon(LucideIcons.calendarCheck,
+                color: Theme.of(context).colorScheme.primary),
+            label: 'Quests'),
       NavigationDestination(
-        icon: const Icon(LucideIcons.calendarCheck), 
-        selectedIcon: Icon(LucideIcons.calendarCheck, color: Theme.of(context).colorScheme.primary), 
-        label: 'Quests'
-      ),
+          icon: const Icon(LucideIcons.bookOpen),
+          selectedIcon: Icon(LucideIcons.bookOpen,
+              color: Theme.of(context).colorScheme.primary),
+          label: 'Log'),
       NavigationDestination(
-        icon: const Icon(LucideIcons.bookOpen), 
-        selectedIcon: Icon(LucideIcons.bookOpen, color: Theme.of(context).colorScheme.primary), 
-        label: 'Log'
-      ),
+          icon: const Icon(LucideIcons.graduationCap),
+          selectedIcon: Icon(LucideIcons.graduationCap,
+              color: Theme.of(context).colorScheme.primary),
+          label: 'Campus'),
       NavigationDestination(
-        icon: const Icon(LucideIcons.graduationCap),
-        selectedIcon: Icon(LucideIcons.graduationCap, color: Theme.of(context).colorScheme.primary),
-        label: 'Campus'
-      ),
-      NavigationDestination(
-        icon: const Icon(LucideIcons.user), 
-        selectedIcon: Icon(LucideIcons.user, color: Theme.of(context).colorScheme.primary), 
-        label: 'You'
-      ),
+          icon: const Icon(LucideIcons.user),
+          selectedIcon: Icon(LucideIcons.user,
+              color: Theme.of(context).colorScheme.primary),
+          label: 'You'),
     ];
 
     // Safety check for index
@@ -81,8 +80,8 @@ class _RootLayoutState extends State<RootLayout> {
     }
 
     // Use NavigationRail for desktop/tablet web, BottomNavigationBar for mobile
-    final useRail = ResponsiveHelper.isDesktop(context) || 
-                     (ResponsiveHelper.isWeb && ResponsiveHelper.isTablet(context));
+    final useRail = ResponsiveHelper.isDesktop(context) ||
+        (ResponsiveHelper.isWeb && ResponsiveHelper.isTablet(context));
 
     if (useRail) {
       return Scaffold(
@@ -92,11 +91,13 @@ class _RootLayoutState extends State<RootLayout> {
               selectedIndex: currentIndex,
               onDestinationSelected: (idx) => navProvider.setIndex(idx),
               labelType: NavigationRailLabelType.all,
-              destinations: navItems.map((item) => NavigationRailDestination(
-                icon: item.icon,
-                selectedIcon: item.selectedIcon,
-                label: Text(item.label),
-              )).toList(),
+              destinations: navItems
+                  .map((item) => NavigationRailDestination(
+                        icon: item.icon,
+                        selectedIcon: item.selectedIcon,
+                        label: Text(item.label),
+                      ))
+                  .toList(),
             ),
             const VerticalDivider(thickness: 1, width: 1),
             Expanded(child: screens[currentIndex]),
@@ -108,7 +109,8 @@ class _RootLayoutState extends State<RootLayout> {
     // Mobile layout with bottom navigation
     return Scaffold(
       body: screens[currentIndex],
-      bottomNavigationBar: const SharedBottomNavigationBar(),
+      bottomNavigationBar:
+          SharedBottomNavigationBar(showPlacementLog: showPlacementLog),
     );
   }
 }

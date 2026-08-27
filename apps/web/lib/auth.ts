@@ -53,11 +53,8 @@ export async function getSessionUser(): Promise<SessionUser | null> {
 
   if (authErr || !user) return null
 
-  const { data: profile, error: profileErr } = await supabase
-    .from('users')
-    .select('id, email, role_label, roles, batch_id, name, reg_no')
-    .eq('id', user.id)
-    .single()
+  const { data: profileRows, error: profileErr } = await supabase.rpc('get_my_profile')
+  const profile = Array.isArray(profileRows) ? profileRows[0] : profileRows
 
   if (profileErr || !profile) return null
 
@@ -71,7 +68,25 @@ export async function getSessionUser(): Promise<SessionUser | null> {
  * or from cookies (fallback).
  */
 export async function getUserFromRequest(req: NextRequest): Promise<SessionUser | null> {
-  void req // session comes from cookies via createClient(); kept for call-site compatibility
+  const bearer = req.headers.get('authorization')?.match(/^Bearer\s+(.+)$/i)?.[1]
+  if (bearer) {
+    const { data: { user }, error } = await supabaseAdmin.auth.getUser(bearer)
+    if (error || !user) return null
+    const { data: identity } = await supabaseAdmin
+      .from('user_auth_identities')
+      .select('user_id')
+      .eq('auth_user_id', user.id)
+      .maybeSingle()
+    const logicalId = identity?.user_id ?? user.id
+    const { data: profile } = await supabaseAdmin
+      .from('users')
+      .select('id, email, role_label, roles, batch_id, name, reg_no')
+      .eq('id', logicalId)
+      .maybeSingle()
+    if (!profile) return null
+    return { ...profile, roleLabel: profile.role_label } as unknown as SessionUser
+  }
+
   const supabase = await createClient()
 
   const {
@@ -80,11 +95,8 @@ export async function getUserFromRequest(req: NextRequest): Promise<SessionUser 
 
   if (!user) return null
 
-  const { data: profile } = await supabase
-    .from('users')
-    .select('id, email, role_label, roles, batch_id, name, reg_no')
-    .eq('id', user.id)
-    .single()
+  const { data: profileRows } = await supabase.rpc('get_my_profile')
+  const profile = Array.isArray(profileRows) ? profileRows[0] : profileRows
 
   if (!profile) return null
 

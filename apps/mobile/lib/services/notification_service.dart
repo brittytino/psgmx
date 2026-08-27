@@ -7,6 +7,7 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/notification.dart';
+import '../core/logical_identity.dart';
 
 /// Real-time Notification Service with Supabase Integration
 /// Features:
@@ -36,9 +37,10 @@ class NotificationService extends ChangeNotifier {
   Stream<String?> get onNotificationTap => _selectNotificationStream.stream;
 
   // Public getter for cached notifications
-  List<AppNotification> get notifications => List.unmodifiable(_cachedNotifications);
+  List<AppNotification> get notifications =>
+      List.unmodifiable(_cachedNotifications);
   bool get isLoading => _isLoading;
-  
+
   // Stream for new notifications (for in-app toasts)
   final _streamController = StreamController<AppNotification>.broadcast();
   Stream<AppNotification> get notificationStream => _streamController.stream;
@@ -60,7 +62,8 @@ class NotificationService extends ChangeNotifier {
 
     // Skip native notification setup on web
     if (kIsWeb) {
-      debugPrint('[Notification] Running on Web - skipping native notifications');
+      debugPrint(
+          '[Notification] Running on Web - skipping native notifications');
       _isInitialized = true;
       _setupRealtimeSubscription();
       return;
@@ -107,8 +110,7 @@ class NotificationService extends ChangeNotifier {
       enableVibration: true,
     );
 
-    const AndroidNotificationChannel caExamChannel =
-        AndroidNotificationChannel(
+    const AndroidNotificationChannel caExamChannel = AndroidNotificationChannel(
       'psgmx_ca_exam',
       'CA Exam Reminders',
       description: '"All the best" notifications on your CA exam days',
@@ -183,12 +185,14 @@ class NotificationService extends ChangeNotifier {
     try {
       final user = _supabase.auth.currentUser;
       if (user == null) return;
+      final profileId = await LogicalIdentity.currentUserId(_supabase);
+      if (profileId == null) return;
 
       final notification = AppNotification.fromMap(data);
 
       // Audence check: Skip if not for this user
       final audience = notification.targetAudience;
-      if (audience != 'all' && audience != user.id) {
+      if (audience != 'all' && audience != profileId) {
         // In a more complex system, we'd check roles (e.g., audience == 'coordinators')
         // For now, we handle 'all' and specific user IDs
         return;
@@ -201,16 +205,16 @@ class NotificationService extends ChangeNotifier {
 
       // Add to cache
       _cachedNotifications.insert(0, notification);
-      
+
       // Notify listeners for UI updates
       notifyListeners();
-      
+
       // Add to stream for toasts
       _streamController.add(notification);
 
       // Avoid showing push notification if the sender is current user
       // (Sender already saw/triggered the local notification)
-      if (notification.createdBy == user.id) {
+      if (notification.createdBy == profileId) {
         return;
       }
 
@@ -228,7 +232,7 @@ class NotificationService extends ChangeNotifier {
       debugPrint('[Notification] Web: In-app notification displayed instead');
       return;
     }
-    
+
     final androidDetails = AndroidNotificationDetails(
       'psgmx_channel_main',
       'PSGMX Notifications',
@@ -294,7 +298,8 @@ class NotificationService extends ChangeNotifier {
       for (var data in response as List) {
         final reads = data['notification_reads'] as List?;
         final hasRead = reads?.isNotEmpty == true;
-        final isDismissed = reads?.any((r) => r['dismissed_at'] != null) == true;
+        final isDismissed =
+            reads?.any((r) => r['dismissed_at'] != null) == true;
         if (isDismissed) continue;
 
         notifications.add(AppNotification(
@@ -326,11 +331,12 @@ class NotificationService extends ChangeNotifier {
       final uniqueNotifications = <AppNotification>[];
 
       for (var n in notifications) {
-        if (n.title.contains('LeetCode POTD') || 
+        if (n.title.contains('LeetCode POTD') ||
             n.notificationType == NotificationType.leetcode) {
           // Use local date for daily comparison
           final localDate = n.generatedAt.toLocal();
-          final dateKey = "${localDate.year}-${localDate.month}-${localDate.day}";
+          final dateKey =
+              "${localDate.year}-${localDate.month}-${localDate.day}";
           if (!seenLeetCodeDates.contains(dateKey)) {
             seenLeetCodeDates.add(dateKey);
             uniqueNotifications.add(n);
@@ -348,14 +354,17 @@ class NotificationService extends ChangeNotifier {
         // This usually means they arrived via realtime during the fetch delay
         final newestFetched = uniqueNotifications.first.generatedAt;
         final newRealtimeItems = _cachedNotifications.where((n) {
-          return !fetchedIds.contains(n.id) && n.generatedAt.isAfter(newestFetched);
+          return !fetchedIds.contains(n.id) &&
+              n.generatedAt.isAfter(newestFetched);
         }).toList();
 
         if (newRealtimeItems.isNotEmpty) {
-           debugPrint('[Notification] Merging ${newRealtimeItems.length} active realtime items into fetch result');
-           uniqueNotifications.insertAll(0, newRealtimeItems);
+          debugPrint(
+              '[Notification] Merging ${newRealtimeItems.length} active realtime items into fetch result');
+          uniqueNotifications.insertAll(0, newRealtimeItems);
         }
-      } else if (_cachedNotifications.isNotEmpty && uniqueNotifications.isEmpty) {
+      } else if (_cachedNotifications.isNotEmpty &&
+          uniqueNotifications.isEmpty) {
         // If fetch returned empty but cache has items (maybe just arrived), keep them
         uniqueNotifications.addAll(_cachedNotifications);
       }
@@ -375,12 +384,12 @@ class NotificationService extends ChangeNotifier {
   /// Mark notification as read in database
   Future<void> markAsRead(String notificationId) async {
     try {
-      final user = _supabase.auth.currentUser;
-      if (user == null) return;
+      final profileId = await LogicalIdentity.currentUserId(_supabase);
+      if (profileId == null) return;
 
       await _supabase.from('notification_reads').upsert({
         'notification_id': notificationId,
-        'user_id': user.id,
+        'user_id': profileId,
         'read_at': DateTime.now().toIso8601String(),
       });
 
@@ -403,30 +412,33 @@ class NotificationService extends ChangeNotifier {
   // Fixed: Marks all UNREAD notifications as read in the database, regardless of whether they are cached or not
   Future<void> markAllAsRead() async {
     try {
-      final user = _supabase.auth.currentUser;
-      if (user == null) return;
-      
+      final profileId = await LogicalIdentity.currentUserId(_supabase);
+      if (profileId == null) return;
+
       final nowStr = DateTime.now().toIso8601String();
 
       // OPTIMIZATION: Instead of finding unread IDs locally, we should ideally call a stored procedure or update
       // But adhering to the current pattern, we try to mark what we know about or fetch unread first.
-      
-      // Strategy: 
+
+      // Strategy:
       // 1. Get ALL unread notification IDs for this user from DB (not just cache)
       // Since 'notification_reads' is a join table, we need notifications that DO NOT have a read entry.
       // Supabase-js has easier filtering for "not in", but here we might have to rely on the cached list for UI responsiveness
       // and maybe a backend trigger for true clean up.
       // For now, let's stick to marking the cached ones to avoid heavy queries, but let's do it robustly.
 
-      final unreadNotifications = _cachedNotifications.where((n) => n.isRead != true).toList();
-      
+      final unreadNotifications =
+          _cachedNotifications.where((n) => n.isRead != true).toList();
+
       if (unreadNotifications.isEmpty) return;
 
-      final List<Map<String, dynamic>> upsertData = unreadNotifications.map((n) => {
-        'notification_id': n.id,
-        'user_id': user.id,
-        'read_at': nowStr,
-      }).toList();
+      final List<Map<String, dynamic>> upsertData = unreadNotifications
+          .map((n) => {
+                'notification_id': n.id,
+                'user_id': profileId,
+                'read_at': nowStr,
+              })
+          .toList();
 
       // Batch upsert
       await _supabase.from('notification_reads').upsert(upsertData);
@@ -449,12 +461,12 @@ class NotificationService extends ChangeNotifier {
   /// Delete/dismiss notification
   Future<void> deleteNotification(String notificationId) async {
     try {
-      final user = _supabase.auth.currentUser;
-      if (user == null) return;
+      final profileId = await LogicalIdentity.currentUserId(_supabase);
+      if (profileId == null) return;
 
       await _supabase.from('notification_reads').upsert({
         'notification_id': notificationId,
-        'user_id': user.id,
+        'user_id': profileId,
         'dismissed_at': DateTime.now().toIso8601String(),
       });
 
@@ -475,6 +487,8 @@ class NotificationService extends ChangeNotifier {
     try {
       final user = _supabase.auth.currentUser;
       if (user == null) return false;
+      final profileId = await LogicalIdentity.currentUserId(_supabase);
+      if (profileId == null) return false;
 
       // Insert into database (triggers real-time for other users)
       await _supabase.from('notifications').insert({
@@ -483,14 +497,14 @@ class NotificationService extends ChangeNotifier {
         'notification_type': 'announcement',
         'tone': tone?.name ?? 'friendly',
         'target_audience': targetAudience,
-        'created_by': user.id,
+        'created_by': profileId,
         'is_active': true,
         'generated_at': DateTime.now().toIso8601String(),
       });
 
       // Show local push (without persisting to DB again or adding to cache duplicates)
       if (!kIsWeb) {
-         final androidDetails = AndroidNotificationDetails(
+        final androidDetails = AndroidNotificationDetails(
           'psgmx_channel_main',
           'PSGMX Notifications',
           channelDescription: 'Important updates and announcements from PSGMX',
@@ -500,12 +514,13 @@ class NotificationService extends ChangeNotifier {
           styleInformation: BigTextStyleInformation(message),
         );
         const iosDetails = DarwinNotificationDetails();
-        
+
         await _notifications.show(
           id: DateTime.now().millisecondsSinceEpoch % 100000,
           title: '📢 $title',
           body: message,
-          notificationDetails: NotificationDetails(android: androidDetails, iOS: iosDetails),
+          notificationDetails:
+              NotificationDetails(android: androidDetails, iOS: iosDetails),
         );
       }
 
@@ -575,7 +590,8 @@ class NotificationService extends ChangeNotifier {
           ),
           payload: 'birthday:$birthdayPersonId',
         );
-        debugPrint('[Notification] 🎂 Local birthday push fired for $birthdayPersonName (id=$notifId)');
+        debugPrint(
+            '[Notification] 🎂 Local birthday push fired for $birthdayPersonName (id=$notifId)');
       }
 
       return true;
@@ -585,14 +601,15 @@ class NotificationService extends ChangeNotifier {
     }
   }
 
-
   /// Check and send birthday notifications for today
   Future<void> checkAndSendBirthdayNotifications() async {
     try {
       final now = DateTime.now();
-      final todayStr = '${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-      
-      debugPrint('[Notification] 🎂 Checking birthdays for today: $todayStr (${now.year}-${now.month}-${now.day})');
+      final todayStr =
+          '${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+
+      debugPrint(
+          '[Notification] 🎂 Checking birthdays for today: $todayStr (${now.year}-${now.month}-${now.day})');
 
       // Check BOTH whitelist AND users tables for birthdays
       final whitelistResponse = await _supabase
@@ -607,7 +624,7 @@ class NotificationService extends ChangeNotifier {
 
       // Combine both lists (prefer users table data if exists)
       final Map<String, Map<String, dynamic>> allUsersMap = {};
-      
+
       // Add whitelist entries first
       for (var user in whitelistResponse as List) {
         final email = user['email'] as String?;
@@ -615,7 +632,7 @@ class NotificationService extends ChangeNotifier {
           allUsersMap[email] = user;
         }
       }
-      
+
       // Override with users table data (more up-to-date)
       for (var user in usersResponse as List) {
         final email = user['email'] as String?;
@@ -624,18 +641,20 @@ class NotificationService extends ChangeNotifier {
         }
       }
 
-      debugPrint('[Notification] Found ${allUsersMap.length} users to check for birthdays');
+      debugPrint(
+          '[Notification] Found ${allUsersMap.length} users to check for birthdays');
 
       int birthdaysFound = 0;
       for (var user in allUsersMap.values) {
         final dobStr = user['dob'] as String?;
         final dob = DateTime.tryParse(dobStr ?? '');
-        
+
         // Skip invalid dobs
         if (dob == null) continue;
 
-        debugPrint('[Notification] Checking user: ${user['name']} - DOB: $dobStr');
-        
+        debugPrint(
+            '[Notification] Checking user: ${user['name']} - DOB: $dobStr');
+
         if (dob.month == now.month && dob.day == now.day) {
           birthdaysFound++;
           final name = user['name'] as String? ?? 'Student';
@@ -643,14 +662,17 @@ class NotificationService extends ChangeNotifier {
 
           // Check if birthday notification already sent today for this SPECIFIC user
           // Using a more precise check than just title matching
-          final startOfDay = DateTime(now.year, now.month, now.day).toIso8601String();
-          
+          final startOfDay =
+              DateTime(now.year, now.month, now.day).toIso8601String();
+
           final existingNotif = await _supabase
               .from('notifications')
               .select('id')
               .eq('notification_type', 'announcement')
-              .eq('target_audience', 'all') // Birthdays are usually public announcements
-              .ilike('message', '%$name%') // Ensure message contains full name to differentiate John vs Johnny
+              .eq('target_audience',
+                  'all') // Birthdays are usually public announcements
+              .ilike('message',
+                  '%$name%') // Ensure message contains full name to differentiate John vs Johnny
               .gte('generated_at', startOfDay)
               .maybeSingle();
 
@@ -661,11 +683,12 @@ class NotificationService extends ChangeNotifier {
             );
             debugPrint('[Notification] ✅ Birthday notification sent for $name');
           } else {
-            debugPrint('[Notification] ⏭️  Birthday notification already sent for $name today');
+            debugPrint(
+                '[Notification] ⏭️  Birthday notification already sent for $name today');
           }
         }
       }
-      
+
       if (birthdaysFound == 0) {
         debugPrint('[Notification] No birthdays found for today');
       } else {
@@ -708,7 +731,7 @@ class NotificationService extends ChangeNotifier {
       debugPrint('[Notification] Web: Scheduled notifications not available');
       return;
     }
-    
+
     await _notifications.cancel(id: 300 + teamId.hashCode % 100);
   }
 
@@ -763,8 +786,7 @@ class NotificationService extends ChangeNotifier {
     raw = raw.trim();
 
     // ── Format: 06/MAR/26, 06-MAR-26, 06/MAR/2026 ──────────────────────────
-    final alphaMonthRe =
-        RegExp(r'(\d{1,2})[/\-]([A-Za-z]{3})[/\-](\d{2,4})');
+    final alphaMonthRe = RegExp(r'(\d{1,2})[/\-]([A-Za-z]{3})[/\-](\d{2,4})');
     final m1 = alphaMonthRe.firstMatch(raw);
     if (m1 != null) {
       final day = int.tryParse(m1.group(1)!) ?? 0;
@@ -772,16 +794,25 @@ class NotificationService extends ChangeNotifier {
       final yearRaw = int.tryParse(m1.group(3)!) ?? 0;
       final year = yearRaw < 100 ? 2000 + yearRaw : yearRaw;
       const monthMap = {
-        'JAN': 1, 'FEB': 2, 'MAR': 3, 'APR': 4, 'MAY': 5,  'JUN': 6,
-        'JUL': 7, 'AUG': 8, 'SEP': 9, 'OCT': 10, 'NOV': 11, 'DEC': 12,
+        'JAN': 1,
+        'FEB': 2,
+        'MAR': 3,
+        'APR': 4,
+        'MAY': 5,
+        'JUN': 6,
+        'JUL': 7,
+        'AUG': 8,
+        'SEP': 9,
+        'OCT': 10,
+        'NOV': 11,
+        'DEC': 12,
       };
       final month = monthMap[monStr] ?? 0;
       if (day > 0 && month > 0 && year > 0) return DateTime(year, month, day);
     }
 
     // ── Format: 06/03/2026 or 06-03-2026 ────────────────────────────────────
-    final numericRe =
-        RegExp(r'(\d{1,2})[/\-](\d{1,2})[/\-](\d{2,4})');
+    final numericRe = RegExp(r'(\d{1,2})[/\-](\d{1,2})[/\-](\d{2,4})');
     final m2 = numericRe.firstMatch(raw);
     if (m2 != null) {
       final day = int.tryParse(m2.group(1)!) ?? 0;
@@ -824,7 +855,12 @@ class NotificationService extends ChangeNotifier {
 
     final now = tz.TZDateTime.now(tz.local);
     final examDay = tz.TZDateTime(
-      tz.local, examDate.year, examDate.month, examDate.day, 7, 30,
+      tz.local,
+      examDate.year,
+      examDate.month,
+      examDate.day,
+      7,
+      30,
     );
 
     const notifDetails = NotificationDetails(
@@ -869,8 +905,14 @@ class NotificationService extends ChangeNotifier {
         examDate.month == now.month &&
         examDate.day == now.day) {
       // Exam is today and it's already past 7:30 AM — fire immediately.
-      await _notifications.show(id: id, title: title, body: body, notificationDetails: notifDetails, payload: payload);
-      debugPrint('[CaExam] Fired immediate notification #$id for $courseName (exam is today)');
+      await _notifications.show(
+          id: id,
+          title: title,
+          body: body,
+          notificationDetails: notifDetails,
+          payload: payload);
+      debugPrint(
+          '[CaExam] Fired immediate notification #$id for $courseName (exam is today)');
     }
     // Past exams → do nothing.
   }
@@ -907,10 +949,17 @@ class NotificationService extends ChangeNotifier {
       if (examDate.isBefore(todayDate)) continue;
 
       final courseName = pickValue(row, const [
-        'course_name', 'course_title', 'subject', 'title', 'paper', 'course',
+        'course_name',
+        'course_title',
+        'subject',
+        'title',
+        'paper',
+        'course',
       ]);
       final courseCode = pickValue(row, const [
-        'course_code', 'code', 'subject_code',
+        'course_code',
+        'code',
+        'subject_code',
       ]);
       final slotNo = pickValue(row, const ['slot_no', 'slot']);
       final session = pickValue(row, const ['session', 'time', 'timing']);
@@ -925,7 +974,8 @@ class NotificationService extends ChangeNotifier {
       );
       scheduled++;
     }
-    debugPrint('[CaExam] Rescheduled $scheduled upcoming CA exam notification(s)');
+    debugPrint(
+        '[CaExam] Rescheduled $scheduled upcoming CA exam notification(s)');
   }
 
   /// Schedule personal birthday notification
@@ -938,7 +988,7 @@ class NotificationService extends ChangeNotifier {
       await cancelBirthdayNotification();
       return false;
     }
-    
+
     if (kIsWeb) {
       debugPrint('[Notification] Web: Scheduled notifications not available');
       return false;
@@ -959,7 +1009,8 @@ class NotificationService extends ChangeNotifier {
       await _notifications.zonedSchedule(
         id: 200,
         title: '🎂 Happy Birthday, $firstName!',
-        body: 'Wishing you a fantastic year ahead filled with success and happiness! 🎉',
+        body:
+            'Wishing you a fantastic year ahead filled with success and happiness! 🎉',
         scheduledDate: birthdayDate,
         notificationDetails: const NotificationDetails(
           android: AndroidNotificationDetails(
@@ -1000,7 +1051,7 @@ class NotificationService extends ChangeNotifier {
     String channel = 'psgmx_leetcode',
   }) async {
     if (kIsWeb) return;
-    
+
     final now = tz.TZDateTime.now(tz.local);
     var scheduledDate =
         tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
@@ -1038,7 +1089,7 @@ class NotificationService extends ChangeNotifier {
     required int minute,
   }) async {
     if (kIsWeb) return;
-    
+
     var date = tz.TZDateTime.now(tz.local);
     while (date.weekday != day) {
       date = date.add(const Duration(days: 1));
@@ -1073,7 +1124,7 @@ class NotificationService extends ChangeNotifier {
       debugPrint('[Notification] Web: Permissions not required');
       return true;
     }
-    
+
     if (await Permission.notification.isGranted) return true;
 
     final status = await Permission.notification.request();
@@ -1107,32 +1158,42 @@ class NotificationService extends ChangeNotifier {
       try {
         final user = _supabase.auth.currentUser;
         if (user != null) {
+          final profileId = await LogicalIdentity.currentUserId(_supabase);
+          if (profileId == null) return;
           // Check for duplicates if uniqueKey provided
           if (uniqueKey != null) {
             final today = DateTime.now().toIso8601String().split('T')[0];
             final existing = await _supabase
                 .from('notifications')
                 .select('id')
-                .eq('created_by', user.id)
+                .eq('created_by', profileId)
                 .eq('title', title)
                 .gte('generated_at', today) // Safer date comparison
                 .maybeSingle();
-            
+
             if (existing != null) {
               debugPrint('[Notification] ⏭️ Skipping duplicate: $title');
               // If it exists in DB, we rely on Realtime/Load to show it.
               // However, if we want to force show LOCAL notification anyway (e.g. for user feedback), proceed.
               // But usually uniqueKey implies "don't do it again".
-              return; 
+              return;
             }
           }
-          
+
           // Map to safe DB types
           String dbType = 'announcement';
-          if (type == NotificationType.motivation) dbType = 'motivation';
-          if (type == NotificationType.reminder || type == NotificationType.leetcode) dbType = 'reminder';
-          if (type == NotificationType.alert || type == NotificationType.attendance) dbType = 'alert';
-          
+          if (type == NotificationType.motivation) {
+            dbType = 'motivation';
+          }
+          if (type == NotificationType.reminder ||
+              type == NotificationType.leetcode) {
+            dbType = 'reminder';
+          }
+          if (type == NotificationType.alert ||
+              type == NotificationType.attendance) {
+            dbType = 'alert';
+          }
+
           // Insert without manually adding to cache (let realtime handle it)
           await _supabase.from('notifications').insert({
             'title': title,
@@ -1140,11 +1201,11 @@ class NotificationService extends ChangeNotifier {
             'notification_type': dbType,
             'tone': 'friendly',
             'target_audience': 'user', // Personal notification
-            'created_by': user.id,
+            'created_by': profileId,
             'is_active': true,
             'generated_at': DateTime.now().toIso8601String(),
           });
-          
+
           // DO NOT add to cache here - realtime subscription will handle it
           debugPrint('[Notification] ✅ Persisted to database: $title');
         }
@@ -1188,7 +1249,7 @@ class NotificationService extends ChangeNotifier {
       debugPrint('[Notification] Web: $title - $body');
       return;
     }
-    
+
     final androidDetails = AndroidNotificationDetails(
       channel,
       'PSGMX Notifications',
@@ -1221,7 +1282,12 @@ class NotificationService extends ChangeNotifier {
 
     final details =
         NotificationDetails(android: androidDetails, iOS: iosDetails);
-    await _notifications.show(id: id, title: title, body: body, notificationDetails: details, payload: payload);
+    await _notifications.show(
+        id: id,
+        title: title,
+        body: body,
+        notificationDetails: details,
+        payload: payload);
   }
 
   String _getNotificationTypeName(NotificationType type) {
@@ -1271,8 +1337,8 @@ class NotificationService extends ChangeNotifier {
   /// Check if a notification type should be sent based on user preferences
   Future<bool> shouldSendNotification(String notificationType) async {
     try {
-      final user = _supabase.auth.currentUser;
-      if (user == null) return false;
+      final profileId = await LogicalIdentity.currentUserId(_supabase);
+      if (profileId == null) return false;
 
       final response = await _supabase.from('users').select('''
             task_reminders_enabled,
@@ -1280,7 +1346,7 @@ class NotificationService extends ChangeNotifier {
             announcements_enabled,
             leetcode_notifications_enabled,
             birthday_notifications_enabled
-          ''').eq('id', user.id).maybeSingle();
+          ''').eq('id', profileId).maybeSingle();
 
       if (response == null) return true; // Default to enabled
 
@@ -1329,17 +1395,18 @@ class NotificationService extends ChangeNotifier {
       );
 
       debugPrint('[Notification] Task deadline reminder scheduled for 9 PM');
-      
+
       // Also schedule task incomplete check at 9:15 PM (15 min after deadline)
       await _scheduleDaily(
         id: 401,
         title: '⏰ Task Still Pending',
-        body: 'You haven\'t marked today\'s task as completed yet. Take a moment to finish it!',
+        body:
+            'You haven\'t marked today\'s task as completed yet. Take a moment to finish it!',
         hour: 21,
         minute: 15,
         channel: 'psgmx_channel_main',
       );
-      
+
       debugPrint('[Notification] Task incomplete check scheduled for 9:15 PM');
     } catch (e) {
       debugPrint('[Notification] Error scheduling task reminder: $e');
@@ -1383,13 +1450,15 @@ class NotificationService extends ChangeNotifier {
         // Still insert to database for in-app viewing
         final user = _supabase.auth.currentUser;
         if (user != null) {
+          final profileId = await LogicalIdentity.currentUserId(_supabase);
+          if (profileId == null) return false;
           await _supabase.from('notifications').insert({
             'title': title,
             'message': message,
             'notification_type': 'announcement',
             'tone': tone?.name ?? 'friendly',
             'target_audience': targetAudience,
-            'created_by': user.id,
+            'created_by': profileId,
             'is_active': true,
           });
         }

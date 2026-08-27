@@ -4,6 +4,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Plus, CalendarClock, MapPin, Lock, Unlock, X } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { getCurrentProfile } from '@/lib/current-profile';
 
 interface SessionRow {
   id: string;
@@ -30,9 +31,7 @@ export default function SessionSchedulingPage() {
   });
 
   const load = React.useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const { data: me } = await supabase.from('users').select('batch_id, id').eq('id', user.id).single();
+    const me = await getCurrentProfile(supabase);
     if (!me?.batch_id) { setLoading(false); return; }
     setBatchId(me.batch_id);
 
@@ -52,8 +51,8 @@ export default function SessionSchedulingPage() {
     if (!form.topic.trim() || !form.date || !form.time || !batchId) return;
     setSaving(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      const me = await getCurrentProfile(supabase);
+      if (!me) return;
       await supabase.from('placement_sessions').insert({
         batch_id: batchId,
         topic: form.topic.trim(),
@@ -62,7 +61,7 @@ export default function SessionSchedulingPage() {
         location: form.location.trim() || null,
         session_datetime: new Date(`${form.date}T${form.time}`).toISOString(),
         duration_minutes: form.duration_minutes,
-        scheduled_by: user.id,
+        scheduled_by: me.id,
       });
       setForm({ topic: '', session_type: 'Placement Drive', session_mode: 'Offline', location: '', date: '', time: '', duration_minutes: 60 });
       setShowForm(false);

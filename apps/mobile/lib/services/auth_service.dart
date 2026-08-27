@@ -1,13 +1,18 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../core/supabase_config.dart';
 import 'supabase_service.dart';
 import '../models/app_user.dart';
+import '../core/logical_identity.dart';
 
 /// AuthService: Secure OTP-based authentication using Supabase Auth
 ///
 /// FLOW:
-/// 1. User enters email (must be @psgtech.ac.in)
-/// 2. System checks if email in whitelist
+/// 1. User enters an approved personal or college email
+/// 2. Trusted backend checks the private roster and sends the OTP
 /// 3. OTP sent to email via Supabase
 /// 4. User enters OTP -> Session created
 /// 5. If new user, profile created from whitelist automatically
@@ -31,52 +36,46 @@ class AuthService {
   /// STEP 1: VALIDATE EMAIL & SEND OTP
   Future<bool> sendOtpToEmail(String email) async {
     try {
-      // 1. Validate domain
-      if (!email.endsWith('@psgtech.ac.in')) {
-        throw Exception('Only @psgtech.ac.in emails are allowed.');
-      }
-
       email = email.trim().toLowerCase();
+      if (!_looksLikeEmail(email)) {
+        throw Exception('Enter a valid email address.');
+      }
       debugPrint('[AuthService] Sending OTP to: $email');
 
-      // 2. Check Whitelist
-      final whitelistData = await _supabaseService
-          .from('whitelist')
-          .select('email')
-          .eq('email', email)
-          .maybeSingle();
+      final response = await http
+          .post(
+            Uri.parse('${SupabaseConfig.appApiUrl}/api/auth/request-otp'),
+            headers: const {'Content-Type': 'application/json'},
+            body: jsonEncode({'email': email}),
+          )
+          .timeout(const Duration(seconds: 20));
 
-      if (whitelistData == null) {
-        throw Exception('Email not authorized. Please contact administrator.');
+      final payload = response.body.isNotEmpty
+          ? jsonDecode(response.body) as Map<String, dynamic>
+          : <String, dynamic>{};
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw Exception(payload['error'] ?? 'The code could not be sent.');
       }
 
-      // 3. Send OTP Token
-      // Note: Users MUST exist in auth.users (created via SQL script with matching UUIDs)
-      await _supabaseService.auth.signInWithOtp(
-        email: email,
-        shouldCreateUser: false, // Users pre-exist with matching UUIDs
-      );
-
-      debugPrint('[AuthService] ✅ OTP sent to $email');
+      debugPrint('[AuthService] OTP request accepted');
       return true;
-
+    } on FormatException {
+      throw Exception('The login service returned an invalid response.');
     } on AuthException catch (e) {
-      debugPrint('[AuthService] Auth Error: ${e.message}');
-      
-      // If user doesn't exist, provide clear error
-      if (e.message.contains('Database error finding user') || 
-          e.message.contains('User not found')) {
-        throw 'User not found. Please contact administrator to add your account.';
-      }
-      
       if (e.message.contains('rate limit')) {
-        throw 'Too many requests. Please wait a moment.';
+        throw Exception('Too many requests. Please wait a moment.');
       }
-      throw e.message;
+      throw Exception(e.message);
     } catch (e) {
-      debugPrint('[AuthService] Error: $e');
-      throw e.toString();
+      debugPrint('[AuthService] OTP request error: $e');
+      if (e is Exception) rethrow;
+      throw Exception('Could not reach the login service. Try again.');
     }
+  }
+
+  bool _looksLikeEmail(String email) {
+    return RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(email) &&
+        email.length <= 254;
   }
 
   /// STEP 2: VERIFY OTP (Magic Link Token)
@@ -86,14 +85,13 @@ class AuthService {
   }) async {
     try {
       email = email.trim().toLowerCase();
-      
+
       if (otp.length != 6) {
         throw 'OTP must be 6 digits';
       }
 
-      debugPrint('[AuthService] Verifying OTP for $email');
+      debugPrint('[AuthService] Verifying OTP');
 
-      // Verify OTP with Supabase (using magic link token)
       final response = await _supabaseService.auth.verifyOTP(
         email: email,
         token: otp,
@@ -110,14 +108,7 @@ class AuthService {
       }
 
       debugPrint('[AuthService] ✅ OTP verified successfully');
-      debugPrint('[AuthService] User authenticated: ${user.email}');
-      debugPrint('[AuthService] User ID: ${user.id}');
-
-      // Production-grade: Sync profile from whitelist if it doesn't exist
-      await _syncProfileFromWhitelist(user.id, email);
-
-      debugPrint('[AuthService] ✅ Login complete for: $email');
-
+      debugPrint('[AuthService] User authenticated');
     } on AuthException catch (e) {
       debugPrint('[AuthService] Auth error: ${e.message}');
       if (e.message.contains('Invalid') || e.message.contains('expired')) {
@@ -133,20 +124,35 @@ class AuthService {
   /// Fetch user profile
   Future<AppUser?> getUserProfile(String userId) async {
     try {
-      debugPrint('[AuthService] Fetching profile for user ID: $userId');
-      
-      final response = await _supabaseService.client
+      // `userId` is the auth identity. The RPC resolves it to the one logical
+      // student profile shared by personal and college email identities.
+      final rows = await _supabaseService.client.rpc('get_my_profile');
+      final raw = rows is List && rows.isNotEmpty ? rows.first : null;
+      Map<String, dynamic>? response =
+          raw is Map ? Map<String, dynamic>.from(raw) : null;
+
+      // Compatibility fallback during the staged migration window.
+      response ??= await _supabaseService.client
           .from('users')
           .select('*, batches(status)')
           .eq('id', userId)
           .maybeSingle();
 
       if (response == null) {
-        debugPrint('[AuthService] ❌ No profile found for user ID: $userId');
+        debugPrint(
+            '[AuthService] ❌ Profile could not be found or created for user ID: $userId');
         return null;
       }
-      
-      debugPrint('[AuthService] ✅ Profile found: ${response['email']} - ${response['name']}');
+
+      if (response['batch_id'] != null && response['batches'] == null) {
+        final batch = await _supabaseService.client
+            .from('batches')
+            .select('status')
+            .eq('id', response['batch_id'])
+            .maybeSingle();
+        response['batches'] = batch;
+      }
+      debugPrint('[AuthService] Profile loaded');
       return AppUser.fromJson(response);
     } catch (e) {
       debugPrint('[AuthService] ❌ Error fetching profile: $e');
@@ -154,58 +160,8 @@ class AuthService {
     }
   }
 
-  /// Production-grade: Ensures the user has a profile in the 'users' table.
-  /// Fetches data from whitelist and inserts into users on first login.
-  Future<void> _syncProfileFromWhitelist(String userId, String email) async {
-    try {
-      // 1. Check if profile already exists
-      final existing = await _supabaseService.client
-          .from('users')
-          .select('id')
-          .eq('id', userId)
-          .maybeSingle();
-      
-      if (existing != null) {
-        debugPrint('[AuthService] Profile already exists for $email');
-        return;
-      }
-
-      debugPrint('[AuthService] First login detected. Creating profile from whitelist for $email...');
-
-      // 2. Get data from whitelist
-      final whitelistData = await _supabaseService.client
-          .from('whitelist')
-          .select()
-          .eq('email', email)
-          .maybeSingle();
-      
-      if (whitelistData == null) {
-        debugPrint('[AuthService] ⚠️ User signed in but not found in whitelist. This should not happen.');
-        return;
-      }
-
-      // 3. Insert into users table
-      await _supabaseService.client.from('users').insert({
-        'id': userId,
-        'email': email,
-        'name': whitelistData['name'],
-        'reg_no': whitelistData['reg_no'],
-        'team_id': whitelistData['team_id'],
-        'batch': whitelistData['batch'] ?? 'G1',
-        'roles': whitelistData['roles'] ?? {'isStudent': true},
-        'leetcode_username': whitelistData['leetcode_username'],
-        'dob': whitelistData['dob'],
-      });
-
-      debugPrint('[AuthService] ✅ Profile created successfully for $email');
-    } catch (e) {
-      debugPrint('[AuthService] ❌ Error syncing profile from whitelist: $e');
-      // We don't throw here to avoid blocking login if profile creation fails,
-      // though it might lead to issues later. In a real app, maybe retry.
-    }
-  }
-
   Future<void> signOut() async {
+    LogicalIdentity.clear();
     await _supabaseService.auth.signOut();
   }
 }

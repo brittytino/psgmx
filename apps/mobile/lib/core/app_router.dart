@@ -8,19 +8,13 @@ import '../ui/auth/calibration_quiz_screen.dart';
 import '../ui/auth/outcome_reveal_screen.dart';
 
 import '../ui/root_layout.dart';
-import '../ui/admin/team_management_screen.dart';
-import '../ui/admin/member_permissions_screen.dart';
-import '../ui/admin/schedule_placement_session_screen.dart';
 import '../ui/daily_five/daily_five_screen.dart';
-import '../ui/admin/question_bank_screen.dart';
 import '../ui/placement_log/placement_log_screen.dart';
 import '../ui/placement_log/company_detail_screen.dart';
 import '../ui/ai_mentor/ai_mentor_screen.dart';
 import '../ui/notifications/notifications_screen.dart';
-import '../ui/tasks/bulk_upload_screen.dart';
 import '../ui/rankings/pulse_rankings_screen.dart';
 import '../ui/rankings/leetcode_arena_screen.dart';
-import '../ui/admin/command_center_screen.dart';
 import '../ui/profile/credits_screen.dart';
 import '../ui/profile/graduation_screen.dart';
 import '../ui/profile/help_support_screen.dart';
@@ -77,24 +71,8 @@ class AppRouter {
           builder: (context, state) => const SettingsScreen(),
         ),
         GoRoute(
-          path: '/admin/team-management',
-          builder: (context, state) => const TeamManagementScreen(),
-        ),
-        GoRoute(
-          path: '/admin/permissions',
-          builder: (context, state) => const MemberPermissionsScreen(),
-        ),
-        GoRoute(
-          path: '/admin/schedule-session',
-          builder: (context, state) => const SchedulePlacementSessionScreen(),
-        ),
-        GoRoute(
           path: '/daily-five',
           builder: (context, state) => const DailyFiveScreen(),
-        ),
-        GoRoute(
-          path: '/admin/question-bank',
-          builder: (context, state) => const QuestionBankScreen(),
         ),
         GoRoute(
           path: '/placement-log',
@@ -112,20 +90,12 @@ class AppRouter {
           builder: (context, state) => const AiMentorScreen(),
         ),
         GoRoute(
-          path: '/admin/bulk-upload',
-          builder: (context, state) => const BulkUploadScreen(),
-        ),
-        GoRoute(
           path: '/pulse-rankings',
           builder: (context, state) => const PulseRankingsScreen(),
         ),
         GoRoute(
           path: '/leetcode-arena',
           builder: (context, state) => const LeetcodeArenaScreen(),
-        ),
-        GoRoute(
-          path: '/admin/command-center',
-          builder: (context, state) => const CommandCenterScreen(),
         ),
         GoRoute(
           path: '/credits',
@@ -152,13 +122,15 @@ class AppRouter {
         }
 
         final isAuthenticated = userProvider.currentUser != null;
-        final isPreAuthRoute = currentPath == '/login' || currentPath == '/onboarding';
-        final isPostAuthOnboarding = currentPath == '/batch-confirmation' || 
-                                     currentPath == '/calibration' || 
-                                     currentPath == '/outcome';
+        final isPreAuthRoute =
+            currentPath == '/login' || currentPath == '/onboarding';
+        final isPostAuthOnboarding = currentPath == '/batch-confirmation' ||
+            currentPath == '/calibration' ||
+            currentPath == '/outcome';
 
         if (isAuthenticated) {
-          if (userProvider.needsGraduationScreen && currentPath != '/graduation') {
+          if (userProvider.needsGraduationScreen &&
+              currentPath != '/graduation') {
             return '/graduation';
           }
           if (userProvider.needsCalibration) {
@@ -166,7 +138,9 @@ class AppRouter {
               return '/batch-confirmation';
             }
           } else {
-            if (isPreAuthRoute || isPostAuthOnboarding || currentPath == '/splash') {
+            if (isPreAuthRoute ||
+                isPostAuthOnboarding ||
+                currentPath == '/splash') {
               return '/';
             }
           }

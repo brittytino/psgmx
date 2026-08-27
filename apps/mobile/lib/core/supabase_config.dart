@@ -4,14 +4,7 @@ class SupabaseConfig {
   static const String _envSupabaseUrl = String.fromEnvironment('SUPABASE_URL');
   static const String _envSupabaseAnonKey =
       String.fromEnvironment('SUPABASE_ANON_KEY');
-  static const String _envEcampusApiUrl =
-      String.fromEnvironment('ECAMPUS_API_URL');
-  static const String _envEcampusApiSecret =
-      String.fromEnvironment('ECAMPUS_API_SECRET');
-  static const String _envExternalPlatformApiKey =
-      String.fromEnvironment('EXTERNAL_PLATFORM_API_KEY');
-  static const String _envOpenRouterApiKey =
-      String.fromEnvironment('OPENROUTER_API_KEY');
+  static const String _envAppApiUrl = String.fromEnvironment('APP_API_URL');
 
   static String get supabaseUrl => _envSupabaseUrl.isNotEmpty
       ? _envSupabaseUrl
@@ -21,20 +14,13 @@ class SupabaseConfig {
       ? _envSupabaseAnonKey
       : 'sb_publishable_FYSPL2NrQ7uby010u8hTmg_26v9e2MI';
 
-  static String get ecampusApiUrl => _envEcampusApiUrl.isNotEmpty
-      ? _envEcampusApiUrl
-      : 'https://psgmx-ecampus-api.onrender.com';
-
-  static String get ecampusApiSecret => _envEcampusApiSecret.isNotEmpty
-      ? _envEcampusApiSecret
-      : 'flutter-client-secret-1234';
-
-  static String get externalPlatformApiKey => _envExternalPlatformApiKey;
-
-  static String get openRouterApiKey => _envOpenRouterApiKey;
+  /// All privileged integrations are brokered by the trusted web backend.
+  /// No shared eCampus or AI secret is ever compiled into the mobile app.
+  static String get appApiUrl => _envAppApiUrl.isNotEmpty
+      ? _envAppApiUrl.replaceAll(RegExp(r'/$'), '')
+      : 'https://psgmx.tech';
 
   /// Returns true if the minimum required config for app startup is present.
   static bool get isConfigured =>
       supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty;
 }
-

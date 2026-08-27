@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/task_completion.dart';
+import '../core/logical_identity.dart';
 
 /// Service for managing task completion tracking
 /// Handles marking tasks as complete, fetching completion status,
@@ -15,14 +16,14 @@ class TaskCompletionService {
   /// Get the current user's task completion status for a specific date
   Future<TaskCompletion?> getMyTaskCompletion(DateTime date) async {
     try {
-      final user = _supabase.auth.currentUser;
-      if (user == null) return null;
+      final userId = await LogicalIdentity.currentUserId(_supabase);
+      if (userId == null) return null;
 
       final dateString = date.toIso8601String().split('T')[0];
       final response = await _supabase
           .from('task_completions')
           .select()
-          .eq('user_id', user.id)
+          .eq('user_id', userId)
           .eq('task_date', dateString)
           .maybeSingle();
 
@@ -40,8 +41,8 @@ class TaskCompletionService {
     required bool completed,
   }) async {
     try {
-      final user = _supabase.auth.currentUser;
-      if (user == null) {
+      final userId = await LogicalIdentity.currentUserId(_supabase);
+      if (userId == null) {
         debugPrint('[TaskCompletionService] No authenticated user');
         return false;
       }
@@ -50,7 +51,7 @@ class TaskCompletionService {
       final now = DateTime.now().toIso8601String();
 
       await _supabase.from('task_completions').upsert({
-        'user_id': user.id,
+        'user_id': userId,
         'task_date': dateString,
         'completed': completed,
         'completed_at': completed ? now : null,
@@ -74,20 +75,20 @@ class TaskCompletionService {
 
   /// Stream the current user's task completion status for today
   Stream<bool> watchTodayTaskCompletion() {
-    final user = _supabase.auth.currentUser;
-    if (user == null) return Stream.value(false);
-
     final today = DateTime.now().toIso8601String().split('T')[0];
-
-    return _supabase
-        .from('task_completions')
-        .stream(primaryKey: ['id'])
-        .eq('user_id', user.id)
-        .map((rows) {
-          final todayRow =
-              rows.where((r) => r['task_date'] == today).firstOrNull;
-          return todayRow?['completed'] == true;
-        });
+    return Stream.fromFuture(LogicalIdentity.currentUserId(_supabase))
+        .asyncExpand((userId) {
+      if (userId == null) return Stream.value(false);
+      return _supabase
+          .from('task_completions')
+          .stream(primaryKey: ['id'])
+          .eq('user_id', userId)
+          .map((rows) {
+            final todayRow =
+                rows.where((r) => r['task_date'] == today).firstOrNull;
+            return todayRow?['completed'] == true;
+          });
+    });
   }
 
   // ========================================
@@ -164,7 +165,8 @@ class TaskCompletionService {
                 .single();
             verifiedByFullName = verifierResponse['name'];
           } catch (e) {
-            debugPrint('[TaskCompletionService] Error getting verifier name: $e');
+            debugPrint(
+                '[TaskCompletionService] Error getting verifier name: $e');
           }
         }
 
@@ -243,8 +245,6 @@ class TaskCompletionService {
           .eq('role_label', 'Student')
           .order('team_id')
           .order('reg_no');
-
-
 
       // 3. Today's completions keyed by user_id
       final completionsResponse = await _supabase
@@ -349,8 +349,8 @@ class TaskCompletionService {
   /// Get my completion rate (percentage of days completed out of days with tasks)
   Future<double> getMyCompletionRate() async {
     try {
-      final user = _supabase.auth.currentUser;
-      if (user == null) return 0.0;
+      final userId = await LogicalIdentity.currentUserId(_supabase);
+      if (userId == null) return 0.0;
 
       // Get count of days with tasks
       final tasksResponse = await _supabase
@@ -366,7 +366,7 @@ class TaskCompletionService {
       final completedResponse = await _supabase
           .from('task_completions')
           .select('task_date')
-          .eq('user_id', user.id)
+          .eq('user_id', userId)
           .eq('completed', true);
       final completedDates = (completedResponse as List)
           .map((r) => r['task_date'] as String)

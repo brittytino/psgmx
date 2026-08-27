@@ -3,14 +3,22 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Users, CalendarClock, LogOut, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Users, CalendarClock, LogOut, Menu, X, UserRoundCog, ClipboardCheck, ListTodo, Building2, Megaphone, LibraryBig, BarChart3, Rocket } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
 
 const sidebarLinks = [
   { name: 'Command Center', href: '/placement-rep', icon: LayoutDashboard },
+  { name: 'Members & Access', href: '/placement-rep/members', icon: UserRoundCog },
   { name: 'Team Management', href: '/placement-rep/teams', icon: Users },
   { name: 'Session Scheduling', href: '/placement-rep/sessions', icon: CalendarClock },
+  { name: 'Attendance', href: '/placement-rep/attendance', icon: ClipboardCheck },
+  { name: 'Daily Tasks', href: '/placement-rep/tasks', icon: ListTodo },
+  { name: 'Companies', href: '/placement-rep/companies', icon: Building2 },
+  { name: 'Announcements', href: '/placement-rep/announcements', icon: Megaphone },
+  { name: 'Question Bank', href: '/placement-rep/questions', icon: LibraryBig },
+  { name: 'Reports & Audit', href: '/placement-rep/reports', icon: BarChart3 },
+  { name: 'Staged Rollout', href: '/placement-rep/rollout', icon: Rocket },
 ];
 
 function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {

@@ -6,8 +6,9 @@ import '../models/leetcode_stats.dart';
 import '../services/supabase_service.dart';
 import '../services/notification_service.dart';
 import '../models/notification.dart';
+import '../core/safe_change_notifier.dart';
 
-class LeetCodeProvider extends ChangeNotifier {
+class LeetCodeProvider extends ChangeNotifier with SafeChangeNotifier {
   final SupabaseService _supabaseService;
   
   bool _isLoading = false;

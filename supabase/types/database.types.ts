@@ -22,9 +22,12 @@ export interface Database {
         Row: {
           id: string
           email: string
+          personal_email: string | null
+          college_email: string | null
           reg_no: string
           name: string
           team_id: string | null
+          team_uuid: string | null
           batch: string
           gender: string | null
           roles: Record<string, unknown>
@@ -45,8 +48,11 @@ export interface Database {
           show_birthday_publicly: boolean
           mentorship_open: boolean
         }
-        Insert: Omit<Database['public']['Tables']['users']['Row'], 'team_id' | 'gender' | 'leetcode_username' | 'dob' | 'birthday_notifications_enabled' | 'leetcode_notifications_enabled' | 'task_reminders_enabled' | 'attendance_alerts_enabled' | 'announcements_enabled' | 'created_at' | 'updated_at' | 'ecampus_password' | 'ecampus_password_set' | 'batch_id' | 'role_label' | 'onboarding_complete' | 'show_birthday_publicly' | 'mentorship_open'> & {
+        Insert: Omit<Database['public']['Tables']['users']['Row'], 'personal_email' | 'college_email' | 'team_id' | 'team_uuid' | 'gender' | 'leetcode_username' | 'dob' | 'birthday_notifications_enabled' | 'leetcode_notifications_enabled' | 'task_reminders_enabled' | 'attendance_alerts_enabled' | 'announcements_enabled' | 'created_at' | 'updated_at' | 'ecampus_password' | 'ecampus_password_set' | 'batch_id' | 'role_label' | 'onboarding_complete' | 'show_birthday_publicly' | 'mentorship_open'> & {
+          personal_email?: string | null
+          college_email?: string | null
           team_id?: string | null
+          team_uuid?: string | null
           gender?: string | null
           leetcode_username?: string | null
           dob?: string | null
@@ -93,6 +99,7 @@ export interface Database {
           id: string
           batch_id: string
           team_name: string
+          team_code: string
           team_leader_id: string | null
           target_size: number
           created_at: string
@@ -127,21 +134,29 @@ export interface Database {
       whitelist: {
         Row: {
           email: string
+          personal_email: string | null
+          college_email: string | null
           name: string | null
           reg_no: string | null
           batch: string | null
+          batch_id: string | null
           team_id: string | null
+          team_uuid: string | null
           gender: string | null
           dob: string | null
           leetcode_username: string | null
           roles: Record<string, unknown> | null
           created_at: string | null
         }
-        Insert: Omit<Database['public']['Tables']['whitelist']['Row'], 'name' | 'reg_no' | 'batch' | 'team_id' | 'gender' | 'dob' | 'leetcode_username' | 'roles' | 'created_at'> & {
+        Insert: Omit<Database['public']['Tables']['whitelist']['Row'], 'name' | 'reg_no' | 'personal_email' | 'college_email' | 'batch' | 'batch_id' | 'team_id' | 'team_uuid' | 'gender' | 'dob' | 'leetcode_username' | 'roles' | 'created_at'> & {
           name?: string | null
           reg_no?: string | null
+          personal_email?: string | null
+          college_email?: string | null
           batch?: string | null
+          batch_id?: string | null
           team_id?: string | null
+          team_uuid?: string | null
           gender?: string | null
           dob?: string | null
           leetcode_username?: string | null
@@ -149,6 +164,37 @@ export interface Database {
           created_at?: string | null
         }
         Update: Partial<Database['public']['Tables']['whitelist']['Insert']>
+        Relationships: []
+      }
+
+      whitelist_email_aliases: {
+        Row: {
+          email: string
+          whitelist_email: string
+          email_type: string
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['whitelist_email_aliases']['Row'], 'created_at'> & {
+          created_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['whitelist_email_aliases']['Insert']>
+        Relationships: []
+      }
+
+      user_auth_identities: {
+        Row: {
+          auth_user_id: string
+          user_id: string
+          email: string
+          email_type: string
+          verified_at: string | null
+          created_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['user_auth_identities']['Row'], 'verified_at' | 'created_at'> & {
+          verified_at?: string | null
+          created_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['user_auth_identities']['Insert']>
         Relationships: []
       }
 
@@ -167,8 +213,11 @@ export interface Database {
           created_at: string
           updated_at: string
           updated_by: string | null
+          rollout_stage: string
+          enabled_batch_ids: string[]
+          pilot_user_ids: string[]
         }
-        Insert: Omit<Database['public']['Tables']['app_config']['Row'], 'id' | 'min_required_version' | 'latest_version' | 'force_update' | 'update_message' | 'github_release_url' | 'android_download_url' | 'ios_download_url' | 'emergency_block' | 'emergency_message' | 'created_at' | 'updated_at' | 'updated_by'> & {
+        Insert: Omit<Database['public']['Tables']['app_config']['Row'], 'id' | 'min_required_version' | 'latest_version' | 'force_update' | 'update_message' | 'github_release_url' | 'android_download_url' | 'ios_download_url' | 'emergency_block' | 'emergency_message' | 'created_at' | 'updated_at' | 'updated_by' | 'rollout_stage' | 'enabled_batch_ids' | 'pilot_user_ids'> & {
           id?: string
           min_required_version?: string
           latest_version?: string
@@ -182,6 +231,9 @@ export interface Database {
           created_at?: string
           updated_at?: string
           updated_by?: string | null
+          rollout_stage?: string
+          enabled_batch_ids?: string[]
+          pilot_user_ids?: string[]
         }
         Update: Partial<Database['public']['Tables']['app_config']['Insert']>
         Relationships: []
@@ -190,6 +242,7 @@ export interface Database {
       announcements: {
         Row: {
           id: string
+          batch_id: string | null
           title: string
           message: string
           is_priority: boolean
@@ -197,8 +250,9 @@ export interface Database {
           created_by: string | null
           created_at: string
         }
-        Insert: Omit<Database['public']['Tables']['announcements']['Row'], 'id' | 'is_priority' | 'expiry_date' | 'created_by' | 'created_at'> & {
+        Insert: Omit<Database['public']['Tables']['announcements']['Row'], 'id' | 'batch_id' | 'is_priority' | 'expiry_date' | 'created_by' | 'created_at'> & {
           id?: string
+          batch_id?: string | null
           is_priority?: boolean
           expiry_date?: string | null
           created_by?: string | null
@@ -211,6 +265,7 @@ export interface Database {
       audit_logs: {
         Row: {
           id: string
+          batch_id: string | null
           actor_id: string
           action: string
           entity_type: string
@@ -218,8 +273,9 @@ export interface Database {
           metadata: Record<string, unknown> | null
           created_at: string
         }
-        Insert: Omit<Database['public']['Tables']['audit_logs']['Row'], 'id' | 'entity_id' | 'metadata' | 'created_at'> & {
+        Insert: Omit<Database['public']['Tables']['audit_logs']['Row'], 'id' | 'batch_id' | 'entity_id' | 'metadata' | 'created_at'> & {
           id?: string
+          batch_id?: string | null
           entity_id?: string | null
           metadata?: Record<string, unknown> | null
           created_at?: string
@@ -231,6 +287,7 @@ export interface Database {
       notifications: {
         Row: {
           id: string
+          batch_id: string | null
           title: string
           message: string
           notification_type: string
@@ -241,8 +298,9 @@ export interface Database {
           created_by: string | null
           is_active: boolean
         }
-        Insert: Omit<Database['public']['Tables']['notifications']['Row'], 'id' | 'tone' | 'generated_at' | 'valid_until' | 'created_by' | 'is_active'> & {
+        Insert: Omit<Database['public']['Tables']['notifications']['Row'], 'id' | 'batch_id' | 'tone' | 'generated_at' | 'valid_until' | 'created_by' | 'is_active'> & {
           id?: string
+          batch_id?: string | null
           tone?: string | null
           generated_at?: string
           valid_until?: string | null
@@ -279,7 +337,7 @@ export interface Database {
           roles_offered: string[]
           package_band: string | null
           eligibility: string | null
-          rounds: Record<string, unknown>
+          rounds: unknown[]
           created_by: string
           created_at: string
           updated_at: string
@@ -415,6 +473,7 @@ export interface Database {
       scheduled_attendance_dates: {
         Row: {
           id: string
+          batch_id: string | null
           date: string
           is_working_day: boolean
           scheduled_by: string | null
@@ -422,8 +481,9 @@ export interface Database {
           created_at: string
           updated_at: string
         }
-        Insert: Omit<Database['public']['Tables']['scheduled_attendance_dates']['Row'], 'id' | 'is_working_day' | 'scheduled_by' | 'notes' | 'created_at' | 'updated_at'> & {
+        Insert: Omit<Database['public']['Tables']['scheduled_attendance_dates']['Row'], 'id' | 'batch_id' | 'is_working_day' | 'scheduled_by' | 'notes' | 'created_at' | 'updated_at'> & {
           id?: string
+          batch_id?: string | null
           is_working_day?: boolean
           scheduled_by?: string | null
           notes?: string | null
@@ -498,6 +558,7 @@ export interface Database {
       daily_tasks: {
         Row: {
           id: string
+          batch_id: string | null
           date: string
           topic_type: string
           title: string
@@ -507,8 +568,9 @@ export interface Database {
           created_at: string
           updated_at: string
         }
-        Insert: Omit<Database['public']['Tables']['daily_tasks']['Row'], 'id' | 'reference_link' | 'subject' | 'created_at' | 'updated_at'> & {
+        Insert: Omit<Database['public']['Tables']['daily_tasks']['Row'], 'id' | 'batch_id' | 'reference_link' | 'subject' | 'created_at' | 'updated_at'> & {
           id?: string
+          batch_id?: string | null
           reference_link?: string | null
           subject?: string | null
           created_at?: string
@@ -599,7 +661,7 @@ export interface Database {
         Row: {
           id: string
           question_text: string
-          options: Record<string, unknown>
+          options: unknown[]
           correct_option: number
           topic: string
           difficulty: string
@@ -616,6 +678,33 @@ export interface Database {
           is_active?: boolean
         }
         Update: Partial<Database['public']['Tables']['question_bank']['Insert']>
+        Relationships: []
+      }
+
+      daily_five_attempts: {
+        Row: {
+          id: string
+          user_id: string
+          attempt_date: string
+          question_ids: string[]
+          started_at: string
+          submitted_at: string | null
+          correct_count: number | null
+          accuracy_rate: number | null
+          flagged: boolean
+          flag_reason: string | null
+        }
+        Insert: Omit<Database['public']['Tables']['daily_five_attempts']['Row'], 'id' | 'attempt_date' | 'started_at' | 'submitted_at' | 'correct_count' | 'accuracy_rate' | 'flagged' | 'flag_reason'> & {
+          id?: string
+          attempt_date?: string
+          started_at?: string
+          submitted_at?: string | null
+          correct_count?: number | null
+          accuracy_rate?: number | null
+          flagged?: boolean
+          flag_reason?: string | null
+        }
+        Update: Partial<Database['public']['Tables']['daily_five_attempts']['Insert']>
         Relationships: []
       }
 
@@ -1089,6 +1178,13 @@ export interface Database {
     // the same blind probe also 404'd for it). Treat any function below
     // NOT marked "confirmed live" as unverified, not proven absent.
     Functions: {
+      current_user_id:                     { Args: Record<string, never>; Returns: string }
+      get_my_profile:                      { Args: Record<string, never>; Returns: Database['public']['Tables']['users']['Row'][] }
+      get_user_team_uuid:                  { Args: { p_user_id: string }; Returns: string | null }
+      assign_team_member:                  { Args: { p_user_id: string; p_team_id: string }; Returns: void }
+      set_team_leader:                     { Args: { p_team_id: string; p_user_id: string }; Returns: void }
+      set_member_permissions:              { Args: { p_user_id: string; p_permissions: string[] }; Returns: void }
+      get_question_bank_full:              { Args: Record<string, never>; Returns: Database['public']['Tables']['question_bank']['Row'][] }
       update_leetcode_username_unified: { Args: { p_user_id: string; p_new_username: string }; Returns: Record<string, unknown> } // confirmed live
       set_ecampus_password:             { Args: { p_password: string | null }; Returns: void } // added in 08_security_fixes_sprint0.sql
       send_birthday_notifications:      { Args: Record<string, never>; Returns: number } // added in 09_sprint1_schema_and_features.sql

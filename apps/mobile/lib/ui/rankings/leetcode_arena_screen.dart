@@ -8,6 +8,7 @@ import '../widgets/rive_placeholder.dart';
 
 import 'package:provider/provider.dart';
 import '../../providers/leetcode_provider.dart';
+import '../../providers/user_provider.dart';
 import '../../models/leetcode_stats.dart';
 import '../widgets/shared_bottom_navigation_bar.dart';
 import '../widgets/avatar_widget.dart';
@@ -71,7 +72,10 @@ class _LeetcodeArenaScreenState extends State<LeetcodeArenaScreen> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      bottomNavigationBar: const SharedBottomNavigationBar(),
+      bottomNavigationBar: SharedBottomNavigationBar(
+          showPlacementLog:
+              context.watch<UserProvider>().currentUser?.isActiveSenior ??
+                  false),
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(LucideIcons.chevronLeft),
@@ -91,7 +95,8 @@ class _LeetcodeArenaScreenState extends State<LeetcodeArenaScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Icon(LucideIcons.flame, color: AppTheme.accentCoral, size: 12),
+                const Icon(LucideIcons.flame,
+                    color: AppTheme.accentCoral, size: 12),
               ],
             ),
             Row(
@@ -100,11 +105,13 @@ class _LeetcodeArenaScreenState extends State<LeetcodeArenaScreen> {
                   'Code more. Solve smart. Climb higher.',
                   style: GoogleFonts.inter(
                     fontSize: 9,
-                    color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
+                    color: theme.textTheme.bodyMedium?.color
+                        ?.withValues(alpha: 0.6),
                   ),
                 ),
                 const SizedBox(width: 4),
-                const Icon(LucideIcons.sparkles, size: 12, color: AppTheme.illusGold),
+                const Icon(LucideIcons.sparkles,
+                    size: 12, color: AppTheme.illusGold),
               ],
             ),
           ],
@@ -116,13 +123,19 @@ class _LeetcodeArenaScreenState extends State<LeetcodeArenaScreen> {
             decoration: BoxDecoration(
               color: theme.colorScheme.surface,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: theme.dividerColor.withValues(alpha: 0.3)),
+              border:
+                  Border.all(color: theme.dividerColor.withValues(alpha: 0.3)),
             ),
             child: Row(
               children: [
-                Icon(LucideIcons.helpCircle, size: 12, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7)),
+                Icon(LucideIcons.helpCircle,
+                    size: 12,
+                    color: theme.textTheme.bodyMedium?.color
+                        ?.withValues(alpha: 0.7)),
                 const SizedBox(width: 4),
-                Text('How it works?', style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w600)),
+                Text('How it works?',
+                    style: GoogleFonts.inter(
+                        fontSize: 9, fontWeight: FontWeight.w600)),
               ],
             ),
           ),
@@ -130,14 +143,18 @@ class _LeetcodeArenaScreenState extends State<LeetcodeArenaScreen> {
       ),
       floatingActionButton: _scrollController.hasClients && _displayLimit > 20
           ? FloatingActionButton.small(
-              onPressed: () => _scrollController.animateTo(0, duration: const Duration(milliseconds: 500), curve: Curves.easeOut),
+              onPressed: () => _scrollController.animateTo(0,
+                  duration: const Duration(milliseconds: 500),
+                  curve: Curves.easeOut),
               backgroundColor: AppTheme.accentCoral,
-              child: const Icon(LucideIcons.arrowUp, color: Colors.white, size: 12),
+              child: const Icon(LucideIcons.arrowUp,
+                  color: Colors.white, size: 12),
             )
           : null,
       body: SingleChildScrollView(
         controller: _scrollController,
-        padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 16.0, bottom: 48.0),
+        padding: const EdgeInsets.only(
+            left: 20.0, right: 20.0, top: 16.0, bottom: 48.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -150,12 +167,20 @@ class _LeetcodeArenaScreenState extends State<LeetcodeArenaScreen> {
                     decoration: BoxDecoration(
                       color: theme.colorScheme.surface,
                       borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: theme.dividerColor.withValues(alpha: 0.3)),
+                      border: Border.all(
+                          color: theme.dividerColor.withValues(alpha: 0.3)),
                     ),
                     child: Row(
                       children: [
-                        Expanded(child: _buildFilterSegment('Weekly', _isWeekly, theme, () => setState(() => _isWeekly = true))),
-                        Expanded(child: _buildFilterSegment('All Time', !_isWeekly, theme, () => setState(() => _isWeekly = false))),
+                        Expanded(
+                            child: _buildFilterSegment('Weekly', _isWeekly,
+                                theme, () => setState(() => _isWeekly = true))),
+                        Expanded(
+                            child: _buildFilterSegment(
+                                'All Time',
+                                !_isWeekly,
+                                theme,
+                                () => setState(() => _isWeekly = false))),
                       ],
                     ),
                   ),
@@ -163,18 +188,25 @@ class _LeetcodeArenaScreenState extends State<LeetcodeArenaScreen> {
                 const SizedBox(width: 12),
                 // Total count badge
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
                     color: theme.colorScheme.surface,
                     borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: theme.dividerColor.withValues(alpha: 0.3)),
+                    border: Border.all(
+                        color: theme.dividerColor.withValues(alpha: 0.3)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(LucideIcons.users, size: 12, color: AppTheme.accentCoral),
+                      Icon(LucideIcons.users,
+                          size: 12, color: AppTheme.accentCoral),
                       const SizedBox(width: 6),
-                      Text('$totalUsers Students', style: GoogleFonts.inter(fontSize: 8, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface)),
+                      Text('$totalUsers Students',
+                          style: GoogleFonts.inter(
+                              fontSize: 8,
+                              fontWeight: FontWeight.w600,
+                              color: theme.colorScheme.onSurface)),
                     ],
                   ),
                 ),
@@ -187,7 +219,8 @@ class _LeetcodeArenaScreenState extends State<LeetcodeArenaScreen> {
               decoration: BoxDecoration(
                 color: theme.colorScheme.surface,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: theme.dividerColor.withValues(alpha: 0.2)),
+                border: Border.all(
+                    color: theme.dividerColor.withValues(alpha: 0.2)),
               ),
               child: TextField(
                 controller: _searchController,
@@ -195,11 +228,20 @@ class _LeetcodeArenaScreenState extends State<LeetcodeArenaScreen> {
                 style: GoogleFonts.inter(fontSize: 9),
                 decoration: InputDecoration(
                   hintText: 'Search students by name...',
-                  hintStyle: GoogleFonts.inter(fontSize: 9, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.4)),
-                  prefixIcon: Icon(LucideIcons.search, size: 12, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.4)),
+                  hintStyle: GoogleFonts.inter(
+                      fontSize: 9,
+                      color: theme.textTheme.bodyMedium?.color
+                          ?.withValues(alpha: 0.4)),
+                  prefixIcon: Icon(LucideIcons.search,
+                      size: 12,
+                      color: theme.textTheme.bodyMedium?.color
+                          ?.withValues(alpha: 0.4)),
                   suffixIcon: _searchQuery.isNotEmpty
                       ? IconButton(
-                          icon: Icon(LucideIcons.x, size: 12, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5)),
+                          icon: Icon(LucideIcons.x,
+                              size: 12,
+                              color: theme.textTheme.bodyMedium?.color
+                                  ?.withValues(alpha: 0.5)),
                           onPressed: () {
                             _searchController.clear();
                             setState(() => _searchQuery = '');
@@ -207,12 +249,13 @@ class _LeetcodeArenaScreenState extends State<LeetcodeArenaScreen> {
                         )
                       : null,
                   border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 ),
               ),
             ),
             const SizedBox(height: 24),
-            
+
             // Hero Card
             if (topUser != null && _searchQuery.isEmpty)
               Container(
@@ -220,14 +263,22 @@ class _LeetcodeArenaScreenState extends State<LeetcodeArenaScreen> {
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surface,
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: theme.dividerColor.withValues(alpha: 0.2)),
+                  border: Border.all(
+                      color: theme.dividerColor.withValues(alpha: 0.2)),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4)),
+                    BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.02),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4)),
                   ],
                 ),
                 child: Row(
                   children: [
-                    const RivePlaceholder(width: 50, height: 50, label: 'Trophy', icon: LucideIcons.trophy),
+                    const RivePlaceholder(
+                        width: 50,
+                        height: 50,
+                        label: 'Trophy',
+                        icon: LucideIcons.trophy),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -247,12 +298,20 @@ class _LeetcodeArenaScreenState extends State<LeetcodeArenaScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      _isWeekly ? 'Weekly Top Performer' : 'All-Time Top Performer',
-                                      style: GoogleFonts.inter(fontSize: 8, fontWeight: FontWeight.bold, color: AppTheme.accentCoral),
+                                      _isWeekly
+                                          ? 'Weekly Top Performer'
+                                          : 'All-Time Top Performer',
+                                      style: GoogleFonts.inter(
+                                          fontSize: 8,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppTheme.accentCoral),
                                     ),
                                     Text(
                                       topUser.name ?? topUser.username,
-                                      style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
+                                      style: GoogleFonts.inter(
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.bold,
+                                          color: theme.colorScheme.onSurface),
                                     ),
                                   ],
                                 ),
@@ -261,12 +320,20 @@ class _LeetcodeArenaScreenState extends State<LeetcodeArenaScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
                                   Text(
-                                    _isWeekly ? topUser.weeklyScore.toString() : topUser.totalSolved.toString(),
-                                    style: GoogleFonts.sora(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.accentCoral),
+                                    _isWeekly
+                                        ? topUser.weeklyScore.toString()
+                                        : topUser.totalSolved.toString(),
+                                    style: GoogleFonts.sora(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppTheme.accentCoral),
                                   ),
                                   Text(
                                     _isWeekly ? 'Weekly Score' : 'Total Solved',
-                                    style: GoogleFonts.inter(fontSize: 8, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5)),
+                                    style: GoogleFonts.inter(
+                                        fontSize: 8,
+                                        color: theme.textTheme.bodyMedium?.color
+                                            ?.withValues(alpha: 0.5)),
                                   ),
                                 ],
                               ),
@@ -275,18 +342,30 @@ class _LeetcodeArenaScreenState extends State<LeetcodeArenaScreen> {
                           const SizedBox(height: 8),
                           RichText(
                             text: TextSpan(
-                              style: GoogleFonts.inter(fontSize: 9, color: theme.colorScheme.onSurface),
+                              style: GoogleFonts.inter(
+                                  fontSize: 9,
+                                  color: theme.colorScheme.onSurface),
                               children: [
                                 const TextSpan(text: 'Solved '),
-                                TextSpan(text: '${_isWeekly ? topUser.weeklyScore : topUser.totalSolved} ', style: const TextStyle(color: AppTheme.accentCoral, fontWeight: FontWeight.bold)),
-                                TextSpan(text: 'problems ${_isWeekly ? 'this week' : 'in total'}\n'),
+                                TextSpan(
+                                    text:
+                                        '${_isWeekly ? topUser.weeklyScore : topUser.totalSolved} ',
+                                    style: const TextStyle(
+                                        color: AppTheme.accentCoral,
+                                        fontWeight: FontWeight.bold)),
+                                TextSpan(
+                                    text:
+                                        'problems ${_isWeekly ? 'this week' : 'in total'}\n'),
                               ],
                             ),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             'Consistency. Focus. Execution.',
-                            style: GoogleFonts.inter(fontSize: 8, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5)),
+                            style: GoogleFonts.inter(
+                                fontSize: 8,
+                                color: theme.textTheme.bodyMedium?.color
+                                    ?.withValues(alpha: 0.5)),
                           ),
                         ],
                       ),
@@ -295,7 +374,7 @@ class _LeetcodeArenaScreenState extends State<LeetcodeArenaScreen> {
                 ),
               ),
             const SizedBox(height: 24),
-            
+
             // Legend
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -307,7 +386,11 @@ class _LeetcodeArenaScreenState extends State<LeetcodeArenaScreen> {
                   const SizedBox(width: 16),
                   _buildLegendItem('Hard', const Color(0xFF81C784), theme),
                   const Spacer(),
-                  Text('Problems Solved', style: GoogleFonts.inter(fontSize: 9, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5))),
+                  Text('Problems Solved',
+                      style: GoogleFonts.inter(
+                          fontSize: 9,
+                          color: theme.textTheme.bodyMedium?.color
+                              ?.withValues(alpha: 0.5))),
                 ],
               ),
             ),
@@ -319,114 +402,150 @@ class _LeetcodeArenaScreenState extends State<LeetcodeArenaScreen> {
                 padding: const EdgeInsets.only(bottom: 12),
                 child: Text(
                   '${sortedUsers.length} result${sortedUsers.length != 1 ? 's' : ''} found',
-                  style: GoogleFonts.inter(fontSize: 9, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5)),
+                  style: GoogleFonts.inter(
+                      fontSize: 9,
+                      color: theme.textTheme.bodyMedium?.color
+                          ?.withValues(alpha: 0.5)),
                 ),
               ),
-            
+
             // List
             if (provider.isLoading && sortedUsers.isEmpty)
-               const Center(child: CircularProgressIndicator(color: AppTheme.accentCoral))
+              const Center(
+                  child: CircularProgressIndicator(color: AppTheme.accentCoral))
             else if (sortedUsers.isEmpty)
               Center(
                 child: Padding(
                   padding: const EdgeInsets.all(32.0),
                   child: Column(
                     children: [
-                      Icon(LucideIcons.searchX, size: 16, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.3)),
+                      Icon(LucideIcons.searchX,
+                          size: 16,
+                          color: theme.textTheme.bodyMedium?.color
+                              ?.withValues(alpha: 0.3)),
                       const SizedBox(height: 16),
-                      Text('No students found', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5))),
+                      Text('No students found',
+                          style: GoogleFonts.inter(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: theme.textTheme.bodyMedium?.color
+                                  ?.withValues(alpha: 0.5))),
                       const SizedBox(height: 4),
-                      Text('Try a different search term', style: GoogleFonts.inter(fontSize: 11, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.4))),
+                      Text('Try a different search term',
+                          style: GoogleFonts.inter(
+                              fontSize: 11,
+                              color: theme.textTheme.bodyMedium?.color
+                                  ?.withValues(alpha: 0.4))),
                     ],
                   ),
                 ),
               )
             else
-                 Container(
-                   decoration: BoxDecoration(
-                     color: theme.colorScheme.surface,
-                     borderRadius: BorderRadius.circular(16),
-                     border: Border.all(color: theme.dividerColor.withValues(alpha: 0.2)),
-                     boxShadow: [
-                       BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4)),
-                     ],
-                   ),
-                   child: Column(
-                     children: [
-                       // Showing X of Y header
-                       Padding(
-                         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-                         child: Row(
-                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                           children: [
-                             Text(
-                               'Showing $displayedCount of ${sortedUsers.length}',
-                               style: GoogleFonts.inter(fontSize: 9, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5)),
-                             ),
-                             if (_searchQuery.isEmpty)
-                               Text(
-                                 _isWeekly ? 'Sorted by weekly score' : 'Sorted by total solved',
-                                 style: GoogleFonts.inter(fontSize: 9, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.4)),
-                               ),
-                           ],
-                         ),
-                       ),
-                       _buildDivider(theme),
-                       ListView.separated(
-                         shrinkWrap: true,
-                         physics: const NeverScrollableScrollPhysics(),
-                         itemCount: displayedCount,
-                         separatorBuilder: (context, index) => _buildDivider(theme),
-                         itemBuilder: (context, index) {
-                           final stat = sortedUsers[index];
-                           return _buildListItem(
-                             index + 1,
-                             0, // diff placeholder
-                             true,
-                             stat.name ?? stat.username,
-                             stat.easySolved,
-                             stat.mediumSolved,
-                             stat.hardSolved,
-                             _isWeekly ? stat.weeklyScore : stat.totalSolved,
-                             theme,
-                             isTop3: index < 3,
-                             avatarUrl: stat.profilePicture,
-                           );
-                         },
-                       ),
-                       if (_displayLimit < sortedUsers.length)
-                         Padding(
-                           padding: const EdgeInsets.all(16.0),
-                           child: SizedBox(
-                             width: double.infinity,
-                             child: OutlinedButton.icon(
-                               onPressed: () => setState(() => _displayLimit += 20),
-                               icon: const Icon(LucideIcons.chevronDown, size: 12),
-                               label: Text(
-                                 'Load More (${sortedUsers.length - _displayLimit} remaining)',
-                                 style: GoogleFonts.inter(fontWeight: FontWeight.w600),
-                               ),
-                               style: OutlinedButton.styleFrom(
-                                 foregroundColor: AppTheme.accentCoral,
-                                 side: BorderSide(color: AppTheme.accentCoral.withValues(alpha: 0.3)),
-                                 padding: const EdgeInsets.symmetric(vertical: 14),
-                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                               ),
-                             ),
-                           ),
-                         ),
-                     ],
-                   ),
-                 ),
+              Container(
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                      color: theme.dividerColor.withValues(alpha: 0.2)),
+                  boxShadow: [
+                    BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.02),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4)),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    // Showing X of Y header
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16.0, vertical: 12.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Showing $displayedCount of ${sortedUsers.length}',
+                            style: GoogleFonts.inter(
+                                fontSize: 9,
+                                color: theme.textTheme.bodyMedium?.color
+                                    ?.withValues(alpha: 0.5)),
+                          ),
+                          if (_searchQuery.isEmpty)
+                            Text(
+                              _isWeekly
+                                  ? 'Sorted by weekly score'
+                                  : 'Sorted by total solved',
+                              style: GoogleFonts.inter(
+                                  fontSize: 9,
+                                  color: theme.textTheme.bodyMedium?.color
+                                      ?.withValues(alpha: 0.4)),
+                            ),
+                        ],
+                      ),
+                    ),
+                    _buildDivider(theme),
+                    ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: displayedCount,
+                      separatorBuilder: (context, index) =>
+                          _buildDivider(theme),
+                      itemBuilder: (context, index) {
+                        final stat = sortedUsers[index];
+                        return _buildListItem(
+                          index + 1,
+                          0, // diff placeholder
+                          true,
+                          stat.name ?? stat.username,
+                          stat.easySolved,
+                          stat.mediumSolved,
+                          stat.hardSolved,
+                          _isWeekly ? stat.weeklyScore : stat.totalSolved,
+                          theme,
+                          isTop3: index < 3,
+                          avatarUrl: stat.profilePicture,
+                        );
+                      },
+                    ),
+                    if (_displayLimit < sortedUsers.length)
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: () =>
+                                setState(() => _displayLimit += 20),
+                            icon: const Icon(LucideIcons.chevronDown, size: 12),
+                            label: Text(
+                              'Load More (${sortedUsers.length - _displayLimit} remaining)',
+                              style: GoogleFonts.inter(
+                                  fontWeight: FontWeight.w600),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppTheme.accentCoral,
+                              side: BorderSide(
+                                  color: AppTheme.accentCoral
+                                      .withValues(alpha: 0.3)),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             const SizedBox(height: 24),
-            
+
             // Info Box
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: const Color(0xFFFAF9F6),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: theme.dividerColor.withValues(alpha: 0.3)),
+                border: Border.all(
+                    color: theme.dividerColor.withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [
@@ -435,9 +554,11 @@ class _LeetcodeArenaScreenState extends State<LeetcodeArenaScreen> {
                     decoration: BoxDecoration(
                       color: theme.colorScheme.surface,
                       shape: BoxShape.circle,
-                      border: Border.all(color: AppTheme.accentCoral.withValues(alpha: 0.2)),
+                      border: Border.all(
+                          color: AppTheme.accentCoral.withValues(alpha: 0.2)),
                     ),
-                    child: const Icon(LucideIcons.target, color: AppTheme.accentCoral, size: 16),
+                    child: const Icon(LucideIcons.target,
+                        color: AppTheme.accentCoral, size: 16),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -446,11 +567,17 @@ class _LeetcodeArenaScreenState extends State<LeetcodeArenaScreen> {
                       children: [
                         Text(
                           'Solve problems. Build logic. Earn your spot.',
-                          style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
+                          style: GoogleFonts.inter(
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                              color: theme.colorScheme.onSurface),
                         ),
                         Text(
                           'Rankings update every Monday at 8:00 AM.',
-                          style: GoogleFonts.inter(fontSize: 9, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7)),
+                          style: GoogleFonts.inter(
+                              fontSize: 9,
+                              color: theme.textTheme.bodyMedium?.color
+                                  ?.withValues(alpha: 0.7)),
                         ),
                       ],
                     ),
@@ -459,16 +586,22 @@ class _LeetcodeArenaScreenState extends State<LeetcodeArenaScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            
+
             // Footer — dynamic last updated
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(LucideIcons.refreshCcw, size: 12, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5)),
+                Icon(LucideIcons.refreshCcw,
+                    size: 12,
+                    color: theme.textTheme.bodyMedium?.color
+                        ?.withValues(alpha: 0.5)),
                 const SizedBox(width: 6),
                 Text(
                   _getLastUpdatedText(provider),
-                  style: GoogleFonts.inter(fontSize: 9, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5)),
+                  style: GoogleFonts.inter(
+                      fontSize: 9,
+                      color: theme.textTheme.bodyMedium?.color
+                          ?.withValues(alpha: 0.5)),
                 ),
               ],
             ),
@@ -495,7 +628,8 @@ class _LeetcodeArenaScreenState extends State<LeetcodeArenaScreen> {
     return 'Last updated: ${diff.inDays}d ago';
   }
 
-  Widget _buildFilterSegment(String label, bool isActive, ThemeData theme, VoidCallback onTap) {
+  Widget _buildFilterSegment(
+      String label, bool isActive, ThemeData theme, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -510,7 +644,9 @@ class _LeetcodeArenaScreenState extends State<LeetcodeArenaScreen> {
             style: GoogleFonts.inter(
               fontSize: 9,
               fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
-              color: isActive ? Colors.white : theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
+              color: isActive
+                  ? Colors.white
+                  : theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
             ),
           ),
         ),
@@ -527,29 +663,28 @@ class _LeetcodeArenaScreenState extends State<LeetcodeArenaScreen> {
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 6),
-        Text(label, style: GoogleFonts.inter(fontSize: 9, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7))),
+        Text(label,
+            style: GoogleFonts.inter(
+                fontSize: 9,
+                color:
+                    theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7))),
       ],
     );
   }
 
   Widget _buildDivider(ThemeData theme) {
-    return Divider(height: 1, indent: 64, endIndent: 16, color: theme.dividerColor.withValues(alpha: 0.1));
+    return Divider(
+        height: 1,
+        indent: 64,
+        endIndent: 16,
+        color: theme.dividerColor.withValues(alpha: 0.1));
   }
 
-  Widget _buildListItem(
-    int rank, 
-    int diff, 
-    bool isUp, 
-    String name, 
-    int easy, 
-    int medium, 
-    int hard, 
-    int displayScore,
-    ThemeData theme, 
-    {bool isHighlighted = false, bool isTop3 = false, String? avatarUrl}
-  ) {
+  Widget _buildListItem(int rank, int diff, bool isUp, String name, int easy,
+      int medium, int hard, int displayScore, ThemeData theme,
+      {bool isHighlighted = false, bool isTop3 = false, String? avatarUrl}) {
     final int total = easy + medium + hard;
-    
+
     // Calculate proportions for the stacked bar
     final int totalProblemsInRow = total > 0 ? total : 1;
     final int easyFlex = (easy * 100) ~/ totalProblemsInRow;
@@ -613,12 +748,16 @@ class _LeetcodeArenaScreenState extends State<LeetcodeArenaScreen> {
                   ),
                 ] else ...[
                   const SizedBox(height: 4),
-                  Text('-', style: GoogleFonts.inter(fontSize: 8, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5))),
+                  Text('-',
+                      style: GoogleFonts.inter(
+                          fontSize: 8,
+                          color: theme.textTheme.bodyMedium?.color
+                              ?.withValues(alpha: 0.5))),
                 ],
               ],
             ),
           ),
-          
+
           // Avatar — using AvatarWidget for DiceBear fallback
           AvatarWidget(
             name: name,
@@ -626,7 +765,7 @@ class _LeetcodeArenaScreenState extends State<LeetcodeArenaScreen> {
             radius: 14,
           ),
           const SizedBox(width: 10),
-          
+
           // Name & Stacked Bar
           Expanded(
             child: Column(
@@ -641,7 +780,9 @@ class _LeetcodeArenaScreenState extends State<LeetcodeArenaScreen> {
                         style: GoogleFonts.inter(
                           fontSize: 9,
                           fontWeight: FontWeight.bold,
-                          color: isHighlighted ? AppTheme.accentCoral : theme.colorScheme.onSurface,
+                          color: isHighlighted
+                              ? AppTheme.accentCoral
+                              : theme.colorScheme.onSurface,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -658,7 +799,10 @@ class _LeetcodeArenaScreenState extends State<LeetcodeArenaScreen> {
                           ),
                         ),
                         const SizedBox(width: 4),
-                        Icon(LucideIcons.chevronRight, size: 12, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.3)),
+                        Icon(LucideIcons.chevronRight,
+                            size: 12,
+                            color: theme.textTheme.bodyMedium?.color
+                                ?.withValues(alpha: 0.3)),
                       ],
                     ),
                   ],
@@ -681,7 +825,10 @@ class _LeetcodeArenaScreenState extends State<LeetcodeArenaScreen> {
                             child: Center(
                               child: Text(
                                 easy.toString(),
-                                style: GoogleFonts.inter(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.white),
+                                style: GoogleFonts.inter(
+                                    fontSize: 8,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white),
                               ),
                             ),
                           ),
@@ -690,11 +837,15 @@ class _LeetcodeArenaScreenState extends State<LeetcodeArenaScreen> {
                         Expanded(
                           flex: medFlex,
                           child: Container(
-                            color: const Color(0xFFFF7043), // Medium Dark Orange
+                            color:
+                                const Color(0xFFFF7043), // Medium Dark Orange
                             child: Center(
                               child: Text(
                                 medium.toString(),
-                                style: GoogleFonts.inter(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.white),
+                                style: GoogleFonts.inter(
+                                    fontSize: 8,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white),
                               ),
                             ),
                           ),
@@ -707,7 +858,10 @@ class _LeetcodeArenaScreenState extends State<LeetcodeArenaScreen> {
                             child: Center(
                               child: Text(
                                 hard.toString(),
-                                style: GoogleFonts.inter(fontSize: 8, fontWeight: FontWeight.bold, color: Colors.white),
+                                style: GoogleFonts.inter(
+                                    fontSize: 8,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white),
                               ),
                             ),
                           ),

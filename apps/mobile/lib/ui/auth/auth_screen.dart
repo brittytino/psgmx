@@ -6,7 +6,6 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../providers/user_provider.dart';
 import '../../core/theme/app_theme.dart';
 
-
 import 'package:pinput/pinput.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -29,9 +28,9 @@ class _AuthScreenState extends State<AuthScreen> {
   void initState() {
     super.initState();
     _emailController.addListener(() {
-      final email = _emailController.text.trim();
+      final email = _emailController.text.trim().toLowerCase();
       setState(() {
-        _isEmailValid = email.isNotEmpty && email.endsWith('@psgtech.ac.in');
+        _isEmailValid = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(email);
       });
     });
   }
@@ -47,17 +46,18 @@ class _AuthScreenState extends State<AuthScreen> {
   Future<void> _handleEmailSubmit() async {
     final email = _emailController.text.trim();
     if (!_isEmailValid) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter a valid @psgtech.ac.in email')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Please enter a valid personal or college email')));
       return;
     }
-    
+
     setState(() {
       _isLoading = true;
-
     });
 
     try {
-      final success = await context.read<UserProvider>().requestOtp(email: email);
+      final success =
+          await context.read<UserProvider>().requestOtp(email: email);
       if (success) {
         setState(() {
           _isOtpSent = true;
@@ -69,7 +69,8 @@ class _AuthScreenState extends State<AuthScreen> {
       }
     } catch (e) {
       setState(() {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString().replaceAll('Exception:', '').trim())));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(e.toString().replaceAll('Exception:', '').trim())));
         _isLoading = false;
       });
     }
@@ -78,24 +79,25 @@ class _AuthScreenState extends State<AuthScreen> {
   Future<void> _handleOtpSubmit() async {
     final otp = _otpController.text.trim();
     if (otp.length != 6) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter valid 6-digit OTP')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please enter valid 6-digit OTP')));
       return;
     }
 
     setState(() {
       _isLoading = true;
-
     });
 
     try {
       await context.read<UserProvider>().verifyOtp(
-        email: _emailController.text.trim(),
-        otp: otp,
-      );
+            email: _emailController.text.trim(),
+            otp: otp,
+          );
       // Navigation handled by router
     } catch (e) {
       setState(() {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString().replaceAll('Exception:', '').trim())));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(e.toString().replaceAll('Exception:', '').trim())));
         _isLoading = false;
       });
     }
@@ -118,7 +120,8 @@ class _AuthScreenState extends State<AuthScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   IconButton(
-                    icon: const Icon(LucideIcons.arrowLeft, color: Color(0xFF1E293B)),
+                    icon: const Icon(LucideIcons.arrowLeft,
+                        color: Color(0xFF1E293B)),
                     onPressed: () {
                       if (_isOtpSent) {
                         setState(() => _isOtpSent = false);
@@ -136,7 +139,9 @@ class _AuthScreenState extends State<AuthScreen> {
                         width: 24,
                         height: 4,
                         decoration: BoxDecoration(
-                          color: index == 0 ? AppTheme.accentCoral : theme.dividerColor,
+                          color: index == 0
+                              ? AppTheme.accentCoral
+                              : theme.dividerColor,
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
@@ -146,7 +151,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 ],
               ),
               const SizedBox(height: 24),
-              
+
               Text(
                 'Verify it\'s you',
                 textAlign: TextAlign.center,
@@ -157,24 +162,32 @@ class _AuthScreenState extends State<AuthScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              
+
               RichText(
                 textAlign: TextAlign.center,
                 text: TextSpan(
                   style: GoogleFonts.inter(
                     fontSize: 11,
-                    color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+                    color: theme.textTheme.bodyMedium?.color
+                        ?.withValues(alpha: 0.7),
                     height: 1.4,
                   ),
                   children: [
-                    TextSpan(text: !_isOtpSent ? 'We\'ll send a 6-digit code to your\n' : 'We\'ve sent a 6-digit code to your\n'),
-                    const TextSpan(text: 'PSG Tech', style: TextStyle(color: AppTheme.accentCoral, fontWeight: FontWeight.w600)),
+                    TextSpan(
+                        text: !_isOtpSent
+                            ? 'We\'ll send a 6-digit code to your\n'
+                            : 'We\'ve sent a 6-digit code to your\n'),
+                    const TextSpan(
+                        text: 'approved personal or college',
+                        style: TextStyle(
+                            color: AppTheme.accentCoral,
+                            fontWeight: FontWeight.w600)),
                     const TextSpan(text: ' email address.'),
                   ],
                 ),
               ),
               const SizedBox(height: 32),
-              
+
               // Illustration
               Center(
                 child: Image.asset(
@@ -185,7 +198,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 ),
               ),
               const SizedBox(height: 32),
-              
+
               // Dynamic Input Area
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 300),
@@ -195,7 +208,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Text(
-                            'Your PSG Tech Email',
+                            'Your approved email',
                             style: GoogleFonts.inter(
                               fontSize: 11,
                               fontWeight: FontWeight.w500,
@@ -208,19 +221,26 @@ class _AuthScreenState extends State<AuthScreen> {
                             keyboardType: TextInputType.emailAddress,
                             style: GoogleFonts.inter(fontSize: 11),
                             decoration: InputDecoration(
-                              prefixIcon: const Icon(LucideIcons.mail, color: Colors.grey),
-                              suffixIcon: _isEmailValid ? const Icon(LucideIcons.checkCircle2, color: Colors.green) : null,
+                              prefixIcon: const Icon(LucideIcons.mail,
+                                  color: Colors.grey),
+                              suffixIcon: _isEmailValid
+                                  ? const Icon(LucideIcons.checkCircle2,
+                                      color: Colors.green)
+                                  : null,
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: theme.dividerColor),
+                                borderSide:
+                                    BorderSide(color: theme.dividerColor),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(color: theme.dividerColor),
+                                borderSide:
+                                    BorderSide(color: theme.dividerColor),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(color: AppTheme.accentCoral, width: 2),
+                                borderSide: const BorderSide(
+                                    color: AppTheme.accentCoral, width: 2),
                               ),
                               filled: true,
                               fillColor: Colors.white,
@@ -276,7 +296,8 @@ class _AuthScreenState extends State<AuthScreen> {
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: AppTheme.accentCoral, width: 2),
+                                border: Border.all(
+                                    color: AppTheme.accentCoral, width: 2),
                               ),
                             ),
                             onCompleted: (val) {
@@ -298,24 +319,29 @@ class _AuthScreenState extends State<AuthScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(LucideIcons.clock, size: 12, color: Colors.grey),
+                              const Icon(LucideIcons.clock,
+                                  size: 12, color: Colors.grey),
                               const SizedBox(width: 4),
                               Text(
                                 'Resend code in ',
-                                style: GoogleFonts.inter(fontSize: 11, color: Colors.grey),
+                                style: GoogleFonts.inter(
+                                    fontSize: 11, color: Colors.grey),
                               ),
                               Text(
                                 '00:45',
-                                style: GoogleFonts.inter(fontSize: 11, color: AppTheme.accentCoral, fontWeight: FontWeight.bold),
+                                style: GoogleFonts.inter(
+                                    fontSize: 11,
+                                    color: AppTheme.accentCoral,
+                                    fontWeight: FontWeight.bold),
                               ),
                             ],
                           ),
                         ],
                       ),
               ),
-              
+
               const SizedBox(height: 48),
-              
+
               // Mascot & Shield
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -333,7 +359,8 @@ class _AuthScreenState extends State<AuthScreen> {
                       decoration: BoxDecoration(
                         color: AppTheme.illusGold.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppTheme.illusGold.withValues(alpha: 0.2)),
+                        border: Border.all(
+                            color: AppTheme.illusGold.withValues(alpha: 0.2)),
                       ),
                       child: Row(
                         children: [
@@ -343,7 +370,8 @@ class _AuthScreenState extends State<AuthScreen> {
                               color: Colors.white,
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(LucideIcons.shieldCheck, color: AppTheme.illusGold),
+                            child: const Icon(LucideIcons.shieldCheck,
+                                color: AppTheme.illusGold),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -362,14 +390,16 @@ class _AuthScreenState extends State<AuthScreen> {
                   ),
                 ],
               ),
-              
+
               const SizedBox(height: 32),
-              
+
               // Verify Button
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
-                  onPressed: _isLoading ? null : (_isOtpSent ? _handleOtpSubmit : _handleEmailSubmit),
+                  onPressed: _isLoading
+                      ? null
+                      : (_isOtpSent ? _handleOtpSubmit : _handleEmailSubmit),
                   style: FilledButton.styleFrom(
                     backgroundColor: AppTheme.accentCoral,
                     padding: const EdgeInsets.symmetric(vertical: 18),
@@ -377,19 +407,24 @@ class _AuthScreenState extends State<AuthScreen> {
                       borderRadius: BorderRadius.circular(16),
                     ),
                   ),
-                  child: _isLoading 
-                    ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            _isOtpSent ? 'Verify & Continue' : 'Get Code',
-                            style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600),
-                          ),
-                          const SizedBox(width: 8),
-                          const Icon(LucideIcons.arrowRight, size: 16),
-                        ],
-                      ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: CircularProgressIndicator(
+                              color: Colors.white, strokeWidth: 2))
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              _isOtpSent ? 'Verify & Continue' : 'Get Code',
+                              style: GoogleFonts.inter(
+                                  fontSize: 12, fontWeight: FontWeight.w600),
+                            ),
+                            const SizedBox(width: 8),
+                            const Icon(LucideIcons.arrowRight, size: 16),
+                          ],
+                        ),
                 ),
               ),
             ],

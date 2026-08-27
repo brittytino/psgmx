@@ -10,7 +10,9 @@ import '../services/permission_service.dart';
 
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 
-class UserProvider with ChangeNotifier {
+import '../core/safe_change_notifier.dart';
+
+class UserProvider with ChangeNotifier, SafeChangeNotifier {
   final AuthService _authService;
   late final BatchService _batchService;
   late final PermissionService _permissionService;
@@ -66,7 +68,7 @@ class UserProvider with ChangeNotifier {
       final supabaseUser = _authService.currentUser;
       // Remove the native splash screen immediately to show UI skeletons
       FlutterNativeSplash.remove();
-      
+
       if (supabaseUser != null) {
         _currentUser = await _loadFullProfile(supabaseUser.id);
         if (_currentUser != null) {
@@ -99,7 +101,8 @@ class UserProvider with ChangeNotifier {
           try {
             _currentUser = await _loadFullProfile(supabaseUser.id);
             if (_currentUser != null) {
-              debugPrint('[UserProvider] ✅ Profile loaded: ${_currentUser!.name}');
+              debugPrint(
+                  '[UserProvider] ✅ Profile loaded: ${_currentUser!.name}');
               await _checkSpecialStates();
               _scheduleBirthdayNotificationIfNeeded();
             } else {
@@ -120,7 +123,8 @@ class UserProvider with ChangeNotifier {
           _needsGraduationScreen = false;
         }
         notifyListeners();
-        debugPrint('[UserProvider] notifyListeners() called, currentUser: ${_currentUser?.email}');
+        debugPrint(
+            '[UserProvider] notifyListeners() called, currentUser: ${_currentUser?.email}');
       },
       onError: (e) {
         debugPrint('[UserProvider] Auth stream error: $e');
@@ -141,9 +145,10 @@ class UserProvider with ChangeNotifier {
       try {
         final batch = await _batchService.batchFromRollNumber(user.regNo);
         if (batch != null) {
-          await _batchService.assignUserToBatch(userId, batch.id);
+          await _batchService.assignUserToBatch(user.uid, batch.id);
           user = user.copyWith(batchId: batch.id);
-          debugPrint('[UserProvider] Auto-assigned to batch ${batch.batchCode}');
+          debugPrint(
+              '[UserProvider] Auto-assigned to batch ${batch.batchCode}');
         }
       } catch (e) {
         debugPrint('[UserProvider] Batch auto-assign error: $e');
@@ -152,8 +157,9 @@ class UserProvider with ChangeNotifier {
 
     // Load permission flags
     try {
-      final permissions = await _permissionService.fetchUserPermissions(userId);
-      user = user?.copyWith(permissionFlags: permissions);
+      final permissions =
+          await _permissionService.fetchUserPermissions(user!.uid);
+      user = user.copyWith(permissionFlags: permissions);
     } catch (e) {
       debugPrint('[UserProvider] Permission load error: $e');
     }
@@ -165,12 +171,15 @@ class UserProvider with ChangeNotifier {
     if (_currentUser == null) return;
     try {
       final prefs = await SharedPreferences.getInstance();
-      final localCalibrated = prefs.getBool('calibrated_${_currentUser!.uid}') ?? false;
-      _needsCalibration = !(_currentUser!.onboardingComplete || localCalibrated);
+      final localCalibrated =
+          prefs.getBool('calibrated_${_currentUser!.uid}') ?? false;
+      _needsCalibration =
+          !(_currentUser!.onboardingComplete || localCalibrated);
 
       if (_currentUser!.isAlumni && _currentUser!.isGraduatedBatch) {
         final prefs = await SharedPreferences.getInstance();
-        final seenGraduation = prefs.getBool('seen_graduation_${_currentUser!.uid}') ?? false;
+        final seenGraduation =
+            prefs.getBool('seen_graduation_${_currentUser!.uid}') ?? false;
         _needsGraduationScreen = !seenGraduation;
       } else {
         _needsGraduationScreen = false;
@@ -184,7 +193,7 @@ class UserProvider with ChangeNotifier {
 
   Future<void> completeCalibration(int startingScore) async {
     if (_currentUser == null) return;
-    
+
     // 1. Update local state immediately (optimistic update) so the user is never trapped in a routing loop
     _needsCalibration = false;
     _currentUser = _currentUser!.copyWith(onboardingComplete: true);
@@ -193,13 +202,14 @@ class UserProvider with ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('calibrated_${_currentUser!.uid}', true);
-      
+
       try {
-        await Supabase.instance.client.from('users').update({
-          'onboarding_complete': true
-        }).eq('id', _currentUser!.uid);
+        await Supabase.instance.client
+            .from('users')
+            .update({'onboarding_complete': true}).eq('id', _currentUser!.uid);
       } catch (e) {
-        debugPrint('[UserProvider] Error updating users table onboarding_complete: $e');
+        debugPrint(
+            '[UserProvider] Error updating users table onboarding_complete: $e');
       }
 
       // Initialize daily_five_streaks if it doesn't exist
@@ -216,11 +226,12 @@ class UserProvider with ChangeNotifier {
 
       // Initialize leetcode_stats if it doesn't exist (with minimal info)
       try {
-        if (_currentUser!.leetcodeUsername != null && _currentUser!.leetcodeUsername!.isNotEmpty) {
-           await Supabase.instance.client.from('leetcode_stats').upsert({
-             'user_id': _currentUser!.uid,
-             'username': _currentUser!.leetcodeUsername,
-           }, onConflict: 'username');
+        if (_currentUser!.leetcodeUsername != null &&
+            _currentUser!.leetcodeUsername!.isNotEmpty) {
+          await Supabase.instance.client.from('leetcode_stats').upsert({
+            'user_id': _currentUser!.uid,
+            'username': _currentUser!.leetcodeUsername,
+          }, onConflict: 'username');
         }
       } catch (e) {
         debugPrint('[UserProvider] Error initializing leetcode_stats: $e');
@@ -256,7 +267,15 @@ class UserProvider with ChangeNotifier {
   }) async {
     try {
       await _authService.verifyOtp(email: email, otp: otp);
-      // Auth state listener will pick up the new session and load profile
+      final supabaseUser = _authService.currentUser;
+      if (supabaseUser != null && _currentUser == null) {
+        _currentUser = await _loadFullProfile(supabaseUser.id);
+        if (_currentUser != null) {
+          await _checkSpecialStates();
+          _scheduleBirthdayNotificationIfNeeded();
+        }
+      }
+      notifyListeners();
     } catch (e) {
       rethrow;
     }
@@ -337,7 +356,7 @@ class UserProvider with ChangeNotifier {
 
       _currentUser = _currentUser!.copyWith(leetcodeUsername: username);
       notifyListeners();
-      
+
       // Force refresh stats for the new username
       // We can notify LeetCodeProvider if needed, but the periodic fetcher will catch it
     } catch (e) {

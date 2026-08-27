@@ -79,6 +79,7 @@ class AppUser {
 
   /// Whether the user's batch has graduated
   final bool isGraduatedBatch;
+  final String? batchStatus;
 
   // ── Existing fields ───────────────────────────────────────────────────────
   final String? leetcodeUsername;
@@ -124,6 +125,7 @@ class AppUser {
     this.ecampusPasswordSet = false,
     this.onboardingComplete = false,
     this.isGraduatedBatch = false,
+    this.batchStatus,
   })  : permissionFlags = permissionFlags ?? const {},
         createdAt = createdAt ?? DateTime.now(),
         updatedAt = updatedAt ?? DateTime.now();
@@ -139,6 +141,9 @@ class AppUser {
   bool get isPlacementRep => roles.isPlacementRep;
   bool get hasAdminAccess => roles.hasAnyAdminRole();
   bool get isAlumni => roleLabel == 'Alumni';
+  bool get isActiveSenior => batchStatus == 'active_senior';
+  bool get isActiveJunior =>
+      batchStatus == 'active_junior' || batchStatus == 'pending_onboarding';
 
   factory AppUser.fromMap(Map<String, dynamic> data) {
     var rolesData = data['roles'];
@@ -175,6 +180,7 @@ class AppUser {
       roleLabel: data['role_label'] as String? ?? 'Student',
       permissionFlags: permissions,
       isGraduatedBatch: data['batches']?['status'] == 'graduated',
+      batchStatus: data['batches']?['status'] as String?,
       createdAt: data['created_at'] != null
           ? DateTime.parse(data['created_at'])
           : null,
@@ -224,6 +230,7 @@ class AppUser {
       'announcements_enabled': announcementsEnabled,
       'ecampus_password_set': ecampusPasswordSet,
       'onboarding_complete': onboardingComplete,
+      'batch_status': batchStatus,
     };
   }
 
@@ -246,6 +253,7 @@ class AppUser {
     bool? onboardingComplete,
     String? teamId,
     bool? isGraduatedBatch,
+    String? batchStatus,
   }) {
     return AppUser(
       uid: uid,
@@ -260,6 +268,7 @@ class AppUser {
       batchId: batchId ?? this.batchId,
       roleLabel: roleLabel ?? this.roleLabel,
       isGraduatedBatch: isGraduatedBatch ?? this.isGraduatedBatch,
+      batchStatus: batchStatus ?? this.batchStatus,
       permissionFlags: permissionFlags ?? this.permissionFlags,
       createdAt: createdAt,
       updatedAt: DateTime.now(),

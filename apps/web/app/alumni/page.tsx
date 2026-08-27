@@ -6,6 +6,7 @@ import { Award, PenLine, Users, Briefcase, BookOpen, ArrowRight, ToggleLeft, Tog
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { InitialsAvatar } from '@/components/basic/InitialsAvatar';
+import { getCurrentProfile } from '@/lib/current-profile';
 
 interface ArticleRow { id: string; title: string; approval_status: string; view_count: number; created_at: string }
 interface ActivityItem { id: string; text: string; time: string; kind: 'company' | 'article' | 'announcement' }
@@ -28,7 +29,7 @@ export default function AlumniDashboard() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setLoading(false); return; }
 
-    const { data: me } = await supabase.from('users').select('name, batch_id, mentorship_open').eq('id', user.id).single();
+    const me = await getCurrentProfile(supabase);
     if (!me) { setLoading(false); return; }
 
     setName(me.name);
@@ -46,9 +47,9 @@ export default function AlumniDashboard() {
       { data: batchExamResults },
     ] = await Promise.all([
       me.batch_id ? supabase.from('batches').select('batch_code, end_year').eq('id', me.batch_id).single() : Promise.resolve({ data: null }),
-      supabase.from('current_readiness_scores').select('score').eq('user_id', user.id).maybeSingle(),
-      supabase.from('knowledge_brain_articles').select('id, title, approval_status, view_count, created_at').eq('author_id', user.id).order('created_at', { ascending: false }),
-      supabase.from('lineage_map').select('id, student_id, users!lineage_map_student_id_fkey(name, batch_id)').eq('senior_user_id', user.id),
+      supabase.from('current_readiness_scores').select('score').eq('user_id', me.id).maybeSingle(),
+      supabase.from('knowledge_brain_articles').select('id, title, approval_status, view_count, created_at').eq('author_id', me.id).order('created_at', { ascending: false }),
+      supabase.from('lineage_map').select('id, student_id, users!lineage_map_student_id_fkey(name, batch_id)').eq('senior_user_id', me.id),
       supabase.from('announcements').select('id, title, created_at').order('created_at', { ascending: false }).limit(3),
       supabase.from('companies').select('id, name, visit_date').order('visit_date', { ascending: false }).limit(2),
       me.batch_id ? supabase.from('daily_five_streaks').select('longest_streak, user_id, users!inner(batch_id)').eq('users.batch_id', me.batch_id).order('longest_streak', { ascending: false }).limit(1) : Promise.resolve({ data: [] }),
@@ -83,11 +84,11 @@ export default function AlumniDashboard() {
   React.useEffect(() => { load(); }, [load]);
 
   const toggleMentorship = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    const me = await getCurrentProfile(supabase);
+    if (!me) return;
     const next = !mentorshipActive;
     setMentorshipActive(next);
-    await supabase.from('users').update({ mentorship_open: next }).eq('id', user.id);
+    await supabase.from('users').update({ mentorship_open: next }).eq('id', me.id);
   };
 
   if (loading) {

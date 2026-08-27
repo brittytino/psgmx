@@ -139,11 +139,8 @@ export async function proxy(request: NextRequest) {
     let onboardingComplete = true
 
     if (user) {
-      const { data: profile } = await supabase
-        .from('users')
-        .select('role_label, roles, onboarding_complete')
-        .eq('id', user.id)
-        .single()
+      const { data: profileRows } = await supabase.rpc('get_my_profile')
+      const profile = Array.isArray(profileRows) ? profileRows[0] : profileRows
       role = (profile?.role_label ?? 'student').toLowerCase()
       isPlacementRep = (profile?.roles as Record<string, boolean> | null)?.isPlacementRep === true
       onboardingComplete = profile?.onboarding_complete ?? false

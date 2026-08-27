@@ -7,6 +7,8 @@ on:
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     defaults:
       run:
         working-directory: apps/mobile
@@ -23,17 +25,32 @@ jobs:
       
       - name: Install dependencies
         run: flutter pub get
+
+      - name: Validate configuration
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          APP_API_URL: ${{ vars.APP_API_URL }}
+        run: |
+          test -n "$SUPABASE_URL" || { echo "Missing SUPABASE_URL secret"; exit 1; }
+          test -n "$SUPABASE_ANON_KEY" || { echo "Missing SUPABASE_ANON_KEY secret"; exit 1; }
+          test -n "$APP_API_URL" || { echo "Missing APP_API_URL repository variable"; exit 1; }
       
       - name: Generate Environment File
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          APP_API_URL: ${{ vars.APP_API_URL }}
         run: |
-          cat > .env.flutter <<EOF
-          SUPABASE_URL=${{ secrets.SUPABASE_URL }}
-          SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
-          ECAMPUS_API_URL=${{ secrets.ECAMPUS_API_URL }}
-          ECAMPUS_API_SECRET=${{ secrets.ECAMPUS_API_SECRET }}
-          EXTERNAL_PLATFORM_API_KEY=${{ secrets.EXTERNAL_PLATFORM_API_KEY }}
-          OPENROUTER_API_KEY=${{ secrets.OPENROUTER_API_KEY }}
-          EOF
+          umask 077
+          printf 'SUPABASE_URL=%s\nSUPABASE_ANON_KEY=%s\nAPP_API_URL=%s\n' \
+            "$SUPABASE_URL" "$SUPABASE_ANON_KEY" "$APP_API_URL" > .env.flutter
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
 
       - name: Build Web
         run: |

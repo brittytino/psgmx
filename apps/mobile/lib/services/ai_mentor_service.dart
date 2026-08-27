@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/supabase_config.dart';
 import '../models/daily_five.dart';
 
@@ -15,17 +16,6 @@ import '../models/daily_five.dart';
 /// over automatically. If all models fail, a pre-written tip is returned so
 /// the AI layer is never visibly the reason something breaks.
 class AiMentorService {
-  static const String _openRouterBaseUrl = 'https://openrouter.ai/api/v1/chat/completions';
-
-  /// Ordered list of free OpenRouter models to try as fallbacks.
-  static const List<String> _modelChain = [
-    'nvidia/nemotron-3-ultra-550b-a55b:free',
-    'poolside/laguna-s-2.1:free',
-    'google/gemma-4-26b-a4b-it:free',
-    'liquid/lfm-2.5-2.6b:free',
-    'openai/gpt-oss-20b:free',
-  ];
-
   /// Pre-written fallback tips for wrong Daily Five answers, by topic.
   static const Map<String, String> _fallbackTips = {
     'default': '💡 Tip: Review the concept once more and try to explain it in '
@@ -54,54 +44,30 @@ class AiMentorService {
     required String userMessage,
     int maxTokens = 300,
   }) async {
-    final apiKey = SupabaseConfig.openRouterApiKey;
-    if (apiKey.isEmpty) {
-      debugPrint('[AiMentor] No OpenRouter API key — skipping AI call');
+    final token = Supabase.instance.client.auth.currentSession?.accessToken;
+    if (token == null) return null;
+    try {
+      final response = await http
+          .post(
+            Uri.parse('${SupabaseConfig.appApiUrl}/api/ai-mentor'),
+            headers: {
+              'Authorization': 'Bearer $token',
+              'Content-Type': 'application/json'
+            },
+            body: jsonEncode({
+              'system_prompt': systemPrompt,
+              'message': userMessage,
+              'max_tokens': maxTokens
+            }),
+          )
+          .timeout(const Duration(seconds: 22));
+      if (response.statusCode != 200) return null;
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      return (data['answer'] as String?)?.trim();
+    } catch (error) {
+      debugPrint('[AiMentor] Trusted API call failed: $error');
       return null;
     }
-
-    for (final model in _modelChain) {
-      try {
-        final response = await http
-            .post(
-              Uri.parse(_openRouterBaseUrl),
-              headers: {
-                'Authorization': 'Bearer $apiKey',
-                'Content-Type': 'application/json',
-                'HTTP-Referer': 'https://psgmx.app',
-                'X-Title': 'PSGMX AI Mentor',
-              },
-              body: jsonEncode({
-                'model': model,
-                'max_tokens': maxTokens,
-                'messages': [
-                  {'role': 'system', 'content': systemPrompt},
-                  {'role': 'user', 'content': userMessage},
-                ],
-              }),
-            )
-            .timeout(const Duration(seconds: 20));
-
-        if (response.statusCode == 200) {
-          final data = jsonDecode(response.body) as Map<String, dynamic>;
-          final content =
-              data['choices']?[0]?['message']?['content'] as String?;
-          if (content != null && content.isNotEmpty) {
-            debugPrint('[AiMentor] ✅ Response from $model');
-            return content.trim();
-          }
-        } else if (response.statusCode == 429 || response.statusCode == 503) {
-          debugPrint(
-              '[AiMentor] Model $model returned ${response.statusCode}, trying next');
-          continue;
-        }
-      } catch (e) {
-        debugPrint('[AiMentor] Model $model error: $e — trying next');
-        continue;
-      }
-    }
-    debugPrint('[AiMentor] All models failed — using fallback');
-    return null;
   }
 
   // ── Feature 1: Explain wrong Daily Five answer ────────────────────────────
@@ -122,7 +88,8 @@ class AiMentorService {
   }) async {
     final correctOption = question.correctOption;
     if (correctOption == null) {
-      throw StateError('correctOption not revealed yet — call fetchTodaysResults() after submission first');
+      throw StateError(
+          'correctOption not revealed yet — call fetchTodaysResults() after submission first');
     }
     final userAnswer = question.options[userAnswerIndex];
     final correctAnswer = question.options[correctOption];
@@ -133,8 +100,7 @@ class AiMentorService {
         'explain WHY the correct answer is right in 2–4 short sentences. '
         'Be specific, use examples where helpful, and keep it encouraging.';
 
-    final userMessage =
-        'Question: ${question.questionText}\n'
+    final userMessage = 'Question: ${question.questionText}\n'
         'Student answered: $userAnswer\n'
         'Correct answer: $correctAnswer\n'
         'Topic: $topic\n'
@@ -146,7 +112,8 @@ class AiMentorService {
       maxTokens: 200,
     );
 
-    return aiResponse ?? (_fallbackTips[topic.toLowerCase()] ?? _fallbackTips['default']!);
+    return aiResponse ??
+        (_fallbackTips[topic.toLowerCase()] ?? _fallbackTips['default']!);
   }
 
   // ── Feature 2: Weekly weak-topic note ────────────────────────────────────
@@ -166,14 +133,13 @@ class AiMentorService {
     }
 
     // Find lowest-accuracy topic
-    final weakest = accuracyByTopic.entries
-        .reduce((a, b) => a.value < b.value ? a : b);
+    final weakest =
+        accuracyByTopic.entries.reduce((a, b) => a.value < b.value ? a : b);
 
     final weakTopic = weakest.key;
     final weakPct = (weakest.value * 100).toStringAsFixed(0);
 
-    const systemPrompt =
-        'You are an encouraging placement-prep coach. '
+    const systemPrompt = 'You are an encouraging placement-prep coach. '
         'Give a student a short motivational note (2–3 sentences) about their '
         'weakest topic, with one specific actionable tip to improve. Be warm and direct.';
 

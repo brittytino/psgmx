@@ -47,6 +47,13 @@ Deno.serve(async (req: Request) => {
     return new Response('Method Not Allowed', { status: 405 })
   }
 
+  if (req.headers.get('authorization') !== `Bearer ${serviceRoleKey}`) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
   let entryId: string
   try {
     const body = await req.json()
@@ -69,14 +76,10 @@ Deno.serve(async (req: Request) => {
         id,
         experience_text,
         round_name,
-        student_id,
-        is_anonymous,
-        approved_by,
-        approved_at,
-        kb_article_id,
-        company_id,
-        companies ( company_name, batch_id ),
-        users ( full_name )
+        user_id,
+        moderated_by,
+        updated_at,
+        company_id
       `)
       .eq('id', entryId)
       .eq('approval_status', 'approved')
@@ -89,21 +92,26 @@ Deno.serve(async (req: Request) => {
       )
     }
 
-    // Guard: don't re-ingest if already has a kb_article_id
-    if (entry.kb_article_id) {
+    const sourceKey = `placement_log:${entryId}`
+    const { data: existingArticle } = await supabase
+      .from('knowledge_brain_articles')
+      .select('id')
+      .eq('source', sourceKey)
+      .maybeSingle()
+    if (existingArticle) {
       return new Response(
-        JSON.stringify({ success: true, skipped: true, reason: 'Already ingested', kb_article_id: entry.kb_article_id }),
+        JSON.stringify({ success: true, skipped: true, reason: 'Already ingested', article_id: existingArticle.id }),
         { status: 200, headers: { 'Content-Type': 'application/json' } }
       )
     }
 
-    const company = Array.isArray(entry.companies) ? entry.companies[0] : entry.companies
-    const author  = Array.isArray(entry.users) ? entry.users[0] : entry.users
+    const [{ data: company }, { data: author }] = await Promise.all([
+      supabase.from('companies').select('name,batch_id').eq('id', entry.company_id).single(),
+      supabase.from('users').select('name').eq('id', entry.user_id).single(),
+    ])
 
     // Step 2: Create knowledge_brain_articles row
-    const articleTitle = entry.is_anonymous
-      ? `Interview Experience: ${company?.company_name ?? 'Unknown Company'} — ${entry.round_name}`
-      : `${author?.full_name ?? 'Anonymous'}'s Experience at ${company?.company_name ?? 'Unknown Company'} — ${entry.round_name}`
+    const articleTitle = `${author?.name ?? 'Student'}'s Experience at ${company?.name ?? 'Unknown Company'} — ${entry.round_name}`
 
     const summaryText = entry.experience_text.slice(0, 300).trim()
     const summary = summaryText.length === entry.experience_text.length
@@ -122,15 +130,14 @@ Deno.serve(async (req: Request) => {
         title:                 articleTitle,
         content:               entry.experience_text,
         summary,
-        author_id:             entry.is_anonymous ? null : entry.student_id,
-        source:                'flutter_placement_log',
-        placement_log_entry_id: entryId,
-        tags:                  ['placement', 'interview-experience', company?.company_name?.toLowerCase().replace(/\s+/g, '-') ?? 'unknown'].filter(Boolean),
-        company_name:          company?.company_name ?? null,
+        author_id:             entry.user_id,
+        source:                sourceKey,
+        tags:                  ['placement', 'interview-experience', company?.name?.toLowerCase().replace(/\s+/g, '-') ?? 'unknown'].filter(Boolean),
+        company_name:          company?.name ?? null,
         batch_year:            batch?.batch_code ?? null,
         approval_status:       'approved',
-        approved_by:           entry.approved_by,
-        approved_at:           entry.approved_at ?? new Date().toISOString(),
+        reviewed_by:           entry.moderated_by,
+        reviewed_at:           entry.updated_at ?? new Date().toISOString(),
       })
       .select('id')
       .single()
@@ -167,12 +174,6 @@ Deno.serve(async (req: Request) => {
         console.error(`Chunk ${i} embedding generation error:`, embErr)
       }
     }
-
-    // Step 6: Update placement_log_entries.kb_article_id
-    await supabase
-      .from('placement_log_entries')
-      .update({ kb_article_id: article.id })
-      .eq('id', entryId)
 
     return new Response(
       JSON.stringify({

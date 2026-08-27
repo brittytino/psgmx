@@ -1,11 +1,11 @@
 /// PSGMX - Placement Excellence Program
-/// 
+///
 /// A comprehensive placement preparation platform for PSG Technology - MCA
-/// 
+///
 /// Author: Tino Britty J
 /// GitHub: https://github.com/brittytino
 /// Portfolio: https://tinobritty.me
-/// 
+///
 /// Copyright (c) 2026 Tino Britty J
 /// Licensed under the MIT License
 
@@ -33,7 +33,6 @@ import 'services/supabase_db_service.dart';
 import 'services/quote_service.dart';
 import 'services/notification_service.dart';
 import 'services/birthday_notification_service.dart';
-import 'services/ca_exam_notification_service.dart';
 import 'services/leetcode_auto_refresh_service.dart';
 import 'services/update_service.dart';
 import 'services/sync_service.dart';
@@ -81,14 +80,10 @@ void main() async {
     await BirthdayNotificationService().init();
     debugPrint('[APP] BirthdayNotificationService initialized successfully');
 
-    debugPrint('[APP] Initializing CaExamNotificationService...');
-    await CaExamNotificationService().init();
-    debugPrint('[APP] CaExamNotificationService initialized successfully');
-
     debugPrint('[APP] Initializing UpdateService...');
     await UpdateService().initialize();
     debugPrint('[APP] UpdateService initialized successfully');
-    
+
     debugPrint('[APP] Initializing SyncService...');
     SyncService(Supabase.instance.client, localDb);
     debugPrint('[APP] SyncService initialized successfully');
@@ -117,7 +112,8 @@ class PsgMxApp extends StatelessWidget {
         Provider<SupabaseDbService>.value(value: supabaseDbService),
         Provider<AuthService>.value(value: authService),
         Provider<QuoteService>.value(value: quoteService),
-        ChangeNotifierProvider<NotificationService>.value(value: NotificationService()),
+        ChangeNotifierProvider<NotificationService>.value(
+            value: NotificationService()),
         ChangeNotifierProvider<UpdateService>.value(value: UpdateService()),
         ChangeNotifierProvider(create: (_) => NavigationProvider()),
         ChangeNotifierProvider(
@@ -199,7 +195,6 @@ class _PsgMxAppInnerState extends State<PsgMxAppInner> {
 
   @override
   Widget build(BuildContext context) {
-    
     return MaterialApp.router(
       title: 'PSGMX - Placement Excellence',
       debugShowCheckedModeBanner: false,
@@ -208,19 +203,10 @@ class _PsgMxAppInnerState extends State<PsgMxAppInner> {
       themeMode: ThemeMode.light,
       routerConfig: _router,
       builder: (context, child) {
-        // Calculate a responsive scaling factor to bump up all tiny fonts proportionally.
-        // It respects user's OS settings, ensuring a minimum baseline scale.
         final mediaData = MediaQuery.of(context);
-        final screenWidth = mediaData.size.width;
-        
-        double scale = mediaData.textScaler.scale(1.0);
-        if (scale < 1.25) {
-          scale = 1.25; // 25% bump for standard mobile devices
-        }
-        if (screenWidth >= 600 && scale < 1.4) {
-          scale = 1.4; // 40% bump for tablets
-        }
-        
+        // Respect the user's accessibility setting while preventing extreme
+        // scaling from making primary actions unreachable on small screens.
+        final scale = mediaData.textScaler.scale(1.0).clamp(0.9, 2.0);
         final scaledChild = MediaQuery(
           data: mediaData.copyWith(
             textScaler: TextScaler.linear(scale),
@@ -230,8 +216,7 @@ class _PsgMxAppInnerState extends State<PsgMxAppInner> {
 
         return UpdateGate(
           child: NotificationListenerWrapper(
-            child: ModernOfflineBanner(child: scaledChild)
-          ),
+              child: ModernOfflineBanner(child: scaledChild)),
         );
       },
     );

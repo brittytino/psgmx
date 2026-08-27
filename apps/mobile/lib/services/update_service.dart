@@ -1,6 +1,7 @@
 import 'dart:io' show Platform;
 
-import 'package:flutter/foundation.dart' show ChangeNotifier, debugPrint, kIsWeb;
+import 'package:flutter/foundation.dart'
+    show ChangeNotifier, debugPrint, kIsWeb;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -10,7 +11,7 @@ import '../models/app_config.dart';
 import '../core/utils/version_comparator.dart';
 
 /// Update Service for PSGMX App
-/// 
+///
 /// Handles:
 /// - Fetching remote app configuration
 /// - Version comparison
@@ -22,11 +23,11 @@ class UpdateService extends ChangeNotifier {
   UpdateService._internal();
 
   final SupabaseClient _supabase = Supabase.instance.client;
-  
+
   // ========================================
   // STATE
   // ========================================
-  
+
   AppConfig? _config;
   String? _currentVersion;
   UpdateStatus? _updateStatus;
@@ -46,23 +47,41 @@ class UpdateService extends ChangeNotifier {
   String? get currentVersion => _currentVersion;
   UpdateStatus? get updateStatus => _updateStatus;
   bool get isInitialized => _isInitialized;
-  
+
   /// Whether we should show the optional update dialog
-  bool get shouldShowOptionalUpdate => 
-      _updateStatus == UpdateStatus.optionalUpdateAvailable && 
+  bool get shouldShowOptionalUpdate =>
+      _updateStatus == UpdateStatus.optionalUpdateAvailable &&
       !_hasShownOptionalUpdateThisSession;
 
   /// Whether we should show force update screen
-  bool get shouldShowForceUpdate => 
+  bool get shouldShowForceUpdate =>
       _updateStatus == UpdateStatus.forceUpdateRequired;
 
   /// Whether we should show emergency block screen
-  bool get shouldShowEmergencyBlock => 
+  bool get shouldShowEmergencyBlock =>
       _updateStatus == UpdateStatus.emergencyBlocked;
 
   /// Check if app needs any update intervention
   bool get needsUpdateIntervention =>
       shouldShowEmergencyBlock || shouldShowForceUpdate;
+
+  /// Feature rollout eligibility. Empty targeting lists intentionally fail
+  /// open so a freshly migrated production app is never accidentally locked.
+  bool isRolloutEnabledFor({required String userId, String? batchId}) {
+    final value = _config;
+    if (value == null || value.rolloutStage == 'full') {
+      return true;
+    }
+    if (value.pilotUserIds.contains(userId)) {
+      return true;
+    }
+    if (value.rolloutStage == 'batch' &&
+        batchId != null &&
+        value.enabledBatchIds.contains(batchId)) {
+      return true;
+    }
+    return value.pilotUserIds.isEmpty && value.enabledBatchIds.isEmpty;
+  }
 
   // ========================================
   // INITIALIZATION
@@ -81,7 +100,7 @@ class UpdateService extends ChangeNotifier {
 
       // Check for updates
       await checkForUpdates();
-      
+
       _isInitialized = true;
     } catch (e) {
       debugPrint('❌ [UpdateService] Initialization error: $e');
@@ -98,14 +117,15 @@ class UpdateService extends ChangeNotifier {
   // ========================================
 
   /// Check for updates from Supabase
-  /// 
+  ///
   /// This fetches the app_config and determines update status
   Future<UpdateStatus> checkForUpdates({bool forceCheck = false}) async {
     // Prevent excessive checks (minimum 5 minutes between checks)
-    if (!forceCheck && 
-        _hasCheckedThisSession && 
+    if (!forceCheck &&
+        _hasCheckedThisSession &&
         _lastCheckTime != null &&
-        DateTime.now().difference(_lastCheckTime!) < const Duration(minutes: 5)) {
+        DateTime.now().difference(_lastCheckTime!) <
+            const Duration(minutes: 5)) {
       return _updateStatus ?? UpdateStatus.upToDate;
     }
 
@@ -113,11 +133,8 @@ class UpdateService extends ChangeNotifier {
       debugPrint('🔍 [UpdateService] Checking for updates...');
 
       // Fetch config from Supabase
-      final response = await _supabase
-          .from('app_config')
-          .select()
-          .limit(1)
-          .maybeSingle();
+      final response =
+          await _supabase.from('app_config').select().limit(1).maybeSingle();
 
       if (response != null) {
         _config = AppConfig.fromMap(response);
@@ -139,10 +156,9 @@ class UpdateService extends ChangeNotifier {
       _lastCheckTime = DateTime.now();
 
       debugPrint('📊 [UpdateService] Update status: $_updateStatus');
-
     } catch (e) {
       debugPrint('❌ [UpdateService] Error fetching config: $e');
-      
+
       // Check if we have cached emergency block
       final cachedEmergency = await _getCachedEmergencyBlockState();
       if (cachedEmergency) {
@@ -189,7 +205,7 @@ class UpdateService extends ChangeNotifier {
     if (_config == null) return false;
 
     String? url;
-    
+
     // Platform-specific URLs if available (not on web)
     if (!kIsWeb) {
       if (Platform.isAndroid && _config!.androidDownloadUrl != null) {
@@ -198,7 +214,7 @@ class UpdateService extends ChangeNotifier {
         url = _config!.iosDownloadUrl;
       }
     }
-    
+
     // Fallback to GitHub releases
     if (url == null || url.isEmpty) {
       url = _config!.githubReleaseUrl;
@@ -210,19 +226,20 @@ class UpdateService extends ChangeNotifier {
 
     try {
       final uri = Uri.parse(url);
-      
+
       // Try external application first (preferred for APK downloads)
-      bool launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
-      
+      bool launched =
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+
       if (!launched) {
         // Fallback to platform default
         launched = await launchUrl(uri);
       }
-      
+
       return launched;
     } catch (e) {
       debugPrint('❌ [UpdateService] Error opening URL: $e');
-      
+
       // Final attempt using launchUrlString if uri fails
       try {
         return await launchUrl(Uri.parse(url));

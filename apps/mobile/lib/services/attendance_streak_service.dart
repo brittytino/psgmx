@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/attendance_streak.dart';
+import '../core/logical_identity.dart';
 
 /// Service for calculating real attendance streaks and providing
 /// attendance calculation explanations (A3 & A4)
@@ -13,10 +14,9 @@ class AttendanceStreakService {
 
   /// Get attendance streak for current user
   Future<AttendanceStreak> getMyAttendanceStreak() async {
-    final user = _supabase.auth.currentUser;
-    if (user == null) return AttendanceStreak.empty();
-
-    return getStudentAttendanceStreak(user.id);
+    final userId = await LogicalIdentity.currentUserId(_supabase);
+    if (userId == null) return AttendanceStreak.empty();
+    return getStudentAttendanceStreak(userId);
   }
 
   /// Get attendance streak for a specific student
@@ -126,10 +126,9 @@ class AttendanceStreakService {
 
   /// Get detailed attendance calculation for current user
   Future<AttendanceCalculation> getMyAttendanceCalculation() async {
-    final user = _supabase.auth.currentUser;
-    if (user == null) return AttendanceCalculation.empty();
-
-    return getStudentAttendanceCalculation(user.id);
+    final userId = await LogicalIdentity.currentUserId(_supabase);
+    if (userId == null) return AttendanceCalculation.empty();
+    return getStudentAttendanceCalculation(userId);
   }
 
   /// Get detailed attendance calculation for a specific student
@@ -144,9 +143,8 @@ class AttendanceStreakService {
           .eq('user_id', studentId);
 
       // Get scheduled attendance dates info (all dates marked)
-      final daysResponse = await _supabase
-          .from('scheduled_attendance_dates')
-          .select('date');
+      final daysResponse =
+          await _supabase.from('scheduled_attendance_dates').select('date');
 
       // Build a map of attendance records by date
       final recordsMap = <String, String>{};
@@ -170,7 +168,7 @@ class AttendanceStreakService {
       // Process each scheduled date
       for (var dateStr in scheduledDates) {
         final date = DateTime.parse(dateStr);
-        
+
         // Track date range
         if (startDate == null || date.isBefore(startDate)) {
           startDate = date;
@@ -192,9 +190,8 @@ class AttendanceStreakService {
       // Calculate percentage based on marked attendance only
       // This gives a true reflection of attendance for days that were actually marked
       final markedDays = presentCount + absentCount;
-      final percentage = markedDays > 0 
-          ? (presentCount / markedDays) * 100 
-          : 0.0;
+      final percentage =
+          markedDays > 0 ? (presentCount / markedDays) * 100 : 0.0;
 
       return AttendanceCalculation(
         presentCount: presentCount,
@@ -261,6 +258,7 @@ class AttendanceStreakService {
       debugPrint('[AttendanceStreakService] Error running defaulter check: $e');
     }
   }
+
   /// Helper: Check if a day is a default class day
   bool _isDefaultClassDay(DateTime date) {
     final weekday = date.weekday;

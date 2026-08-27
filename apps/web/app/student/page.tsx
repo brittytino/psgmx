@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Award, BrainCircuit, BookOpen, ClipboardList, Users, ArrowRight, Calendar, Flame, FileText, Building2, Star, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import { getCurrentProfile } from '@/lib/current-profile';
 import { InitialsAvatar } from '@/components/basic/InitialsAvatar';
 
 const StatCard = ({ title, value, trend, icon: Icon, color, delay }: any) => (
@@ -64,11 +65,8 @@ export default function StudentDashboard() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setLoading(false); return; }
 
-      const { data: me } = await supabase
-        .from('users')
-        .select('name, batch_id')
-        .eq('id', user.id)
-        .single();
+      const me = await getCurrentProfile(supabase);
+      if (!me) { setLoading(false); return; }
 
       const batchId = me?.batch_id ?? null;
 
@@ -83,8 +81,8 @@ export default function StudentDashboard() {
         { data: companies },
       ] = await Promise.all([
         batchId ? supabase.from('batches').select('batch_code').eq('id', batchId).single() : Promise.resolve({ data: null }),
-        supabase.from('current_readiness_scores').select('score, components_json').eq('user_id', user.id).maybeSingle(),
-        supabase.from('daily_five_streaks').select('current_streak').eq('user_id', user.id).maybeSingle(),
+        supabase.from('current_readiness_scores').select('score, components_json').eq('user_id', me.id).maybeSingle(),
+        supabase.from('daily_five_streaks').select('current_streak').eq('user_id', me.id).maybeSingle(),
         supabase
           .from('knowledge_brain_articles')
           .select('id, title, tags, created_at, author_id, users!knowledge_brain_articles_author_id_fkey(name, role_label)')
@@ -94,11 +92,11 @@ export default function StudentDashboard() {
         supabase
           .from('mock_exam_results')
           .select('id, status, mock_exams(id, title, exam_date, duration_minutes)')
-          .eq('student_id', user.id),
+          .eq('student_id', me.id),
         supabase
           .from('lineage_map')
           .select('senior_quote, users!lineage_map_senior_user_id_fkey(name)')
-          .eq('student_id', user.id)
+          .eq('student_id', me.id)
           .maybeSingle(),
         batchId
           ? supabase
@@ -153,7 +151,7 @@ export default function StudentDashboard() {
           userId: r.user_id,
           name: r.users?.name || 'Student',
           score: r.score,
-          isYou: r.user_id === user.id,
+          isYou: r.user_id === me.id,
         })),
         recentCompanies: (companies || []).map((c: any) => ({
           id: c.id,

@@ -66,16 +66,13 @@ In Supabase Dashboard → Settings → API:
 cd apps/mobile
 flutter pub get
 flutter build apk --release \
-  --dart-define=SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co \
-  --dart-define=SUPABASE_ANON_KEY=YOUR_ANON_KEY \
-  --dart-define=ECAMPUS_API_URL=https://your-ecampus-api.render.com \
-  --dart-define=ECAMPUS_API_SECRET=YOUR_SECRET
+  --dart-define-from-file=.env.flutter
 ```
 
 The APK is output to: `apps/mobile/build/app/outputs/flutter-apk/app-release.apk`
 
 ### 2.2 GitHub Actions — Automated APK Release
-Push a Git tag matching `v*` to trigger the `mobile-apk-release.yml` workflow:
+Push a Git tag matching `v*` to trigger `.github/workflows/release.yml`:
 ```bash
 git tag v4.1.0
 git push origin v4.1.0
@@ -86,16 +83,33 @@ The workflow builds the APK and uploads it as a GitHub Release asset automatical
 ```
 SUPABASE_URL
 SUPABASE_ANON_KEY
-ECAMPUS_API_URL
-ECAMPUS_API_SECRET
+ANDROID_KEYSTORE_BASE64
+ANDROID_KEY_ALIAS
+ANDROID_KEY_PASSWORD
+ANDROID_STORE_PASSWORD
 ```
+
+Add this repository variable under Settings → Secrets and variables → Actions → Variables:
+
+```text
+APP_API_URL=https://psgmx.tech
+```
+
+Generate `ANDROID_KEYSTORE_BASE64` on Linux with:
+
+```bash
+base64 -w 0 apps/mobile/android/app/upload-keystore.jks
+```
+
+On macOS, use `base64 -i apps/mobile/android/app/upload-keystore.jks | tr -d '\n'`.
+The workflow intentionally fails when signing configuration is missing; it never publishes a debug-signed APK as a production release.
 
 ### 2.3 Firebase Hosting — Flutter Web Build (app.psgmx.tech)
 The Flutter app is also built as a PWA and hosted on Firebase Hosting for iOS/Safari users.
 
 ```bash
 cd apps/mobile
-flutter build web --release
+flutter build web --release --dart-define-from-file=.env.flutter
 firebase deploy --only hosting
 ```
 
@@ -201,5 +215,5 @@ git push origin main
 git tag v4.x.x && git push origin v4.x.x
 
 # 5. Deploy Flutter web (manual)
-cd apps/mobile && flutter build web --release && firebase deploy --only hosting
+cd apps/mobile && flutter build web --release --dart-define-from-file=.env.flutter && firebase deploy --only hosting
 ```

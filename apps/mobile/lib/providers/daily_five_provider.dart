@@ -2,16 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/daily_five.dart';
 import '../services/daily_five_service.dart';
+import '../core/safe_change_notifier.dart';
 
-
-/// State management for the Daily Five quiz engine.
-///
-/// Lifecycle:
-///   1. On mount → [loadState] checks streak (completedToday?)
-///   2. If not completed → [startSession] fetches 5 questions
-///   3. As user answers → [submitAnswer] updates [session]
-///   4. When all answered → [finalizeSession] calls the RPC + updates streak
-class DailyFiveProvider with ChangeNotifier {
+class DailyFiveProvider with ChangeNotifier, SafeChangeNotifier {
   final DailyFiveService _service;
 
   DailyFiveProvider() : _service = DailyFiveService(Supabase.instance.client);

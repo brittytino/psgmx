@@ -4,9 +4,10 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Users, X, UserCheck } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { getCurrentProfile } from '@/lib/current-profile';
 
-interface StudentRow { id: string; name: string; reg_no: string; team_id: string | null }
-interface TeamRow { id: string; team_name: string; target_size: number; team_leader_id: string | null }
+interface StudentRow { id: string; name: string; reg_no: string; team_uuid: string | null }
+interface TeamRow { id: string; team_name: string; team_code: string; target_size: number; team_leader_id: string | null }
 
 export default function TeamManagementPage() {
   const [batchId, setBatchId] = React.useState<string | null>(null);
@@ -21,15 +22,13 @@ export default function TeamManagementPage() {
   const supabase = createClient();
 
   const load = React.useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const { data: me } = await supabase.from('users').select('batch_id').eq('id', user.id).single();
+    const me = await getCurrentProfile(supabase);
     if (!me?.batch_id) { setLoading(false); return; }
     setBatchId(me.batch_id);
 
     const [{ data: teamRows }, { data: studentRows }] = await Promise.all([
-      supabase.from('teams').select('id, team_name, target_size, team_leader_id').eq('batch_id', me.batch_id).order('team_name'),
-      supabase.from('users').select('id, name, reg_no, team_id').eq('batch_id', me.batch_id).eq('role_label', 'Student').order('reg_no'),
+      supabase.from('teams').select('id, team_name, team_code, target_size, team_leader_id').eq('batch_id', me.batch_id).order('team_name'),
+      supabase.from('users').select('id, name, reg_no, team_uuid').eq('batch_id', me.batch_id).eq('role_label', 'Student').order('reg_no'),
     ]);
 
     setTeams(teamRows || []);
@@ -43,7 +42,11 @@ export default function TeamManagementPage() {
     if (!newTeamName.trim() || !batchId) return;
     setSaving(true);
     try {
-      await supabase.from('teams').insert({ batch_id: batchId, team_name: newTeamName.trim(), target_size: newTeamSize });
+      const usedCodes = new Set(teams.map((team) => team.team_code));
+      let sequence = 1;
+      while (usedCodes.has(`T${String(sequence).padStart(2, '0')}`)) sequence += 1;
+      const nextCode = `T${String(sequence).padStart(2, '0')}`;
+      await supabase.from('teams').insert({ batch_id: batchId, team_name: newTeamName.trim(), team_code: nextCode, target_size: newTeamSize });
       setNewTeamName('');
       setNewTeamSize(5);
       setShowCreate(false);
@@ -54,13 +57,14 @@ export default function TeamManagementPage() {
   };
 
   const handleAssign = async (studentId: string, teamId: string | null) => {
-    await supabase.from('users').update({ team_id: teamId }).eq('id', studentId);
-    setStudents((prev) => prev.map((s) => (s.id === studentId ? { ...s, team_id: teamId } : s)));
+    if (!teamId) return;
+    const { error } = await supabase.rpc('assign_team_member', { p_user_id: studentId, p_team_id: teamId });
+    if (!error) setStudents((prev) => prev.map((s) => (s.id === studentId ? { ...s, team_uuid: teamId } : s)));
   };
 
   const handleSetLeader = async (teamId: string, studentId: string) => {
-    await supabase.from('teams').update({ team_leader_id: studentId }).eq('id', teamId);
-    setTeams((prev) => prev.map((t) => (t.id === teamId ? { ...t, team_leader_id: studentId } : t)));
+    const { error } = await supabase.rpc('set_team_leader', { p_team_id: teamId, p_user_id: studentId });
+    if (!error) setTeams((prev) => prev.map((t) => (t.id === teamId ? { ...t, team_leader_id: studentId } : t)));
   };
 
   if (loading) {
@@ -101,7 +105,7 @@ export default function TeamManagementPage() {
           <p className="text-[13px] text-text-muted col-span-2">No teams created for this batch yet.</p>
         )}
         {teams.map((team) => {
-          const members = students.filter((s) => s.team_id === team.id);
+          const members = students.filter((s) => s.team_uuid === team.id);
           return (
             <div key={team.id} className="bg-white rounded-2xl border border-border-light p-6">
               <div className="flex items-center justify-between mb-4">
@@ -124,7 +128,6 @@ export default function TeamManagementPage() {
                           <UserCheck className="w-3 h-3" /> Make Leader
                         </button>
                       )}
-                      <button onClick={() => handleAssign(m.id, null)} className="text-text-muted hover:text-deep-violet"><X className="w-3.5 h-3.5" /></button>
                     </div>
                   </div>
                 ))}
@@ -137,8 +140,8 @@ export default function TeamManagementPage() {
       <div className="bg-white rounded-2xl border border-border-light p-6">
         <h3 className="text-[15px] font-bold text-text-main mb-4">Unassigned Students</h3>
         <div className="space-y-2">
-          {students.filter((s) => !s.team_id).length === 0 && <p className="text-[13px] text-text-muted">Every student is assigned to a team.</p>}
-          {students.filter((s) => !s.team_id).map((s) => (
+          {students.filter((s) => !s.team_uuid).length === 0 && <p className="text-[13px] text-text-muted">Every student is assigned to a team.</p>}
+          {students.filter((s) => !s.team_uuid).map((s) => (
             <div key={s.id} className="flex items-center justify-between p-2.5 rounded-lg hover:bg-page-bg">
               <span className="text-[13px] font-semibold text-text-main">{s.name} <span className="text-text-muted font-normal">· {s.reg_no}</span></span>
               <select

@@ -14,6 +14,24 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
+val environmentStoreFile = System.getenv("ANDROID_KEYSTORE_PATH")?.takeIf { it.isNotBlank() }
+val releaseStoreFile = environmentStoreFile ?: keystoreProperties.getProperty("storeFile")
+val releaseKeyAlias = System.getenv("ANDROID_KEY_ALIAS")
+    ?.takeIf { it.isNotBlank() }
+    ?: keystoreProperties.getProperty("keyAlias")
+val releaseKeyPassword = System.getenv("ANDROID_KEY_PASSWORD")
+    ?.takeIf { it.isNotBlank() }
+    ?: keystoreProperties.getProperty("keyPassword")
+val releaseStorePassword = System.getenv("ANDROID_STORE_PASSWORD")
+    ?.takeIf { it.isNotBlank() }
+    ?: keystoreProperties.getProperty("storePassword")
+val hasReleaseSigning = listOf(
+    releaseStoreFile,
+    releaseKeyAlias,
+    releaseKeyPassword,
+    releaseStorePassword,
+).all { !it.isNullOrBlank() }
+
 android {
     namespace = "com.example.psgmx_placement_prep"
     compileSdk = flutter.compileSdkVersion
@@ -45,19 +63,23 @@ android {
     }
 
     signingConfigs {
-        create("release") {
-            if (keystorePropertiesFile.exists()) {
-                keyAlias = keystoreProperties.getProperty("keyAlias")
-                keyPassword = keystoreProperties.getProperty("keyPassword")
-                storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
-                storePassword = keystoreProperties.getProperty("storePassword")
+        if (hasReleaseSigning) {
+            create("release") {
+                keyAlias = releaseKeyAlias!!
+                keyPassword = releaseKeyPassword!!
+                storeFile = if (environmentStoreFile != null) {
+                    file(environmentStoreFile)
+                } else {
+                    rootProject.file(releaseStoreFile!!)
+                }
+                storePassword = releaseStorePassword!!
             }
         }
     }
 
     buildTypes {
         release {
-            signingConfig = if (keystorePropertiesFile.exists()) {
+            signingConfig = if (hasReleaseSigning) {
                 signingConfigs.getByName("release")
             } else {
                 signingConfigs.getByName("debug")

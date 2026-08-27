@@ -7,9 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:api": "vitest run --reporter=verbose",
+    "test:unit": "vitest run --reporter=verbose",
+    "test:coverage": "vitest run --coverage",
+    "test:api": "bash tests/run-all-tests.sh",
     "test:e2e": "playwright test",
-    "test": "bash tests/run-all-tests.sh"
+    "test": "npm run test:unit"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",

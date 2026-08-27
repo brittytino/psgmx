@@ -58,7 +58,8 @@ class _PulseRankingsScreenState extends State<PulseRankingsScreen> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      bottomNavigationBar: const SharedBottomNavigationBar(),
+      bottomNavigationBar: SharedBottomNavigationBar(
+          showPlacementLog: userProvider.currentUser?.isActiveSenior ?? false),
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(LucideIcons.chevronLeft),
@@ -78,7 +79,8 @@ class _PulseRankingsScreenState extends State<PulseRankingsScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Icon(LucideIcons.sparkles, color: AppTheme.illusGold, size: 12),
+                const Icon(LucideIcons.sparkles,
+                    color: AppTheme.illusGold, size: 12),
               ],
             ),
             Row(
@@ -87,11 +89,13 @@ class _PulseRankingsScreenState extends State<PulseRankingsScreen> {
                   'Learn. Improve. Inspire.',
                   style: GoogleFonts.inter(
                     fontSize: 9,
-                    color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
+                    color: theme.textTheme.bodyMedium?.color
+                        ?.withValues(alpha: 0.6),
                   ),
                 ),
                 const SizedBox(width: 4),
-                const Icon(LucideIcons.heart, size: 12, color: AppTheme.accentCoral),
+                const Icon(LucideIcons.heart,
+                    size: 12, color: AppTheme.accentCoral),
               ],
             ),
           ],
@@ -103,24 +107,34 @@ class _PulseRankingsScreenState extends State<PulseRankingsScreen> {
             decoration: BoxDecoration(
               color: theme.colorScheme.surface,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: theme.dividerColor.withValues(alpha: 0.3)),
+              border:
+                  Border.all(color: theme.dividerColor.withValues(alpha: 0.3)),
             ),
             child: Row(
               children: [
-                Icon(LucideIcons.helpCircle, size: 12, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7)),
+                Icon(LucideIcons.helpCircle,
+                    size: 12,
+                    color: theme.textTheme.bodyMedium?.color
+                        ?.withValues(alpha: 0.7)),
                 const SizedBox(width: 4),
-                Text('How it works?', style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w600)),
+                Text('How it works?',
+                    style: GoogleFonts.inter(
+                        fontSize: 9, fontWeight: FontWeight.w600)),
               ],
             ),
           ),
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppTheme.accentCoral))
+          ? const Center(
+              child: CircularProgressIndicator(color: AppTheme.accentCoral))
           : _scores.isEmpty
-              ? Center(child: Text('No data available', style: GoogleFonts.inter(fontSize: 11)))
+              ? Center(
+                  child: Text('No data available',
+                      style: GoogleFonts.inter(fontSize: 11)))
               : SingleChildScrollView(
-                  padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 16.0, bottom: 48.0),
+                  padding: const EdgeInsets.only(
+                      left: 20.0, right: 20.0, top: 16.0, bottom: 48.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -133,49 +147,75 @@ class _PulseRankingsScreenState extends State<PulseRankingsScreen> {
                               decoration: BoxDecoration(
                                 color: theme.colorScheme.surface,
                                 borderRadius: BorderRadius.circular(24),
-                                border: Border.all(color: theme.dividerColor.withValues(alpha: 0.3)),
+                                border: Border.all(
+                                    color: theme.dividerColor
+                                        .withValues(alpha: 0.3)),
                               ),
                               child: Row(
                                 children: [
-                                  Expanded(child: _buildFilterSegment('Institute', false, theme)),
-                                  Expanded(child: _buildFilterSegment('Batch', true, theme)),
-                                  Expanded(child: _buildFilterSegment('Branch', false, theme)),
-                                  Expanded(child: _buildFilterSegment('Year', false, theme)),
+                                  Expanded(
+                                      child: _buildFilterSegment(
+                                          'Institute', false, theme)),
+                                  Expanded(
+                                      child: _buildFilterSegment(
+                                          'Batch', true, theme)),
+                                  Expanded(
+                                      child: _buildFilterSegment(
+                                          'Branch', false, theme)),
+                                  Expanded(
+                                      child: _buildFilterSegment(
+                                          'Year', false, theme)),
                                 ],
                               ),
                             ),
                           ),
                           const SizedBox(width: 12),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 10),
                             decoration: BoxDecoration(
                               color: theme.colorScheme.surface,
                               borderRadius: BorderRadius.circular(24),
-                              border: Border.all(color: theme.dividerColor.withValues(alpha: 0.3)),
+                              border: Border.all(
+                                  color: theme.dividerColor
+                                      .withValues(alpha: 0.3)),
                             ),
                             child: Row(
                               children: [
-                                Text('Current Batch', style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w600)),
+                                Text('Current Batch',
+                                    style: GoogleFonts.inter(
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w600)),
                                 const SizedBox(width: 4),
-                                Icon(LucideIcons.chevronDown, size: 12, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5)),
+                                Icon(LucideIcons.chevronDown,
+                                    size: 12,
+                                    color: theme.textTheme.bodyMedium?.color
+                                        ?.withValues(alpha: 0.5)),
                               ],
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 24),
-                      
+
                       // Top 20% Banner
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 16),
                         decoration: BoxDecoration(
                           color: const Color(0xFFFFF8F5), // Very light coral
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppTheme.accentCoral.withValues(alpha: 0.1)),
+                          border: Border.all(
+                              color:
+                                  AppTheme.accentCoral.withValues(alpha: 0.1)),
                         ),
                         child: Row(
                           children: [
-                            const RivePlaceholder(width: 40, height: 40, label: 'High Five', icon: LucideIcons.users),
+                            const RivePlaceholder(
+                                width: 40,
+                                height: 40,
+                                label: 'High Five',
+                                icon: LucideIcons.users),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Column(
@@ -183,22 +223,29 @@ class _PulseRankingsScreenState extends State<PulseRankingsScreen> {
                                 children: [
                                   Text(
                                     'Consistency is key!',
-                                    style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
+                                    style: GoogleFonts.inter(
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.bold,
+                                        color: theme.colorScheme.onSurface),
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
                                     'Keep pushing to improve your score daily.',
-                                    style: GoogleFonts.inter(fontSize: 9, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7)),
+                                    style: GoogleFonts.inter(
+                                        fontSize: 9,
+                                        color: theme.textTheme.bodyMedium?.color
+                                            ?.withValues(alpha: 0.7)),
                                   ),
                                 ],
                               ),
                             ),
-                            const Icon(LucideIcons.sparkles, color: AppTheme.illusGold, size: 12),
+                            const Icon(LucideIcons.sparkles,
+                                color: AppTheme.illusGold, size: 12),
                           ],
                         ),
                       ),
                       const SizedBox(height: 48), // Extra space for podium
-                      
+
                       // Podium
                       if (_scores.length >= 3)
                         Row(
@@ -213,35 +260,58 @@ class _PulseRankingsScreenState extends State<PulseRankingsScreen> {
                           ],
                         ),
                       const SizedBox(height: 32),
-                      
+
                       // List Header
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16.0),
                         child: Row(
                           children: [
-                            SizedBox(width: 40, child: Text('Rank', style: GoogleFonts.inter(fontSize: 9, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5)))),
-                            Expanded(child: Text('Student', style: GoogleFonts.inter(fontSize: 9, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5)))),
+                            SizedBox(
+                                width: 40,
+                                child: Text('Rank',
+                                    style: GoogleFonts.inter(
+                                        fontSize: 9,
+                                        color: theme.textTheme.bodyMedium?.color
+                                            ?.withValues(alpha: 0.5)))),
+                            Expanded(
+                                child: Text('Student',
+                                    style: GoogleFonts.inter(
+                                        fontSize: 9,
+                                        color: theme.textTheme.bodyMedium?.color
+                                            ?.withValues(alpha: 0.5)))),
                             Row(
                               children: [
-                                Text('Readiness Score', style: GoogleFonts.inter(fontSize: 9, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5))),
+                                Text('Readiness Score',
+                                    style: GoogleFonts.inter(
+                                        fontSize: 9,
+                                        color: theme.textTheme.bodyMedium?.color
+                                            ?.withValues(alpha: 0.5))),
                                 const SizedBox(width: 4),
-                                Icon(LucideIcons.info, size: 10, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5)),
+                                Icon(LucideIcons.info,
+                                    size: 10,
+                                    color: theme.textTheme.bodyMedium?.color
+                                        ?.withValues(alpha: 0.5)),
                               ],
                             ),
                           ],
                         ),
                       ),
                       const SizedBox(height: 16),
-                      
+
                       // List
                       if (_scores.length > 3)
                         Container(
                           decoration: BoxDecoration(
                             color: theme.colorScheme.surface,
                             borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: theme.dividerColor.withValues(alpha: 0.2)),
+                            border: Border.all(
+                                color:
+                                    theme.dividerColor.withValues(alpha: 0.2)),
                             boxShadow: [
-                              BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4)),
+                              BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.02),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4)),
                             ],
                           ),
                           child: Column(
@@ -259,14 +329,15 @@ class _PulseRankingsScreenState extends State<PulseRankingsScreen> {
                           ),
                         ),
                       const SizedBox(height: 24),
-                      
+
                       // Info Box
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           color: const Color(0xFFFAF9F6),
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: theme.dividerColor.withValues(alpha: 0.3)),
+                          border: Border.all(
+                              color: theme.dividerColor.withValues(alpha: 0.3)),
                         ),
                         child: Row(
                           children: [
@@ -275,31 +346,43 @@ class _PulseRankingsScreenState extends State<PulseRankingsScreen> {
                               decoration: BoxDecoration(
                                 color: theme.colorScheme.surface,
                                 shape: BoxShape.circle,
-                                border: Border.all(color: AppTheme.accentCoral.withValues(alpha: 0.2)),
+                                border: Border.all(
+                                    color: AppTheme.accentCoral
+                                        .withValues(alpha: 0.2)),
                               ),
-                              child: const Icon(LucideIcons.users, color: AppTheme.accentCoral, size: 12),
+                              child: const Icon(LucideIcons.users,
+                                  color: AppTheme.accentCoral, size: 12),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
                                 'Rankings update every 24 hours based on learning activity, quizzes, consistency & performance.',
-                                style: GoogleFonts.inter(fontSize: 9, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7)),
+                                style: GoogleFonts.inter(
+                                    fontSize: 9,
+                                    color: theme.textTheme.bodyMedium?.color
+                                        ?.withValues(alpha: 0.7)),
                               ),
                             ),
                           ],
                         ),
                       ),
                       const SizedBox(height: 24),
-                      
+
                       // Footer
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(LucideIcons.refreshCcw, size: 10, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5)),
+                          Icon(LucideIcons.refreshCcw,
+                              size: 10,
+                              color: theme.textTheme.bodyMedium?.color
+                                  ?.withValues(alpha: 0.5)),
                           const SizedBox(width: 6),
                           Text(
                             'Updated just now',
-                            style: GoogleFonts.inter(fontSize: 9, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5)),
+                            style: GoogleFonts.inter(
+                                fontSize: 9,
+                                color: theme.textTheme.bodyMedium?.color
+                                    ?.withValues(alpha: 0.5)),
                           ),
                         ],
                       ),
@@ -322,20 +405,23 @@ class _PulseRankingsScreenState extends State<PulseRankingsScreen> {
           style: GoogleFonts.inter(
             fontSize: 9,
             fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
-            color: isActive ? Colors.white : theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
+            color: isActive
+                ? Colors.white
+                : theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildPodiumItem(int rank, ReadinessScore scoreItem, double cardHeight, ThemeData theme) {
+  Widget _buildPodiumItem(
+      int rank, ReadinessScore scoreItem, double cardHeight, ThemeData theme) {
     final bool isFirst = rank == 1;
     final double avatarRadius = isFirst ? 24.0 : 18.0;
     final name = scoreItem.userName ?? 'Student';
     final scoreStr = scoreItem.score.toStringAsFixed(1);
     final avatarUrl = scoreItem.avatarUrl;
-    
+
     return Expanded(
       child: Stack(
         clipBehavior: Clip.none,
@@ -343,14 +429,18 @@ class _PulseRankingsScreenState extends State<PulseRankingsScreen> {
         children: [
           Container(
             height: cardHeight,
-            padding: EdgeInsets.only(top: avatarRadius + 16, bottom: 16, left: 8, right: 8),
+            padding: EdgeInsets.only(
+                top: avatarRadius + 16, bottom: 16, left: 8, right: 8),
             decoration: BoxDecoration(
               color: theme.colorScheme.surface,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: theme.dividerColor.withValues(alpha: 0.2)),
+              border:
+                  Border.all(color: theme.dividerColor.withValues(alpha: 0.2)),
               boxShadow: [
                 BoxShadow(
-                  color: isFirst ? AppTheme.accentCoral.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.02),
+                  color: isFirst
+                      ? AppTheme.accentCoral.withValues(alpha: 0.1)
+                      : Colors.black.withValues(alpha: 0.02),
                   blurRadius: 16,
                   offset: const Offset(0, 8),
                 ),
@@ -373,7 +463,10 @@ class _PulseRankingsScreenState extends State<PulseRankingsScreen> {
                 const SizedBox(height: 2),
                 Text(
                   'Batch',
-                  style: GoogleFonts.inter(fontSize: 8, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5)),
+                  style: GoogleFonts.inter(
+                      fontSize: 8,
+                      color: theme.textTheme.bodyMedium?.color
+                          ?.withValues(alpha: 0.5)),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -387,7 +480,7 @@ class _PulseRankingsScreenState extends State<PulseRankingsScreen> {
               ],
             ),
           ),
-          
+
           // Avatar
           Positioned(
             top: -avatarRadius,
@@ -398,17 +491,21 @@ class _PulseRankingsScreenState extends State<PulseRankingsScreen> {
               radius: avatarRadius,
             ),
           ),
-          
+
           // Rank Flag
           Positioned(
             top: -avatarRadius - 40,
             child: Row(
               children: [
-                const Icon(LucideIcons.flag, size: 12, color: AppTheme.illusTerracotta),
+                const Icon(LucideIcons.flag,
+                    size: 12, color: AppTheme.illusTerracotta),
                 const SizedBox(width: 4),
                 Text(
                   rank.toString(),
-                  style: GoogleFonts.sora(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
+                  style: GoogleFonts.sora(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white),
                 ),
               ],
             ),
@@ -419,23 +516,30 @@ class _PulseRankingsScreenState extends State<PulseRankingsScreen> {
   }
 
   Widget _buildDivider(ThemeData theme) {
-    return Divider(height: 1, indent: 64, endIndent: 16, color: theme.dividerColor.withValues(alpha: 0.1));
+    return Divider(
+        height: 1,
+        indent: 64,
+        endIndent: 16,
+        color: theme.dividerColor.withValues(alpha: 0.1));
   }
 
-  Widget _buildListItem(int rank, ReadinessScore scoreItem, ThemeData theme, {bool isHighlighted = false}) {
+  Widget _buildListItem(int rank, ReadinessScore scoreItem, ThemeData theme,
+      {bool isHighlighted = false}) {
     final name = scoreItem.userName ?? 'Student';
     final scoreStr = scoreItem.score.toStringAsFixed(1);
     final avatarUrl = scoreItem.avatarUrl;
 
     return Container(
-      decoration: isHighlighted 
+      decoration: isHighlighted
           ? BoxDecoration(
               color: const Color(0xFFFFF8F5),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: AppTheme.accentCoral),
             )
           : null,
-      margin: isHighlighted ? const EdgeInsets.symmetric(vertical: 4, horizontal: 8) : EdgeInsets.zero,
+      margin: isHighlighted
+          ? const EdgeInsets.symmetric(vertical: 4, horizontal: 8)
+          : EdgeInsets.zero,
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
       child: Row(
         children: [
@@ -453,11 +557,15 @@ class _PulseRankingsScreenState extends State<PulseRankingsScreen> {
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text('-', style: GoogleFonts.inter(fontSize: 8, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5))),
+                Text('-',
+                    style: GoogleFonts.inter(
+                        fontSize: 8,
+                        color: theme.textTheme.bodyMedium?.color
+                            ?.withValues(alpha: 0.5))),
               ],
             ),
           ),
-          
+
           // Avatar
           AvatarWidget(
             name: name,
@@ -466,7 +574,7 @@ class _PulseRankingsScreenState extends State<PulseRankingsScreen> {
             radius: 14,
           ),
           const SizedBox(width: 10),
-          
+
           // Name & Details
           Expanded(
             child: Column(
@@ -479,17 +587,22 @@ class _PulseRankingsScreenState extends State<PulseRankingsScreen> {
                   style: GoogleFonts.inter(
                     fontSize: 9,
                     fontWeight: FontWeight.bold,
-                    color: isHighlighted ? AppTheme.accentCoral : theme.colorScheme.onSurface,
+                    color: isHighlighted
+                        ? AppTheme.accentCoral
+                        : theme.colorScheme.onSurface,
                   ),
                 ),
                 Text(
                   'Batch',
-                  style: GoogleFonts.inter(fontSize: 8, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5)),
+                  style: GoogleFonts.inter(
+                      fontSize: 8,
+                      color: theme.textTheme.bodyMedium?.color
+                          ?.withValues(alpha: 0.5)),
                 ),
               ],
             ),
           ),
-          
+
           // Score
           Text(
             scoreStr,
@@ -500,7 +613,9 @@ class _PulseRankingsScreenState extends State<PulseRankingsScreen> {
             ),
           ),
           const SizedBox(width: 4),
-          Icon(LucideIcons.chevronRight, size: 12, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.3)),
+          Icon(LucideIcons.chevronRight,
+              size: 12,
+              color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.3)),
         ],
       ),
     );

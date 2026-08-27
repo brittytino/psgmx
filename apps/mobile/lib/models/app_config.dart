@@ -33,6 +33,9 @@ class AppConfig {
 
   /// When this config was last updated
   final DateTime? updatedAt;
+  final String rolloutStage;
+  final List<String> enabledBatchIds;
+  final List<String> pilotUserIds;
 
   const AppConfig({
     required this.minRequiredVersion,
@@ -45,6 +48,9 @@ class AppConfig {
     required this.emergencyBlock,
     required this.emergencyMessage,
     this.updatedAt,
+    this.rolloutStage = 'internal',
+    this.enabledBatchIds = const [],
+    this.pilotUserIds = const [],
   });
 
   /// Default configuration (used when fetch fails)
@@ -54,9 +60,11 @@ class AppConfig {
       latestVersion: '1.0.0',
       forceUpdate: false,
       updateMessage: 'A new version is available.',
-      githubReleaseUrl: 'https://github.com/brittytino/psgmx-flutter/releases/latest',
+      githubReleaseUrl:
+          'https://github.com/brittytino/psgmx-flutter/releases/latest',
       emergencyBlock: false,
       emergencyMessage: 'App temporarily unavailable.',
+      rolloutStage: 'internal',
     );
   }
 
@@ -66,17 +74,23 @@ class AppConfig {
       minRequiredVersion: map['min_required_version'] as String? ?? '1.0.0',
       latestVersion: map['latest_version'] as String? ?? '1.0.0',
       forceUpdate: map['force_update'] as bool? ?? false,
-      updateMessage: map['update_message'] as String? ?? 'A new version is available.',
-      githubReleaseUrl: map['github_release_url'] as String? ?? 
+      updateMessage:
+          map['update_message'] as String? ?? 'A new version is available.',
+      githubReleaseUrl: map['github_release_url'] as String? ??
           'https://github.com/brittytino/psgmx-flutter/releases/latest',
       androidDownloadUrl: map['android_download_url'] as String?,
       iosDownloadUrl: map['ios_download_url'] as String?,
       emergencyBlock: map['emergency_block'] as bool? ?? false,
-      emergencyMessage: map['emergency_message'] as String? ?? 
-          'App temporarily unavailable.',
-      updatedAt: map['updated_at'] != null 
+      emergencyMessage:
+          map['emergency_message'] as String? ?? 'App temporarily unavailable.',
+      updatedAt: map['updated_at'] != null
           ? DateTime.tryParse(map['updated_at'] as String)
           : null,
+      rolloutStage: map['rollout_stage'] as String? ?? 'internal',
+      enabledBatchIds:
+          List<String>.from(map['enabled_batch_ids'] as List? ?? const []),
+      pilotUserIds:
+          List<String>.from(map['pilot_user_ids'] as List? ?? const []),
     );
   }
 
@@ -93,12 +107,15 @@ class AppConfig {
       'emergency_block': emergencyBlock,
       'emergency_message': emergencyMessage,
       'updated_at': updatedAt?.toIso8601String(),
+      'rollout_stage': rolloutStage,
+      'enabled_batch_ids': enabledBatchIds,
+      'pilot_user_ids': pilotUserIds,
     };
   }
 
   @override
   String toString() {
     return 'AppConfig(min: $minRequiredVersion, latest: $latestVersion, '
-        'force: $forceUpdate, emergency: $emergencyBlock)';
+        'force: $forceUpdate, emergency: $emergencyBlock, rollout: $rolloutStage)';
   }
 }

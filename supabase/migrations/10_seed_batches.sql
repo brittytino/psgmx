@@ -11,14 +11,9 @@
 --                       is historical record of their 2nd-year placement season).
 --   25MX (2025-2027) — active_senior, the current fully-onboarded batch
 --                       (real students seeded in 13_seed_students_25mx.sql).
---   26MX (2026-2028) — pending_onboarding: batch has arrived but only has
---                       placeholder roll numbers so far (per reg_no_is_placeholder).
---                       No student rows are seeded for them yet — there is no
---                       source data for individual 26MX students anywhere in
---                       this repo, unlike 23MX/24MX/25MX. Once real names and
---                       roll numbers exist, add them via the faculty
---                       batch-import flow (apps/web/app/api/faculty/batch-import),
---                       then flip this batch's status to 'active_junior'.
+--   26MX (2026-2028) — starts pending_onboarding here. Migration 16 loads the
+--                       validated G1/G2 roster supplied in August 2026 and
+--                       promotes the batch to active_junior.
 --
 -- Adjust status/years here if the real academic calendar differs.
 --

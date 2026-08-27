@@ -59,11 +59,8 @@ export async function POST(request: NextRequest) {
   }
 
   // Fetch user profile from the database to determine role-based redirect
-  const { data: profileRaw } = await supabase
-    .from('users')
-    .select('role_label, roles, onboarding_complete, name')
-    .eq('id', data.user.id)
-    .maybeSingle()
+  const { data: profileRows } = await supabase.rpc('get_my_profile')
+  const profileRaw = Array.isArray(profileRows) ? profileRows[0] : profileRows
 
   const profile = profileRaw as {
     role_label: string;

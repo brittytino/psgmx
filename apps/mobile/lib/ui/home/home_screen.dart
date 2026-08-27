@@ -864,13 +864,23 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            children: [
-              Container(width: 7, height: 7, decoration: const BoxDecoration(color: Color(0xFF818CF8), shape: BoxShape.circle)),
-              const SizedBox(width: 6),
-              Text(title, style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF334155), fontWeight: FontWeight.w500)),
-            ],
+          Expanded(
+            child: Row(
+              children: [
+                Container(width: 7, height: 7, decoration: const BoxDecoration(color: Color(0xFF818CF8), shape: BoxShape.circle)),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF334155), fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ],
+            ),
           ),
+          const SizedBox(width: 4),
           Text(val.toString(), style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF1E293B), fontWeight: FontWeight.bold)),
         ],
       ),

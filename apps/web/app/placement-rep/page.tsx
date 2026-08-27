@@ -4,6 +4,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Users, TrendingUp, AlertTriangle, Download, CalendarClock } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { getCurrentProfile } from '@/lib/current-profile';
 
 interface CommandCenterData {
   batchCode: string;
@@ -31,10 +32,7 @@ export default function CommandCenterPage() {
     const supabase = createClient();
 
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: me } = await supabase.from('users').select('batch_id').eq('id', user.id).single();
+      const me = await getCurrentProfile(supabase);
       const batchId = me?.batch_id;
       if (!batchId) { setLoading(false); return; }
 
@@ -80,9 +78,7 @@ export default function CommandCenterPage() {
     setExporting(true);
     try {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data: me } = await supabase.from('users').select('batch_id').eq('id', user.id).single();
+      const me = await getCurrentProfile(supabase);
       if (!me?.batch_id) return;
       const { data: rows } = await supabase
         .from('users')
