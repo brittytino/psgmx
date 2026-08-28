@@ -3,6 +3,7 @@
 import React, { Suspense } from 'react'
 import { ArrowRight, Heart, Loader2, Mail, ShieldAlert, ShieldCheck } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 
 function LoginForm() {
   const searchParams = useSearchParams()
@@ -58,6 +59,10 @@ function LoginForm() {
             {otpSent && <button type="button" onClick={() => { setOtpSent(false); setOtp(''); setMessage('') }} className="w-full text-sm font-bold text-[#667085]">Use a different email</button>}
           </form>
           <div className="mt-8 flex items-center justify-center gap-2 text-xs font-semibold text-[#98A2B3]"><ShieldCheck className="h-4 w-4" />One student profile, whichever approved email you use.</div>
+          <div className="mt-5 border-t border-[#EAECF0] pt-5 text-center text-sm text-[#667085]">
+            Graduated from PSG Tech MCA?{' '}
+            <Link href="/join-alumni" className="font-black text-[#FF5A1F] hover:text-[#E04812]">Join with alumni OTP</Link>
+          </div>
         </div>
       </section>
     </div>

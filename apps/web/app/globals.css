@@ -110,7 +110,7 @@
   --color-error: var(--error);
   --color-on-error: var(--on-error);
 
-  --font-sans: "Plus Jakarta Sans", sans-serif;
+  --font-sans: "Avenir Next", "Segoe UI", Inter, system-ui, -apple-system, sans-serif;
 }
 
 @layer base {
@@ -270,4 +270,3 @@
   background: linear-gradient(to right, transparent, #EFE9E0, transparent);
   margin: 0 auto;
 }
-

@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireRole } from '@/lib/auth'
 import { requireAppRole } from '@/lib/auth'
-import { normalizeRosterStudent } from '@/lib/auth-input'
+import { collegeEmailForRegisterNumber, normalizeRosterStudent } from '@/lib/auth-input'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 
 export async function POST(req: NextRequest) {
@@ -76,7 +76,13 @@ export async function POST(req: NextRequest) {
           ?? college_email
           ?? `pending+${reg_no.toLowerCase()}@roster.psgmx.invalid`
         const effectivePersonalEmail = personal_email ?? existingRoster?.personal_email ?? null
-        const effectiveCollegeEmail = college_email ?? existingRoster?.college_email ?? null
+        const generatedCollegeEmail = (batch as { batch_code: string }).batch_code === '26MX'
+          ? collegeEmailForRegisterNumber(reg_no)
+          : null
+        const effectiveCollegeEmail = college_email
+          ?? existingRoster?.college_email
+          ?? generatedCollegeEmail
+          ?? null
         const incomingIdentities = [...new Set([
           effectivePersonalEmail,
           effectiveCollegeEmail,

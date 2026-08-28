@@ -228,7 +228,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 style: GoogleFonts.inter(fontSize: 15),
                 decoration: InputDecoration(
                   labelText: 'Username',
-                  hintText: 'e.g. john_doe',
+                  hintText: 'e.g. john_doe or a LeetCode profile URL',
+                  helperText: 'Used for your live progress and batch leaderboard.',
                   labelStyle: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF64748B)),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
                   focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppTheme.accentCoral)),
@@ -257,7 +258,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         try {
                           await userProvider.updateLeetCodeUsername(username);
                           if (context.mounted) Navigator.pop(context);
-                        } catch (_) {}
+                        } catch (error) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(error
+                                    .toString()
+                                    .replaceFirst('FormatException: ', '')),
+                              ),
+                            );
+                          }
+                        }
                       },
                       style: FilledButton.styleFrom(
                         backgroundColor: AppTheme.accentCoral,

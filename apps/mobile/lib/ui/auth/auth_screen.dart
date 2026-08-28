@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -21,6 +23,8 @@ class _AuthScreenState extends State<AuthScreen> {
   final _otpFocusNode = FocusNode();
   bool _isOtpSent = false;
   bool _isLoading = false;
+  Timer? _resendTimer;
+  int _resendSeconds = 0;
 
   bool _isEmailValid = false;
 
@@ -37,10 +41,30 @@ class _AuthScreenState extends State<AuthScreen> {
 
   @override
   void dispose() {
+    _resendTimer?.cancel();
     _emailController.dispose();
     _otpController.dispose();
     _otpFocusNode.dispose();
     super.dispose();
+  }
+
+  void _startResendCountdown() {
+    _resendTimer?.cancel();
+    setState(() => _resendSeconds = 45);
+    _resendTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) return timer.cancel();
+      if (_resendSeconds <= 1) {
+        timer.cancel();
+        setState(() => _resendSeconds = 0);
+      } else {
+        setState(() => _resendSeconds--);
+      }
+    });
+  }
+
+  Future<void> _resendOtp() async {
+    if (_resendSeconds > 0 || _isLoading) return;
+    await _handleEmailSubmit();
   }
 
   Future<void> _handleEmailSubmit() async {
@@ -63,6 +87,7 @@ class _AuthScreenState extends State<AuthScreen> {
           _isOtpSent = true;
           _isLoading = false;
         });
+        _startResendCountdown();
         Future.delayed(const Duration(milliseconds: 350), () {
           if (mounted) _otpFocusNode.requestFocus();
         });
@@ -316,25 +341,20 @@ class _AuthScreenState extends State<AuthScreen> {
                             ),
                           ),
                           const SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(LucideIcons.clock,
-                                  size: 12, color: Colors.grey),
-                              const SizedBox(width: 4),
-                              Text(
-                                'Resend code in ',
-                                style: GoogleFonts.inter(
-                                    fontSize: 11, color: Colors.grey),
+                          TextButton.icon(
+                            onPressed: _resendSeconds == 0 && !_isLoading
+                                ? _resendOtp
+                                : null,
+                            icon: const Icon(LucideIcons.refreshCw, size: 14),
+                            label: Text(
+                              _resendSeconds > 0
+                                  ? 'Send a new code in 00:${_resendSeconds.toString().padLeft(2, '0')}'
+                                  : 'Send a new code',
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
                               ),
-                              Text(
-                                '00:45',
-                                style: GoogleFonts.inter(
-                                    fontSize: 11,
-                                    color: AppTheme.accentCoral,
-                                    fontWeight: FontWeight.bold),
-                              ),
-                            ],
+                            ),
                           ),
                         ],
                       ),

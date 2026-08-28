@@ -1,8 +1,8 @@
 # PSGMX Application Architecture and Improvement Report
 
-**Prepared:** 27 August 2026  
+**Prepared:** 28 August 2026
 **Primary cohorts:** 25MX and 26MX  
-**Status:** Repository implementation completed; migrations 15 and 16 and the updated services still need to be deployed through the staged rollout below.
+**Release baseline:** v4.0.1 — web, Android, authentication, roster and delivery hardening completed and verified.
 
 ## 1. Executive summary
 
@@ -22,6 +22,8 @@ The application now has a clearer division of responsibility:
 - Faculty and HOD access remains a governance layer; it is not mixed into normal student administration.
 
 The most important technical repair is the new logical identity model. A 26MX student may start with a personal email, receive a college email later, and use either approved address without creating two student profiles or losing attendance, streak, readiness, tasks or history.
+
+Release v4.0.1 completes that model for the supplied roster, adds passwordless alumni onboarding, gives 26MX a safe in-app LeetCode setup path, hardens faculty OTP access and makes the Android release pipeline reproducible.
 
 ## 2. Product purpose
 
@@ -57,7 +59,7 @@ Its Placement Rep controls only 25MX operational data unless a faculty or HOD ac
 
 26MX is prepared as the active-junior cohort. Migration 16 loads the supplied roster and promotes the batch from `pending_onboarding` to `active_junior`. Its mobile experience includes:
 
-- personal-email OTP until college email is issued;
+- personal-email OTP immediately, plus the predictable college alias `register-number@psgtech.ac.in`;
 - the same common Today loop;
 - academic attendance;
 - Daily Five;
@@ -66,6 +68,20 @@ Its Placement Rep controls only 25MX operational data unless a faculty or HOD ac
 - batch announcements.
 
 The senior placement-experience log is hidden from 26MX navigation until the batch becomes `active_senior`. The information can still be introduced later as a deliberate senior-year feature rather than cluttering first-year onboarding.
+
+LeetCode can be connected from the Profile or the 26MX Today prompt. The app accepts either a username or a full `leetcode.com/u/...` profile URL, normalizes it to one username and rejects malformed input before saving.
+
+### Alumni
+
+Graduated MCA users now have a dedicated passwordless path:
+
+1. enter full name, MCA register number, OTP email and optional LinkedIn profile;
+2. the admission batch and graduation year are derived from the register number;
+3. active 25MX/26MX register numbers are redirected to normal Student OTP instead of being duplicated as alumni;
+4. the alumni profile and approved roster identity are linked to the graduated batch;
+5. a six-digit OTP opens the alumni workspace—no alumni password is stored or requested.
+
+The desktop flow uses the same visual system as the main login, while mobile collapses to a focused single-column form. Validation covers register format, batch lifecycle, email conflicts, name length and HTTPS LinkedIn URLs.
 
 ## 4. System architecture
 
@@ -193,7 +209,15 @@ This preserves:
 
 ## 6. 26MX roster input
 
-The two supplied G1/G2 workbooks have been reconciled into 117 unique roster rows: 59 in G1 and 58 in G2. There are no duplicate register numbers or duplicate email identities. 116 students are OTP-ready with a personal email; one roster row is retained as `Email required` instead of being silently dropped. One student supplied two personal addresses, and both become valid aliases for the same profile.
+The two supplied G1/G2 workbooks have been reconciled into 117 unique roster rows: 59 in G1 and 58 in G2. There are no duplicate register numbers. All 117 students are now OTP-ready, and every row has a deterministic college identity derived from its register number. One student supplied two personal addresses; both remain valid aliases for the same profile.
+
+The final missing identity is now recorded as:
+
+- **26MX331 — Nareshwaran J**
+- personal OTP email: `nareshwaran703@gmail.com`
+- college identity: `26mx331@psgtech.ac.in`
+
+Across 26MX, the verified roster contains 235 approved aliases: 117 college identities, 117 primary personal identities and one alternate personal identity. For example, `26mx301@psgtech.ac.in` is accepted automatically without creating a second account when that address becomes available.
 
 The validated roster is installed by `16_seed_students_26mx.sql`. For later corrections or college-email updates, use **Members & Access → Import roster CSV** in the Placement Rep web console.
 
@@ -209,15 +233,15 @@ Rules:
 
 - `name` is required.
 - `reg_no` is required and normalized to uppercase.
-- a row with no email is retained in a non-login state so the roster stays complete;
+- a row with no personal email is retained, while its derived college identity keeps the roster structurally ready for future issuance;
 - `alternate_personal_email` accepts additional approved OTP identities;
 - `section` is honored per row, preventing a mixed G1/G2 file from being imported entirely as G1;
-- `college_email` may be blank during initial 26MX onboarding;
+- `college_email` may be omitted from a 26MX import because the server derives it from `reg_no`;
 - re-importing a register number updates its roster data without changing its stable canonical roster key;
 - authentication accounts are not pre-created during import;
 - the first valid OTP login creates the auth identity and logical profile safely.
 
-When college addresses arrive, re-import the same register numbers with both email columns populated.
+When PSG Tech activates those college mailboxes, students can use them immediately; no second roster import or profile migration is required.
 
 ## 7. Strict batch isolation
 
@@ -358,6 +382,8 @@ Scores are refreshed after meaningful Daily Five, task, placement-attendance and
 - Personal email is accepted only when it appears in the private roster alias table.
 - Unknown OTP requests return a generic response to limit email enumeration.
 - OTP requests have per-instance IP/email limits and a database-backed three-per-ten-minute control.
+- The 19 supplied faculty identities are seeded before OTP lookup. Dr. Ilayaraja N and Dr. Chitra A both retain HOD-level access so the current and former HOD workflows remain available.
+- Faculty can use normal emailed OTP. The shared test code `098765` is accepted only when the server explicitly sets `ALLOW_STATIC_OTP=true`; it is disabled by default in every environment and is never valid for students or alumni.
 - Mobile no longer reads the private whitelist before authentication.
 - Mobile no longer compiles the eCampus shared secret or the AI provider key.
 - eCampus sync derives the register number from the authenticated logical profile; the client cannot request another student’s roll number.
@@ -371,15 +397,31 @@ Scores are refreshed after meaningful Daily Five, task, placement-attendance and
 
 ### Automated checks added
 
-- Vitest unit tests for personal email normalization, alternate aliases, email-pending roster rows and quoted CSV parsing;
-- Flutter tests for 26MX junior and 25MX senior experience selection;
-- Playwright desktop/mobile smoke tests for OTP and staff login modes;
+- 16 Vitest unit tests for personal email normalization, alternate aliases, derived college identities, static faculty OTP gating and quoted CSV parsing;
+- Flutter tests for 26MX junior/25MX senior experience selection and LeetCode username/URL normalization;
+- Playwright desktop/mobile smoke tests for student OTP, staff OTP, health status and alumni batch derivation;
 - SQL assertions for both batches, identity tables, canonical teams and restrictive policies;
 - TypeScript type checking;
-- Flutter analysis;
-- web linting;
-- web production build;
+- strict Flutter analysis with zero issues;
+- web linting with zero errors;
+- Next.js 16.3 production build covering 78 routes;
+- Flutter production web build and three release APK architectures;
+- npm dependency audit with zero known vulnerabilities;
 - Flutter build and tests before preview, merge and release deployments.
+
+### v4.0.1 release delivery
+
+The release workflow now uses the configured Android signing-secret names, regenerates ignored Drift/build-runner files on clean runners, performs strict analysis, verifies the generated APKs and uploads checksums with the release artifacts. Firebase preview and merge workflows also generate required code before analysis/build.
+
+Release outputs:
+
+- `app-armeabi-v7a-release.apk`;
+- `app-arm64-v8a-release.apk`;
+- `app-x86_64-release.apk`;
+- Flutter web package;
+- SHA-256 checksum manifest.
+
+The canonical release page is `https://github.com/brittytino/psgmx/releases/tag/v4.0.1`, marked as the latest GitHub release.
 
 ### Observability added
 
@@ -404,9 +446,10 @@ Recommended production alerts:
 
 1. Take a Supabase backup.
 2. Run `supabase/migrations/15_identity_batch_team_hardening.sql` once.
-3. Run `supabase/tests/15_identity_batch_team_hardening.sql` against a disposable/staging database.
-4. Deploy the Next.js API with server-only eCampus and AI secrets.
-5. Confirm `/api/health` reports `healthy`.
+3. Apply roster/faculty migrations 16 and 18, then `19_identity_and_alumni_hardening.sql`.
+4. Run the migration 15 and 26MX SQL assertions against a disposable/staging database.
+5. Deploy the Next.js API with server-only eCampus and AI secrets.
+6. Confirm `/api/health` reports `healthy`.
 
 ### Stage 1 — internal
 
@@ -470,6 +513,14 @@ ECAMPUS_API_SECRET
 OPENROUTER_API_KEY
 ```
 
+Optional test-only setting:
+
+```text
+ALLOW_STATIC_OTP=true
+```
+
+Do not enable this setting in the public production deployment. Without the exact value `true`, static faculty OTP is disabled.
+
 ### Flutter build
 
 Required:
@@ -482,39 +533,33 @@ APP_API_URL
 
 No eCampus, OpenRouter or other privileged integration secret belongs in Flutter build arguments.
 
-## 16. Current data readiness observed during the audit
+## 16. Current data readiness observed during release verification
 
-Before migrations 15–16 and before receiving the 26MX list, the connected database contained:
+The v4.0.1 release baseline contains:
 
-- 25MX as `active_senior`;
-- 26MX as `pending_onboarding`;
-- 120 whitelist rows, all belonging to 25MX;
-- 1 registered logical user;
-- 0 26MX roster rows;
-- 0 configured teams in the UUID team table;
-- 0 delegated permission rows;
-- 1,098 question-bank items;
-- 119 LeetCode statistics rows;
-- 144 company rows;
-- no live placement session, attendance, Daily Five attempt/streak or readiness activity beyond initial development records;
-- empty eCampus attendance caches.
+- 25MX as the active senior cohort and 26MX as the active junior cohort;
+- 117 unique 26MX students, all OTP-ready;
+- 235 approved 26MX email aliases with no missing 26MX login identity;
+- Nareshwaran J linked to both `nareshwaran703@gmail.com` and `26mx331@psgtech.ac.in`;
+- deterministic `26mxNNN@psgtech.ac.in` generation for every future college mailbox in the roster/import path;
+- 19 faculty/HOD roster identities, including current HOD Dr. Ilayaraja N and retained HOD access for Dr. Chitra A;
+- graduated batch records for alumni enrollment and a batch-aware OTP onboarding API;
+- a single logical-profile resolver for personal and college authentication identities.
 
-This means the database structure is substantial, but daily operational data will become meaningful only after the roster, teams, sessions, tasks and pilot users are loaded.
+Daily operational metrics—attendance, Daily Five, task completions, readiness and LeetCode statistics—remain activity-driven. The application no longer substitutes static numbers when those records are empty.
 
 ## 17. Recommended next improvements
 
 ### Immediate
 
-- deploy migrations 15 and 16 to staging, then production;
-- collect the one missing personal email and re-import that register number;
 - assign one 25MX and one 26MX Placement Rep explicitly;
 - configure teams through the web console;
 - verify the production eCampus proxy and server secrets;
+- keep `ALLOW_STATIC_OTP` disabled outside controlled faculty testing;
 - add a persistent distributed rate limiter before a large public launch.
 
 ### Near-term
 
-- migrate Drift web storage from the deprecated web API to Drift WASM;
 - add direct XLSX upload with a preview-and-confirm step (quoted CSV parsing is already supported);
 - add a college-email update workflow with explicit verification and conflict preview;
 - provide an “identity health” admin view for missing, duplicate or unverified aliases;

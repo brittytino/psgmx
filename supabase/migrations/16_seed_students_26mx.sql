@@ -2,8 +2,8 @@
 -- PSGMX — 16_seed_students_26mx.sql
 -- ============================================================
 -- Validated 26MX G1/G2 roster supplied in August 2026.
--- Personal email is the initial OTP identity. College email remains NULL and
--- can be added later without creating a second logical student profile.
+-- Personal email is the initial OTP identity. The predictable college email
+-- is also registered now; either identity resolves to one logical profile.
 -- Run AFTER 15_identity_batch_team_hardening.sql.
 -- ============================================================
 
@@ -102,7 +102,7 @@ INSERT INTO public.whitelist AS existing (
 ('mounishamuthusamy@gmail.com', 'mounishamuthusamy@gmail.com', NULL, 'MOUNISHA M', '26MX328', 'G2', (SELECT id FROM public.batches WHERE batch_code = '26MX'), NULL, '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'::jsonb),
 ('nabilabanu7618@gmail.com', 'nabilabanu7618@gmail.com', NULL, 'NABILA BANU R', '26MX329', 'G2', (SELECT id FROM public.batches WHERE batch_code = '26MX'), NULL, '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'::jsonb),
 ('nadhishbaskar16@gmail.com', 'nadhishbaskar16@gmail.com', NULL, 'NADHISH B', '26MX330', 'G2', (SELECT id FROM public.batches WHERE batch_code = '26MX'), NULL, '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'::jsonb),
-('pending+26mx331@roster.psgmx.invalid', NULL, NULL, 'NARESHWARAN J', '26MX331', 'G2', (SELECT id FROM public.batches WHERE batch_code = '26MX'), NULL, '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'::jsonb),
+('nareshwaran703@gmail.com', 'nareshwaran703@gmail.com', '26mx331@psgtech.ac.in', 'NARESHWARAN J', '26MX331', 'G2', (SELECT id FROM public.batches WHERE batch_code = '26MX'), NULL, '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'::jsonb),
 ('muralidharannatesh@gmail.com', 'muralidharannatesh@gmail.com', NULL, 'NATESH M', '26MX332', 'G2', (SELECT id FROM public.batches WHERE batch_code = '26MX'), NULL, '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'::jsonb),
 ('navyasureshkumar505@gmail.com', 'navyasureshkumar505@gmail.com', NULL, 'NAVYA S K', '26MX333', 'G2', (SELECT id FROM public.batches WHERE batch_code = '26MX'), NULL, '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'::jsonb),
 ('nigithag79799@gmail.com', 'nigithag79799@gmail.com', NULL, 'NIGITHA G', '26MX334', 'G2', (SELECT id FROM public.batches WHERE batch_code = '26MX'), NULL, '{"isStudent": true, "isTeamLeader": false, "isCoordinator": false, "isPlacementRep": false}'::jsonb),
@@ -138,6 +138,12 @@ ON CONFLICT (reg_no) DO UPDATE SET
     batch_id = EXCLUDED.batch_id,
     roles = EXCLUDED.roles;
 
+-- Future-ready college identity for every 26MX student. The alias trigger
+-- registers these addresses without replacing the personal-email identity.
+UPDATE public.whitelist
+SET college_email = lower(reg_no) || '@psgtech.ac.in'
+WHERE reg_no ~ '^26MX[0-9]{3}$';
+
 -- One supplied student has an additional personal address. Both addresses
 -- are accepted for OTP and resolve to the same register number.
 INSERT INTO public.whitelist_email_aliases (email, whitelist_email, email_type)
@@ -165,8 +171,8 @@ BEGIN
         RAISE EXCEPTION '26MX roster validation failed: expected 117 rows, found %', roster_count;
     END IF;
 
-    IF otp_ready_count <> 116 THEN
-        RAISE EXCEPTION '26MX email validation failed: expected 116 OTP-ready rows, found %', otp_ready_count;
+    IF otp_ready_count <> 117 THEN
+        RAISE EXCEPTION '26MX email validation failed: expected 117 OTP-ready rows, found %', otp_ready_count;
     END IF;
 
     RAISE NOTICE '16_seed_students_26mx.sql complete — % rostered, % OTP-ready.', roster_count, otp_ready_count;

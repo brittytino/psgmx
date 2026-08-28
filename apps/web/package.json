@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
     "test:unit": "vitest run --reporter=verbose",
@@ -22,15 +22,12 @@
     "dotenv": "^17.2.2",
     "framer-motion": "^12.38.0",
     "groq-sdk": "^1.1.1",
-    "html2canvas": "^1.4.1",
-    "jspdf": "^2.5.2",
     "lucide-react": "^0.577.0",
-    "next": "16.1.6",
+    "next": "^16.3.3",
     "openai": "^6.42.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "recharts": "^3.8.0",
-    "xlsx": "^0.18.5"
+    "recharts": "^3.8.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.0",
@@ -40,7 +37,7 @@
     "@types/react-dom": "^19",
     "@vitest/coverage-v8": "^4.1.2",
     "eslint": "^9",
-    "eslint-config-next": "16.1.6",
+    "eslint-config-next": "^16.3.3",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
     "typescript": "5.9.3",

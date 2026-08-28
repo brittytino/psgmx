@@ -97,6 +97,8 @@ Thumbs.db
 *.dart
 !pubspec.lock
 !lib/**/*.dart
+!test/
+!test/**/*.dart
 
 # Scripts & Secrets
 scripts/node_modules/

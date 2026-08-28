@@ -26,6 +26,9 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Generate Drift database code
+        run: dart run build_runner build
+
       - name: Validate configuration
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -48,7 +51,7 @@ jobs:
             "$SUPABASE_URL" "$SUPABASE_ANON_KEY" "$APP_API_URL" > .env.flutter
 
       - name: Analyze
-        run: flutter analyze
+        run: flutter analyze --fatal-infos --fatal-warnings
 
       - name: Test
         run: flutter test

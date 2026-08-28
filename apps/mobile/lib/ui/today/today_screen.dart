@@ -127,6 +127,65 @@ class _TodayScreenState extends State<TodayScreen> {
                             completed: dailyFive.completedToday,
                             streak: dailyFive.streak?.currentStreak ?? 0,
                             onTap: () => context.push('/daily-five')))),
+                if (batchCode == '26MX' &&
+                    (user.leetcodeUsername == null ||
+                        user.leetcodeUsername!.isEmpty))
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(18),
+                        onTap: () => context
+                            .read<NavigationProvider>()
+                            .setIndex(user.isActiveSenior ? 4 : 3),
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFF8F3),
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(
+                                color: const Color(0xFFFFD4BF)),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 42,
+                                height: 42,
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  color: AppTheme.accentCoral
+                                      .withValues(alpha: .12),
+                                  borderRadius: BorderRadius.circular(13),
+                                ),
+                                child: const Icon(LucideIcons.code2,
+                                    color: AppTheme.accentCoral, size: 21),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('Connect your LeetCode profile',
+                                        style: GoogleFonts.inter(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w800)),
+                                    const SizedBox(height: 3),
+                                    Text(
+                                        'Enter it once in You to activate live progress.',
+                                        style: GoogleFonts.inter(
+                                            fontSize: 11,
+                                            color: const Color(0xFF64748B))),
+                                  ],
+                                ),
+                              ),
+                              const Icon(LucideIcons.chevronRight,
+                                  size: 18, color: AppTheme.accentCoral),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 SliverToBoxAdapter(
                     child: Padding(
                         padding: const EdgeInsets.fromLTRB(20, 22, 20, 10),

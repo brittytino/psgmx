@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { normalizeEmail, normalizeRosterStudent } from '@/lib/auth-input'
+import {
+  collegeEmailForRegisterNumber,
+  normalizeEmail,
+  normalizeRosterStudent,
+  registerNumberFromCollegeEmail,
+} from '@/lib/auth-input'
 
 describe('dual-email roster validation', () => {
   it('normalizes personal email without requiring the college domain', () => {
@@ -29,5 +34,17 @@ describe('dual-email roster validation', () => {
       personal_email: 'primary@example.com',
       alternate_personal_email: ' Alternate@Example.com / primary@example.com ',
     })?.alternate_personal_emails).toEqual(['alternate@example.com'])
+  })
+})
+
+describe('MCA college identity', () => {
+  it('derives a stable college address from the register number', () => {
+    expect(collegeEmailForRegisterNumber('26MX301')).toBe('26mx301@psgtech.ac.in')
+    expect(collegeEmailForRegisterNumber(' 26mx331 ')).toBe('26mx331@psgtech.ac.in')
+  })
+
+  it('resolves a college address back to its register number', () => {
+    expect(registerNumberFromCollegeEmail('26MX301@psgtech.ac.in')).toBe('26MX301')
+    expect(registerNumberFromCollegeEmail('person@gmail.com')).toBeNull()
   })
 })

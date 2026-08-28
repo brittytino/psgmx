@@ -314,7 +314,7 @@ class AttendanceService {
           .select('id, email, reg_no, name, team_id, batch')
           .order('name');
 
-      return _buildSummariesFromUsers(users as List);
+      return await _buildSummariesFromUsers(users as List);
     } catch (e) {
       throw Exception('Failed to get all students summary: ${e.toString()}');
     }
@@ -330,7 +330,7 @@ class AttendanceService {
           .eq('team_id', teamId)
           .order('name');
 
-      return _buildSummariesFromUsers(users as List);
+      return await _buildSummariesFromUsers(users as List);
     } catch (e) {
       throw Exception('Failed to get team summary: ${e.toString()}');
     }

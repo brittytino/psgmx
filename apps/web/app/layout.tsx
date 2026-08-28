@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
 
 import "./globals.css";
 
@@ -9,12 +8,6 @@ import { Suspense } from "react";
 import { UIProvider } from "@/components/providers/ui-provider";
 import ImpersonationBanner from "@/components/auth/ImpersonationBanner";
 import IOSInstallModal from "@/components/platform/IOSInstallModal";
-
-const plusJakartaSans = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-sans",
-});
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://psgmx.tech"),
@@ -47,7 +40,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={plusJakartaSans.variable}>
+    <html lang="en">
       <body className="antialiased bg-page-bg text-text-main font-sans">
         <ImpersonationBanner />
         <UIProvider>

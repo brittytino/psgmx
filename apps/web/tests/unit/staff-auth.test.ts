@@ -55,4 +55,9 @@ describe('static staff OTP', () => {
     expect(isStaticOtpEnabled()).toBe(false)
     expect(isStaticStaffOtp('ac.mca@psgtech.ac.in', STATIC_STAFF_OTP)).toBe(false)
   })
+
+  it('is disabled unless explicitly enabled', () => {
+    delete process.env.ALLOW_STATIC_OTP
+    expect(isStaticOtpEnabled()).toBe(false)
+  })
 })

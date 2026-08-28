@@ -4,6 +4,7 @@ import path from "path";
 const nextConfig: NextConfig = {
   output: "standalone",
   poweredByHeader: false,
+  allowedDevOrigins: ['127.0.0.1'],
   turbopack: {
     root: path.resolve(__dirname),
   },
@@ -23,6 +24,9 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     optimizePackageImports: ['lucide-react', 'framer-motion', 'recharts'],
+    // Next 16.3 enables the CLI parser by default. The compiler API is more
+    // reliable across npm/CI environments and still performs full type checks.
+    useTypeScriptCli: false,
   },
 };
 

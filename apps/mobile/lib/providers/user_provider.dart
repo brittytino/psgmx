@@ -11,6 +11,7 @@ import '../services/permission_service.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 
 import '../core/safe_change_notifier.dart';
+import '../core/leetcode_identity.dart';
 
 class UserProvider with ChangeNotifier, SafeChangeNotifier {
   final AuthService _authService;
@@ -345,16 +346,18 @@ class UserProvider with ChangeNotifier, SafeChangeNotifier {
   Future<void> updateLeetCodeUsername(String username) async {
     if (_currentUser == null) return;
     try {
+      final normalizedUsername = LeetCodeIdentity.requireValid(username);
       // Use RPC to ensure atomic update across users, whitelist, and stats tables
       await Supabase.instance.client.rpc(
         'update_leetcode_username_unified',
         params: {
           'p_user_id': _currentUser!.uid,
-          'p_new_username': username,
+          'p_new_username': normalizedUsername,
         },
       );
 
-      _currentUser = _currentUser!.copyWith(leetcodeUsername: username);
+      _currentUser =
+          _currentUser!.copyWith(leetcodeUsername: normalizedUsername);
       notifyListeners();
 
       // Force refresh stats for the new username

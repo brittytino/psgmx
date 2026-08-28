@@ -64,11 +64,11 @@ BEGIN
     IF v_total <> 117 OR v_g1 <> 59 OR v_g2 <> 58 THEN
         RAISE EXCEPTION '26MX roster mismatch: total %, G1 %, G2 %', v_total, v_g1, v_g2;
     END IF;
-    IF v_otp_ready < 116 OR v_pending_email > 1 THEN
+    IF v_otp_ready <> 117 OR v_pending_email <> 0 THEN
         RAISE EXCEPTION '26MX email readiness mismatch: ready %, pending %', v_otp_ready, v_pending_email;
     END IF;
-    IF v_aliases < 118 THEN
-        RAISE EXCEPTION '26MX alias mismatch: expected at least 118, found %', v_aliases;
+    IF v_aliases < 235 THEN
+        RAISE EXCEPTION '26MX alias mismatch: expected at least 235, found %', v_aliases;
     END IF;
 END $$;
 

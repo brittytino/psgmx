@@ -1,10 +1,29 @@
 export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+export const MCA_REGISTER_NUMBER_PATTERN = /^(\d{2}MX)(\d{3})$/i
 
 export function normalizeEmail(value: unknown): string | null {
   if (typeof value !== 'string') return null
   const email = value.trim().toLowerCase()
   if (email.length > 254 || !EMAIL_PATTERN.test(email)) return null
   return email
+}
+
+export function normalizeRegisterNumber(value: unknown): string | null {
+  if (typeof value !== 'string') return null
+  const regNo = value.trim().toUpperCase()
+  return MCA_REGISTER_NUMBER_PATTERN.test(regNo) ? regNo : null
+}
+
+/** The college identity is deterministic and always shares one roster row. */
+export function collegeEmailForRegisterNumber(value: unknown): string | null {
+  const regNo = normalizeRegisterNumber(value)
+  return regNo ? `${regNo.toLowerCase()}@psgtech.ac.in` : null
+}
+
+export function registerNumberFromCollegeEmail(value: unknown): string | null {
+  const email = normalizeEmail(value)
+  if (!email?.endsWith('@psgtech.ac.in')) return null
+  return normalizeRegisterNumber(email.slice(0, -'@psgtech.ac.in'.length))
 }
 
 export interface RosterStudentInput {

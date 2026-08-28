@@ -46,12 +46,12 @@ class _RootLayoutState extends State<RootLayout> {
           selectedIcon: Icon(LucideIcons.home,
               color: Theme.of(context).colorScheme.primary),
           label: 'Today'),
+      NavigationDestination(
+          icon: const Icon(LucideIcons.calendarCheck),
+          selectedIcon: Icon(LucideIcons.calendarCheck,
+              color: Theme.of(context).colorScheme.primary),
+          label: 'Quests'),
       if (showPlacementLog)
-        NavigationDestination(
-            icon: const Icon(LucideIcons.calendarCheck),
-            selectedIcon: Icon(LucideIcons.calendarCheck,
-                color: Theme.of(context).colorScheme.primary),
-            label: 'Quests'),
       NavigationDestination(
           icon: const Icon(LucideIcons.bookOpen),
           selectedIcon: Icon(LucideIcons.bookOpen,

@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
-import { normalizeEmail } from '@/lib/auth-input'
+import { normalizeEmail, registerNumberFromCollegeEmail } from '@/lib/auth-input'
 import { checkRateLimit } from '@/lib/limiter'
 import { isStaffEmail, isStaticOtpEnabled } from '@/lib/staff-auth'
 import { provisionStaffByEmail } from '@/lib/staff-provision'
@@ -13,6 +13,37 @@ function requestIp(request: NextRequest) {
   return request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
     || request.headers.get('x-real-ip')
     || 'unknown'
+}
+
+async function resolveRosterEmail(email: string): Promise<boolean> {
+  const directMatches = await Promise.all([
+    supabaseAdmin.from('whitelist').select('email').eq('email', email).maybeSingle(),
+    supabaseAdmin.from('whitelist').select('email').eq('personal_email', email).maybeSingle(),
+    supabaseAdmin.from('whitelist').select('email').eq('college_email', email).maybeSingle(),
+  ])
+  if (directMatches.some((result) => result.data)) return true
+
+  // 26MX college accounts are predictable before the institution activates
+  // the inboxes. Resolve the register number and attach the address to the
+  // existing roster row; the alias trigger keeps both identities unified.
+  const regNo = registerNumberFromCollegeEmail(email)
+  if (!regNo?.startsWith('26MX')) return false
+
+  const { data: roster } = await supabaseAdmin
+    .from('whitelist')
+    .select('email, college_email')
+    .eq('reg_no', regNo)
+    .maybeSingle()
+  if (!roster) return false
+
+  if (!roster.college_email) {
+    const { error } = await supabaseAdmin
+      .from('whitelist')
+      .update({ college_email: email })
+      .eq('reg_no', regNo)
+    if (error) throw error
+  }
+  return true
 }
 
 export async function POST(request: NextRequest) {
@@ -36,17 +67,13 @@ export async function POST(request: NextRequest) {
   }
 
   const since = new Date(Date.now() - 10 * 60 * 1000).toISOString()
-  const [aliasResult, whitelistRows, rateResult] = await Promise.all([
+  const [aliasResult, rosteredDirectly, rateResult] = await Promise.all([
     supabaseAdmin
       .from('whitelist_email_aliases')
       .select('email')
       .eq('email', email)
       .maybeSingle(),
-    Promise.all([
-      supabaseAdmin.from('whitelist').select('email').eq('email', email).maybeSingle(),
-      supabaseAdmin.from('whitelist').select('email').eq('personal_email', email).maybeSingle(),
-      supabaseAdmin.from('whitelist').select('email').eq('college_email', email).maybeSingle(),
-    ]),
+    resolveRosterEmail(email),
     supabaseAdmin
       .from('otp_rate_log')
       .select('id', { count: 'exact', head: true })
@@ -54,8 +81,7 @@ export async function POST(request: NextRequest) {
       .gte('sent_at', since),
   ])
 
-  const whitelistHit = whitelistRows.find((row) => row.data)?.data
-  const rostered = Boolean(aliasResult.data || whitelistHit) || isStaffEmail(email)
+  const rostered = Boolean(aliasResult.data || rosteredDirectly) || isStaffEmail(email)
   if (!rostered) return NextResponse.json({ success: true, message: GENERIC_MESSAGE })
   if ((rateResult.count ?? 0) >= 3) {
     return NextResponse.json({ error: 'Too many codes requested. Try again in ten minutes.' }, { status: 429 })

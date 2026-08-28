@@ -47,8 +47,15 @@ export interface Database {
           onboarding_complete: boolean
           show_birthday_publicly: boolean
           mentorship_open: boolean
+          avatar_url: string | null
+          linkedin_url: string | null
+          github_url: string | null
+          current_company: string | null
+          current_role_title: string | null
+          skills: string[]
+          arrears: Record<string, unknown>[]
         }
-        Insert: Omit<Database['public']['Tables']['users']['Row'], 'personal_email' | 'college_email' | 'team_id' | 'team_uuid' | 'gender' | 'leetcode_username' | 'dob' | 'birthday_notifications_enabled' | 'leetcode_notifications_enabled' | 'task_reminders_enabled' | 'attendance_alerts_enabled' | 'announcements_enabled' | 'created_at' | 'updated_at' | 'ecampus_password' | 'ecampus_password_set' | 'batch_id' | 'role_label' | 'onboarding_complete' | 'show_birthday_publicly' | 'mentorship_open'> & {
+        Insert: Omit<Database['public']['Tables']['users']['Row'], 'personal_email' | 'college_email' | 'team_id' | 'team_uuid' | 'gender' | 'leetcode_username' | 'dob' | 'birthday_notifications_enabled' | 'leetcode_notifications_enabled' | 'task_reminders_enabled' | 'attendance_alerts_enabled' | 'announcements_enabled' | 'created_at' | 'updated_at' | 'ecampus_password' | 'ecampus_password_set' | 'batch_id' | 'role_label' | 'onboarding_complete' | 'show_birthday_publicly' | 'mentorship_open' | 'avatar_url' | 'linkedin_url' | 'github_url' | 'current_company' | 'current_role_title' | 'skills' | 'arrears'> & {
           personal_email?: string | null
           college_email?: string | null
           team_id?: string | null
@@ -70,6 +77,13 @@ export interface Database {
           onboarding_complete?: boolean
           show_birthday_publicly?: boolean
           mentorship_open?: boolean
+          avatar_url?: string | null
+          linkedin_url?: string | null
+          github_url?: string | null
+          current_company?: string | null
+          current_role_title?: string | null
+          skills?: string[]
+          arrears?: Record<string, unknown>[]
         }
         Update: Partial<Database['public']['Tables']['users']['Insert']>
         Relationships: []
