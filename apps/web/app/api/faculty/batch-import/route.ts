@@ -76,9 +76,7 @@ export async function POST(req: NextRequest) {
           ?? college_email
           ?? `pending+${reg_no.toLowerCase()}@roster.psgmx.invalid`
         const effectivePersonalEmail = personal_email ?? existingRoster?.personal_email ?? null
-        const generatedCollegeEmail = (batch as { batch_code: string }).batch_code === '26MX'
-          ? collegeEmailForRegisterNumber(reg_no)
-          : null
+        const generatedCollegeEmail = collegeEmailForRegisterNumber(reg_no)
         const effectiveCollegeEmail = college_email
           ?? existingRoster?.college_email
           ?? generatedCollegeEmail

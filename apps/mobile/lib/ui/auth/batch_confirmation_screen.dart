@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
-
+import '../../providers/user_provider.dart';
 
 class BatchConfirmationScreen extends StatelessWidget {
   const BatchConfirmationScreen({super.key});
@@ -11,6 +12,14 @@ class BatchConfirmationScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final user = context.watch<UserProvider>().currentUser;
+    final batchMatch = RegExp(r'^(\d{2}MX)').firstMatch(user?.regNo ?? '');
+    final batchCode = batchMatch?.group(1) ?? user?.batch ?? 'MCA';
+    final yearPrefix = RegExp(r'^(\d{2})MX$').firstMatch(batchCode)?.group(1);
+    final startYear = yearPrefix == null ? null : int.tryParse('20$yearPrefix');
+    final classYears = startYear == null
+        ? 'Your MCA batch'
+        : 'Batch of $startYear–${startYear + 2}';
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -19,7 +28,8 @@ class BatchConfirmationScreen extends StatelessWidget {
           children: [
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 24.0, vertical: 16.0),
                 child: Column(
                   children: [
                     const SizedBox(height: 24),
@@ -31,12 +41,13 @@ class BatchConfirmationScreen extends StatelessWidget {
                       fit: BoxFit.contain,
                     ),
                     const SizedBox(height: 24),
-                    
+
                     // Welcome Title Row
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(LucideIcons.heart, color: AppTheme.accentCoral, size: 16),
+                        const Icon(LucideIcons.heart,
+                            color: AppTheme.accentCoral, size: 16),
                         const SizedBox(width: 8),
                         Text(
                           'Welcome to the crew!',
@@ -49,7 +60,7 @@ class BatchConfirmationScreen extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    
+
                     // Headline
                     RichText(
                       textAlign: TextAlign.center,
@@ -60,37 +71,44 @@ class BatchConfirmationScreen extends StatelessWidget {
                           color: theme.colorScheme.onSurface,
                           letterSpacing: -0.5,
                         ),
-                        children: const [
-                          TextSpan(text: 'You\'re in '),
-                          TextSpan(text: '25MX', style: TextStyle(color: AppTheme.accentCoral)),
+                        children: [
+                          const TextSpan(text: 'You\'re in '),
+                          TextSpan(
+                              text: batchCode,
+                              style:
+                                  const TextStyle(color: AppTheme.accentCoral)),
                         ],
                       ),
                     ),
                     const SizedBox(height: 12),
-                    
+
                     // Batch Subtitle
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(LucideIcons.leaf, color: AppTheme.illusSage, size: 16),
+                        const Icon(LucideIcons.leaf,
+                            color: AppTheme.illusSage, size: 16),
                         const SizedBox(width: 8),
                         Text(
-                          'Batch of 2025–2027',
+                          classYears,
                           style: GoogleFonts.inter(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.8),
+                            color: theme.textTheme.bodyMedium?.color
+                                ?.withValues(alpha: 0.8),
                           ),
                         ),
                         const SizedBox(width: 8),
-                        const Icon(LucideIcons.leaf, color: AppTheme.illusSage, size: 16),
+                        const Icon(LucideIcons.leaf,
+                            color: AppTheme.illusSage, size: 16),
                       ],
                     ),
                     const SizedBox(height: 24),
-                    
+
                     // Badge
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
                         color: AppTheme.illusGold.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
@@ -98,7 +116,8 @@ class BatchConfirmationScreen extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(LucideIcons.graduationCap, color: AppTheme.illusTerracotta, size: 12),
+                          const Icon(LucideIcons.graduationCap,
+                              color: AppTheme.illusTerracotta, size: 12),
                           const SizedBox(width: 8),
                           Text(
                             'A new journey. Together.',
@@ -111,9 +130,9 @@ class BatchConfirmationScreen extends StatelessWidget {
                         ],
                       ),
                     ),
-                    
+
                     const SizedBox(height: 32),
-                    
+
                     // Central Illustration
                     Image.asset(
                       'assets/images/onboarding/student_group2.png',
@@ -121,16 +140,17 @@ class BatchConfirmationScreen extends StatelessWidget {
                       height: 220,
                       fit: BoxFit.contain,
                     ),
-                    
+
                     const SizedBox(height: 32),
-                    
+
                     // Bottom Card
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: AppTheme.illusGold.withValues(alpha: 0.05),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppTheme.illusGold.withValues(alpha: 0.2)),
+                        border: Border.all(
+                            color: AppTheme.illusGold.withValues(alpha: 0.2)),
                       ),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -138,10 +158,12 @@ class BatchConfirmationScreen extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: AppTheme.accentCoral.withValues(alpha: 0.1),
+                              color:
+                                  AppTheme.accentCoral.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Icon(LucideIcons.users2, color: AppTheme.accentCoral),
+                            child: const Icon(LucideIcons.users2,
+                                color: AppTheme.accentCoral),
                           ),
                           const SizedBox(width: 16),
                           Expanded(
@@ -149,7 +171,7 @@ class BatchConfirmationScreen extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'You\'re now part of the 25MX family.',
+                                  'You\'re now part of the $batchCode family.',
                                   style: GoogleFonts.inter(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w600,
@@ -164,11 +186,14 @@ class BatchConfirmationScreen extends StatelessWidget {
                                         'Let\'s make these years unforgettable!',
                                         style: GoogleFonts.inter(
                                           fontSize: 11,
-                                          color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.8),
+                                          color: theme
+                                              .textTheme.bodyMedium?.color
+                                              ?.withValues(alpha: 0.8),
                                         ),
                                       ),
                                     ),
-                                    const Icon(LucideIcons.heart, color: AppTheme.accentCoral, size: 16),
+                                    const Icon(LucideIcons.heart,
+                                        color: AppTheme.accentCoral, size: 16),
                                   ],
                                 ),
                               ],
@@ -181,7 +206,7 @@ class BatchConfirmationScreen extends StatelessWidget {
                 ),
               ),
             ),
-            
+
             // Bottom Action Area
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
@@ -204,7 +229,8 @@ class BatchConfirmationScreen extends StatelessWidget {
                         children: [
                           Text(
                             'Let\'s Go!',
-                            style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600),
+                            style: GoogleFonts.inter(
+                                fontSize: 12, fontWeight: FontWeight.w600),
                           ),
                           const SizedBox(width: 8),
                           const Icon(LucideIcons.arrowRight, size: 16),

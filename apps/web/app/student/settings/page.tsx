@@ -1,143 +1,108 @@
-'use client';
+'use client'
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Settings, User, Bell, Shield, Save, Linkedin, Github, ExternalLink } from 'lucide-react';
+import React from 'react'
+import { Bell, Github, Linkedin, Loader2, LogOut, Save, Settings, ShieldCheck, UserRound } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+import { getCurrentProfile } from '@/lib/current-profile'
+
+type Profile = {
+  id: string
+  name: string
+  email: string
+  reg_no: string
+  role_label: string
+  batch_id: string | null
+  linkedin_url: string | null
+  github_url: string | null
+  task_reminders_enabled: boolean | null
+  attendance_alerts_enabled: boolean | null
+  announcements_enabled: boolean | null
+  leetcode_notifications_enabled: boolean | null
+}
 
 export default function StudentSettingsPage() {
-  const [activeTab, setActiveTab] = useState<'profile' | 'notifications' | 'account'>('profile');
-  const [saved, setSaved] = useState(false);
+  const supabase = React.useMemo(() => createClient(), [])
+  const [profile, setProfile] = React.useState<Profile | null>(null)
+  const [batchCode, setBatchCode] = React.useState('MCA')
+  const [loading, setLoading] = React.useState(true)
+  const [saving, setSaving] = React.useState(false)
+  const [message, setMessage] = React.useState('')
 
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
-  };
+  React.useEffect(() => { void (async () => {
+    try {
+      const me = await getCurrentProfile(supabase)
+      if (!me) throw new Error('Your profile could not be found.')
+      const { data, error } = await supabase.from('users').select('id,name,email,reg_no,role_label,batch_id,linkedin_url,github_url,task_reminders_enabled,attendance_alerts_enabled,announcements_enabled,leetcode_notifications_enabled').eq('id', me.id).single()
+      if (error) throw error
+      setProfile(data)
+      if (data.batch_id) {
+        const { data: batch } = await supabase.from('batches').select('batch_code').eq('id', data.batch_id).single()
+        if (batch?.batch_code) setBatchCode(batch.batch_code)
+      }
+    } catch (cause) {
+      setMessage(cause instanceof Error ? cause.message : 'Profile could not be loaded.')
+    } finally {
+      setLoading(false)
+    }
+  })() }, [supabase])
 
-  return (
-    <div className="max-w-[900px] mx-auto space-y-8 pb-8">
+  async function save() {
+    if (!profile) return
+    setSaving(true)
+    setMessage('')
+    const { error } = await supabase.from('users').update({
+      name: profile.name.trim(),
+      linkedin_url: profile.linkedin_url?.trim() || null,
+      github_url: profile.github_url?.trim() || null,
+      task_reminders_enabled: profile.task_reminders_enabled,
+      attendance_alerts_enabled: profile.attendance_alerts_enabled,
+      announcements_enabled: profile.announcements_enabled,
+      leetcode_notifications_enabled: profile.leetcode_notifications_enabled,
+    }).eq('id', profile.id)
+    setMessage(error ? error.message : 'Your profile and preferences are saved.')
+    setSaving(false)
+  }
 
-      {/* Header */}
-      <div>
-        <h1 className="text-[24px] font-black text-text-main tracking-tight flex items-center gap-2">
-          <Settings className="w-6 h-6 text-primary-purple" /> Settings
-        </h1>
-        <p className="text-[13px] text-text-muted mt-0.5">Manage your profile, preferences, and account.</p>
-      </div>
+  if (loading) return <div className="flex min-h-64 items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary-purple"/></div>
 
-      {/* Tabs */}
-      <div className="flex gap-6 border-b border-border-light">
-        {(['profile', 'notifications', 'account'] as const).map((tab) => (
-          <button key={tab} onClick={() => setActiveTab(tab)} className={`pb-4 px-1 text-[14px] font-bold capitalize transition-colors border-b-2 ${activeTab === tab ? 'text-primary-purple border-primary-purple' : 'text-text-muted border-transparent hover:text-text-main'}`}>
-            {tab}
-          </button>
-        ))}
-      </div>
+  return <div className="mx-auto max-w-4xl space-y-7 pb-10">
+    <div><h1 className="flex items-center gap-2 text-2xl font-black"><Settings className="h-6 w-6 text-primary-purple"/>Your profile</h1><p className="mt-1 text-sm text-text-muted">Keep the details used across placement, lineage and notifications accurate.</p></div>
 
-      {activeTab === 'profile' && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-          {/* Avatar */}
-          <div className="bg-white rounded-[20px] border border-border-light shadow-[0_2px_12px_rgba(0,0,0,0.02)] p-6">
-            <h3 className="text-[15px] font-bold text-text-main mb-5">Profile Picture</h3>
-            <div className="flex items-center gap-6">
-              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary-purple to-deep-violet flex items-center justify-center text-white text-3xl font-black shadow-lg">S</div>
-              <div>
-                <button className="px-5 py-2 bg-primary-purple text-white rounded-xl text-[13px] font-bold hover:bg-deep-violet transition-colors">Upload Photo</button>
-                <p className="text-[12px] text-text-muted mt-2">JPG, PNG up to 2MB</p>
-              </div>
-            </div>
-          </div>
+    {!profile ? <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5"><p className="font-bold">{message || 'Your profile is unavailable.'}</p></div> : <>
+      <section className="rounded-3xl border border-border-light bg-white p-5 sm:p-6">
+        <div className="flex items-center gap-3"><div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-purple to-deep-violet text-xl font-black text-white">{profile.name.trim().charAt(0).toUpperCase() || 'S'}</div><div><h2 className="font-black">{profile.name}</h2><p className="text-sm text-text-muted">{profile.email}</p></div></div>
+        <div className="mt-6 grid gap-3 sm:grid-cols-3">{[
+          ['Register number', profile.reg_no],
+          ['Batch', batchCode],
+          ['Access', profile.role_label],
+        ].map(([label, value]) => <div key={label} className="rounded-2xl bg-page-bg p-4"><p className="text-[10px] font-black uppercase tracking-wide text-text-muted">{label}</p><p className="mt-1 font-black">{value}</p></div>)}</div>
+        <p className="mt-4 flex items-center gap-2 text-xs text-text-muted"><ShieldCheck className="h-4 w-4"/>Register number and batch are protected. Ask your Placement Rep or faculty coordinator to correct them.</p>
+      </section>
 
-          {/* Read-only Info */}
-          <div className="bg-white rounded-[20px] border border-border-light shadow-[0_2px_12px_rgba(0,0,0,0.02)] p-6">
-            <h3 className="text-[15px] font-bold text-text-main mb-5">Identity (Read-only)</h3>
-            <div className="grid grid-cols-2 gap-4">
-              {[
-                { label: 'Roll Number', value: '25MX301' },
-                { label: 'Batch', value: '25MX · Class of 2027' },
-                { label: 'Department', value: 'MCA — Computer Applications' },
-                { label: 'Status', value: 'Active Student' },
-              ].map((f, i) => (
-                <div key={i} className="p-4 bg-page-bg rounded-xl">
-                  <p className="text-[11px] font-bold text-text-muted uppercase tracking-wider">{f.label}</p>
-                  <p className="text-[14px] font-bold text-text-main mt-1">{f.value}</p>
-                </div>
-              ))}
-            </div>
-            <p className="text-[12px] text-text-muted mt-4 flex items-center gap-1.5"><Shield className="w-3.5 h-3.5" /> To change batch or roll information, contact your placement coordinator.</p>
-          </div>
+      <section className="rounded-3xl border border-border-light bg-white p-5 sm:p-6"><div className="flex items-center gap-2"><UserRound className="h-5 w-5 text-primary-purple"/><h2 className="font-black">Public placement profile</h2></div><div className="mt-5 space-y-4">
+        <Field label="Display name"><input value={profile.name} onChange={(event) => setProfile({ ...profile, name: event.target.value })} className="w-full rounded-xl border border-border-light bg-page-bg px-4 py-3 text-sm outline-none focus:border-primary-purple" maxLength={100}/></Field>
+        <Field label="LinkedIn URL" icon={<Linkedin className="h-4 w-4"/>}><input type="url" value={profile.linkedin_url ?? ''} onChange={(event) => setProfile({ ...profile, linkedin_url: event.target.value })} placeholder="https://linkedin.com/in/your-name" className="w-full rounded-xl border border-border-light bg-page-bg px-4 py-3 text-sm outline-none focus:border-primary-purple"/></Field>
+        <Field label="GitHub URL" icon={<Github className="h-4 w-4"/>}><input type="url" value={profile.github_url ?? ''} onChange={(event) => setProfile({ ...profile, github_url: event.target.value })} placeholder="https://github.com/your-name" className="w-full rounded-xl border border-border-light bg-page-bg px-4 py-3 text-sm outline-none focus:border-primary-purple"/></Field>
+      </div></section>
 
-          {/* Editable Profile */}
-          <div className="bg-white rounded-[20px] border border-border-light shadow-[0_2px_12px_rgba(0,0,0,0.02)] p-6">
-            <h3 className="text-[15px] font-bold text-text-main mb-5">Profile Details</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="text-[12px] font-bold text-text-muted uppercase tracking-wider block mb-2">Display Name</label>
-                <input type="text" defaultValue="Student" className="w-full bg-page-bg border border-border-light rounded-xl px-4 py-3 text-[14px] text-text-main outline-none focus:border-primary-purple transition-colors" />
-              </div>
-              <div>
-                <label className="text-[12px] font-bold text-text-muted uppercase tracking-wider block mb-2 flex items-center gap-2"><Linkedin className="w-3.5 h-3.5 text-primary-purple" /> LinkedIn Profile URL</label>
-                <input type="url" placeholder="https://linkedin.com/in/your-profile" className="w-full bg-page-bg border border-border-light rounded-xl px-4 py-3 text-[14px] text-text-main outline-none focus:border-primary-purple transition-colors" />
-              </div>
-              <div>
-                <label className="text-[12px] font-bold text-text-muted uppercase tracking-wider block mb-2 flex items-center gap-2"><Github className="w-3.5 h-3.5 text-text-muted" /> GitHub Profile URL</label>
-                <input type="url" placeholder="https://github.com/username" className="w-full bg-page-bg border border-border-light rounded-xl px-4 py-3 text-[14px] text-text-main outline-none focus:border-primary-purple transition-colors" />
-              </div>
-            </div>
-            <div className="flex items-center gap-3 mt-6">
-              <button onClick={handleSave} className="flex items-center gap-2 px-6 py-3 bg-primary-purple text-white rounded-xl text-[14px] font-bold hover:bg-deep-violet transition-colors">
-                <Save className="w-4 h-4" /> Save Changes
-              </button>
-              {saved && <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-[13px] font-bold text-electric-blue flex items-center gap-1.5"><span>✓</span> Saved!</motion.span>}
-            </div>
-          </div>
-        </motion.div>
-      )}
+      <section className="rounded-3xl border border-border-light bg-white p-5 sm:p-6"><div className="flex items-center gap-2"><Bell className="h-5 w-5 text-primary-purple"/><h2 className="font-black">Useful reminders</h2></div><div className="mt-5 space-y-3">
+        <Toggle label="Daily quest reminders" hint="A short reminder when today’s placement work is still open." checked={profile.task_reminders_enabled ?? true} onChange={(value) => setProfile({ ...profile, task_reminders_enabled: value })}/>
+        <Toggle label="Attendance alerts" hint="Notify you when attendance needs attention." checked={profile.attendance_alerts_enabled ?? true} onChange={(value) => setProfile({ ...profile, attendance_alerts_enabled: value })}/>
+        <Toggle label="Batch announcements" hint="Important updates from your Placement Rep and department." checked={profile.announcements_enabled ?? true} onChange={(value) => setProfile({ ...profile, announcements_enabled: value })}/>
+        <Toggle label="LeetCode progress" hint="Milestones and reminders tied to your connected profile." checked={profile.leetcode_notifications_enabled ?? true} onChange={(value) => setProfile({ ...profile, leetcode_notifications_enabled: value })}/>
+      </div></section>
 
-      {activeTab === 'notifications' && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-[20px] border border-border-light shadow-[0_2px_12px_rgba(0,0,0,0.02)] p-6 space-y-5">
-          <h3 className="text-[15px] font-bold text-text-main">Notification Preferences</h3>
-          {[
-            { label: 'Exam reminders', sub: 'Get notified 24h and 1h before scheduled exams', defaultOn: true },
-            { label: 'Knowledge Brain approvals', sub: 'When an article you submitted gets approved', defaultOn: true },
-            { label: 'Lineage senior activity', sub: 'When your senior updates their profile or posts an article', defaultOn: false },
-            { label: 'Department announcements', sub: 'Important notices from faculty and placement team', defaultOn: true },
-            { label: 'Readiness score milestones', sub: 'When your score crosses a new band', defaultOn: true },
-          ].map((n, i) => (
-            <div key={i} className="flex items-center justify-between p-4 bg-page-bg rounded-xl">
-              <div>
-                <p className="text-[14px] font-bold text-text-main">{n.label}</p>
-                <p className="text-[12px] text-text-muted mt-0.5">{n.sub}</p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" defaultChecked={n.defaultOn} className="sr-only peer" />
-                <div className="w-10 h-6 bg-border-light peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-purple" />
-              </label>
-            </div>
-          ))}
-        </motion.div>
-      )}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div>{message && <p className="text-sm font-semibold" role="status">{message}</p>}</div><button onClick={save} disabled={saving || !profile.name.trim()} className="flex items-center justify-center gap-2 rounded-xl bg-primary-purple px-6 py-3 text-sm font-bold text-white disabled:opacity-50">{saving ? <Loader2 className="h-4 w-4 animate-spin"/> : <Save className="h-4 w-4"/>}{saving ? 'Saving…' : 'Save changes'}</button></div>
+    </>}
 
-      {activeTab === 'account' && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-          <div className="bg-white rounded-[20px] border border-border-light shadow-[0_2px_12px_rgba(0,0,0,0.02)] p-6">
-            <h3 className="text-[15px] font-bold text-text-main mb-5">Change Password</h3>
-            <div className="space-y-4">
-              <input type="password" placeholder="Current password" className="w-full bg-page-bg border border-border-light rounded-xl px-4 py-3 text-[14px] outline-none focus:border-primary-purple transition-colors" />
-              <input type="password" placeholder="New password" className="w-full bg-page-bg border border-border-light rounded-xl px-4 py-3 text-[14px] outline-none focus:border-primary-purple transition-colors" />
-              <input type="password" placeholder="Confirm new password" className="w-full bg-page-bg border border-border-light rounded-xl px-4 py-3 text-[14px] outline-none focus:border-primary-purple transition-colors" />
-            </div>
-            <button className="mt-4 px-6 py-3 bg-primary-purple text-white rounded-xl text-[14px] font-bold hover:bg-deep-violet transition-colors">Update Password</button>
-          </div>
+    <section className="rounded-3xl border border-border-light bg-white p-5 sm:p-6"><h2 className="font-black">Passwordless account</h2><p className="mt-2 text-sm leading-6 text-text-muted">PSGMX uses a one-time code sent to your approved email, so there is no password to remember or reset.</p><button onClick={async () => { try { await fetch('/api/auth/logout', { method: 'POST' }) } finally { window.location.href = '/login' } }} className="mt-5 flex items-center gap-2 rounded-xl border border-border-light px-5 py-3 text-sm font-bold text-deep-violet"><LogOut className="h-4 w-4"/>Sign out securely</button></section>
+  </div>
+}
 
-          <div className="bg-white rounded-[20px] border border-deep-violet/30 shadow-[0_2px_12px_rgba(0,0,0,0.02)] p-6">
-            <h3 className="text-[15px] font-bold text-deep-violet mb-2">Sign Out</h3>
-            <p className="text-[13px] text-text-muted mb-4">You'll need to log in again to access your account.</p>
-            <button onClick={async () => { try { await fetch('/api/auth/logout', { method: 'POST' }); } catch {} window.location.href = '/login'; }} className="px-6 py-3 bg-deep-violet text-white rounded-xl text-[14px] font-bold hover:opacity-90 transition-opacity">
-              Sign Out
-            </button>
-          </div>
-        </motion.div>
-      )}
-    </div>
-  );
+function Field({ label, icon, children }: { label: string; icon?: React.ReactNode; children: React.ReactNode }) {
+  return <label className="block"><span className="mb-2 flex items-center gap-2 text-xs font-black uppercase tracking-wide text-text-muted">{icon}{label}</span>{children}</label>
+}
+
+function Toggle({ label, hint, checked, onChange }: { label: string; hint: string; checked: boolean; onChange: (value: boolean) => void }) {
+  return <label className="flex cursor-pointer items-center justify-between gap-4 rounded-2xl bg-page-bg p-4"><span><span className="block text-sm font-black">{label}</span><span className="mt-0.5 block text-xs text-text-muted">{hint}</span></span><input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} className="h-5 w-5 shrink-0 accent-[#5B3FD1]"/></label>
 }

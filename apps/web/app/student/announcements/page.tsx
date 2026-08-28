@@ -1,111 +1,93 @@
-'use client';
+'use client'
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Megaphone, Bell, AlertTriangle, Calendar, CheckCircle, BookOpen } from 'lucide-react';
+import React from 'react'
+import { AlertTriangle, Bell, CheckCircle2, Loader2, Megaphone } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+import { getCurrentProfile } from '@/lib/current-profile'
 
-const announcements = [
-  { id: 1, title: 'Mock Exam Scheduled — Data Structures', from: 'Dr. Arunkumar', role: 'Faculty', date: 'Jan 15, 2025', tag: 'EXAM', tagColor: 'bg-primary-purple/10 text-primary-purple', read: false, body: 'A full mock exam on Data Structures will be conducted on January 20th at 10:00 AM. Please ensure you log in with a laptop and allow camera access for proctoring. Duration: 90 minutes. The exam includes 40 questions — MCQ and one coding problem.' },
-  { id: 2, title: 'Zoho Campus Drive — Registration Open', from: 'Placement Team', role: 'Admin', date: 'Jan 12, 2025', tag: 'URGENT', tagColor: 'bg-deep-violet/10 text-deep-violet', read: false, body: 'Zoho Corporation will be visiting the campus on February 5, 2025. Registration is mandatory and must be completed before January 25. Role: Software Engineer. Package: 6.5 LPA. Open to 2nd year MCA students with 60%+ CGPA.' },
-  { id: 3, title: 'New Articles Approved in Knowledge Brain', from: 'Faculty Review Team', role: 'Faculty', date: 'Jan 10, 2025', tag: 'KNOWLEDGE', tagColor: 'bg-electric-blue/10 text-electric-blue', read: true, body: '5 new articles have been approved and indexed in the Knowledge Brain: "How I cracked Zoho", "TCS NQT Deep Dive", "My 2-Year Strategy", "SQL Interview Patterns", and "Capgemini GameChallenge". Search for these in the Knowledge Brain.' },
-  { id: 4, title: 'FYP Mid-Review Dates Announced', from: 'Dr. Priya', role: 'Faculty', date: 'Jan 8, 2025', tag: 'DEADLINE', tagColor: 'bg-illus-gold/10 text-illus-gold', read: true, body: 'FYP mid-reviews will be conducted between January 20–25. Please ensure your progress log is updated and your documentation is ready. Your guide will review entries before the session.' },
-  { id: 5, title: 'PSGMX App — Streak Freeze Feature Now Live', from: 'Tech Team', role: 'Admin', date: 'Jan 5, 2025', tag: 'UPDATE', tagColor: 'bg-page-bg text-text-muted', read: true, body: 'You now get 2 streak freeze tokens per month in the Flutter app. Use them on days you genuinely can\'t complete the Daily Five. They reset on the 1st of every month. Open the Flutter app to claim your tokens.' },
-];
+type Announcement = {
+  id: string
+  title: string
+  message: string
+  is_priority: boolean
+  expiry_date: string | null
+  created_at: string
+}
 
-const tagIcons: Record<string, any> = {
-  'EXAM': BookOpen,
-  'URGENT': AlertTriangle,
-  'KNOWLEDGE': BookOpen,
-  'DEADLINE': Calendar,
-  'UPDATE': Bell,
-};
+const readStorageKey = 'psgmx:read-announcements'
 
 export default function AnnouncementsPage() {
-  const [filter, setFilter] = useState('All');
-  const [expandedId, setExpandedId] = useState<number | null>(null);
-  const [readIds, setReadIds] = useState<Set<number>>(new Set(announcements.filter(a => a.read).map(a => a.id)));
+  const supabase = React.useMemo(() => createClient(), [])
+  const [rows, setRows] = React.useState<Announcement[]>([])
+  const [readIds, setReadIds] = React.useState<Set<string>>(new Set())
+  const [filter, setFilter] = React.useState<'all' | 'unread' | 'priority'>('all')
+  const [expanded, setExpanded] = React.useState<string | null>(null)
+  const [loading, setLoading] = React.useState(true)
+  const [error, setError] = React.useState('')
 
-  const filters = ['All', 'Unread', 'EXAM', 'URGENT', 'DEADLINE'];
-  const filtered = announcements.filter(a =>
-    filter === 'All' ? true :
-    filter === 'Unread' ? !readIds.has(a.id) :
-    a.tag === filter
-  );
+  const load = React.useCallback(async () => {
+    setLoading(true)
+    setError('')
+    try {
+      const me = await getCurrentProfile(supabase)
+      if (!me?.batch_id) throw new Error('Your batch is not assigned yet.')
+      const { data, error: queryError } = await supabase
+        .from('announcements')
+        .select('id,title,message,is_priority,expiry_date,created_at')
+        .eq('batch_id', me.batch_id)
+        .or(`expiry_date.is.null,expiry_date.gte.${new Date().toISOString()}`)
+        .order('is_priority', { ascending: false })
+        .order('created_at', { ascending: false })
+      if (queryError) throw queryError
+      setRows(data ?? [])
+      const stored = JSON.parse(localStorage.getItem(readStorageKey) ?? '[]')
+      setReadIds(new Set(Array.isArray(stored) ? stored : []))
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Announcements could not be loaded.')
+    } finally {
+      setLoading(false)
+    }
+  }, [supabase])
 
-  const markRead = (id: number) => {
-    setReadIds(prev => new Set([...prev, id]));
-    setExpandedId(expandedId === id ? null : id);
-  };
+  React.useEffect(() => { void load() }, [load])
 
-  return (
-    <div className="max-w-[900px] mx-auto space-y-8 pb-8">
+  function remember(next: Set<string>) {
+    setReadIds(next)
+    localStorage.setItem(readStorageKey, JSON.stringify([...next]))
+  }
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-[24px] font-black text-text-main tracking-tight flex items-center gap-2">
-            <Megaphone className="w-6 h-6 text-primary-purple" /> Announcements
-          </h1>
-          <p className="text-[13px] text-text-muted mt-0.5">{announcements.filter(a => !readIds.has(a.id)).length} unread · Department updates from faculty and placement team.</p>
-        </div>
-        <button onClick={() => setReadIds(new Set(announcements.map(a => a.id)))} className="text-[13px] font-bold text-primary-purple hover:underline">
-          Mark all read
-        </button>
-      </div>
+  function open(id: string) {
+    remember(new Set([...readIds, id]))
+    setExpanded((current) => current === id ? null : id)
+  }
 
-      {/* Filters */}
-      <div className="flex gap-2 flex-wrap">
-        {filters.map((f) => (
-          <button key={f} onClick={() => setFilter(f)} className={`px-4 py-2 rounded-full text-[12px] font-bold transition-colors ${filter === f ? 'bg-primary-purple text-white' : 'bg-white border border-border-light text-text-muted hover:bg-page-bg'}`}>
-            {f}
-          </button>
-        ))}
-      </div>
+  const filtered = rows.filter((row) =>
+    filter === 'unread' ? !readIds.has(row.id) : filter === 'priority' ? row.is_priority : true)
+  const unread = rows.filter((row) => !readIds.has(row.id)).length
 
-      {/* Announcement List */}
-      <div className="space-y-3">
-        {filtered.map((ann, i) => {
-          const TagIcon = tagIcons[ann.tag] || Bell;
-          const isRead = readIds.has(ann.id);
-          const isExpanded = expandedId === ann.id;
-          return (
-            <motion.div
-              key={ann.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05 }}
-              className={`bg-white rounded-[20px] border transition-all cursor-pointer shadow-[0_2px_12px_rgba(0,0,0,0.02)] ${isRead ? 'border-border-light' : 'border-primary-purple/30 shadow-primary-purple/5'}`}
-              onClick={() => markRead(ann.id)}
-            >
-              <div className="p-5 flex items-start gap-4">
-                {!isRead && <div className="w-2 h-2 rounded-full bg-primary-purple shrink-0 mt-2" />}
-                <div className={`w-10 h-10 rounded-[10px] flex items-center justify-center shrink-0 ${ann.tagColor.split(' ')[0]}`}>
-                  <TagIcon className={`w-5 h-5 ${ann.tagColor.split(' ')[1]}`} />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${ann.tagColor}`}>{ann.tag}</span>
-                    {isRead && <CheckCircle className="w-3.5 h-3.5 text-electric-blue" />}
-                  </div>
-                  <h4 className="text-[15px] font-bold text-text-main">{ann.title}</h4>
-                  <p className="text-[12px] text-text-muted mt-0.5">{ann.from} · {ann.role} · {ann.date}</p>
-                  {isExpanded && (
-                    <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[13px] text-text-main mt-3 leading-relaxed">
-                      {ann.body}
-                    </motion.p>
-                  )}
-                </div>
-              </div>
-            </motion.div>
-          );
-        })}
-        {filtered.length === 0 && (
-          <div className="text-center py-16">
-            <Megaphone className="w-12 h-12 text-border-light mx-auto mb-3" />
-            <p className="text-[15px] font-bold text-text-muted">No announcements here</p>
-          </div>
-        )}
-      </div>
+  if (loading) return <div className="flex min-h-64 items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary-purple" /></div>
+
+  return <div className="mx-auto max-w-4xl space-y-7 pb-10">
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div><h1 className="flex items-center gap-2 text-2xl font-black"><Megaphone className="h-6 w-6 text-primary-purple"/>Announcements</h1><p className="mt-1 text-sm text-text-muted">{unread ? `${unread} unread update${unread === 1 ? '' : 's'}` : 'You are caught up.'}</p></div>
+      {rows.length > 0 && <button onClick={() => remember(new Set(rows.map((row) => row.id)))} className="text-sm font-bold text-primary-purple">Mark all read</button>}
     </div>
-  );
+
+    <div className="flex flex-wrap gap-2">{(['all', 'unread', 'priority'] as const).map((value) => <button key={value} onClick={() => setFilter(value)} className={`rounded-full px-4 py-2 text-xs font-bold capitalize ${filter === value ? 'bg-primary-purple text-white' : 'border border-border-light bg-white text-text-muted'}`}>{value}</button>)}</div>
+
+    {error && <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5"><p className="font-bold text-amber-900">{error}</p><button onClick={load} className="mt-2 text-sm font-bold text-primary-purple">Try again</button></div>}
+
+    {!error && filtered.length === 0 && <div className="rounded-3xl border border-dashed border-border-light bg-white px-6 py-16 text-center"><Bell className="mx-auto h-10 w-10 text-text-muted"/><h2 className="mt-4 font-black">{rows.length === 0 ? 'No announcements yet' : 'Nothing in this view'}</h2><p className="mx-auto mt-2 max-w-md text-sm text-text-muted">{rows.length === 0 ? 'Your Placement Rep and faculty updates will appear here as soon as they are published.' : 'You have already read everything in this filter.'}</p></div>}
+
+    <div className="space-y-3">{filtered.map((row) => {
+      const isRead = readIds.has(row.id)
+      const isOpen = expanded === row.id
+      return <button key={row.id} onClick={() => open(row.id)} className={`w-full rounded-2xl border bg-white p-5 text-left transition ${isRead ? 'border-border-light' : 'border-primary-purple/30 shadow-sm'}`}>
+        <div className="flex items-start gap-4">
+          <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${row.is_priority ? 'bg-amber-50 text-amber-700' : 'bg-violet-50 text-primary-purple'}`}>{row.is_priority ? <AlertTriangle className="h-5 w-5"/> : <Bell className="h-5 w-5"/>}</div>
+          <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2">{row.is_priority && <span className="rounded-full bg-amber-50 px-2 py-1 text-[10px] font-black uppercase text-amber-700">Priority</span>}{isRead && <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-700"><CheckCircle2 className="h-3 w-3"/>Read</span>}</div><h2 className="mt-1 font-black text-text-main">{row.title}</h2><p className="mt-1 text-xs text-text-muted">{new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(row.created_at))}</p>{isOpen && <p className="mt-4 whitespace-pre-wrap text-sm leading-6 text-text-main">{row.message}</p>}</div>
+        </div>
+      </button>
+    })}</div>
+  </div>
 }

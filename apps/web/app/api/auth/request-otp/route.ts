@@ -23,11 +23,12 @@ async function resolveRosterEmail(email: string): Promise<boolean> {
   ])
   if (directMatches.some((result) => result.data)) return true
 
-  // 26MX college accounts are predictable before the institution activates
-  // the inboxes. Resolve the register number and attach the address to the
-  // existing roster row; the alias trigger keeps both identities unified.
+  // College accounts are deterministic for every MCA batch. Resolve the
+  // register number and attach the address to the existing roster row even
+  // before the institution activates that inbox. The alias trigger keeps the
+  // personal and college identities tied to one student account.
   const regNo = registerNumberFromCollegeEmail(email)
-  if (!regNo?.startsWith('26MX')) return false
+  if (!regNo) return false
 
   const { data: roster } = await supabaseAdmin
     .from('whitelist')

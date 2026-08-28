@@ -41,10 +41,12 @@ describe('MCA college identity', () => {
   it('derives a stable college address from the register number', () => {
     expect(collegeEmailForRegisterNumber('26MX301')).toBe('26mx301@psgtech.ac.in')
     expect(collegeEmailForRegisterNumber(' 26mx331 ')).toBe('26mx331@psgtech.ac.in')
+    expect(collegeEmailForRegisterNumber('29MX407')).toBe('29mx407@psgtech.ac.in')
   })
 
   it('resolves a college address back to its register number', () => {
     expect(registerNumberFromCollegeEmail('26MX301@psgtech.ac.in')).toBe('26MX301')
+    expect(registerNumberFromCollegeEmail('31mx112@psgtech.ac.in')).toBe('31MX112')
     expect(registerNumberFromCollegeEmail('person@gmail.com')).toBeNull()
   })
 })

@@ -1,163 +1,77 @@
-'use client';
+'use client'
 
-import React from 'react';
-import { motion } from 'framer-motion';
-import { Award, Trophy, Flame, Target, Zap, BookOpen, Star, Calendar } from 'lucide-react';
+import React from 'react'
+import { Award, BookOpen, Code2, Flame, GraduationCap, Loader2, Target } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+import { getCurrentProfile } from '@/lib/current-profile'
 
-const milestones = [
-  { icon: '🎓', label: 'Batch joined', detail: 'Calibration score: 34/100', date: 'June 2023', color: 'bg-page-bg border-border-light' },
-  { icon: '📝', label: 'First mock exam', detail: 'Python Mock — Score: 72/100', date: 'Aug 2023', color: 'bg-page-bg border-border-light' },
-  { icon: '🔥', label: 'Longest streak', detail: '47 consecutive days of Daily Five', date: 'Oct–Dec 2023', color: 'bg-primary-purple/10 border-primary-purple/30' },
-  { icon: '💼', label: 'First placement drive', detail: 'Attended TCS Digital campus drive', date: 'Jan 2024', color: 'bg-page-bg border-border-light' },
-  { icon: '📈', label: 'Reached STRONG band', detail: 'Score crossed 80 for the first time', date: 'Mar 2024', color: 'bg-electric-blue/10 border-electric-blue/30' },
-  { icon: '🏆', label: 'Top 5 batch leaderboard', detail: 'Ranked 3rd in 23MX for readiness', date: 'May 2024', color: 'bg-illus-gold/10 border-illus-gold/30' },
-  { icon: '✅', label: 'Graduation', detail: 'Final readiness score locked: 88/100 · STRONG', date: 'June 2025', color: 'bg-primary-purple/10 border-primary-purple/30' },
-  { icon: '🌟', label: 'First alumni article', detail: '"How I cracked Zoho\'s 5-round process"', date: 'Jul 2025', color: 'bg-electric-blue/10 border-electric-blue/30' },
-];
-
-const trophies = [
-  { icon: Flame, label: 'Best Streak', value: '47 days', color: 'text-deep-violet' },
-  { icon: Target, label: 'Exams Taken', value: '9', color: 'text-primary-purple' },
-  { icon: Zap, label: 'LeetCode (batch)', value: '147 problems', color: 'text-electric-blue' },
-  { icon: BookOpen, label: 'Articles Written', value: '3', color: 'text-illus-gold' },
-  { icon: Star, label: 'Batch Rank (final)', value: '#3', color: 'text-primary-purple' },
-  { icon: Award, label: 'Final Band', value: 'STRONG', color: 'text-electric-blue' },
-];
+type Journey = {
+  name: string
+  batchCode: string
+  startYear: number | null
+  endYear: number | null
+  finalScore: number | null
+  bestStreak: number
+  leetcodeSolved: number
+  examsTaken: number
+  articles: number
+  joinedAt: string
+  lastSnapshot: string | null
+}
 
 export default function JourneyPage() {
-  const finalScore = 88;
+  const supabase = React.useMemo(() => createClient(), [])
+  const [data, setData] = React.useState<Journey | null>(null)
+  const [loading, setLoading] = React.useState(true)
+  const [error, setError] = React.useState('')
 
-  return (
-    <div className="max-w-[1100px] mx-auto space-y-8 pb-8">
+  React.useEffect(() => { void (async () => {
+    try {
+      const me = await getCurrentProfile(supabase)
+      if (!me) throw new Error('Your alumni profile could not be found.')
+      const [{ data: batch }, { data: score }, { data: streak }, { data: leetcode }, { count: exams }, { count: articles }] = await Promise.all([
+        me.batch_id ? supabase.from('batches').select('batch_code,start_year,end_year').eq('id', me.batch_id).single() : Promise.resolve({ data: null }),
+        supabase.from('readiness_scores').select('score,computed_at').eq('user_id', me.id).order('computed_at', { ascending: false }).limit(1).maybeSingle(),
+        supabase.from('daily_five_streaks').select('longest_streak').eq('user_id', me.id).maybeSingle(),
+        me.leetcode_username ? supabase.from('leetcode_stats').select('total_solved').eq('username', me.leetcode_username).maybeSingle() : Promise.resolve({ data: null }),
+        supabase.from('mock_exam_results').select('id', { count: 'exact', head: true }).eq('student_id', me.id).eq('status', 'submitted'),
+        supabase.from('knowledge_brain_articles').select('id', { count: 'exact', head: true }).eq('author_id', me.id).eq('approval_status', 'approved'),
+      ])
+      setData({
+        name: me.name,
+        batchCode: batch?.batch_code ?? 'MCA',
+        startYear: batch?.start_year ?? null,
+        endYear: batch?.end_year ?? null,
+        finalScore: score?.score ?? null,
+        bestStreak: streak?.longest_streak ?? 0,
+        leetcodeSolved: leetcode?.total_solved ?? 0,
+        examsTaken: exams ?? 0,
+        articles: articles ?? 0,
+        joinedAt: me.created_at,
+        lastSnapshot: score?.computed_at ?? null,
+      })
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Your journey could not be loaded.')
+    } finally {
+      setLoading(false)
+    }
+  })() }, [supabase])
 
-      {/* Header */}
-      <div>
-        <h1 className="text-[24px] font-black text-text-main tracking-tight flex items-center gap-2">
-          <Award className="w-6 h-6 text-primary-purple" /> My Journey
-        </h1>
-        <p className="text-[13px] text-text-muted mt-0.5">Your 2-year PSGMX journey — permanently archived.</p>
-      </div>
+  if (loading) return <div className="flex min-h-64 items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary-purple"/></div>
+  if (!data) return <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 font-bold">{error}</div>
 
-      {/* Archive Banner */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-[24px] border border-border-light shadow-[0_4px_20px_rgba(0,0,0,0.04)] p-8">
-        <div className="flex flex-col md:flex-row items-center gap-8">
-          {/* Final Score Gauge */}
-          <div className="relative w-48 h-48 shrink-0">
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="absolute inset-0 rounded-full bg-primary-purple/5" />
-            </div>
-            <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
-              <circle cx="50" cy="50" r="44" fill="none" stroke="#EFE9E0" strokeWidth="8" />
-              <motion.circle
-                cx="50" cy="50" r="44" fill="none" stroke="var(--primary-purple)" strokeWidth="8" strokeLinecap="round"
-                initial={{ strokeDasharray: '0 276.46' }}
-                animate={{ strokeDasharray: `${(finalScore / 100) * 276.46} 276.46` }}
-                transition={{ duration: 1.2, ease: 'easeOut', delay: 0.3 }}
-              />
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-[48px] font-black text-text-main leading-none">{finalScore}</span>
-              <span className="text-[10px] font-bold text-text-muted">/100</span>
-              <span className="text-[10px] font-black text-electric-blue mt-1 bg-electric-blue/10 px-2 py-0.5 rounded-full">STRONG</span>
-            </div>
-            <div className="absolute top-2 right-2 bg-illus-gold rounded-full p-1.5">
-              <Trophy className="w-4 h-4 text-white" />
-            </div>
-          </div>
+  const band = data.finalScore === null ? 'Not archived' : data.finalScore >= 80 ? 'Strong' : data.finalScore >= 60 ? 'Building' : data.finalScore >= 40 ? 'Needs attention' : 'At risk'
+  const facts = [
+    { label: 'Best Daily Five streak', value: `${data.bestStreak} days`, icon: Flame },
+    { label: 'LeetCode solved', value: data.leetcodeSolved, icon: Code2 },
+    { label: 'Mock exams completed', value: data.examsTaken, icon: Target },
+    { label: 'Approved contributions', value: data.articles, icon: BookOpen },
+  ]
 
-          {/* Archive Info */}
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-[10px] font-bold bg-primary-purple/10 text-primary-purple px-3 py-1 rounded-full uppercase tracking-wider">ARCHIVED · FINAL SCORE</span>
-            </div>
-            <h2 className="text-[26px] font-black text-text-main">Your 2-Year PSGMX Journey</h2>
-            <p className="text-[14px] text-text-muted mt-1">Batch 23MX · <strong className="text-text-main">June 2023 — June 2025</strong></p>
-            <p className="text-[13px] text-text-muted mt-3 leading-relaxed">
-              This record is permanent and will remain visible to all future batches. Your placement experiences and articles are indexed in the Knowledge Brain and read by every junior who joins the department.
-            </p>
-            <div className="flex gap-3 mt-4">
-              <div className="p-3 bg-page-bg rounded-xl text-center">
-                <p className="text-[20px] font-black text-text-main">9</p>
-                <p className="text-[10px] font-bold text-text-muted uppercase">Mock Exams</p>
-              </div>
-              <div className="p-3 bg-page-bg rounded-xl text-center">
-                <p className="text-[20px] font-black text-text-main">147</p>
-                <p className="text-[10px] font-bold text-text-muted uppercase">LeetCode</p>
-              </div>
-              <div className="p-3 bg-page-bg rounded-xl text-center">
-                <p className="text-[20px] font-black text-text-main">47d</p>
-                <p className="text-[10px] font-bold text-text-muted uppercase">Best Streak</p>
-              </div>
-              <div className="p-3 bg-page-bg rounded-xl text-center">
-                <p className="text-[20px] font-black text-text-main">#3</p>
-                <p className="text-[10px] font-bold text-text-muted uppercase">Final Rank</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Trophy Shelf */}
-      <div>
-        <h2 className="text-[18px] font-bold text-text-main mb-4">Achievement Shelf</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          {trophies.map((t, i) => (
-            <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }} className="bg-white rounded-[16px] border border-border-light p-4 text-center hover:shadow-md transition-shadow">
-              <t.icon className={`w-8 h-8 mx-auto mb-2 ${t.color}`} />
-              <p className="text-[16px] font-black text-text-main">{t.value}</p>
-              <p className="text-[10px] font-bold text-text-muted mt-0.5">{t.label}</p>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-
-      {/* Journey Timeline */}
-      <div>
-        <h2 className="text-[18px] font-bold text-text-main mb-6">Journey Timeline</h2>
-        <div className="relative">
-          <div className="absolute left-8 top-0 bottom-0 w-px bg-border-light" />
-          <div className="space-y-6 pl-20">
-            {milestones.map((m, i) => (
-              <motion.div key={i} initial={{ opacity: 0, x: -15 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.08 }} className="relative">
-                <div className={`absolute -left-[52px] w-8 h-8 rounded-full border-2 flex items-center justify-center text-[16px] bg-white ${m.color.includes('border-primary') ? 'border-primary-purple' : m.color.includes('border-electric') ? 'border-electric-blue' : m.color.includes('border-illus') ? 'border-illus-gold' : 'border-border-light'}`}>
-                  {m.icon}
-                </div>
-                <div className={`p-5 rounded-[16px] border-2 ${m.color}`}>
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-[15px] font-bold text-text-main">{m.label}</h4>
-                    <span className="text-[11px] font-semibold text-text-muted flex items-center gap-1"><Calendar className="w-3 h-3" /> {m.date}</span>
-                  </div>
-                  <p className="text-[13px] text-text-muted mt-1">{m.detail}</p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Component Archive (read-only) */}
-      <div>
-        <h2 className="text-[18px] font-bold text-text-main mb-4">Final Score Breakdown <span className="text-[12px] font-normal text-text-muted">(Archived)</span></h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { label: 'Daily Five', score: 26, max: 30 },
-            { label: 'LeetCode', score: 22, max: 25 },
-            { label: 'Mock Exams', score: 32, max: 35 },
-            { label: 'Attendance', score: 8, max: 10 },
-          ].map((comp, i) => (
-            <div key={i} className="bg-white rounded-[16px] border border-border-light p-5">
-              <div className="flex justify-between mb-3">
-                <p className="text-[12px] font-bold text-text-muted">{comp.label}</p>
-                <p className="text-[14px] font-black text-text-main">{comp.score}/{comp.max}</p>
-              </div>
-              <div className="h-2.5 bg-border-light rounded-full overflow-hidden">
-                <div className="h-full rounded-full bg-primary-purple" style={{ width: `${(comp.score / comp.max) * 100}%` }} />
-              </div>
-              <p className="text-[10px] text-text-muted mt-2">ARCHIVED · READ-ONLY</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
+  return <div className="mx-auto max-w-5xl space-y-7 pb-10">
+    <div><h1 className="flex items-center gap-2 text-2xl font-black"><Award className="h-6 w-6 text-primary-purple"/>Your MCA journey</h1><p className="mt-1 text-sm text-text-muted">A read-only record built from the activity PSGMX actually captured.</p></div>
+    <section className="grid gap-6 rounded-3xl border border-border-light bg-white p-6 md:grid-cols-[190px_1fr] md:p-8"><div className="flex h-44 w-44 flex-col items-center justify-center justify-self-center rounded-full border-[12px] border-violet-100 bg-page-bg"><p className="text-4xl font-black">{data.finalScore === null ? '—' : Math.round(data.finalScore)}</p><p className="text-xs font-black text-primary-purple">{band}</p></div><div className="flex flex-col justify-center"><p className="text-xs font-black uppercase tracking-[0.18em] text-primary-purple">Archived cohort record</p><h2 className="mt-2 text-3xl font-black">{data.name} · {data.batchCode}</h2><p className="mt-2 text-sm text-text-muted">{data.startYear && data.endYear ? `MCA ${data.startYear}–${data.endYear}` : 'MCA alumni'} · Account active since {new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium' }).format(new Date(data.joinedAt))}</p><p className="mt-4 max-w-xl text-sm leading-6 text-text-muted">{data.lastSnapshot ? `The final available readiness snapshot was recorded on ${new Intl.DateTimeFormat('en-IN', { dateStyle: 'long' }).format(new Date(data.lastSnapshot))}.` : 'No readiness snapshot was captured before graduation. The rest of your real contributions remain available below.'}</p></div></section>
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{facts.map(({ label, value, icon: Icon }) => <div key={label} className="rounded-2xl border border-border-light bg-white p-5"><Icon className="h-5 w-5 text-primary-purple"/><p className="mt-4 text-2xl font-black">{value}</p><p className="mt-1 text-xs font-bold text-text-muted">{label}</p></div>)}</div>
+    <section className="rounded-3xl border border-border-light bg-white p-6"><div className="flex items-start gap-3"><GraduationCap className="mt-0.5 h-6 w-6 text-primary-purple"/><div><h2 className="font-black">Your story continues through contribution</h2><p className="mt-2 text-sm leading-6 text-text-muted">Keep your LinkedIn, role and company current, mentor your assigned lineage junior, and document interviews while the details are still fresh. Those actions are more valuable to future batches than a decorative trophy count.</p></div></div></section>
+  </div>
 }

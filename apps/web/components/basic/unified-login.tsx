@@ -178,7 +178,7 @@ export default function UnifiedLogin() {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     className="block w-full pl-11 pr-4 py-3.5 bg-white border border-border-light rounded-[10px] text-[14px] text-text-main placeholder-[#94A3B8] focus:border-primary-purple focus:ring-1 focus:ring-[#6C3DFF] focus:outline-none transition-colors"
-                    placeholder="Email or Token (e.g. 25MX301)"
+                    placeholder="Email or register number (e.g. 27MX301)"
                     autoComplete="username"
                   />
                 </div>

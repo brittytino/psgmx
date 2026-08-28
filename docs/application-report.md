@@ -1,7 +1,7 @@
 # PSGMX Application Architecture and Improvement Report
 
 **Prepared:** 28 August 2026
-**Primary cohorts:** 25MX and 26MX  
+**Active cohorts:** 25MX and 26MX · **lifecycle-ready cohorts:** 27MX–31MX
 **Release baseline:** v4.0.1 — web, Android, authentication, roster and delivery hardening completed and verified.
 
 ## 1. Executive summary
@@ -23,7 +23,7 @@ The application now has a clearer division of responsibility:
 
 The most important technical repair is the new logical identity model. A 26MX student may start with a personal email, receive a college email later, and use either approved address without creating two student profiles or losing attendance, streak, readiness, tasks or history.
 
-Release v4.0.1 completes that model for the supplied roster, adds passwordless alumni onboarding, gives 26MX a safe in-app LeetCode setup path, hardens faculty OTP access and makes the Android release pipeline reproducible.
+Release v4.0.1 completes that model for the supplied roster, adds passwordless alumni onboarding, gives junior cohorts a safe in-app LeetCode setup path, hardens faculty OTP access and makes the Android release pipeline reproducible. The senior architecture pass also removes high-trust demo data from core student, faculty and alumni surfaces; when live data is absent, the application now says so clearly and offers the next useful action.
 
 ## 2. Product purpose
 
@@ -446,7 +446,7 @@ Recommended production alerts:
 
 1. Take a Supabase backup.
 2. Run `supabase/migrations/15_identity_batch_team_hardening.sql` once.
-3. Apply roster/faculty migrations 16 and 18, then `19_identity_and_alumni_hardening.sql`.
+3. Apply roster/faculty migrations 16 and 18, then migrations 19 and `20_scalable_batch_lifecycle.sql`.
 4. Run the migration 15 and 26MX SQL assertions against a disposable/staging database.
 5. Deploy the Next.js API with server-only eCampus and AI secrets.
 6. Confirm `/api/health` reports `healthy`.
@@ -541,7 +541,7 @@ The v4.0.1 release baseline contains:
 - 117 unique 26MX students, all OTP-ready;
 - 235 approved 26MX email aliases with no missing 26MX login identity;
 - Nareshwaran J linked to both `nareshwaran703@gmail.com` and `26mx331@psgtech.ac.in`;
-- deterministic `26mxNNN@psgtech.ac.in` generation for every future college mailbox in the roster/import path;
+- deterministic `NNmxNNN@psgtech.ac.in` generation for every valid current or future MCA register number in the roster/import path;
 - 19 faculty/HOD roster identities, including current HOD Dr. Ilayaraja N and retained HOD access for Dr. Chitra A;
 - graduated batch records for alumni enrollment and a batch-aware OTP onboarding API;
 - a single logical-profile resolver for personal and college authentication identities.
@@ -590,3 +590,65 @@ The application is succeeding when:
 - releases can be stopped, piloted and expanded without an all-at-once deployment.
 
 The intended outcome is not to force students to remain in the app. It is to make a short daily visit so consistently useful that students choose to return.
+
+## 19. Senior architecture and experience pass
+
+### Trust repairs
+
+The audit found that the largest user-experience risk was not visual polish; it was screens that looked operational while showing hardcoded people, scores, exams, alerts or achievements. Those surfaces create incorrect decisions and make staff stop trusting the system.
+
+The following core experiences now read live, role-scoped records and include loading, empty, error and retry states:
+
+- student identity, links and notification preferences;
+- student batch announcements and local read state;
+- student mock exams and submitted results;
+- student readiness score, weighted components, trend and next-best action;
+- student Knowledge Brain search and faculty-approved article submission;
+- student lineage, FYP portfolio/progress and moderated placement experiences;
+- faculty student pulse with batch filters and real readiness bands;
+- faculty and alumni announcements;
+- alumni journey archive and contribution totals;
+- alumni lineage, senior/junior contacts and persisted mentorship availability;
+- Placement Rep rollout readiness and batch targets.
+
+The student header no longer displays fake notification counts, a fake register number or an inert search field. It resolves the current logical profile and directs search to the live Knowledge Brain.
+
+### Retention model
+
+Regular use should come from a useful story, not artificial screen time:
+
+1. **Today:** see the one short placement loop and recover cleanly from a network failure.
+2. **Act:** complete Daily Five, attendance check and today’s quest.
+3. **Understand:** see exactly which real inputs changed readiness.
+4. **Reflect:** compare recent snapshots and act on the lowest component.
+5. **Belong:** receive batch-specific updates and, after graduation, help a real lineage junior.
+
+This loop gives students an immediate reason to return, Placement Reps an operational reason to maintain the data, faculty an intervention view, and alumni a contribution pathway.
+
+### Five-cohort lifecycle
+
+Migration 20 pre-creates 27MX through 31MX as onboarding cohorts. The lifecycle function is idempotent and derives status from the start and end year at the July 1 academic boundary:
+
+- before the admission boundary: pending onboarding;
+- first academic year: active junior;
+- second academic year: active senior;
+- after the programme boundary: graduated, with Student profiles promoted to Alumni.
+
+College email generation and OTP alias resolution now use the MCA register-number pattern rather than a special case for 26MX. New batches therefore do not require an authentication code change.
+
+### Placement Rep launch control
+
+The rollout panel now discovers every non-graduated cohort dynamically and calculates launch health for the Rep’s own batch from live records:
+
+- roster loaded;
+- at least 80% first-login activation;
+- teams configured;
+- current daily work published;
+- placement sessions created;
+- a welcome announcement published.
+
+The four rollout stages remain Internal, Pilot, Selected batches and Everyone. A selected-batch rollout cannot be saved with no target, and every save exposes a real success or failure message.
+
+### Remaining product discipline
+
+Some secondary repository pages still have more visual depth than operational depth. They should not receive fabricated data. The rule for future work is: connect the page to a supported table, show an honest empty state, or remove the route from navigation until the workflow exists. Highest-value next candidates are faculty mentorship scheduling, FYP review workflow, recovery-case ownership and richer alumni contribution moderation.

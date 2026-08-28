@@ -35,7 +35,7 @@ function LoginForm() {
     <div className="mx-auto flex min-h-[680px] w-full max-w-[1160px] overflow-hidden rounded-[32px] bg-white p-3 shadow-[0_24px_80px_-24px_rgba(16,24,40,.18)]">
       <section className="relative hidden w-1/2 flex-col overflow-hidden rounded-[24px] bg-[#FFF4EC] p-12 lg:flex">
         <div className="flex items-center gap-2"><img src="/logo.webp" alt="PSGMX" className="h-9 w-9" /><span className="text-xl font-black">PSGMX</span></div>
-        <div className="relative z-10 mt-20"><h1 className="text-5xl font-black leading-[1.08] tracking-tight text-[#101828]">Five focused minutes.<br/><span className="text-[#FF5A1F]">A stronger placement day.</span></h1><p className="mt-5 max-w-md text-base leading-7 text-[#475467]">Attendance, Daily Five, today’s quest and batch updates—one calm routine for 25MX and 26MX.</p></div>
+        <div className="relative z-10 mt-20"><h1 className="text-5xl font-black leading-[1.08] tracking-tight text-[#101828]">Five focused minutes.<br/><span className="text-[#FF5A1F]">A stronger placement day.</span></h1><p className="mt-5 max-w-md text-base leading-7 text-[#475467]">Attendance, Daily Five, today’s quest and batch updates—one calm routine for every MCA batch.</p></div>
         <img src="/auth/login.png" alt="PSGMX student experience" className="absolute bottom-0 right-0 w-[92%] object-contain" />
       </section>
       <section className="flex w-full items-center px-6 py-12 sm:px-14 lg:w-1/2">

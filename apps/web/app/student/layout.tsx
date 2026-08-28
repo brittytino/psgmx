@@ -23,17 +23,19 @@ import {
   GraduationCap,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { createClient } from '@/lib/supabase/client';
+import { getCurrentProfile } from '@/lib/current-profile';
 
 const sidebarLinks = [
   { name: 'Dashboard', href: '/student', icon: Home },
   { name: 'AI Senior', href: '/student/ai-senior', icon: BrainCircuit },
   { name: 'Knowledge Brain', href: '/student/knowledge-brain', icon: BookOpen },
-  { name: 'Mock Exams', href: '/student/exams', icon: ClipboardList, badge: 2 },
+  { name: 'Mock Exams', href: '/student/exams', icon: ClipboardList },
   { name: 'Readiness Score', href: '/student/readiness', icon: Award },
   { name: 'Your Lineage', href: '/student/lineage', icon: Users },
   { name: 'FYP Portfolio', href: '/student/fyp', icon: Folder },
   { name: 'Placement Log', href: '/student/placement-log', icon: Building2 },
-  { name: 'Announcements', href: '/student/announcements', icon: Megaphone, badge: 3 },
+  { name: 'Announcements', href: '/student/announcements', icon: Megaphone },
   { name: 'Settings', href: '/student/settings', icon: Settings },
 ];
 
@@ -73,7 +75,22 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [profileOpen, setProfileOpen] = React.useState(false);
   const [notificationsOpen, setNotificationsOpen] = React.useState(false);
+  const [identity, setIdentity] = React.useState({ name: 'Student', regNo: '', batchCode: 'MCA' });
   const cardContent = getSidebarCardContent(pathname);
+
+  React.useEffect(() => { void (async () => {
+    try {
+      const supabase = createClient();
+      const me = await getCurrentProfile(supabase);
+      if (!me) return;
+      let batchCode = 'MCA';
+      if (me.batch_id) {
+        const { data: batch } = await supabase.from('batches').select('batch_code').eq('id', me.batch_id).single();
+        batchCode = batch?.batch_code ?? batchCode;
+      }
+      setIdentity({ name: me.name ?? 'Student', regNo: me.reg_no ?? '', batchCode });
+    } catch { /* Route protection handles an unavailable session. */ }
+  })() }, []);
 
   const handleLogout = async () => {
     try { await fetch('/api/auth/logout', { method: 'POST' }); } catch {}
@@ -115,13 +132,6 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
                   <link.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-text-muted group-hover:text-primary-purple'}`} />
                   <span className={`text-[14px] ${isActive ? 'font-bold' : 'font-semibold'}`}>{link.name}</span>
                 </div>
-                {link.badge && (
-                  <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                    isActive ? 'bg-white text-primary-purple' : 'bg-primary-purple text-white'
-                  }`}>
-                    {link.badge}
-                  </span>
-                )}
               </Link>
             );
           })}
@@ -178,11 +188,6 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
                         <link.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-text-muted'}`} />
                         <span className={`text-[14px] ${isActive ? 'font-bold' : 'font-semibold'}`}>{link.name}</span>
                       </div>
-                      {link.badge && (
-                        <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${isActive ? 'bg-white text-primary-purple' : 'bg-primary-purple text-white'}`}>
-                          {link.badge}
-                        </span>
-                      )}
                     </Link>
                   );
                 })}
@@ -201,13 +206,10 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
             <button onClick={() => setMobileMenuOpen(true)} className="w-10 h-10 flex lg:hidden items-center justify-center rounded-full bg-white border border-border-light shadow-sm text-text-muted">
               <Menu className="w-5 h-5" />
             </button>
-            <div className="hidden md:flex items-center bg-white border border-border-light rounded-full h-11 px-4 w-[360px] shadow-sm focus-within:border-primary-purple focus-within:ring-1 focus-within:ring-primary-purple transition-all">
+            <Link href="/student/knowledge-brain" className="hidden md:flex items-center bg-white border border-border-light rounded-full h-11 px-4 w-[360px] shadow-sm hover:border-primary-purple transition-all">
               <Search className="w-4 h-4 text-text-muted mr-3" />
-              <input type="text" placeholder="Search knowledge brain, exams..." className="bg-transparent border-none outline-none text-[14px] text-text-main placeholder-text-muted w-full" />
-              <div className="flex items-center gap-1 text-text-muted text-[12px] font-bold bg-page-bg px-2 py-1 rounded-md ml-2 shrink-0">
-                <span>⌘</span><span>K</span>
-              </div>
-            </div>
+              <span className="text-sm text-text-muted">Search the Knowledge Brain</span>
+            </Link>
           </div>
 
           <div className="flex items-center gap-6">
@@ -215,7 +217,6 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
             <div className="relative">
               <button onClick={() => setNotificationsOpen(!notificationsOpen)} className={`relative w-10 h-10 flex items-center justify-center rounded-full bg-white border border-border-light shadow-sm transition-colors ${notificationsOpen ? 'text-primary-purple border-primary-purple' : 'text-text-muted hover:text-text-main'}`}>
                 <Bell className="w-5 h-5" />
-                <span className="absolute top-0 right-0 w-4 h-4 bg-deep-violet text-white text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-white">3</span>
               </button>
               <AnimatePresence>
                 {notificationsOpen && (
@@ -224,25 +225,9 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
                     <motion.div initial={{ opacity: 0, y: 10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.95 }} className="absolute right-0 top-12 w-80 bg-white rounded-2xl shadow-xl border border-border-light z-50 overflow-hidden">
                       <div className="p-4 border-b border-border-light flex justify-between items-center">
                         <h3 className="text-[14px] font-bold text-text-main">Notifications</h3>
-                        <span className="text-[11px] font-bold text-primary-purple cursor-pointer">Mark all read</span>
+                        <Link href="/student/announcements" onClick={() => setNotificationsOpen(false)} className="text-[11px] font-bold text-primary-purple">View updates</Link>
                       </div>
-                      <div className="p-2 max-h-[300px] overflow-y-auto">
-                        {[
-                          { icon: ClipboardList, text: 'Mock Exam scheduled for Jan 20', time: '1 hour ago' },
-                          { icon: BookOpen, text: 'New article approved in Knowledge Brain', time: '3 hours ago' },
-                          { icon: Users, text: 'Your lineage senior updated their profile', time: '1 day ago' },
-                        ].map((n, i) => (
-                          <div key={i} className="p-3 hover:bg-page-bg rounded-xl cursor-pointer transition-colors flex gap-3">
-                            <div className="w-8 h-8 rounded-full bg-page-bg flex items-center justify-center shrink-0">
-                              <n.icon className="w-4 h-4 text-primary-purple" />
-                            </div>
-                            <div>
-                              <p className="text-[13px] text-text-main font-semibold">{n.text}</p>
-                              <p className="text-[11px] text-text-muted mt-0.5">{n.time}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                      <div className="p-5 text-center"><Bell className="mx-auto h-7 w-7 text-text-muted"/><p className="mt-2 text-sm font-bold">Your live updates are in Announcements</p><p className="mt-1 text-xs text-text-muted">Important batch notices are kept together and easy to revisit.</p></div>
                     </motion.div>
                   </>
                 )}
@@ -253,7 +238,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
             <div className="relative">
               <div onClick={() => setProfileOpen(!profileOpen)} className={`flex items-center gap-3 cursor-pointer group bg-white border rounded-full pl-2 pr-4 py-1.5 shadow-sm transition-colors ${profileOpen ? 'border-primary-purple' : 'border-border-light hover:border-border-light'}`}>
                 <div className="w-8 h-8 rounded-full bg-border-light overflow-hidden shrink-0 relative">
-                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary-purple to-deep-violet text-white font-bold text-xs">S</div>
+                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary-purple to-deep-violet text-white font-bold text-xs">{identity.name.charAt(0).toUpperCase()}</div>
                 </div>
                 <ChevronDown className={`w-4 h-4 transition-transform ${profileOpen ? 'rotate-180 text-primary-purple' : 'text-text-muted'}`} />
               </div>
@@ -263,8 +248,8 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
                     <div className="fixed inset-0 z-40" onClick={() => setProfileOpen(false)}></div>
                     <motion.div initial={{ opacity: 0, y: 10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.95 }} className="absolute right-0 top-12 w-56 bg-white rounded-2xl shadow-xl border border-border-light z-50 overflow-hidden">
                       <div className="p-4 border-b border-border-light">
-                        <p className="text-[14px] font-bold text-text-main">Student</p>
-                        <p className="text-[12px] text-text-muted">25MX301 · Batch 2025</p>
+                        <p className="text-[14px] font-bold text-text-main">{identity.name}</p>
+                        <p className="text-[12px] text-text-muted">{identity.regNo || 'Register pending'} · {identity.batchCode}</p>
                       </div>
                       <div className="p-2">
                         <Link href="/student/settings" onClick={() => setProfileOpen(false)} className="flex items-center gap-2 w-full p-2 text-[13px] font-semibold text-text-muted hover:bg-page-bg hover:text-text-main rounded-xl transition-colors">

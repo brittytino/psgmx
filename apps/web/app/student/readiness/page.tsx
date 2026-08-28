@@ -1,242 +1,85 @@
-'use client';
+'use client'
 
-import React from 'react';
-import { motion } from 'framer-motion';
-import { Award, TrendingUp, Target, Zap, BookOpen, Users, Info } from 'lucide-react';
-import Link from 'next/link';
+import React from 'react'
+import Link from 'next/link'
+import { ArrowRight, Award, CalendarCheck2, CheckSquare2, Code2, Loader2, Target } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+import { getCurrentProfile } from '@/lib/current-profile'
 
-const ComponentCard = ({ title, score, max, color, children, delay }: any) => (
-  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay }} className="bg-white rounded-[20px] border border-border-light shadow-[0_2px_12px_rgba(0,0,0,0.02)] p-6">
-    <div className="flex items-center justify-between mb-5">
-      <h3 className="text-[16px] font-bold text-text-main">{title}</h3>
-      <div className="text-right">
-        <span className="text-[28px] font-black text-text-main leading-none">{score}</span>
-        <span className="text-[14px] text-text-muted font-semibold">/{max}</span>
-      </div>
-    </div>
-    <div className="h-3 bg-border-light rounded-full mb-6 overflow-hidden">
-      <motion.div initial={{ width: 0 }} animate={{ width: `${(score / max) * 100}%` }} transition={{ delay: delay + 0.2, duration: 0.8, ease: 'easeOut' }} className={`h-full rounded-full ${color}`} />
-    </div>
-    {children}
-  </motion.div>
-);
+type Snapshot = { score: number; computed_at: string; components_json: Record<string, unknown> }
+
+const components = [
+  { key: 'placement_attendance_pct', label: 'Placement attendance', weight: 30, icon: CalendarCheck2, action: 'Attend the next placement session' },
+  { key: 'daily_five_adherence_pct', label: 'Daily Five consistency', weight: 20, icon: Target, action: 'Complete today’s five questions' },
+  { key: 'task_completion_rate_pct', label: 'Quest completion', weight: 20, icon: CheckSquare2, action: 'Finish your current placement quest' },
+  { key: 'daily_five_accuracy_pct', label: 'Daily Five accuracy', weight: 15, icon: Award, action: 'Review explanations after each attempt' },
+  { key: 'leetcode_momentum_percentile', label: 'LeetCode momentum', weight: 15, icon: Code2, action: 'Solve one useful problem today' },
+]
+
+function numeric(value: unknown) {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? Math.max(0, Math.min(100, parsed)) : 0
+}
+
+function band(score: number) {
+  if (score >= 80) return { label: 'Strong', color: 'text-emerald-700', message: 'Keep the rhythm. Consistency is now your advantage.' }
+  if (score >= 60) return { label: 'Building', color: 'text-amber-700', message: 'You have momentum. Improve the lowest input next.' }
+  if (score >= 40) return { label: 'Needs attention', color: 'text-orange-700', message: 'A small daily recovery plan can move this quickly.' }
+  return { label: 'At risk', color: 'text-red-700', message: 'Start with one action today and ask your mentor for support.' }
+}
 
 export default function ReadinessPage() {
-  const score = 72;
-  const band = score >= 80 ? 'STRONG' : score >= 60 ? 'BUILDING' : score >= 40 ? 'NEEDS ATTENTION' : 'AT RISK';
-  const bandColor = score >= 80 ? 'text-electric-blue' : score >= 60 ? 'text-illus-gold' : score >= 40 ? 'text-primary-purple' : 'text-deep-violet';
+  const supabase = React.useMemo(() => createClient(), [])
+  const [snapshot, setSnapshot] = React.useState<Snapshot | null>(null)
+  const [history, setHistory] = React.useState<Snapshot[]>([])
+  const [batchCode, setBatchCode] = React.useState('MCA')
+  const [loading, setLoading] = React.useState(true)
+  const [error, setError] = React.useState('')
 
-  const heatmapDays = React.useMemo(() => Array.from({ length: 30 }, (_, i) => ({
-    day: i + 1,
-    status: (i + 1) % 5 !== 0 ? 'completed' : ((i + 1) % 10 === 0 ? 'frozen' : 'missed'),
-  })), []);
+  const load = React.useCallback(async () => {
+    setLoading(true)
+    setError('')
+    try {
+      const me = await getCurrentProfile(supabase)
+      if (!me) throw new Error('Your student profile is unavailable.')
+      const [{ data: current, error: currentError }, { data: trend, error: trendError }] = await Promise.all([
+        supabase.from('current_readiness_scores').select('score,computed_at,components_json').eq('user_id', me.id).maybeSingle(),
+        supabase.from('readiness_scores').select('score,computed_at,components_json').eq('user_id', me.id).order('computed_at', { ascending: false }).limit(12),
+      ])
+      if (currentError || trendError) throw currentError ?? trendError
+      setSnapshot(current as Snapshot | null)
+      setHistory(((trend ?? []) as Snapshot[]).reverse())
+      if (me.batch_id) {
+        const { data: batchRow } = await supabase.from('batches').select('batch_code').eq('id', me.batch_id).single()
+        setBatchCode(batchRow?.batch_code ?? 'MCA')
+      }
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Readiness could not be loaded.')
+    } finally {
+      setLoading(false)
+    }
+  }, [supabase])
 
-  return (
-    <div className="max-w-[1200px] mx-auto space-y-8 pb-8">
+  React.useEffect(() => { void load() }, [load])
 
-      {/* Header */}
-      <div>
-        <h1 className="text-[24px] font-black text-text-main tracking-tight flex items-center gap-2">
-          <Award className="w-6 h-6 text-primary-purple" /> Readiness Score
-        </h1>
-        <p className="text-[13px] text-text-muted mt-0.5">Your placement readiness, measured across four dimensions. Last updated just now.</p>
-      </div>
+  if (loading) return <div className="flex min-h-64 items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary-purple"/></div>
+  if (error) return <div className="mx-auto max-w-3xl rounded-2xl border border-amber-200 bg-amber-50 p-6"><h1 className="font-black">Readiness is temporarily unavailable</h1><p className="mt-2 text-sm">{error}</p><button onClick={load} className="mt-4 font-black text-primary-purple">Try again</button></div>
+  if (!snapshot) return <div className="mx-auto max-w-3xl space-y-5 rounded-3xl border border-dashed border-border-light bg-white p-10 text-center"><Award className="mx-auto h-12 w-12 text-primary-purple"/><h1 className="text-2xl font-black">Your score starts with real activity</h1><p className="mx-auto max-w-xl text-sm leading-6 text-text-muted">Complete Daily Five, finish a quest, connect LeetCode and attend a placement session. The engine will then create your first honest readiness snapshot.</p><Link href="/student" className="inline-flex items-center gap-2 rounded-xl bg-primary-purple px-5 py-3 text-sm font-bold text-white">Start today’s loop<ArrowRight className="h-4 w-4"/></Link></div>
 
-      {/* Hero Score */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-[24px] border border-border-light shadow-[0_4px_20px_rgba(0,0,0,0.04)] p-8">
-        <div className="flex flex-col md:flex-row items-center gap-10">
-          {/* Big Gauge */}
-          <div className="relative w-52 h-52 shrink-0">
-            <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
-              <circle cx="50" cy="50" r="44" fill="none" stroke="#EFE9E0" strokeWidth="8" />
-              <motion.circle
-                cx="50" cy="50" r="44" fill="none" stroke="var(--primary-purple)" strokeWidth="8" strokeLinecap="round"
-                initial={{ strokeDasharray: '0 276.46' }}
-                animate={{ strokeDasharray: `${(score / 100) * 276.46} 276.46` }}
-                transition={{ duration: 1.2, ease: 'easeOut', delay: 0.2 }}
-              />
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="text-[52px] font-black text-text-main leading-none">{score}</motion.span>
-              <span className="text-[11px] font-bold text-text-muted uppercase tracking-wider">/ 100</span>
-            </div>
-          </div>
+  const score = Math.round(Number(snapshot.score))
+  const currentBand = band(score)
+  const values = components.map((item) => ({ ...item, value: numeric(snapshot.components_json?.[item.key]) }))
+  const focus = [...values].sort((a, b) => a.value - b.value)[0]
+  const previous = history.length > 1 ? Number(history.at(-2)?.score ?? score) : score
+  const change = Math.round(score - previous)
 
-          {/* Band + Info */}
-          <div className="flex-1 space-y-5">
-            <div>
-              <p className="text-[12px] font-bold text-text-muted uppercase tracking-wider mb-1">Current Band</p>
-              <p className={`text-[36px] font-black ${bandColor}`}>{band}</p>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              {[
-                { label: 'Active since', value: 'June 2025' },
-                { label: 'Batch', value: '25MX' },
-                { label: 'Score last week', value: '64' },
-                { label: 'Score change', value: '↑ 8 points' },
-              ].map((item, i) => (
-                <div key={i} className="p-3 bg-page-bg rounded-xl">
-                  <p className="text-[11px] font-bold text-text-muted uppercase">{item.label}</p>
-                  <p className="text-[16px] font-black text-text-main mt-0.5">{item.value}</p>
-                </div>
-              ))}
-            </div>
-          </div>
+  return <div className="mx-auto max-w-6xl space-y-7 pb-10">
+    <div><h1 className="flex items-center gap-2 text-2xl font-black"><Award className="h-6 w-6 text-primary-purple"/>Readiness story</h1><p className="mt-1 text-sm text-text-muted">A transparent score built from your real placement habits—not a prediction or a label.</p></div>
 
-          {/* 90-day Chart */}
-          <div className="shrink-0 flex flex-col items-center gap-2">
-            <p className="text-[11px] font-bold text-text-muted uppercase tracking-wider">90-Day Trend</p>
-            <svg viewBox="0 0 180 80" className="w-48 h-20 fill-none" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M0,75 C10,70 20,65 35,55 C50,45 55,50 70,42 C85,34 90,38 105,30 C120,22 130,18 150,12 C160,9 170,7 180,5" stroke="#EFE9E0" strokeWidth="2" />
-              <path d="M0,75 C10,70 20,65 35,55 C50,45 55,50 70,42 C85,34 90,38 105,30 C120,22 130,18 150,12 C160,9 170,7 180,5" stroke="var(--primary-purple)" strokeWidth="2.5" />
-            </svg>
-            <div className="flex items-center gap-1.5">
-              <TrendingUp className="w-4 h-4 text-electric-blue" />
-              <span className="text-[12px] font-bold text-electric-blue">↑ 8 pts this month</span>
-            </div>
-          </div>
-        </div>
-      </motion.div>
+    <section className="grid gap-5 rounded-3xl border border-border-light bg-white p-6 md:grid-cols-[220px_1fr] md:p-8"><div className="flex h-48 w-48 flex-col items-center justify-center justify-self-center rounded-full border-[14px] border-violet-100 bg-page-bg"><p className="text-5xl font-black">{score}</p><p className="text-xs font-black text-text-muted">OUT OF 100</p></div><div className="flex flex-col justify-center"><p className="text-xs font-black uppercase tracking-[0.18em] text-text-muted">{batchCode} · Updated {new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium' }).format(new Date(snapshot.computed_at))}</p><h2 className={`mt-2 text-4xl font-black ${currentBand.color}`}>{currentBand.label}</h2><p className="mt-2 max-w-xl text-sm leading-6 text-text-muted">{currentBand.message}</p><div className="mt-5 rounded-2xl bg-page-bg p-4"><p className="text-xs font-black uppercase text-text-muted">Best next move</p><p className="mt-1 font-black">{focus.action}</p><p className="mt-1 text-xs text-text-muted">{focus.label} is currently your clearest growth opportunity.</p></div><p className="mt-4 text-xs font-bold text-text-muted">{change === 0 ? 'No change since your previous snapshot.' : `${change > 0 ? '+' : ''}${change} points since your previous snapshot.`}</p></div></section>
 
-      {/* Score Bands Info */}
-      <div className="grid grid-cols-4 gap-4">
-        {[
-          { band: 'STRONG', range: '80–100', color: 'border-electric-blue bg-electric-blue/5', text: 'text-electric-blue' },
-          { band: 'BUILDING', range: '60–79', color: 'border-illus-gold bg-illus-gold/5', text: 'text-illus-gold' },
-          { band: 'NEEDS ATTENTION', range: '40–59', color: 'border-primary-purple bg-primary-purple/5', text: 'text-primary-purple' },
-          { band: 'AT RISK', range: '0–39', color: 'border-deep-violet bg-deep-violet/5', text: 'text-deep-violet' },
-        ].map((b, i) => (
-          <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.05 }} className={`p-4 rounded-[16px] border-2 ${b.color} ${score >= parseInt(b.range) ? 'ring-2 ring-offset-2' : ''}`}>
-            <p className={`text-[11px] font-black uppercase tracking-wider ${b.text}`}>{b.band}</p>
-            <p className="text-[20px] font-black text-text-main mt-1">{b.range}</p>
-          </motion.div>
-        ))}
-      </div>
+    <section><h2 className="font-black">What shapes the score</h2><p className="mt-1 text-sm text-text-muted">Every component is shown with its exact weight.</p><div className="mt-4 grid gap-3 md:grid-cols-2">{values.map((item) => <div key={item.key} className="rounded-2xl border border-border-light bg-white p-5"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50"><item.icon className="h-5 w-5 text-primary-purple"/></div><div className="flex-1"><div className="flex items-center justify-between gap-3"><p className="text-sm font-black">{item.label}</p><p className="text-sm font-black">{Math.round(item.value)}%</p></div><p className="text-xs text-text-muted">{item.weight}% of overall readiness</p></div></div><div className="mt-4 h-2 overflow-hidden rounded-full bg-page-bg"><div className="h-full rounded-full bg-primary-purple" style={{ width: `${item.value}%` }}/></div><p className="mt-3 text-xs text-text-muted">{item.action}</p></div>)}</div></section>
 
-      {/* Four Component Cards */}
-
-      {/* Component 1: Daily Five */}
-      <ComponentCard title="Daily Five Engagement" score={21} max={30} color="bg-primary-purple" delay={0.1}>
-        <div className="grid grid-cols-2 gap-4 mb-5">
-          <div className="p-4 bg-page-bg rounded-xl">
-            <p className="text-[11px] font-bold text-text-muted uppercase">Adherence Rate</p>
-            <p className="text-[24px] font-black text-text-main">87%</p>
-            <p className="text-[11px] text-text-muted">Points: 17.4/20</p>
-          </div>
-          <div className="p-4 bg-page-bg rounded-xl">
-            <p className="text-[11px] font-bold text-text-muted uppercase">Accuracy Rate</p>
-            <p className="text-[24px] font-black text-text-main">73%</p>
-            <p className="text-[11px] text-text-muted">Points: 7.3/10</p>
-          </div>
-        </div>
-        <div>
-          <p className="text-[12px] font-bold text-text-muted uppercase mb-3">30-Day Activity (Flutter App)</p>
-          <div className="flex flex-wrap gap-1.5">
-            {heatmapDays.map((day) => (
-              <div
-                key={day.day}
-                title={`Day ${day.day}: ${day.status}`}
-                className={`w-7 h-7 rounded-lg flex items-center justify-center text-[9px] font-bold ${
-                  day.status === 'completed' ? 'bg-primary-purple text-white' :
-                  day.status === 'frozen' ? 'bg-illus-gold text-white' : 'bg-border-light text-text-muted'
-                }`}
-              >
-                {day.day}
-              </div>
-            ))}
-          </div>
-          <div className="flex gap-4 mt-3">
-            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-primary-purple" /><span className="text-[11px] text-text-muted">Completed</span></div>
-            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-illus-gold" /><span className="text-[11px] text-text-muted">Freeze used</span></div>
-            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded bg-border-light" /><span className="text-[11px] text-text-muted">Missed</span></div>
-          </div>
-          <p className="text-[11px] text-text-muted mt-3 flex items-center gap-1.5"><Info className="w-3.5 h-3.5" /> Updated daily via PSGMX Flutter App. Open the app to complete today's quiz.</p>
-        </div>
-      </ComponentCard>
-
-      {/* Component 2: LeetCode */}
-      <ComponentCard title="LeetCode Progress" score={16} max={25} color="bg-electric-blue" delay={0.2}>
-        <div className="grid grid-cols-3 gap-4 mb-5">
-          {[
-            { label: 'Easy', value: 48, weight: '×1', pts: 48 },
-            { label: 'Medium', value: 22, weight: '×2', pts: 44 },
-            { label: 'Hard', value: 4, weight: '×3', pts: 12 },
-          ].map((lc, i) => (
-            <div key={i} className="p-4 bg-page-bg rounded-xl">
-              <p className="text-[11px] font-bold text-text-muted uppercase">{lc.label} <span className="text-text-main">{lc.weight}</span></p>
-              <p className="text-[22px] font-black text-text-main">{lc.value}</p>
-              <p className="text-[10px] text-text-muted">{lc.pts} weighted pts</p>
-            </div>
-          ))}
-        </div>
-        <div className="p-4 bg-page-bg rounded-xl flex items-center gap-4">
-          <Zap className="w-6 h-6 text-electric-blue shrink-0" />
-          <div>
-            <p className="text-[12px] font-bold text-text-muted uppercase">Batch Percentile</p>
-            <p className="text-[22px] font-black text-text-main">73<span className="text-[14px] text-text-muted">th percentile</span></p>
-            <p className="text-[11px] text-text-muted">You rank higher than 73% of 25MX batch in LeetCode</p>
-          </div>
-        </div>
-        <p className="text-[11px] text-text-muted mt-3 flex items-center gap-1.5"><Info className="w-3.5 h-3.5" /> Synced every 6 hours from LeetCode. Solve today's problem in the Flutter app's Quests tab.</p>
-      </ComponentCard>
-
-      {/* Component 3: Mock Exams */}
-      <ComponentCard title="Mock Exam Performance" score={28} max={35} color="bg-illus-gold" delay={0.3}>
-        <div className="overflow-x-auto">
-          <table className="w-full mb-4">
-            <thead>
-              <tr className="border-b border-border-light">
-                {['Exam', 'Date', 'Score', 'Weight', 'Contribution'].map(h => (
-                  <th key={h} className="pb-3 text-[10px] font-bold text-text-muted uppercase text-left pr-4 first:pl-0">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {[
-                { name: 'DS — Full Mock', date: 'Dec 15', score: 82, weight: '100%', contribution: 28.7 },
-                { name: 'Python Mock', date: 'Nov 20', score: 67, weight: '100%', contribution: 23.45 },
-                { name: 'DS — Mid Mock', date: 'Oct 10', score: 91, weight: '70%', contribution: 31.85 },
-                { name: 'Aptitude Q2', date: 'Sep 25', score: 72, weight: '40%', contribution: 28.8 },
-                { name: 'Aptitude Q1', date: 'Sep 5', score: 54, weight: '40%', contribution: 21.6 },
-              ].map((e, i) => (
-                <tr key={i} className="border-b border-border-light last:border-0">
-                  <td className="py-3 text-[13px] font-bold text-text-main pr-4">{e.name}</td>
-                  <td className="py-3 text-[12px] text-text-muted pr-4">{e.date}</td>
-                  <td className="py-3 text-[13px] font-bold text-text-main pr-4">{e.score}%</td>
-                  <td className="py-3 text-[12px] text-text-muted pr-4">{e.weight}</td>
-                  <td className="py-3 text-[13px] font-bold text-illus-gold">{e.contribution.toFixed(1)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div className="p-4 bg-page-bg rounded-xl">
-          <p className="text-[12px] font-bold text-text-muted mb-2">Decaying Weight Note</p>
-          <p className="text-[12px] text-text-muted">Exams taken within 30 days: 100% weight · 1–3 months: 70% weight · 3–6 months: 40% weight. Recent performance matters more.</p>
-        </div>
-        <Link href="/student/exams" className="mt-3 flex items-center gap-1.5 text-[13px] font-bold text-primary-purple hover:underline">
-          View Upcoming Exams <Award className="w-4 h-4" />
-        </Link>
-      </ComponentCard>
-
-      {/* Component 4: Session Attendance */}
-      <ComponentCard title="Placement Session Attendance" score={7} max={10} color="bg-deep-violet" delay={0.4}>
-        <div className="grid grid-cols-3 gap-4">
-          <div className="p-4 bg-page-bg rounded-xl">
-            <p className="text-[11px] font-bold text-text-muted uppercase">Sessions Eligible</p>
-            <p className="text-[24px] font-black text-text-main">14</p>
-          </div>
-          <div className="p-4 bg-page-bg rounded-xl">
-            <p className="text-[11px] font-bold text-text-muted uppercase">Sessions Attended</p>
-            <p className="text-[24px] font-black text-electric-blue">10</p>
-          </div>
-          <div className="p-4 bg-page-bg rounded-xl">
-            <p className="text-[11px] font-bold text-text-muted uppercase">Attendance Rate</p>
-            <p className="text-[24px] font-black text-text-main">71%</p>
-          </div>
-        </div>
-        <p className="text-[11px] text-text-muted mt-3 flex items-center gap-1.5"><Info className="w-3.5 h-3.5" /> Marked by your Team Leader via the Flutter App. You cannot mark your own attendance here.</p>
-      </ComponentCard>
-    </div>
-  );
+    {history.length > 1 && <section className="rounded-3xl border border-border-light bg-white p-6"><h2 className="font-black">Recent direction</h2><p className="mt-1 text-sm text-text-muted">Your latest {history.length} computed snapshots.</p><div className="mt-6 flex h-36 items-end gap-2">{history.map((item) => <div key={item.computed_at} className="group flex min-w-0 flex-1 flex-col items-center justify-end gap-2"><span className="text-[10px] font-bold opacity-0 group-hover:opacity-100">{Math.round(item.score)}</span><div className="w-full rounded-t-lg bg-primary-purple/80" style={{ height: `${Math.max(8, Number(item.score))}%` }}/></div>)}</div></section>}
+  </div>
 }

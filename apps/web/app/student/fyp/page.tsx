@@ -1,207 +1,124 @@
-'use client';
+'use client'
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Folder, CheckCircle, Clock, Plus, ChevronRight, Calendar, MessageSquare } from 'lucide-react';
+import React from 'react'
+import { ExternalLink, Folder, Loader2, Plus, Save } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+import { getCurrentProfile } from '@/lib/current-profile'
 
-const milestones = [
-  { label: 'Topic Finalization', status: 'done', date: 'Jul 10, 2024' },
-  { label: 'Proposal Submission', status: 'done', date: 'Aug 5, 2024' },
-  { label: 'Mid-Review', status: 'done', date: 'Oct 20, 2024' },
-  { label: 'Development Phase', status: 'active', date: 'Jan 20, 2025' },
-  { label: 'Testing & QA', status: 'pending', date: 'Mar 15, 2025' },
-  { label: 'Final Submission', status: 'pending', date: 'Apr 30, 2025' },
-];
-
-const progressLog = [
-  { date: 'Jan 12, 2025', note: 'Completed authentication module with JWT and role-based access control.', author: 'You' },
-  { date: 'Jan 5, 2025', note: 'Set up the Next.js project with Supabase integration. Initial DB schema finalized.', author: 'You' },
-  { date: 'Dec 20, 2024', note: 'Mid-review cleared. Faculty suggested adding a performance dashboard.', author: 'You' },
-  { date: 'Nov 15, 2024', note: 'Proposal approved by Dr. Arunkumar. Team formed with 3 members.', author: 'You' },
-];
-
-const facultyComments = [
-  { date: 'Jan 10, 2025', comment: 'Good progress on authentication. Make sure to add proper error handling and validation.', faculty: 'Dr. Arunkumar' },
-  { date: 'Dec 22, 2024', comment: 'Mid-review performance was excellent. Focus on the frontend polish in next phase.', faculty: 'Dr. Priya' },
-];
+type Project = { id: string; title: string; description: string | null; guide_name: string | null; team_members_count: number; status: string; repository_url: string | null; updated_at: string }
+type Log = { id: string; note: string; created_at: string }
+type Feedback = { id: string; comment: string; created_at: string }
+const inputClass = 'w-full rounded-xl border border-border-light bg-page-bg px-4 py-3 text-sm outline-none focus:border-primary-purple'
 
 export default function FYPPage() {
-  const [showAddLog, setShowAddLog] = useState(false);
-  const [newNote, setNewNote] = useState('');
-  const [logs, setLogs] = useState(progressLog);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const supabase = React.useMemo(() => createClient(), [])
+  const [userId, setUserId] = React.useState('')
+  const [batchId, setBatchId] = React.useState<string | null>(null)
+  const [project, setProject] = React.useState<Project | null>(null)
+  const [logs, setLogs] = React.useState<Log[]>([])
+  const [feedback, setFeedback] = React.useState<Feedback[]>([])
+  const [form, setForm] = React.useState({ title: '', description: '', guide_name: '', repository_url: '' })
+  const [note, setNote] = React.useState('')
+  const [loading, setLoading] = React.useState(true)
+  const [busy, setBusy] = React.useState(false)
+  const [message, setMessage] = React.useState('')
 
-  const handleSaveLog = async () => {
-    if (!newNote.trim()) return;
-    setIsSubmitting(true);
-    const newEntry = {
-      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-      note: newNote,
-      author: 'You',
-    };
-    setLogs([newEntry, ...logs]);
-    setNewNote('');
-    setShowAddLog(false);
-    setIsSubmitting(false);
-  };
+  const load = React.useCallback(async () => {
+    setLoading(true)
+    const me = await getCurrentProfile(supabase)
+    if (!me) {
+      setMessage('Your student profile could not be found.')
+      setLoading(false)
+      return
+    }
+    setUserId(me.id)
+    setBatchId(me.batch_id)
+    const { data: projectRow, error } = await supabase
+      .from('fyp_projects')
+      .select('id,title,description,guide_name,team_members_count,status,repository_url,updated_at')
+      .eq('student_id', me.id)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (error) {
+      setMessage(error.message)
+      setLoading(false)
+      return
+    }
+    setProject(projectRow)
+    if (projectRow) {
+      const [{ data: logRows }, { data: feedbackRows }] = await Promise.all([
+        supabase.from('fyp_progress_logs').select('id,note,created_at').eq('project_id', projectRow.id).order('created_at', { ascending: false }),
+        supabase.from('fyp_feedback').select('id,comment,created_at').eq('project_id', projectRow.id).order('created_at', { ascending: false }),
+      ])
+      setLogs(logRows ?? [])
+      setFeedback(feedbackRows ?? [])
+    }
+    setLoading(false)
+  }, [supabase])
 
-  const currentPhaseIdx = milestones.findIndex(m => m.status === 'active');
-  const progress = Math.round(((currentPhaseIdx) / (milestones.length - 1)) * 100);
+  React.useEffect(() => { void load() }, [load])
 
-  return (
-    <div className="max-w-[1100px] mx-auto space-y-8 pb-8">
+  async function createProject() {
+    if (!userId || !form.title.trim()) return
+    setBusy(true)
+    const { error } = await supabase.from('fyp_projects').insert({
+      student_id: userId,
+      batch_id: batchId,
+      title: form.title.trim(),
+      description: form.description.trim() || null,
+      guide_name: form.guide_name.trim() || null,
+      repository_url: form.repository_url.trim() || null,
+    })
+    setMessage(error ? error.message : 'Your FYP portfolio is ready.')
+    if (!error) await load()
+    setBusy(false)
+  }
 
-      {/* Header */}
-      <div>
-        <h1 className="text-[24px] font-black text-text-main tracking-tight flex items-center gap-2">
-          <Folder className="w-6 h-6 text-primary-purple" /> FYP Portfolio
-        </h1>
-        <p className="text-[13px] text-text-muted mt-0.5">Your Final Year Project progress — tracked and documented.</p>
+  async function addLog() {
+    if (!project || !note.trim()) return
+    setBusy(true)
+    const { error } = await supabase.from('fyp_progress_logs').insert({ project_id: project.id, student_id: userId, note: note.trim() })
+    setMessage(error ? error.message : 'Progress update added.')
+    if (!error) {
+      setNote('')
+      await load()
+    }
+    setBusy(false)
+  }
+
+  if (loading) return <div className="flex min-h-64 items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary-purple"/></div>
+
+  return <div className="mx-auto max-w-5xl space-y-7 pb-10">
+    <div><h1 className="flex items-center gap-2 text-2xl font-black"><Folder className="h-6 w-6 text-primary-purple"/>FYP portfolio</h1><p className="mt-1 text-sm text-text-muted">Keep a durable project record that your guide can review.</p></div>
+    {!project ? <section className="rounded-3xl border border-border-light bg-white p-6">
+      <h2 className="font-black">Create your project record</h2>
+      <p className="mt-1 text-sm text-text-muted">Use the official project title. You can add progress updates after setup.</p>
+      <div className="mt-5 grid gap-4">
+        <Field label="Project title"><input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} className={inputClass}/></Field>
+        <Field label="Description"><textarea value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} className={`${inputClass} min-h-28`}/></Field>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Guide name"><input value={form.guide_name} onChange={(event) => setForm({ ...form, guide_name: event.target.value })} className={inputClass}/></Field>
+          <Field label="Repository URL"><input type="url" value={form.repository_url} onChange={(event) => setForm({ ...form, repository_url: event.target.value })} className={inputClass} placeholder="https://github.com/..."/></Field>
+        </div>
+        <button onClick={createProject} disabled={busy || !form.title.trim()} className="flex w-fit items-center gap-2 rounded-xl bg-primary-purple px-5 py-3 text-sm font-bold text-white disabled:opacity-50">{busy ? <Loader2 className="h-4 w-4 animate-spin"/> : <Save className="h-4 w-4"/>}Create portfolio</button>
       </div>
-
-      {/* Project Hero Card */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-[24px] border border-border-light shadow-[0_4px_20px_rgba(0,0,0,0.04)] p-8">
-        <div className="flex items-start justify-between mb-6">
-          <div>
-            <span className="text-[10px] font-bold text-primary-purple uppercase tracking-wider bg-primary-purple/10 px-2.5 py-1 rounded-full">ACTIVE PROJECT</span>
-            <h2 className="text-[22px] font-black text-text-main mt-3 mb-1">PSGMX — Placement Readiness Ecosystem</h2>
-            <p className="text-[13px] text-text-muted">MCA Department · PSG College of Technology</p>
-            <div className="flex gap-4 mt-3">
-              <p className="text-[13px] text-text-muted">Guide: <span className="font-bold text-text-main">Dr. Arunkumar</span></p>
-              <p className="text-[13px] text-text-muted">Team: <span className="font-bold text-text-main">3 members</span></p>
-            </div>
-          </div>
-          <div className="relative w-20 h-20 shrink-0">
-            <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
-              <circle cx="50" cy="50" r="44" fill="none" stroke="#EFE9E0" strokeWidth="10" />
-              <motion.circle cx="50" cy="50" r="44" fill="none" stroke="var(--primary-purple)" strokeWidth="10" strokeLinecap="round"
-                initial={{ strokeDasharray: '0 276.46' }}
-                animate={{ strokeDasharray: `${(progress / 100) * 276.46} 276.46` }}
-                transition={{ duration: 1, ease: 'easeOut', delay: 0.3 }}
-              />
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-[18px] font-black text-text-main">{progress}%</span>
-            </div>
-          </div>
+    </section> : <>
+      <section className="rounded-3xl border border-border-light bg-white p-6 sm:p-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div><span className="rounded-full bg-violet-50 px-3 py-1 text-[10px] font-black uppercase text-primary-purple">{project.status.replaceAll('_', ' ')}</span><h2 className="mt-3 text-2xl font-black">{project.title}</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-text-muted">{project.description || 'No description added.'}</p><p className="mt-3 text-xs font-bold text-text-muted">Guide: {project.guide_name || 'Not assigned'} · {project.team_members_count} member{project.team_members_count === 1 ? '' : 's'}</p></div>
+          {project.repository_url && <a href={project.repository_url} target="_blank" rel="noreferrer" className="flex items-center gap-2 rounded-xl border border-border-light px-4 py-3 text-sm font-bold"><ExternalLink className="h-4 w-4"/>Repository</a>}
         </div>
+      </section>
+      <section className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2"><h2 className="font-black">Progress log</h2><div className="mt-3 rounded-2xl border border-border-light bg-white p-4"><textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="What changed since your last update?" className="min-h-24 w-full resize-y bg-transparent text-sm outline-none"/><button onClick={addLog} disabled={busy || !note.trim()} className="mt-3 flex items-center gap-2 rounded-xl bg-primary-purple px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50"><Plus className="h-4 w-4"/>Add update</button></div><div className="mt-3 space-y-3">{logs.map((log) => <div key={log.id} className="rounded-2xl border border-border-light bg-white p-5"><p className="text-sm leading-6">{log.note}</p><p className="mt-2 text-xs text-text-muted">{new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(log.created_at))}</p></div>)}{logs.length === 0 && <p className="rounded-2xl bg-page-bg p-5 text-sm text-text-muted">No progress updates yet.</p>}</div></div>
+        <div><h2 className="font-black">Guide feedback</h2><div className="mt-3 space-y-3">{feedback.map((item) => <div key={item.id} className="rounded-2xl border border-border-light bg-white p-5"><p className="text-sm leading-6">{item.comment}</p><p className="mt-2 text-xs text-text-muted">{new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium' }).format(new Date(item.created_at))}</p></div>)}{feedback.length === 0 && <p className="rounded-2xl bg-page-bg p-5 text-sm text-text-muted">Faculty feedback will appear here after review.</p>}</div></div>
+      </section>
+    </>}
+    {message && <p className="rounded-xl bg-page-bg p-4 text-sm font-semibold" role="status">{message}</p>}
+  </div>
+}
 
-        {/* Phase Stepper */}
-        <div className="relative">
-          <div className="flex items-center gap-0">
-            {milestones.map((m, i) => (
-              <React.Fragment key={i}>
-                <div className="flex flex-col items-center flex-1">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-colors z-10 ${
-                    m.status === 'done' ? 'bg-primary-purple border-primary-purple' :
-                    m.status === 'active' ? 'bg-white border-primary-purple' : 'bg-white border-border-light'
-                  }`}>
-                    {m.status === 'done' ? <CheckCircle className="w-4 h-4 text-white" /> :
-                     m.status === 'active' ? <div className="w-3 h-3 rounded-full bg-primary-purple" /> :
-                     <div className="w-3 h-3 rounded-full bg-border-light" />}
-                  </div>
-                  <p className={`text-[9px] font-bold mt-2 text-center leading-tight ${
-                    m.status === 'done' ? 'text-primary-purple' : m.status === 'active' ? 'text-text-main' : 'text-text-muted'
-                  }`}>{m.label}</p>
-                  <p className="text-[8px] text-text-muted mt-0.5">{m.date}</p>
-                </div>
-                {i < milestones.length - 1 && (
-                  <div className={`h-0.5 flex-1 -mx-1 mb-8 ${milestones[i + 1].status !== 'pending' ? 'bg-primary-purple' : 'bg-border-light'}`} />
-                )}
-              </React.Fragment>
-            ))}
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Main Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-        {/* Progress Log */}
-        <div className="lg:col-span-2 bg-white rounded-[20px] border border-border-light shadow-[0_2px_12px_rgba(0,0,0,0.02)]">
-          <div className="p-6 border-b border-page-bg flex justify-between items-center">
-            <h3 className="text-[16px] font-bold text-text-main">Progress Log</h3>
-            <button onClick={() => setShowAddLog(!showAddLog)} className="flex items-center gap-2 px-4 py-2 bg-primary-purple text-white rounded-xl text-[12px] font-bold hover:bg-deep-violet transition-colors">
-              <Plus className="w-3.5 h-3.5" /> Add Entry
-            </button>
-          </div>
-          <div className="p-6">
-            {showAddLog && (
-              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6 p-5 bg-page-bg rounded-[16px] border border-border-light">
-                <textarea
-                  value={newNote}
-                  onChange={(e) => setNewNote(e.target.value)}
-                  placeholder="Describe what you accomplished today..."
-                  rows={3}
-                  className="w-full bg-white border border-border-light rounded-xl px-4 py-3 text-[14px] text-text-main outline-none focus:border-primary-purple transition-colors resize-none"
-                />
-                <div className="flex gap-3 mt-3">
-                  <button onClick={handleSaveLog} disabled={isSubmitting} className="px-5 py-2 bg-primary-purple text-white rounded-xl text-[13px] font-bold hover:bg-deep-violet transition-colors disabled:opacity-50">
-                    {isSubmitting ? 'Saving...' : 'Save Entry'}
-                  </button>
-                  <button onClick={() => setShowAddLog(false)} className="px-5 py-2 bg-white border border-border-light text-text-muted rounded-xl text-[13px] font-bold hover:bg-page-bg transition-colors">Cancel</button>
-                </div>
-              </motion.div>
-            )}
-
-            {/* Timeline */}
-            <div className="relative">
-              <div className="absolute left-4 top-0 bottom-0 w-px bg-border-light" />
-              <div className="space-y-6 pl-12">
-                {logs.map((entry, i) => (
-                  <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.1 }} className="relative">
-                    <div className="absolute -left-[44px] w-8 h-8 rounded-full bg-primary-purple flex items-center justify-center shadow-sm border-2 border-white">
-                      <span className="text-[10px] font-black text-white">{String(logs.length - i).padStart(2, '0')}</span>
-                    </div>
-                    <div className="p-4 bg-page-bg rounded-[16px] border border-border-light">
-                      <p className="text-[14px] text-text-main leading-relaxed">{entry.note}</p>
-                      <div className="flex items-center gap-3 mt-2">
-                        <Calendar className="w-3.5 h-3.5 text-text-muted" />
-                        <span className="text-[11px] font-semibold text-text-muted">{entry.date} · {entry.author}</span>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Right: Faculty Comments + Milestones */}
-        <div className="space-y-6">
-          <div className="bg-white rounded-[20px] border border-border-light shadow-[0_2px_12px_rgba(0,0,0,0.02)] p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <MessageSquare className="w-5 h-5 text-primary-purple" />
-              <h3 className="text-[14px] font-bold text-text-main">Faculty Comments</h3>
-            </div>
-            <div className="space-y-4">
-              {facultyComments.map((c, i) => (
-                <div key={i} className="p-4 bg-page-bg rounded-[14px] border-l-4 border-primary-purple">
-                  <p className="text-[13px] text-text-main leading-relaxed">{c.comment}</p>
-                  <p className="text-[11px] font-bold text-primary-purple mt-2">{c.faculty} · {c.date}</p>
-                </div>
-              ))}
-              {facultyComments.length === 0 && (
-                <p className="text-[13px] text-text-muted text-center py-4">No faculty comments yet. Add progress entries to get feedback.</p>
-              )}
-            </div>
-          </div>
-
-          <div className="bg-white rounded-[20px] border border-border-light shadow-[0_2px_12px_rgba(0,0,0,0.02)] p-6">
-            <h3 className="text-[14px] font-bold text-text-main mb-4">Upcoming Milestones</h3>
-            {milestones.filter(m => m.status !== 'done').map((m, i) => (
-              <div key={i} className="flex items-center gap-3 mb-3 last:mb-0">
-                <div className={`w-2 h-2 rounded-full shrink-0 ${m.status === 'active' ? 'bg-primary-purple' : 'bg-border-light'}`} />
-                <div className="flex-1">
-                  <p className={`text-[13px] font-bold ${m.status === 'active' ? 'text-text-main' : 'text-text-muted'}`}>{m.label}</p>
-                  <p className="text-[11px] text-text-muted">{m.date}</p>
-                </div>
-                {m.status === 'active' && <span className="text-[9px] font-bold bg-primary-purple text-white px-2 py-0.5 rounded-full">NOW</span>}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return <label className="block"><span className="mb-2 block text-xs font-black uppercase tracking-wide text-text-muted">{label}</span>{children}</label>
 }

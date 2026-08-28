@@ -23,6 +23,7 @@ class _TodayScreenState extends State<TodayScreen> {
   int assignedTasks = 0;
   bool taskCompleted = false;
   bool loading = true;
+  String? loadError;
 
   @override
   void initState() {
@@ -32,37 +33,55 @@ class _TodayScreenState extends State<TodayScreen> {
 
   Future<void> _load() async {
     final user = context.read<UserProvider>().currentUser;
-    if (user == null) return;
-    await Future.wait([
-      context.read<DailyFiveProvider>().loadState(user.uid),
-      context.read<AnnouncementProvider>().fetchAnnouncements(),
-      if (user.regNo.isNotEmpty)
-        context.read<EcampusProvider>().init(user.regNo),
-    ]);
-    final supabase = Supabase.instance.client;
-    final today = DateTime.now().toIso8601String().split('T').first;
-    final scoreResult = await supabase
-        .from('current_readiness_scores')
-        .select('score')
-        .eq('user_id', user.uid)
-        .maybeSingle();
-    final taskResult =
-        await supabase.from('daily_tasks').select('id').eq('date', today);
-    final completionResult = await supabase
-        .from('task_completions')
-        .select('completed')
-        .eq('user_id', user.uid)
-        .eq('task_date', today)
-        .maybeSingle();
-    if (!mounted) return;
-    setState(() {
-      final score = scoreResult;
-      readiness =
-          score == null ? null : double.tryParse(score['score'].toString());
-      assignedTasks = taskResult.length;
-      taskCompleted = completionResult?['completed'] == true;
-      loading = false;
-    });
+    if (user == null) {
+      if (mounted) setState(() => loading = false);
+      return;
+    }
+    if (mounted) {
+      setState(() {
+        loading = true;
+        loadError = null;
+      });
+    }
+    try {
+      await Future.wait([
+        context.read<DailyFiveProvider>().loadState(user.uid),
+        context.read<AnnouncementProvider>().fetchAnnouncements(),
+        if (user.regNo.isNotEmpty)
+          context.read<EcampusProvider>().init(user.regNo),
+      ]);
+      final supabase = Supabase.instance.client;
+      final today = DateTime.now().toIso8601String().split('T').first;
+      final scoreResult = await supabase
+          .from('current_readiness_scores')
+          .select('score')
+          .eq('user_id', user.uid)
+          .maybeSingle();
+      final taskResult =
+          await supabase.from('daily_tasks').select('id').eq('date', today);
+      final completionResult = await supabase
+          .from('task_completions')
+          .select('completed')
+          .eq('user_id', user.uid)
+          .eq('task_date', today)
+          .maybeSingle();
+      if (!mounted) return;
+      setState(() {
+        readiness = scoreResult == null
+            ? null
+            : double.tryParse(scoreResult['score'].toString());
+        assignedTasks = taskResult.length;
+        taskCompleted = completionResult?['completed'] == true;
+        loading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        loading = false;
+        loadError =
+            'Today could not be refreshed. Check your connection and try again.';
+      });
+    }
   }
 
   @override
@@ -77,8 +96,8 @@ class _TodayScreenState extends State<TodayScreen> {
         : hour < 17
             ? 'Good afternoon'
             : 'Good evening';
-    final batchCode = RegExp(r'\d{2}MX').firstMatch(user.regNo)?.group(0) ??
-        (user.isActiveSenior ? '25MX' : '26MX');
+    final batchCode =
+        RegExp(r'\d{2}MX').firstMatch(user.regNo)?.group(0) ?? 'MCA';
     final campusIndex = user.isActiveSenior ? 3 : 2;
 
     return Scaffold(
@@ -127,7 +146,7 @@ class _TodayScreenState extends State<TodayScreen> {
                             completed: dailyFive.completedToday,
                             streak: dailyFive.streak?.currentStreak ?? 0,
                             onTap: () => context.push('/daily-five')))),
-                if (batchCode == '26MX' &&
+                if (user.isActiveJunior &&
                     (user.leetcodeUsername == null ||
                         user.leetcodeUsername!.isEmpty))
                   SliverToBoxAdapter(
@@ -143,8 +162,7 @@ class _TodayScreenState extends State<TodayScreen> {
                           decoration: BoxDecoration(
                             color: const Color(0xFFFFF8F3),
                             borderRadius: BorderRadius.circular(18),
-                            border: Border.all(
-                                color: const Color(0xFFFFD4BF)),
+                            border: Border.all(color: const Color(0xFFFFD4BF)),
                           ),
                           child: Row(
                             children: [
@@ -181,6 +199,41 @@ class _TodayScreenState extends State<TodayScreen> {
                               const Icon(LucideIcons.chevronRight,
                                   size: 18, color: AppTheme.accentCoral),
                             ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                if (loadError != null)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+                      child: Material(
+                        color: const Color(0xFFFFF4ED),
+                        borderRadius: BorderRadius.circular(16),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(16),
+                          onTap: _load,
+                          child: Padding(
+                            padding: const EdgeInsets.all(14),
+                            child: Row(children: [
+                              const Icon(LucideIcons.wifiOff,
+                                  size: 19, color: AppTheme.accentCoral),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(loadError!,
+                                    style: GoogleFonts.inter(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: const Color(0xFF7C2D12))),
+                              ),
+                              const SizedBox(width: 8),
+                              Text('Retry',
+                                  style: GoogleFonts.inter(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w800,
+                                      color: AppTheme.accentCoral)),
+                            ]),
                           ),
                         ),
                       ),
