@@ -29,6 +29,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
 import { getCurrentProfile } from '@/lib/current-profile';
+import { NotificationDrawer } from '@/components/student/NotificationDrawer';
 
 const sidebarLinks = [
   { name: 'Today', href: '/student', icon: Home },
@@ -221,26 +222,24 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
           </div>
 
           <div className="flex items-center gap-6">
-            {/* Notifications */}
+            {/* Notifications Bell */}
             <div className="relative">
-              <button onClick={() => setNotificationsOpen(!notificationsOpen)} className={`relative w-10 h-10 flex items-center justify-center rounded-full bg-white border border-border-light shadow-sm transition-colors ${notificationsOpen ? 'text-primary-purple border-primary-purple' : 'text-text-muted hover:text-text-main'}`}>
+              <button 
+                onClick={() => setNotificationsOpen(true)} 
+                className={`relative w-10 h-10 flex items-center justify-center rounded-full bg-white border border-border-light shadow-sm transition-colors ${notificationsOpen ? 'text-primary-purple border-primary-purple' : 'text-text-muted hover:text-text-main'}`}
+                aria-label="Open Notifications"
+              >
                 <Bell className="w-5 h-5" />
+                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary-purple text-[10px] font-black text-white shadow-sm">
+                  2
+                </span>
               </button>
-              <AnimatePresence>
-                {notificationsOpen && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setNotificationsOpen(false)}></div>
-                    <motion.div initial={{ opacity: 0, y: 10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.95 }} className="absolute right-0 top-12 w-80 bg-white rounded-2xl shadow-xl border border-border-light z-50 overflow-hidden">
-                      <div className="p-4 border-b border-border-light flex justify-between items-center">
-                        <h3 className="text-[14px] font-bold text-text-main">Notifications</h3>
-                        <Link href="/student/announcements" onClick={() => setNotificationsOpen(false)} className="text-[11px] font-bold text-primary-purple">View updates</Link>
-                      </div>
-                      <div className="p-5 text-center"><Bell className="mx-auto h-7 w-7 text-text-muted"/><p className="mt-2 text-sm font-bold">Your live updates are in Announcements</p><p className="mt-1 text-xs text-text-muted">Important batch notices are kept together and easy to revisit.</p></div>
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
             </div>
+
+            <NotificationDrawer 
+              isOpen={notificationsOpen} 
+              onClose={() => setNotificationsOpen(false)} 
+            />
 
             {/* Profile */}
             <div className="relative">

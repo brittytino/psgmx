@@ -4,7 +4,7 @@ import '../providers/user_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../core/utils/responsive_helper.dart';
 import 'today/today_screen.dart';
-import 'tasks/tasks_screen.dart';
+import 'train/train_hub_screen.dart';
 import 'progress/progress_screen.dart';
 import 'community/community_screen.dart';
 import 'profile/profile_screen.dart';
@@ -33,7 +33,7 @@ class _RootLayoutState extends State<RootLayout> {
     // destination adapts to junior/senior status instead of moving navigation.
     final screens = <Widget>[
       const TodayScreen(),
-      const TasksScreen(),
+      const TrainHubScreen(),
       const ProgressScreen(),
       const CommunityScreen(),
       const ProfileScreen(),

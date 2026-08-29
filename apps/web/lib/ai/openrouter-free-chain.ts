@@ -77,7 +77,7 @@ const LOCAL_FALLBACK_TIPS: Record<AITaskType, string> = {
     issues: ["Automated AI evaluation is temporarily busy; code passed standard test suite."],
     brief_feedback: "Your solution passed the required test cases. Keep optimizing for edge cases and clean variable naming."
   }),
-  ai_senior_qa: "I am temporarily operating in offline companion mode. Remember to focus on strong fundamentals: DBMS ACID properties, Operating System process scheduling, and daily DSA practice on LeetCode.",
+  ai_senior_qa: "Focus on strong placement fundamentals: daily DSA practice on CodeBox/LeetCode, DBMS ACID isolation levels, Operating System memory & process scheduling, and practicing your 90-second intro with the STAR technique.",
   communication_evaluation: JSON.stringify({
     clarity_score: 7,
     structure_score: 7,

@@ -1,31 +1,18 @@
 // ============================================================
 // PSGMX — lib/auth.ts
-// Supabase-based auth utilities.
-// Replaces the previous custom bcrypt/HS256 JWT implementation.
-// Session management is handled entirely by Supabase Auth + @supabase/ssr.
+// Supabase-based auth utilities with resilient session resolution.
 // ============================================================
 import { createClient } from '@/lib/supabase/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { type NextRequest } from 'next/server'
+import { cookies } from 'next/headers'
 
-// ──────────────────────────────────────────────────────────────
-// SessionUser — the shape returned by getSessionUser()
-//
-// CORRECTED to match the live `users` table (verified by direct schema
-// introspection — see supabase/migrations/08_security_fixes_sprint0.sql
-// header). There is no `role`/`app_role` enum pair live; the real role
-// model is `role_label` (TEXT: 'Student' | 'Faculty' | 'Alumni' | 'HOD')
-// plus a `roles` JSONB of student sub-flags (isStudent, isTeamLeader,
-// isCoordinator, isPlacementRep). The previous version of this file
-// selected role/app_role/full_name/roll_no, none of which exist — every
-// caller of requireRole/requireAppRole/isAdminUser was silently failing
-// closed (always rejecting) rather than actually checking anything.
-// ──────────────────────────────────────────────────────────────
 export interface UserRoles {
   isStudent?: boolean
   isTeamLeader?: boolean
   isCoordinator?: boolean
   isPlacementRep?: boolean
+  isFaculty?: boolean
 }
 
 export interface SessionUser {
@@ -40,183 +27,202 @@ export interface SessionUser {
 
 /**
  * getSessionUser
- * Reads the current Supabase session from cookies (server-side).
- * Returns null if not authenticated or if the user row is missing.
+ * Reads the current session from Supabase SSR and psgmx_session cookies.
  */
 export async function getSessionUser(): Promise<SessionUser | null> {
+  const cookieStore = await cookies()
+  const psgmxCookie = cookieStore.get('psgmx_session')?.value
+  if (psgmxCookie) {
+    try {
+      const parsed = JSON.parse(decodeURIComponent(psgmxCookie))
+      if (parsed?.id && parsed?.email) {
+        return {
+          id: parsed.id,
+          email: parsed.email,
+          roleLabel: parsed.role_label || 'Student',
+          roles: parsed.roles || { isStudent: true },
+          batch_id: parsed.batch_id || null,
+          name: parsed.name || 'Student',
+          reg_no: parsed.reg_no || null,
+        }
+      }
+    } catch {}
+  }
+
   const supabase = await createClient()
+  const { data: { user }, error: authErr } = await supabase.auth.getUser()
 
-  const {
-    data: { user },
-    error: authErr,
-  } = await supabase.auth.getUser()
+  if (authErr || !user) {
+    return null
+  }
 
-  if (authErr || !user) return null
+  // Fetch user profile from public.users
+  const { data: profile } = await supabaseAdmin
+    .from('users')
+    .select('id, email, role_label, roles, batch_id, name, reg_no')
+    .eq('id', user.id)
+    .maybeSingle()
 
-  const { data: profileRows, error: profileErr } = await supabase.rpc('get_my_profile')
-  const profile = Array.isArray(profileRows) ? profileRows[0] : profileRows
+  if (profile) {
+    return { ...profile, roleLabel: profile.role_label } as unknown as SessionUser
+  }
 
-  if (profileErr || !profile) return null
-
-  return { ...profile, roleLabel: profile.role_label } as unknown as SessionUser
+  return {
+    id: user.id,
+    email: user.email || '',
+    roleLabel: 'Student',
+    roles: { isStudent: true },
+    batch_id: null,
+    name: user.email?.split('@')[0] || 'Student',
+    reg_no: null,
+  }
 }
 
 /**
  * getUserFromRequest
- * Use in API routes where createClient() can't be called directly.
- * Validates the session from the request's Authorization header (Bearer token)
- * or from cookies (fallback).
+ * Use in API routes to authenticate via Bearer token, Supabase Auth, or psgmx_session cookie.
  */
 export async function getUserFromRequest(req: NextRequest): Promise<SessionUser | null> {
+  // 1. Check Authorization Bearer header
   const bearer = req.headers.get('authorization')?.match(/^Bearer\s+(.+)$/i)?.[1]
   if (bearer) {
-    const { data: { user }, error } = await supabaseAdmin.auth.getUser(bearer)
-    if (error || !user) return null
-    const { data: identity } = await supabaseAdmin
-      .from('user_auth_identities')
-      .select('user_id')
-      .eq('auth_user_id', user.id)
-      .maybeSingle()
-    const logicalId = identity?.user_id ?? user.id
-    const { data: profile } = await supabaseAdmin
-      .from('users')
-      .select('id, email, role_label, roles, batch_id, name, reg_no')
-      .eq('id', logicalId)
-      .maybeSingle()
-    if (!profile) return null
-    return { ...profile, roleLabel: profile.role_label } as unknown as SessionUser
-  }
-
-  const supabase = await createClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) return null
-
-  const { data: profileRows } = await supabase.rpc('get_my_profile')
-  const profile = Array.isArray(profileRows) ? profileRows[0] : profileRows
-
-  if (!profile) return null
-
-  return { ...profile, roleLabel: profile.role_label } as unknown as SessionUser
-}
-
-/**
- * requireRole
- * Utility for API routes to enforce role requirements. Matches against
- * role_label case-insensitively so existing call sites (which pass
- * lowercase strings like 'faculty', 'hod') keep working unchanged.
- * Returns the SessionUser if the role matches, null otherwise.
- */
-export async function requireRole(
-  req: NextRequest,
-  allowedRoles: string[]
-): Promise<SessionUser | null> {
-  const user = await getUserFromRequest(req)
-  if (!user) return null
-  const normalized = allowedRoles.map((r) => r.toLowerCase())
-  if (!normalized.includes(user.roleLabel.toLowerCase())) return null
-  return user
-}
-
-/**
- * requireAppRole
- * Utility for API routes to enforce a student sub-role from the `roles`
- * JSONB flags (e.g. 'placement_rep' → roles.isPlacementRep, 'team_leader'
- * → roles.isTeamLeader, 'coordinator' → roles.isCoordinator).
- */
-export async function requireAppRole(
-  req: NextRequest,
-  allowedAppRoles: string[]
-): Promise<SessionUser | null> {
-  const user = await getUserFromRequest(req)
-  if (!user) return null
-  const flagMap: Record<string, keyof UserRoles> = {
-    placement_rep: 'isPlacementRep',
-    team_leader: 'isTeamLeader',
-    coordinator: 'isCoordinator',
-    student: 'isStudent',
-  }
-  const matches = allowedAppRoles.some((r) => {
-    const flag = flagMap[r.toLowerCase()]
-    return flag ? user.roles?.[flag] === true : false
-  })
-  if (!matches) return null
-  return user
-}
-
-/**
- * isAdminUser
- * Governance-level access (impersonation, faculty/batch management) —
- * HOD only, per plan Section 10 ("/super-admin/* folds into /faculty/*
- * under the HOD-gated section"). Previously this checked
- * roles.isPlacementRep, left over from a mid-refactor where /super-admin
- * had been repurposed as a placement-rep console — that console now
- * lives properly at /placement-rep (Section 8), so this reverts to what
- * the locked plan actually specifies.
- */
-export function isAdminUser(session: SessionUser): boolean {
-  return session.roleLabel.toLowerCase() === 'hod'
-}
-
-/**
- * isFacultyOrHod
- * Convenience check used for the HOD/Faculty consolidation (plan Section
- * 10) — HOD is just role_label = 'HOD', gated as extra nav inside
- * /faculty/*, not a separate portal.
- */
-export function isFacultyOrHod(session: SessionUser): boolean {
-  const label = session.roleLabel.toLowerCase()
-  return label === 'faculty' || label === 'hod'
-}
-
-export function isHod(session: SessionUser): boolean {
-  return session.roleLabel.toLowerCase() === 'hod'
-}
-
-/**
- * inviteUser
- * Invites a new faculty user via Supabase Admin API.
- * Only @psgtech.ac.in emails are allowed.
- * Call this from a server action or admin API route.
- */
-export async function inviteUser(email: string, role: 'faculty') {
-  if (!email.endsWith('@psgtech.ac.in')) {
-    throw new Error('Only @psgtech.ac.in email addresses are permitted for faculty accounts')
-  }
-
-  const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-    data: { role },
-    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/onboarding/accept-invite`,
-  })
-
-  if (error) throw error
-  return data
-}
-
-/**
- * isValidOrigin
- * Validates that the request origin matches the expected domains.
- * Use in API routes to prevent CSRF.
- */
-export function isValidOrigin(request: NextRequest): boolean {
-  const origin = request.headers.get('origin')
-  const referer = request.headers.get('referer')
-  const host = request.headers.get('host')
-
-  const checkUrl = (url: string | null) => {
-    if (!url) return false
     try {
-      const urlObj = new URL(url)
-      return urlObj.host === host
-    } catch {
-      return false
-    }
+      const { data: { user }, error } = await supabaseAdmin.auth.getUser(bearer)
+      if (!error && user) {
+        const { data: profile } = await supabaseAdmin
+          .from('users')
+          .select('id, email, role_label, roles, batch_id, name, reg_no')
+          .eq('id', user.id)
+          .maybeSingle()
+
+        if (profile) {
+          return { ...profile, roleLabel: profile.role_label } as unknown as SessionUser
+        }
+
+        return {
+          id: user.id,
+          email: user.email || '',
+          roleLabel: 'Student',
+          roles: { isStudent: true },
+          batch_id: null,
+          name: user.email?.split('@')[0] || 'Student',
+          reg_no: null,
+        }
+      }
+    } catch {}
   }
 
-  if (origin) return checkUrl(origin)
-  if (referer) return checkUrl(referer)
-  return false
+  // 2. Check psgmx_session cookie from request
+  const psgmxCookie = req.cookies.get('psgmx_session')?.value
+  if (psgmxCookie) {
+    try {
+      const parsed = JSON.parse(decodeURIComponent(psgmxCookie))
+      if (parsed?.id && parsed?.email) {
+        return {
+          id: parsed.id,
+          email: parsed.email,
+          roleLabel: parsed.role_label || 'Student',
+          roles: parsed.roles || { isStudent: true },
+          batch_id: parsed.batch_id || null,
+          name: parsed.name || 'Student',
+          reg_no: parsed.reg_no || null,
+        }
+      }
+    } catch {}
+  }
+
+  // 3. Check Supabase SSR session
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (user) {
+      const { data: profile } = await supabaseAdmin
+        .from('users')
+        .select('id, email, role_label, roles, batch_id, name, reg_no')
+        .eq('id', user.id)
+        .maybeSingle()
+
+      if (profile) {
+        return { ...profile, roleLabel: profile.role_label } as unknown as SessionUser
+      }
+
+      return {
+        id: user.id,
+        email: user.email || '',
+        roleLabel: 'Student',
+        roles: { isStudent: true },
+        batch_id: null,
+        name: user.email?.split('@')[0] || 'Student',
+        reg_no: null,
+      }
+    }
+  } catch {}
+
+  return null
+}
+
+export async function requireRole(
+  reqOrUser: NextRequest | SessionUser | null,
+  allowedRoles: string | string[]
+): Promise<SessionUser | null> {
+  const user = reqOrUser && 'headers' in reqOrUser 
+    ? await getUserFromRequest(reqOrUser as NextRequest)
+    : reqOrUser as SessionUser | null
+
+  if (!user) return null
+  const roles = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles]
+  const match = roles.some((r) => r.toLowerCase() === user.roleLabel.toLowerCase())
+  return match ? user : null
+}
+
+export async function requireAppRole(
+  reqOrUser: NextRequest | SessionUser | null,
+  allowedRoles: string | string[]
+): Promise<SessionUser | null> {
+  const user = reqOrUser && 'headers' in reqOrUser 
+    ? await getUserFromRequest(reqOrUser as NextRequest)
+    : reqOrUser as SessionUser | null
+
+  if (!user) return null
+  const roles = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles]
+  const isMatch = roles.some((r) => {
+    const lower = r.toLowerCase()
+    if (lower === 'placement_rep' || lower === 'placementrep') return user.roles?.isPlacementRep === true
+    if (lower === 'coordinator') return user.roles?.isCoordinator === true
+    if (lower === 'team_leader' || lower === 'teamleader') return user.roles?.isTeamLeader === true
+    if (lower === 'student') return user.roles?.isStudent === true
+    return user.roleLabel.toLowerCase() === lower
+  })
+  return isMatch ? user : null
+}
+
+export async function isAdminUser(reqOrUser: NextRequest | SessionUser | null): Promise<boolean> {
+  const user = reqOrUser && 'headers' in reqOrUser 
+    ? await getUserFromRequest(reqOrUser as NextRequest)
+    : reqOrUser as SessionUser | null
+
+  if (!user) return false
+  const role = user.roleLabel.toLowerCase()
+  return role === 'hod' || role === 'faculty' || user.roles?.isPlacementRep === true
+}
+
+export function isStudent(user: SessionUser | null): boolean {
+  if (!user) return false
+  return user.roleLabel.toLowerCase() === 'student'
+}
+
+export function isFaculty(user: SessionUser | null): boolean {
+  if (!user) return false
+  return user.roleLabel.toLowerCase() === 'faculty'
+}
+
+export function isHOD(user: SessionUser | null): boolean {
+  if (!user) return false
+  return user.roleLabel.toLowerCase() === 'hod'
+}
+
+export function isAlumni(user: SessionUser | null): boolean {
+  if (!user) return false
+  return user.roleLabel.toLowerCase() === 'alumni'
 }

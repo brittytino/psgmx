@@ -1,95 +1,301 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import { BrainCircuit, BookOpen, Activity, ArrowLeft } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { ShieldCheck, Target, Calendar, CheckCircle2, Plus, MessageSquare, ArrowRight, Loader2, HeartHandshake } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
+import { getCurrentProfile } from '@/lib/current-profile';
 
-export default function RecoveryHub() {
-  const router = useRouter();
-  const [profile, setProfile] = useState<any>(null);
-  
+interface SupportCase {
+  id: string;
+  case_type: string;
+  title: string;
+  context: string;
+  status: string;
+  goal: string | null;
+  action_plan: any[];
+  review_at: string | null;
+  resolution: string | null;
+  created_at: string;
+}
+
+type CaseType = 'student_request' | 'evidence_gap' | 'assessment_support' | 'academic_continuity' | 'identity' | 'privacy' | 'technical';
+
+export default function StudentRecoveryHubPage() {
+  const [cases, setCases] = useState<SupportCase[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showRequestModal, setShowRequestModal] = useState(false);
+  const [requestTitle, setRequestTitle] = useState('');
+  const [requestContext, setRequestContext] = useState('');
+  const [requestType, setRequestType] = useState<CaseType>('assessment_support');
+  const [submitting, setSubmitting] = useState(false);
+  const [feedbackMsg, setFeedbackMsg] = useState('');
+
+  const supabase = createClient();
+
   useEffect(() => {
-    fetch('/api/user/profile')
-      .then(res => res.json())
-      .then(data => {
-        if (data.success && data.profile) {
-          setProfile(data.profile);
-          if (!data.profile.arrears || data.profile.arrears.length === 0) {
-            router.push('/student');
-          }
-        }
-      });
-  }, [router]);
+    loadCases();
+  }, []);
 
-  if (!profile) {
-    return <div className="min-h-screen bg-page-bg text-white flex items-center justify-center">Loading...</div>;
+  async function loadCases() {
+    try {
+      setLoading(true);
+      const me = await getCurrentProfile(supabase);
+      if (!me) {
+        setLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('support_cases')
+        .select('*')
+        .eq('student_id', me.id)
+        .order('created_at', { ascending: false });
+
+      if (!error && data) {
+        setCases(data as SupportCase[]);
+      }
+    } catch (err) {
+      console.error('Failed to load support cases:', err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleCreateRequest(e: React.FormEvent) {
+    e.preventDefault();
+    if (!requestTitle.trim() || !requestContext.trim()) return;
+
+    setSubmitting(true);
+    try {
+      const me = await getCurrentProfile(supabase);
+      if (!me) throw new Error('Not authenticated');
+
+      const { error } = await supabase.from('support_cases').insert({
+        student_id: me.id,
+        created_by: me.id,
+        title: requestTitle.trim(),
+        context: requestContext.trim(),
+        case_type: requestType,
+        status: 'requested',
+        privacy_level: 'faculty_student',
+      });
+
+      if (error) throw error;
+
+      setFeedbackMsg('Support request submitted successfully. Your faculty mentor will review it.');
+      setRequestTitle('');
+      setRequestContext('');
+      setShowRequestModal(false);
+      await loadCases();
+    } catch (err: any) {
+      alert(err.message || 'Failed to submit support request');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex min-h-64 items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-primary-purple" />
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-page-bg text-text-main p-4 md:p-8 relative overflow-hidden">
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-rose-500/10 rounded-full blur-[120px] pointer-events-none" />
-      
-      <div className="max-w-7xl mx-auto relative z-10">
-        <header className="flex items-center justify-between mb-12">
-          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-4">
-            <button onClick={() => router.push('/student')} className="p-2.5 rounded-xl psgmx-glass-panel hover:bg-white/5 transition-colors text-text-muted hover:text-white">
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-rose-500 to-orange-500 flex items-center justify-center shadow-[0_0_20px_rgba(244,63,94,0.4)]">
-              <Activity className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-black tracking-tight text-white">Recovery Hub</h1>
-              <p className="psgmx-subtitle mt-0.5">Academic Intervention & Mock Testing</p>
-            </div>
-          </motion.div>
-        </header>
+    <div className="max-w-5xl mx-auto space-y-6 pb-12">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <span className="text-xs font-bold text-primary-purple uppercase tracking-wider block">
+            Mentorship & Academic Support · PRD Chapter 7.4
+          </span>
+          <h1 className="text-2xl font-black text-text-main mt-1 flex items-center gap-2">
+            <HeartHandshake className="w-6 h-6 text-primary-purple" />
+            Support & Recovery Hub
+          </h1>
+          <p className="text-sm text-text-muted">
+            Personalized recovery plans and guidance from your faculty mentors to strengthen your preparation foundation.
+          </p>
+        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-8">
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-              className="psgmx-glass p-8 border-rose-500/30"
-            >
-              <h2 className="text-2xl font-black text-white mb-6">Active Arrears</h2>
-              
-              <div className="space-y-4">
-                {profile.arrears?.map((arrear: any, idx: number) => (
-                  <div key={idx} className="psgmx-glass-panel p-6 border-rose-500/20">
-                    <div className="flex justify-between items-start mb-4">
-                      <h3 className="text-xl font-bold text-white">{arrear.subject}</h3>
-                      <span className="px-3 py-1 bg-rose-500/20 text-rose-400 rounded-full text-xs font-bold uppercase">{arrear.status}</span>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4 mt-6">
-                      <button className="flex items-center justify-center gap-2 py-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors border border-white/10 text-white font-semibold text-sm">
-                        <BookOpen className="w-4 h-4" /> Previous Year Questions
-                      </button>
-                      <button className="flex items-center justify-center gap-2 py-3 rounded-xl bg-rose-500 hover:bg-rose-600 transition-colors text-white font-semibold text-sm shadow-[0_0_15px_rgba(244,63,94,0.4)]">
-                        <BrainCircuit className="w-4 h-4" /> Start AI Mock Exam
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          </div>
-          
-          <div className="space-y-8">
-            <motion.div 
-              initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}
-              className="psgmx-glass p-8"
-            >
-              <h3 className="text-xl font-bold text-white mb-6">AI Coach Feedback</h3>
-              <div className="h-40 flex flex-col items-center justify-center border border-dashed border-border rounded-2xl p-6 text-center">
-                <BrainCircuit className="w-8 h-8 text-text-muted mb-3 opacity-50" />
-                <p className="text-sm text-text-muted">Take your first mock exam to receive personalized feedback from the AI Senior.</p>
-              </div>
-            </motion.div>
-          </div>
+        <button
+          onClick={() => setShowRequestModal(true)}
+          className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-purple hover:bg-deep-violet text-white text-sm font-bold rounded-xl transition-colors shadow-sm self-start sm:self-auto"
+        >
+          <Plus className="w-4 h-4" /> Request Mentorship Support
+        </button>
+      </div>
+
+      {feedbackMsg && (
+        <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-medium rounded-xl flex items-center justify-between">
+          <span>{feedbackMsg}</span>
+          <button onClick={() => setFeedbackMsg('')} className="text-xs font-bold text-emerald-700 underline">Dismiss</button>
+        </div>
+      )}
+
+      {/* Overview Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white border border-border-light rounded-2xl p-5 shadow-sm">
+          <span className="text-xs font-bold text-text-muted uppercase">Active Support Plans</span>
+          <p className="text-3xl font-black text-text-main mt-2">
+            {cases.filter(c => ['active', 'review_due', 'requested'].includes(c.status)).length}
+          </p>
+          <p className="text-xs text-text-muted mt-1">Direct mentor interventions</p>
+        </div>
+        <div className="bg-white border border-border-light rounded-2xl p-5 shadow-sm">
+          <span className="text-xs font-bold text-text-muted uppercase">Completed Milestones</span>
+          <p className="text-3xl font-black text-emerald-600 mt-2">
+            {cases.filter(c => ['resolved', 'closed'].includes(c.status)).length}
+          </p>
+          <p className="text-xs text-text-muted mt-1">Successfully resolved cases</p>
+        </div>
+        <div className="bg-white border border-border-light rounded-2xl p-5 shadow-sm">
+          <span className="text-xs font-bold text-text-muted uppercase">Privacy Guarantee</span>
+          <p className="text-base font-bold text-text-main mt-2 flex items-center gap-1.5">
+            <ShieldCheck className="w-5 h-5 text-primary-purple" /> Faculty-Student Private
+          </p>
+          <p className="text-xs text-text-muted mt-1">Never shared with batch peers or external drives</p>
         </div>
       </div>
+
+      {/* Case List */}
+      <div className="space-y-4">
+        <h2 className="text-lg font-bold text-text-main">Your Support Plans & Requests</h2>
+
+        {cases.length === 0 ? (
+          <div className="bg-white border border-dashed border-border-light rounded-3xl p-12 text-center space-y-3">
+            <HeartHandshake className="w-12 h-12 text-text-muted mx-auto" />
+            <h3 className="font-bold text-text-main text-lg">No active recovery cases</h3>
+            <p className="text-sm text-text-muted max-w-md mx-auto">
+              You are currently on track with regular preparation. If you ever need focused assistance with algorithms, core CS, or mock exams, click &quot;Request Mentorship Support&quot;.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {cases.map((c) => (
+              <div key={c.id} className="bg-white border border-border-light rounded-2xl p-6 shadow-sm space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border-light pb-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2.5 py-0.5 text-[10px] font-bold uppercase rounded-full ${
+                        c.status === 'resolved' || c.status === 'closed'
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                          : c.status === 'active'
+                          ? 'bg-primary-purple/10 text-primary-purple border border-primary-purple/20'
+                          : 'bg-amber-50 text-amber-700 border border-amber-200'
+                      }`}>
+                        {c.status.replace('_', ' ')}
+                      </span>
+                      <span className="text-xs font-semibold text-text-muted uppercase">
+                        {c.case_type.replace('_', ' ')}
+                      </span>
+                    </div>
+                    <h3 className="text-base font-bold text-text-main mt-1">{c.title}</h3>
+                  </div>
+
+                  {c.review_at && (
+                    <div className="flex items-center gap-1.5 text-xs text-text-muted">
+                      <Calendar className="w-4 h-4 text-primary-purple" />
+                      <span>Review: {new Date(c.review_at).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="text-sm text-text-muted leading-relaxed">
+                  <p>{c.context}</p>
+                </div>
+
+                {c.goal && (
+                  <div className="bg-page-bg p-4 rounded-xl border border-border-light">
+                    <span className="text-xs font-bold text-text-main flex items-center gap-1.5 mb-1">
+                      <Target className="w-4 h-4 text-primary-purple" /> Support Goal
+                    </span>
+                    <p className="text-xs text-text-muted">{c.goal}</p>
+                  </div>
+                )}
+
+                {c.resolution && (
+                  <div className="bg-emerald-50/50 p-4 rounded-xl border border-emerald-100">
+                    <span className="text-xs font-bold text-emerald-800 flex items-center gap-1.5 mb-1">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Resolution Notes
+                    </span>
+                    <p className="text-xs text-emerald-950">{c.resolution}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Modal for Requesting Support */}
+      {showRequestModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-xl border border-border-light space-y-5">
+            <div className="flex items-center justify-between border-b border-border-light pb-3">
+              <h3 className="font-bold text-lg text-text-main">Request Mentorship Support</h3>
+              <button onClick={() => setShowRequestModal(false)} className="text-text-muted hover:text-text-main text-sm font-bold">✕</button>
+            </div>
+
+            <form onSubmit={handleCreateRequest} className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-text-muted uppercase block mb-1">Support Category</label>
+                <select
+                  value={requestType}
+                  onChange={(e) => setRequestType(e.target.value as CaseType)}
+                  className="w-full text-sm border border-border-light rounded-xl p-3 bg-page-bg focus:outline-none focus:border-primary-purple"
+                >
+                  <option value="assessment_support">Assessment & Test Preparation</option>
+                  <option value="evidence_gap">Core CS & DSA Concept Gap</option>
+                  <option value="student_request">General Mentorship / Career Advice</option>
+                  <option value="academic_continuity">Academic Continuity</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-text-muted uppercase block mb-1">Topic / Subject</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Difficulty with Dynamic Programming or DBMS ACID"
+                  value={requestTitle}
+                  onChange={(e) => setRequestTitle(e.target.value)}
+                  required
+                  className="w-full text-sm border border-border-light rounded-xl p-3 bg-page-bg focus:outline-none focus:border-primary-purple"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-text-muted uppercase block mb-1">Details & How Mentor Can Help</label>
+                <textarea
+                  rows={4}
+                  placeholder="Describe where you feel stuck or what concept you would like personalized guidance on..."
+                  value={requestContext}
+                  onChange={(e) => setRequestContext(e.target.value)}
+                  required
+                  className="w-full text-sm border border-border-light rounded-xl p-3 bg-page-bg focus:outline-none focus:border-primary-purple"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowRequestModal(false)}
+                  className="px-4 py-2 text-sm font-bold text-text-muted hover:text-text-main"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="px-5 py-2.5 bg-primary-purple hover:bg-deep-violet text-white text-sm font-bold rounded-xl transition-colors shadow-sm disabled:opacity-50"
+                >
+                  {submitting ? 'Submitting...' : 'Submit Request'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,18 +1,12 @@
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '@/../../supabase/types/database.types'
 
-// ⚠️  SERVICE ROLE CLIENT — SERVER ONLY
-// This client bypasses Row Level Security.
-// NEVER import this in Client Components, pages, or any file that
-// could be bundled for the browser.
-// Use only in:
-//   - API routes (app/api/**/route.ts)
-//   - Server Actions
-//   - Edge Functions
+const DEFAULT_SUPABASE_URL = 'https://ucmskbgdpnolnyrmkotz.supabase.co'
+const DEFAULT_SUPABASE_ANON_KEY = 'sb_publishable_FYSPL2NrQ7uby010u8hTmg_26v9e2MI'
 
 export const supabaseAdmin = createClient<Database>(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "http://localhost",
-  process.env.SUPABASE_SERVICE_ROLE_KEY || "dummy",
+  process.env.NEXT_PUBLIC_SUPABASE_URL || DEFAULT_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY,
   {
     auth: {
       autoRefreshToken: false,

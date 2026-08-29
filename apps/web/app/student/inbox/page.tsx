@@ -1,109 +1,152 @@
-'use client';
+'use client'
 
-import React, { useState } from 'react';
-import { Bell, CheckCircle2, Clock, AlertCircle, Sparkles, Inbox, Filter } from 'lucide-react';
+import React, { useState, useEffect } from 'react'
+import { Bell, CheckCircle2, Clock, Sparkles, Inbox, CheckCheck, Megaphone, Zap, ShieldCheck } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+import { getCurrentProfile } from '@/lib/current-profile'
 
 interface NotificationItem {
-  id: string;
-  title: string;
-  body: string;
-  category: 'quest' | 'session' | 'digest' | 'system';
-  created_at: string;
-  read: boolean;
-  priority: 'high' | 'normal';
+  id: string
+  title: string
+  body: string
+  category: 'announcement' | 'quest' | 'session' | 'system'
+  created_at: string
+  read: boolean
+  priority: 'high' | 'normal'
 }
 
+const DEFAULT_INBOX_ITEMS: NotificationItem[] = [
+  {
+    id: 'inb-1',
+    title: 'Zoho Corporation On-Campus Recruitment Drive',
+    body: 'Zoho Corporation placement process is scheduled for the MCA cohort. All eligible candidates must complete basic matrix manipulation and OOP CLI practice.',
+    category: 'announcement',
+    created_at: '15m ago',
+    read: false,
+    priority: 'high',
+  },
+  {
+    id: 'inb-2',
+    title: 'Daily Five Gymnasium Streak Active',
+    body: 'Solve today’s 5 curated placement questions in the Train Gymnasium to boost your readiness index and maintain your streak.',
+    category: 'quest',
+    created_at: '2 hours ago',
+    read: false,
+    priority: 'high',
+  },
+  {
+    id: 'inb-3',
+    title: 'TCS Digital / Prime Mock Assessment Open',
+    body: 'Proctored speed assessment is ready. Test your problem-solving accuracy and time complexity instincts.',
+    category: 'session',
+    created_at: '5 hours ago',
+    read: false,
+    priority: 'high',
+  },
+  {
+    id: 'inb-4',
+    title: 'Weekly Readiness Movement Digest',
+    body: 'You completed 4 quests this week with 100% Daily Five consistency. Your overall readiness score is tracking at 78.',
+    category: 'system',
+    created_at: 'Yesterday',
+    read: true,
+    priority: 'normal',
+  },
+]
+
 export default function StudentInboxPage() {
-  const [filter, setFilter] = useState<'all' | 'unread'>('all');
-  const [notifications, setNotifications] = useState<NotificationItem[]>([
-    {
-      id: '1',
-      title: 'DBMS ACID Sprint Available',
-      body: 'Your Core CS evidence is 18 days old. Complete the 7-minute sprint to refresh your readiness dimension.',
-      category: 'quest',
-      created_at: '2 hours ago',
-      read: false,
-      priority: 'high',
-    },
-    {
-      id: '2',
-      title: 'Coding Lab Session Tomorrow 08:30 AM',
-      body: 'Placement readiness coding session scheduled at Lab 3 (F Block). Bring your laptop ready for CodeBox tasks.',
-      category: 'session',
-      created_at: '5 hours ago',
-      read: false,
-      priority: 'high',
-    },
-    {
-      id: '3',
-      title: 'Weekly Readiness Digest Generated',
-      body: 'You completed 4 quests this week with 100% Daily Five streak. Check your readiness movement report.',
-      category: 'digest',
-      created_at: 'Yesterday',
-      read: true,
-      priority: 'normal',
-    },
-    {
-      id: '4',
-      title: 'LeetCode Stats Synced',
-      body: 'Successfully synced 3 new problem solves from your LeetCode handle. Coding dimension updated.',
-      category: 'system',
-      created_at: '2 days ago',
-      read: true,
-      priority: 'normal',
-    },
-  ]);
+  const supabase = React.useMemo(() => createClient(), [])
+  const [filter, setFilter] = useState<'all' | 'unread'>('all')
+  const [notifications, setNotifications] = useState<NotificationItem[]>(DEFAULT_INBOX_ITEMS)
+
+  useEffect(() => {
+    async function loadInbox() {
+      try {
+        const me = await getCurrentProfile(supabase)
+        let query = supabase
+          .from('announcements')
+          .select('id, title, message, is_priority, created_at')
+          .order('created_at', { ascending: false })
+          .limit(10)
+
+        if (me?.batch_id) {
+          query = query.or(`batch_id.eq.${me.batch_id},batch_id.is.null`)
+        }
+
+        const { data } = await query
+        if (data && data.length > 0) {
+          const mapped: NotificationItem[] = data.map((row: any) => ({
+            id: row.id,
+            title: row.title,
+            body: row.message,
+            category: 'announcement',
+            created_at: new Intl.DateTimeFormat('en-IN', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(row.created_at)),
+            read: false,
+            priority: row.is_priority ? 'high' : 'normal',
+          }))
+          setNotifications(mapped)
+        }
+      } catch (err) {
+        console.warn('Inbox DB query fallback:', err)
+      }
+    }
+    loadInbox()
+  }, [supabase])
 
   const markAllAsRead = () => {
-    setNotifications(notifications.map(n => ({ ...n, read: true })));
-  };
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
+  }
 
   const markAsRead = (id: string) => {
-    setNotifications(notifications.map(n => n.id === id ? ({ ...n, read: true }) : n));
-  };
+    setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)))
+  }
 
-  const filtered = filter === 'unread' ? notifications.filter(n => !n.read) : notifications;
+  const filtered = filter === 'unread' ? notifications.filter((n) => !n.read) : notifications
+  const unreadCount = notifications.filter((n) => !n.read).length
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-12">
-      <div className="flex items-center justify-between">
+    <div className="mx-auto max-w-4xl space-y-7 pb-12 font-sans">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <span className="text-xs font-bold text-electric-blue uppercase tracking-wider block">
-            Notifications & Alerts · PRD Chapter 13
-          </span>
-          <h1 className="text-2xl font-black text-white mt-1 flex items-center gap-2">
-            <Inbox className="w-6 h-6 text-electric-blue" />
-            Unified Inbox
+          <h1 className="flex items-center gap-2.5 text-2xl font-black text-text-main">
+            <Inbox className="h-6 w-6 text-primary-purple"/>
+            Unified Notification Inbox
           </h1>
-          <p className="text-sm text-slate-400">
-            FCM push and in-app alerts. Read states synchronize seamlessly across web and mobile.
+          <p className="mt-1 text-sm text-text-muted">
+            All department broadcasts, quest reminders, and mock test updates in one unified feed.
           </p>
         </div>
-        <button
-          onClick={markAllAsRead}
-          className="text-xs font-bold text-slate-400 hover:text-white px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg transition-colors"
-        >
-          Mark all as read
-        </button>
+        {unreadCount > 0 && (
+          <button
+            onClick={markAllAsRead}
+            className="flex items-center gap-1.5 rounded-xl border border-border-light bg-white px-4 py-2 text-xs font-bold text-primary-purple hover:bg-page-bg transition-colors shadow-sm"
+          >
+            <CheckCheck className="h-4 w-4"/> Mark all as read
+          </button>
+        )}
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex gap-2 border-b border-slate-800 pb-3">
+      <div className="flex gap-2">
         <button
           onClick={() => setFilter('all')}
-          className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${
-            filter === 'all' ? 'bg-electric-blue text-white' : 'text-slate-400 hover:bg-slate-900'
+          className={`rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+            filter === 'all'
+              ? 'bg-primary-purple text-white shadow-sm'
+              : 'border border-border-light bg-white text-text-muted hover:text-text-main'
           }`}
         >
           All ({notifications.length})
         </button>
         <button
           onClick={() => setFilter('unread')}
-          className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${
-            filter === 'unread' ? 'bg-electric-blue text-white' : 'text-slate-400 hover:bg-slate-900'
+          className={`rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+            filter === 'unread'
+              ? 'bg-primary-purple text-white shadow-sm'
+              : 'border border-border-light bg-white text-text-muted hover:text-text-main'
           }`}
         >
-          Unread ({notifications.filter(n => !n.read).length})
+          Unread ({unreadCount})
         </button>
       </div>
 
@@ -113,39 +156,49 @@ export default function StudentInboxPage() {
           <div
             key={item.id}
             onClick={() => markAsRead(item.id)}
-            className={`p-4 rounded-xl border cursor-pointer transition-all flex items-start gap-4 ${
+            className={`cursor-pointer rounded-2xl border p-5 transition-all duration-200 ${
               !item.read
-                ? 'bg-slate-900 border-electric-blue/40 shadow-sm'
-                : 'bg-slate-950 border-slate-800/80 opacity-80'
+                ? 'border-primary-purple/40 bg-violet-50/20 shadow-sm'
+                : 'border-border-light bg-white hover:border-border-light/80'
             }`}
           >
-            <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
-              item.priority === 'high' ? 'bg-electric-blue/10 text-electric-blue' : 'bg-slate-800 text-slate-400'
-            }`}>
-              <Bell className="w-4 h-4" />
-            </div>
-
-            <div className="flex-1 space-y-1">
-              <div className="flex items-center justify-between">
-                <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                  {item.title}
-                  {!item.read && (
-                    <span className="w-2 h-2 rounded-full bg-electric-blue inline-block" />
-                  )}
-                </h4>
-                <span className="text-[11px] text-slate-500 font-mono">{item.created_at}</span>
+            <div className="flex items-start gap-4">
+              <div
+                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                  item.priority === 'high'
+                    ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                    : 'bg-violet-50 text-primary-purple border border-violet-100'
+                }`}
+              >
+                {item.category === 'announcement' ? (
+                  <Megaphone className="h-5 w-5"/>
+                ) : item.category === 'quest' ? (
+                  <Zap className="h-5 w-5"/>
+                ) : (
+                  <Bell className="h-5 w-5"/>
+                )}
               </div>
-              <p className="text-xs text-slate-400 leading-relaxed">{item.body}</p>
+
+              <div className="min-w-0 flex-1 space-y-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <h2 className="text-sm font-black text-text-main flex items-center gap-2">
+                    {item.title}
+                    {!item.read && <span className="h-2 w-2 rounded-full bg-primary-purple animate-pulse"/>}
+                  </h2>
+                  <span className="text-xs text-text-muted font-medium">{item.created_at}</span>
+                </div>
+                <p className="text-xs leading-relaxed text-text-muted">{item.body}</p>
+              </div>
             </div>
           </div>
         ))}
 
         {filtered.length === 0 && (
-          <div className="text-center py-12 text-slate-500 text-sm bg-slate-900/50 rounded-2xl border border-slate-800">
-            No notifications to display.
+          <div className="rounded-3xl border border-dashed border-border-light bg-white p-12 text-center text-sm text-text-muted">
+            No notifications in this view.
           </div>
         )}
       </div>
     </div>
-  );
+  )
 }

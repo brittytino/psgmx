@@ -32,7 +32,7 @@ const baseSidebarLinks = [
   { name: 'Dashboard', href: '/faculty', icon: Home },
   { name: 'AI Senior Insights', href: '/faculty/ai-insights', icon: BrainCircuit },
   { name: 'Knowledge Brain', href: '/faculty/knowledge-brain', icon: BookOpen },
-  { name: 'Assessment Studio', href: '/faculty/assessments', icon: ClipboardList },
+  { name: 'Assessment Studio', href: '/faculty/assessment-studio', icon: ClipboardList },
   { name: 'FYP Repository', href: '/faculty/fyp-repository', icon: Folder },
   { name: 'Recovery Hub', href: '/faculty/recovery-hub', icon: Target },
   { name: 'Students', href: '/faculty/students', icon: Users },

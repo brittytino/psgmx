@@ -23,6 +23,7 @@ import '../ui/exam/proctored_exam_screen.dart';
 import '../ui/splash/splash_screen.dart';
 import '../ui/train/train_hub_screen.dart';
 import '../ui/train/communication_practice_screen.dart';
+import '../ui/admin/command_center_screen.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -67,12 +68,32 @@ class AppRouter {
           builder: (context, state) => const NotificationsScreen(),
         ),
         GoRoute(
+          path: '/inbox',
+          builder: (context, state) => const NotificationsScreen(),
+        ),
+        GoRoute(
           path: '/settings',
           builder: (context, state) => const SettingsScreen(),
         ),
         GoRoute(
+          path: '/you/settings',
+          builder: (context, state) => const SettingsScreen(),
+        ),
+        GoRoute(
+          path: '/you/archive',
+          builder: (context, state) => const GraduationScreen(),
+        ),
+        GoRoute(
           path: '/train',
           builder: (context, state) => const TrainHubScreen(),
+        ),
+        GoRoute(
+          path: '/train/daily-five',
+          builder: (context, state) => const DailyFiveScreen(),
+        ),
+        GoRoute(
+          path: '/train/sprint',
+          builder: (context, state) => const DailyFiveScreen(),
         ),
         GoRoute(
           path: '/train/communication',
@@ -101,6 +122,10 @@ class AppRouter {
         GoRoute(
           path: '/ai-mentor',
           builder: (context, state) => const AiMentorScreen(),
+        ),
+        GoRoute(
+          path: '/admin',
+          builder: (context, state) => const CommandCenterScreen(),
         ),
         GoRoute(
           path: '/pulse-rankings',
