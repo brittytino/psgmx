@@ -54,7 +54,7 @@ export default function QuestStudio() {
         sample_cases_json: visibleCases,
       };
 
-      const { data: quest, error: insertError } = await supabase
+      const { data: quest, error: insertError } = await (supabase as any)
         .from('quests')
         .insert(questData)
         .select('id')
@@ -75,9 +75,9 @@ export default function QuestStudio() {
       if (uploadError) {
         // If upload fails, just use the JSON directly for MVP
         console.warn('Storage upload failed, updating quest to use sample_cases_json entirely', uploadError);
-        await supabase.from('quests').update({ sample_cases_json: testSuite }).eq('id', quest.id);
+        await (supabase as any).from('quests').update({ sample_cases_json: testSuite }).eq('id', quest.id);
       } else {
-        await supabase.from('quests').update({ test_suite_storage_path: storagePath }).eq('id', quest.id);
+        await (supabase as any).from('quests').update({ test_suite_storage_path: storagePath }).eq('id', quest.id);
       }
 
       setSuccess(true);

@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     const supabase = await createClient()
 
     // 1. Fetch quest details
-    const { data: quest, error: questErr } = await supabase
+    const { data: quest, error: questErr } = await (supabase as any)
       .from('quests')
       .select('*')
       .eq('id', questId)
@@ -170,7 +170,7 @@ export async function POST(req: NextRequest) {
 
     // 5. Store submission
     // Determine attempt number
-    const { data: existingAttempts } = await supabase
+    const { data: existingAttempts } = await (supabase as any)
       .from('code_submissions')
       .select('attempt_number')
       .eq('quest_id', questId)
@@ -180,7 +180,7 @@ export async function POST(req: NextRequest) {
 
     const attemptNumber = (existingAttempts?.[0]?.attempt_number || 0) + 1
 
-    const { error: insertErr } = await supabase
+    const { error: insertErr } = await (supabase as any)
       .from('code_submissions')
       .insert({
         quest_id: questId,

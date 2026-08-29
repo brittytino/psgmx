@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 4. Save to Database
-    const { error: dbErr } = await supabase
+    const { error: dbErr } = await (supabase as any)
       .from('communication_attempts')
       .insert({
         id: attemptId,

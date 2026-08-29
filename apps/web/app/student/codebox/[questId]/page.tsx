@@ -5,7 +5,12 @@ import Editor, { useMonaco } from '@monaco-editor/react';
 import { Play, Check, ChevronLeft, Loader2, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 
-export default function CodeBoxPage({ params }: { params: { questId: string } }) {
+export default function CodeBoxPage({ params }: { params: Promise<{ questId: string }> }) {
+  const [questId, setQuestId] = useState<string>('');
+  
+  useEffect(() => {
+    params.then(p => setQuestId(p.questId));
+  }, [params]);
   const [quest, setQuest] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [code, setCode] = useState('// Write your solution here...\n');
@@ -19,10 +24,12 @@ export default function CodeBoxPage({ params }: { params: { questId: string } })
 
   useEffect(() => {
     // In a real app, fetch quest details from Supabase using an API route or client supabase
+    if (!questId) return;
+    
     const fetchQuest = async () => {
       // Mocked for the demo, since we don't have the client setup in this file
       setQuest({
-        id: params.questId,
+        id: questId,
         title: 'Two Sum',
         problem_md: 'Given an array of integers `nums` and an integer `target`, return indices of the two numbers such that they add up to `target`.\n\nYou may assume that each input would have exactly one solution, and you may not use the same element twice.\n\nYou can return the answer in any order.',
         allowed_languages: ['python', 'java', 'cpp', 'javascript'],
@@ -34,7 +41,7 @@ export default function CodeBoxPage({ params }: { params: { questId: string } })
       setLoading(false);
     };
     fetchQuest();
-  }, [params.questId]);
+  }, [questId]);
 
   const handleRun = async () => {
     setIsEvaluating(true);
@@ -71,7 +78,7 @@ export default function CodeBoxPage({ params }: { params: { questId: string } })
       const res = await fetch('/api/codebox/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ questId: params.questId, code, language })
+        body: JSON.stringify({ questId: questId, code, language })
       });
       
       const data = await res.json();
