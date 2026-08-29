@@ -11,76 +11,14 @@ import { buildRAGContext, formatRAGContextForPrompt } from '@/lib/ai/rag'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 
-const FALLBACK_MESSAGE =
-  "I couldn't find a specific answer in the knowledge base right now. " +
-  "Try searching the Knowledge Brain directly for more detailed information."
+import { executeOpenRouterPrompt } from '@/lib/ai/openrouter-free-chain'
 
-async function callGemini(systemPrompt: string, contextText: string, query: string): Promise<string> {
-  const apiKey = process.env.GEMINI_API_KEY
-  if (!apiKey) throw new Error('GEMINI_API_KEY not configured')
+const SYSTEM_PROMPT = `You are AI Senior, a preparation companion for MCA students at PSG Tech. 
+Answer using the provided approved knowledge as your primary source. Always cite which knowledge item you are drawing from. 
+If no approved knowledge directly answers the question, say so and provide general guidance while noting its lower confidence. 
+Never fabricate faculty names, company names as official partners, or official drive details. 
+If the question is about an active drive or placement portal, respond: "For official drive details, please check NEO PAT."`
 
-  const genAI  = new GoogleGenerativeAI(apiKey)
-  const model  = genAI.getGenerativeModel({
-    model: 'gemini-2.5-flash',
-    systemInstruction: systemPrompt,
-    generationConfig: {
-      maxOutputTokens: 800,
-      temperature:     0.3,
-    },
-  })
-
-  const prompt = `Knowledge Brain Context:\n${contextText}\n\nStudent Question: ${query}`
-
-  // 8-second timeout
-  const result = await Promise.race([
-    model.generateContent(prompt),
-    new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('Gemini timeout')), 8000)
-    ),
-  ])
-
-  const text = result.response.text()
-  if (!text) throw new Error('Empty response from Gemini')
-  return text
-}
-
-async function callOpenRouter(systemPrompt: string, contextText: string, query: string): Promise<string> {
-  const apiKey = process.env.OPENROUTER_API_KEY
-  if (!apiKey) throw new Error('OPENROUTER_API_KEY not configured')
-
-  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type':  'application/json',
-      'HTTP-Referer':  process.env.NEXT_PUBLIC_APP_URL ?? 'https://psgmx.tech',
-      'X-Title':       'PSGMX AI Senior',
-    },
-    body: JSON.stringify({
-      model:      'anthropic/claude-3-haiku',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        {
-          role:    'user',
-          content: `Knowledge Brain Context:\n${contextText}\n\nStudent Question: ${query}`,
-        },
-      ],
-      max_tokens:  800,
-      temperature: 0.3,
-    }),
-    signal: AbortSignal.timeout(10000),
-  })
-
-  if (!response.ok) {
-    const err = await response.text()
-    throw new Error(`OpenRouter error: ${err}`)
-  }
-
-  const data = await response.json()
-  const text = data.choices?.[0]?.message?.content
-  if (!text) throw new Error('Empty response from OpenRouter')
-  return text
-}
 
 export async function POST(req: NextRequest) {
   try {
@@ -103,27 +41,16 @@ export async function POST(req: NextRequest) {
     const ragContext  = await buildRAGContext(query, session.id)
     const contextText = formatRAGContextForPrompt(ragContext)
 
-    // 2. Try Gemini 2.5 Flash as primary
-    let answer: string | null = null
-    let llmUsed = 'none'
+    // 2. Generate response using OpenRouter Free Model Fallback Chain
+    const aiResult = await executeOpenRouterPrompt(
+      `Knowledge Brain Context:\n${contextText}\n\nStudent Question: ${query}`,
+      'ai_senior_qa',
+      ragContext.systemPrompt || SYSTEM_PROMPT
+    )
 
-    try {
-      answer  = await callGemini(ragContext.systemPrompt, contextText, query)
-      llmUsed = 'gemini-2.5-flash'
-    } catch (geminiErr) {
-      console.warn('Gemini failed, trying OpenRouter fallback:', geminiErr)
+    const answer = aiResult.text
+    const llmUsed = aiResult.modelUsed
 
-      // 3. Fallback to OpenRouter (claude-3-haiku)
-      try {
-        answer  = await callOpenRouter(ragContext.systemPrompt, contextText, query)
-        llmUsed = 'openrouter/claude-3-haiku'
-      } catch (orErr) {
-        console.error('OpenRouter also failed:', orErr)
-        // 4. Static fallback
-        answer  = FALLBACK_MESSAGE
-        llmUsed = 'static_fallback'
-      }
-    }
 
     // Fire-and-forget: powers the faculty dashboard's "AI Senior Top
     // Queries" widget (Section 7.2). Never block the response on this.
