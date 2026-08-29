@@ -283,17 +283,18 @@ class _TodayScreenState extends State<TodayScreen> {
                               onTap: () => context.push('/daily-five')),
                           const SizedBox(height: 10),
                           _LoopTile(
-                              icon: LucideIcons.listChecks,
-                              title: 'Finish today’s quest',
-                              subtitle: assignedTasks == 0
-                                  ? 'No task has been published yet'
-                                  : taskCompleted
-                                      ? 'Today’s quest is complete'
-                                      : '$assignedTasks task${assignedTasks == 1 ? '' : 's'} waiting',
-                              done: taskCompleted,
-                              onTap: () => context
-                                  .read<NavigationProvider>()
-                                  .setIndex(1)),
+                              icon: LucideIcons.mic,
+                              title: 'Interview Audio Practice',
+                              subtitle: '2-min response practice evaluated on clarity & structure',
+                              done: false,
+                              onTap: () => context.push('/train/communication')),
+                          const SizedBox(height: 10),
+                          _LoopTile(
+                              icon: LucideIcons.bot,
+                              title: 'Ask AI Senior',
+                              subtitle: 'Instant guidance grounded in approved Knowledge Brain',
+                              done: false,
+                              onTap: () => context.push('/ai-mentor')),
                         ]))),
                 SliverToBoxAdapter(
                     child: Padding(

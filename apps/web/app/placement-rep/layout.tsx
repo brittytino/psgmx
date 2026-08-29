@@ -3,22 +3,21 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Users, CalendarClock, LogOut, Menu, X, UserRoundCog, ClipboardCheck, ListTodo, Route, Megaphone, LibraryBig, BarChart3, Rocket } from 'lucide-react';
+import { LayoutDashboard, Users, CalendarClock, LogOut, Menu, X, UserRoundCog, ClipboardCheck, ListTodo, Route, Megaphone, LibraryBig, BarChart3, Rocket, Activity } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
 
 const sidebarLinks = [
   { name: 'Command Center', href: '/placement-rep', icon: LayoutDashboard },
-  { name: 'Members & Access', href: '/placement-rep/members', icon: UserRoundCog },
-  { name: 'Preparation Squads', href: '/placement-rep/teams', icon: Users },
+  { name: 'Roster & Members', href: '/placement-rep/members', icon: UserRoundCog },
+  { name: 'Readiness Pulse', href: '/placement-rep/pulse', icon: Activity },
+  { name: 'Quest Studio', href: '/placement-rep/quest-studio', icon: ListTodo },
   { name: 'Programme Calendar', href: '/placement-rep/sessions', icon: CalendarClock },
-  { name: 'Participation', href: '/placement-rep/attendance', icon: ClipboardCheck },
-  { name: 'Quest Studio', href: '/placement-rep/tasks', icon: ListTodo },
-  { name: 'Preparation Tracks', href: '/placement-rep/tracks', icon: Route },
-  { name: 'Communication', href: '/placement-rep/announcements', icon: Megaphone },
-  { name: 'Question Bank', href: '/placement-rep/questions', icon: LibraryBig },
+  { name: 'Preparation Squads', href: '/placement-rep/squads', icon: Users },
+  { name: 'Question Bank', href: '/placement-rep/question-bank', icon: LibraryBig },
+  { name: 'Participation', href: '/placement-rep/participation', icon: ClipboardCheck },
+  { name: 'Communication', href: '/placement-rep/communication', icon: Megaphone },
   { name: 'Preparation Health', href: '/placement-rep/reports', icon: BarChart3 },
-  { name: 'Staged Rollout', href: '/placement-rep/rollout', icon: Rocket },
 ];
 
 function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {

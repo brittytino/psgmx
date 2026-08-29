@@ -21,22 +21,30 @@ import {
   LogOut,
   ChevronDown,
   GraduationCap,
+  Zap,
+  Code2,
+  ShieldCheck,
+  Inbox
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
 import { getCurrentProfile } from '@/lib/current-profile';
 
 const sidebarLinks = [
-  { name: 'Overview', href: '/student', icon: Home },
+  { name: 'Today', href: '/student', icon: Home },
+  { name: 'Train Gymnasium', href: '/student/train', icon: Zap },
+  { name: 'CodeBox Tasks', href: '/student/codebox/two-sum', icon: Code2 },
+  { name: 'Readiness & Progress', href: '/student/progress', icon: Award },
   { name: 'AI Senior', href: '/student/ai-senior', icon: BrainCircuit },
-  { name: 'Learn Together', href: '/student/knowledge-brain', icon: BookOpen },
   { name: 'Mock Assessments', href: '/student/exams', icon: ClipboardList },
-  { name: 'Progress', href: '/student/readiness', icon: Award },
-  { name: 'Lineage & Mentors', href: '/student/lineage', icon: Users },
-  { name: 'Build Portfolio', href: '/student/fyp', icon: Folder },
+  { name: 'Knowledge Brain', href: '/student/knowledge-brain', icon: BookOpen },
+  { name: 'Peer Squads', href: '/student/squads', icon: Users },
+  { name: 'Lineage Mentors', href: '/student/lineage', icon: GraduationCap },
+  { name: 'FYP Portfolio', href: '/student/fyp', icon: Folder },
   { name: 'Interview Patterns', href: '/student/interview-patterns', icon: Building2 },
-  { name: 'Inbox', href: '/student/announcements', icon: Megaphone },
-  { name: 'Account', href: '/student/settings', icon: Settings },
+  { name: 'Recovery Support', href: '/student/recovery-hub', icon: ShieldCheck },
+  { name: 'Unified Inbox', href: '/student/inbox', icon: Inbox },
+  { name: 'Account Settings', href: '/student/settings', icon: Settings },
 ];
 
 const getSidebarCardContent = (pathname: string) => {
