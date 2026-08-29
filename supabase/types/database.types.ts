@@ -313,8 +313,11 @@ export interface Database {
           valid_until: string | null
           created_by: string | null
           is_active: boolean
+          target_user_id: string | null
+          action_path: string | null
+          category: 'action_required' | 'scheduled_reminder' | 'progress' | 'community' | 'announcement' | 'system'
         }
-        Insert: Omit<Database['public']['Tables']['notifications']['Row'], 'id' | 'batch_id' | 'tone' | 'generated_at' | 'valid_until' | 'created_by' | 'is_active'> & {
+        Insert: Omit<Database['public']['Tables']['notifications']['Row'], 'id' | 'batch_id' | 'tone' | 'generated_at' | 'valid_until' | 'created_by' | 'is_active' | 'target_user_id' | 'action_path' | 'category'> & {
           id?: string
           batch_id?: string | null
           tone?: string | null
@@ -322,6 +325,9 @@ export interface Database {
           valid_until?: string | null
           created_by?: string | null
           is_active?: boolean
+          target_user_id?: string | null
+          action_path?: string | null
+          category?: 'action_required' | 'scheduled_reminder' | 'progress' | 'community' | 'announcement' | 'system'
         }
         Update: Partial<Database['public']['Tables']['notifications']['Insert']>
         Relationships: []
@@ -1025,13 +1031,20 @@ export interface Database {
           team_members_count: number
           status:             'proposal' | 'in_progress' | 'completed' | 'archived'
           repository_url:     string | null
+          domain:             string | null
+          problem_statement:  string | null
+          architecture_summary: string | null
+          demonstration_url:  string | null
+          evidence_confidence: 'low' | 'medium' | 'high'
           created_at:         string
           updated_at:         string
         }
-        Insert: Omit<Database['public']['Tables']['fyp_projects']['Row'], 'id' | 'batch_id' | 'description' | 'guide_name' | 'team_members_count' | 'status' | 'repository_url' | 'created_at' | 'updated_at'> & {
+        Insert: Omit<Database['public']['Tables']['fyp_projects']['Row'], 'id' | 'batch_id' | 'description' | 'guide_name' | 'team_members_count' | 'status' | 'repository_url' | 'domain' | 'problem_statement' | 'architecture_summary' | 'demonstration_url' | 'evidence_confidence' | 'created_at' | 'updated_at'> & {
           id?: string; batch_id?: string | null; description?: string | null; guide_name?: string | null
           team_members_count?: number; status?: 'proposal' | 'in_progress' | 'completed' | 'archived'
-          repository_url?: string | null; created_at?: string; updated_at?: string
+          repository_url?: string | null; domain?: string | null; problem_statement?: string | null
+          architecture_summary?: string | null; demonstration_url?: string | null
+          evidence_confidence?: 'low' | 'medium' | 'high'; created_at?: string; updated_at?: string
         }
         Update: Partial<Database['public']['Tables']['fyp_projects']['Insert']>
         Relationships: []
@@ -1124,12 +1137,15 @@ export interface Database {
           proctoring_flags: unknown
           status:           'in_progress' | 'submitted' | 'auto_submitted' | 'voided'
           voided_by:        string | null
+          reflection:       string | null
+          reflected_at:     string | null
           created_at:       string
         }
-        Insert: Omit<Database['public']['Tables']['mock_exam_results']['Row'], 'id' | 'session_token' | 'started_at' | 'submitted_at' | 'score' | 'raw_marks' | 'out_of' | 'total_questions' | 'proctoring_flags' | 'status' | 'voided_by' | 'created_at'> & {
+        Insert: Omit<Database['public']['Tables']['mock_exam_results']['Row'], 'id' | 'session_token' | 'started_at' | 'submitted_at' | 'score' | 'raw_marks' | 'out_of' | 'total_questions' | 'proctoring_flags' | 'status' | 'voided_by' | 'reflection' | 'reflected_at' | 'created_at'> & {
           id?: string; session_token?: string; started_at?: string | null; submitted_at?: string | null
           score?: number | null; raw_marks?: number | null; out_of?: number | null; total_questions?: number | null; proctoring_flags?: unknown
-          status?: 'in_progress' | 'submitted' | 'auto_submitted' | 'voided'; voided_by?: string | null; created_at?: string
+          status?: 'in_progress' | 'submitted' | 'auto_submitted' | 'voided'; voided_by?: string | null
+          reflection?: string | null; reflected_at?: string | null; created_at?: string
         }
         Update: Partial<Database['public']['Tables']['mock_exam_results']['Insert']>
         Relationships: []
@@ -1154,18 +1170,147 @@ export interface Database {
       collaboration_posts: {
         Row: {
           id:          string
-          post_type:   'job' | 'project' | 'mentorship'
+          post_type:   'job' | 'project' | 'mentorship' | 'learning_event' | 'career_information' | 'unofficial_opportunity'
           title:       string
           description: string
           visibility:  'lineage_only' | 'batch' | 'department'
           is_active:   boolean
           posted_by:   string
           created_at:  string
+          disclaimer:  string
         }
-        Insert: Omit<Database['public']['Tables']['collaboration_posts']['Row'], 'id' | 'visibility' | 'is_active' | 'created_at'> & {
+        Insert: Omit<Database['public']['Tables']['collaboration_posts']['Row'], 'id' | 'visibility' | 'is_active' | 'created_at' | 'disclaimer'> & {
           id?: string; visibility?: 'lineage_only' | 'batch' | 'department'; is_active?: boolean; created_at?: string
+          disclaimer?: string
         }
         Update: Partial<Database['public']['Tables']['collaboration_posts']['Insert']>
+        Relationships: []
+      }
+
+      preparation_tracks: {
+        Row: {
+          id: string
+          batch_id: string | null
+          title: string
+          summary: string
+          stage: 'foundation' | 'proof' | 'all'
+          skill_domains: string[]
+          difficulty: 'foundation' | 'intermediate' | 'advanced' | 'adaptive'
+          estimated_weeks: number
+          is_active: boolean
+          created_by: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['preparation_tracks']['Row'], 'id' | 'batch_id' | 'stage' | 'skill_domains' | 'difficulty' | 'estimated_weeks' | 'is_active' | 'created_at' | 'updated_at'> & {
+          id?: string; batch_id?: string | null; stage?: 'foundation' | 'proof' | 'all'; skill_domains?: string[]
+          difficulty?: 'foundation' | 'intermediate' | 'advanced' | 'adaptive'; estimated_weeks?: number
+          is_active?: boolean; created_at?: string; updated_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['preparation_tracks']['Insert']>
+        Relationships: []
+      }
+
+      interview_patterns: {
+        Row: {
+          id: string
+          author_id: string
+          title: string
+          pattern_type: 'aptitude_screening' | 'coding_round' | 'technical_deep_dive' | 'fyp_discussion' | 'behavioural' | 'group_discussion' | 'general'
+          historical_context: string | null
+          preparation_helped: string
+          mistakes: string | null
+          example_themes: string[]
+          advice: string
+          company_name: string | null
+          batch_year: string | null
+          approval_status: 'draft' | 'pending' | 'changes_requested' | 'approved' | 'rejected' | 'retired'
+          reviewed_by: string | null
+          reviewed_at: string | null
+          review_notes: string | null
+          review_due_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['interview_patterns']['Row'], 'id' | 'historical_context' | 'mistakes' | 'example_themes' | 'company_name' | 'batch_year' | 'approval_status' | 'reviewed_by' | 'reviewed_at' | 'review_notes' | 'review_due_at' | 'created_at' | 'updated_at'> & {
+          id?: string; historical_context?: string | null; mistakes?: string | null; example_themes?: string[]
+          company_name?: string | null; batch_year?: string | null
+          approval_status?: 'draft' | 'pending' | 'changes_requested' | 'approved' | 'rejected' | 'retired'
+          reviewed_by?: string | null; reviewed_at?: string | null; review_notes?: string | null
+          review_due_at?: string | null; created_at?: string; updated_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['interview_patterns']['Insert']>
+        Relationships: []
+      }
+
+      readiness_dimension_scores: {
+        Row: {
+          id: string
+          user_id: string
+          dimension: 'aptitude_reasoning' | 'coding_problem_solving' | 'core_computer_science' | 'communication_interview' | 'assessment_performance' | 'portfolio_project'
+          score: number
+          confidence: 'low' | 'medium' | 'high'
+          evidence_count: number
+          evidence_fresh_at: string | null
+          algorithm_version: string
+          evidence: unknown
+          computed_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['readiness_dimension_scores']['Row'], 'id' | 'confidence' | 'evidence_count' | 'evidence_fresh_at' | 'algorithm_version' | 'evidence' | 'computed_at'> & {
+          id?: string; confidence?: 'low' | 'medium' | 'high'; evidence_count?: number
+          evidence_fresh_at?: string | null; algorithm_version?: string; evidence?: unknown; computed_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['readiness_dimension_scores']['Insert']>
+        Relationships: []
+      }
+
+      mentorship_requests: {
+        Row: {
+          id: string
+          requester_id: string
+          mentor_id: string | null
+          topic: string
+          context: string
+          preferred_response: 'async' | 'call' | 'in_person'
+          status: 'requested' | 'accepted' | 'answered' | 'declined' | 'redirected' | 'cancelled'
+          resolution_note: string | null
+          resolved_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['mentorship_requests']['Row'], 'id' | 'mentor_id' | 'preferred_response' | 'status' | 'resolution_note' | 'resolved_at' | 'created_at' | 'updated_at'> & {
+          id?: string; mentor_id?: string | null; preferred_response?: 'async' | 'call' | 'in_person'
+          status?: 'requested' | 'accepted' | 'answered' | 'declined' | 'redirected' | 'cancelled'
+          resolution_note?: string | null; resolved_at?: string | null; created_at?: string; updated_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['mentorship_requests']['Insert']>
+        Relationships: []
+      }
+
+      support_cases: {
+        Row: {
+          id: string
+          student_id: string
+          case_type: 'student_request' | 'evidence_gap' | 'assessment_support' | 'academic_continuity' | 'identity' | 'privacy' | 'technical'
+          title: string
+          context: string
+          status: 'suggested' | 'requested' | 'active' | 'review_due' | 'resolved' | 'closed'
+          owner_id: string | null
+          goal: string | null
+          action_plan: unknown
+          review_at: string | null
+          resolution: string | null
+          privacy_level: 'faculty_student' | 'governance'
+          created_by: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['support_cases']['Row'], 'id' | 'status' | 'owner_id' | 'goal' | 'action_plan' | 'review_at' | 'resolution' | 'privacy_level' | 'created_at' | 'updated_at'> & {
+          id?: string; status?: 'suggested' | 'requested' | 'active' | 'review_due' | 'resolved' | 'closed'
+          owner_id?: string | null; goal?: string | null; action_plan?: unknown; review_at?: string | null
+          resolution?: string | null; privacy_level?: 'faculty_student' | 'governance'; created_at?: string; updated_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['support_cases']['Insert']>
         Relationships: []
       }
 

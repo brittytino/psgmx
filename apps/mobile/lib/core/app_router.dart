@@ -9,8 +9,8 @@ import '../ui/auth/outcome_reveal_screen.dart';
 
 import '../ui/root_layout.dart';
 import '../ui/daily_five/daily_five_screen.dart';
-import '../ui/placement_log/placement_log_screen.dart';
-import '../ui/placement_log/company_detail_screen.dart';
+import '../ui/interview_patterns/interview_patterns_screen.dart';
+import '../ui/bunker/bunker_screen.dart';
 import '../ui/ai_mentor/ai_mentor_screen.dart';
 import '../ui/notifications/notifications_screen.dart';
 import '../ui/rankings/pulse_rankings_screen.dart';
@@ -21,8 +21,6 @@ import '../ui/profile/help_support_screen.dart';
 import '../ui/settings/settings_screen.dart';
 import '../ui/exam/proctored_exam_screen.dart';
 import '../ui/splash/splash_screen.dart';
-
-import '../models/company.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -75,15 +73,20 @@ class AppRouter {
           builder: (context, state) => const DailyFiveScreen(),
         ),
         GoRoute(
+          path: '/interview-patterns',
+          builder: (context, state) => const InterviewPatternsScreen(),
+        ),
+        GoRoute(
           path: '/placement-log',
-          builder: (context, state) => const PlacementLogScreen(),
+          redirect: (context, state) => '/interview-patterns',
         ),
         GoRoute(
           path: '/placement-log/company/:id',
-          builder: (context, state) {
-            final company = state.extra as Company;
-            return CompanyDetailScreen(company: company);
-          },
+          redirect: (context, state) => '/interview-patterns',
+        ),
+        GoRoute(
+          path: '/campus',
+          builder: (context, state) => const BunkerScreen(),
         ),
         GoRoute(
           path: '/ai-mentor',

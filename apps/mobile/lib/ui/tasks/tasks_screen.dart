@@ -17,7 +17,8 @@ class TasksScreen extends StatefulWidget {
   State<TasksScreen> createState() => _TasksScreenState();
 }
 
-class _TasksScreenState extends State<TasksScreen> with SingleTickerProviderStateMixin {
+class _TasksScreenState extends State<TasksScreen>
+    with SingleTickerProviderStateMixin {
   final _service = DailyContentService(Supabase.instance.client);
   late TabController _tabController;
 
@@ -77,7 +78,12 @@ class _TasksScreenState extends State<TasksScreen> with SingleTickerProviderStat
         _isLoading = false;
       });
     } catch (e) {
-      if (mounted) setState(() { _error = e.toString(); _isLoading = false; });
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -100,7 +106,9 @@ class _TasksScreenState extends State<TasksScreen> with SingleTickerProviderStat
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not save — check your connection and try again.')),
+          const SnackBar(
+              content: Text(
+                  'Could not save — check your connection and try again.')),
         );
       }
     }
@@ -125,7 +133,9 @@ class _TasksScreenState extends State<TasksScreen> with SingleTickerProviderStat
               ),
               Expanded(
                 child: _isLoading
-                    ? const Center(child: CircularProgressIndicator(color: AppTheme.accentCoral))
+                    ? const Center(
+                        child: CircularProgressIndicator(
+                            color: AppTheme.accentCoral))
                     : _error != null
                         ? _buildError()
                         : RefreshIndicator(
@@ -157,14 +167,21 @@ class _TasksScreenState extends State<TasksScreen> with SingleTickerProviderStat
           children: [
             Text(
               'Quests',
-              style: GoogleFonts.sora(fontSize: 26, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A), letterSpacing: -0.5),
+              style: GoogleFonts.sora(
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF0F172A),
+                  letterSpacing: -0.5),
             ),
             const SizedBox(height: 4),
             Row(
               children: [
-                Text('Your daily placement roadmap.', style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748B))),
+                Text('Your daily preparation roadmap.',
+                    style: GoogleFonts.inter(
+                        fontSize: 13, color: const Color(0xFF64748B))),
                 const SizedBox(width: 4),
-                const Icon(LucideIcons.sparkles, size: 12, color: AppTheme.illusGold),
+                const Icon(LucideIcons.sparkles,
+                    size: 12, color: AppTheme.illusGold),
               ],
             ),
           ],
@@ -177,11 +194,15 @@ class _TasksScreenState extends State<TasksScreen> with SingleTickerProviderStat
           ),
           child: Row(
             children: [
-              const Icon(LucideIcons.calendarCheck, size: 14, color: AppTheme.accentCoral),
+              const Icon(LucideIcons.calendarCheck,
+                  size: 14, color: AppTheme.accentCoral),
               const SizedBox(width: 6),
               Text(
                 'Day ${DateFormatDoy.format(DateTime.now())}',
-                style: GoogleFonts.sora(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.accentCoral),
+                style: GoogleFonts.sora(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.accentCoral),
               ),
             ],
           ),
@@ -227,15 +248,23 @@ class _TasksScreenState extends State<TasksScreen> with SingleTickerProviderStat
           children: [
             const Icon(LucideIcons.wifiOff, size: 40, color: Color(0xFF94A3B8)),
             const SizedBox(height: 12),
-            Text('Could not load today\'s content', style: GoogleFonts.sora(fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
+            Text('Could not load today\'s content',
+                style: GoogleFonts.sora(
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF1E293B))),
             const SizedBox(height: 8),
-            Text(_error ?? '', style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF64748B)), textAlign: TextAlign.center),
+            Text(_error ?? '',
+                style: GoogleFonts.inter(
+                    fontSize: 12, color: const Color(0xFF64748B)),
+                textAlign: TextAlign.center),
             const SizedBox(height: 16),
             TextButton.icon(
               onPressed: _load,
               icon: const Icon(LucideIcons.refreshCw, size: 14),
-              label: Text('Retry', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
-              style: TextButton.styleFrom(foregroundColor: AppTheme.accentCoral),
+              label: Text('Retry',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+              style:
+                  TextButton.styleFrom(foregroundColor: AppTheme.accentCoral),
             ),
           ],
         ),
@@ -251,14 +280,25 @@ class _TasksScreenState extends State<TasksScreen> with SingleTickerProviderStat
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 72, height: 72,
-              decoration: BoxDecoration(color: AppTheme.accentCoral.withValues(alpha: 0.08), shape: BoxShape.circle),
-              child: const Icon(LucideIcons.clipboardList, size: 32, color: AppTheme.accentCoral),
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                  color: AppTheme.accentCoral.withValues(alpha: 0.08),
+                  shape: BoxShape.circle),
+              child: const Icon(LucideIcons.clipboardList,
+                  size: 32, color: AppTheme.accentCoral),
             ),
             const SizedBox(height: 16),
-            Text('No $label for today', style: GoogleFonts.sora(fontSize: 16, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
+            Text('No $label for today',
+                style: GoogleFonts.sora(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF1E293B))),
             const SizedBox(height: 8),
-            Text('Check back tomorrow for fresh content.', style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748B)), textAlign: TextAlign.center),
+            Text('Check back tomorrow for fresh content.',
+                style: GoogleFonts.inter(
+                    fontSize: 13, color: const Color(0xFF64748B)),
+                textAlign: TextAlign.center),
           ],
         ),
       ),
@@ -267,7 +307,11 @@ class _TasksScreenState extends State<TasksScreen> with SingleTickerProviderStat
 
   Widget _buildProjectTaskTab() {
     final task = _projectTask;
-    if (task == null) return SingleChildScrollView(physics: const AlwaysScrollableScrollPhysics(), child: SizedBox(height: 500, child: _buildEmpty('project task')));
+    if (task == null) {
+      return SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: SizedBox(height: 500, child: _buildEmpty('project task')));
+    }
 
     const accentColor = Color(0xFF6366F1);
     return SingleChildScrollView(
@@ -276,7 +320,8 @@ class _TasksScreenState extends State<TasksScreen> with SingleTickerProviderStat
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildProgressStrip('$_projectTaskCompletedCount / 365 completed', accentColor),
+          _buildProgressStrip(
+              '$_projectTaskCompletedCount / 365 completed', accentColor),
           const SizedBox(height: 12),
           _ContentCard(
             accentColor: accentColor,
@@ -296,7 +341,11 @@ class _TasksScreenState extends State<TasksScreen> with SingleTickerProviderStat
 
   Widget _buildAptiDsaTab() {
     final item = _aptiDsa;
-    if (item == null) return SingleChildScrollView(physics: const AlwaysScrollableScrollPhysics(), child: SizedBox(height: 500, child: _buildEmpty('Apti & DSA set')));
+    if (item == null) {
+      return SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: SizedBox(height: 500, child: _buildEmpty('Apti & DSA set')));
+    }
 
     const accentColor = Color(0xFFEF4444);
     return SingleChildScrollView(
@@ -305,7 +354,8 @@ class _TasksScreenState extends State<TasksScreen> with SingleTickerProviderStat
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildProgressStrip('$_aptiDsaCompletedCount / 365 completed', accentColor),
+          _buildProgressStrip(
+              '$_aptiDsaCompletedCount / 365 completed', accentColor),
           const SizedBox(height: 12),
           _ContentCard(
             accentColor: accentColor,
@@ -319,7 +369,11 @@ class _TasksScreenState extends State<TasksScreen> with SingleTickerProviderStat
             showMarkComplete: false,
           ),
           const SizedBox(height: 16),
-          Text('Quick Aptitude Practice', style: GoogleFonts.sora(fontSize: 14, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A))),
+          Text('Quick Aptitude Practice',
+              style: GoogleFonts.sora(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF0F172A))),
           const SizedBox(height: 10),
           ...item.aptitudeQuestions.asMap().entries.map(
                 (e) => _AptitudeQuestionCard(index: e.key, question: e.value),
@@ -329,12 +383,18 @@ class _TasksScreenState extends State<TasksScreen> with SingleTickerProviderStat
             width: double.infinity,
             child: FilledButton.icon(
               onPressed: _aptiDsaDone ? null : () => _markComplete('apti_dsa'),
-              icon: Icon(_aptiDsaDone ? LucideIcons.checkCircle2 : LucideIcons.check, size: 16),
-              label: Text(_aptiDsaDone ? 'Completed for today' : 'Mark Today\'s Set Complete'),
+              icon: Icon(
+                  _aptiDsaDone ? LucideIcons.checkCircle2 : LucideIcons.check,
+                  size: 16),
+              label: Text(_aptiDsaDone
+                  ? 'Completed for today'
+                  : 'Mark Today\'s Set Complete'),
               style: FilledButton.styleFrom(
-                backgroundColor: _aptiDsaDone ? const Color(0xFF22C55E) : accentColor,
+                backgroundColor:
+                    _aptiDsaDone ? const Color(0xFF22C55E) : accentColor,
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
               ),
             ),
           ),
@@ -348,7 +408,11 @@ class _TasksScreenState extends State<TasksScreen> with SingleTickerProviderStat
       children: [
         Icon(LucideIcons.flame, size: 14, color: accentColor),
         const SizedBox(width: 6),
-        Text(label, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: const Color(0xFF64748B))),
+        Text(label,
+            style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF64748B))),
       ],
     );
   }
@@ -400,7 +464,9 @@ class _ContentCard extends StatelessWidget {
     } catch (_) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not open link', style: GoogleFonts.inter()), behavior: SnackBarBehavior.floating),
+          SnackBar(
+              content: Text('Could not open link', style: GoogleFonts.inter()),
+              behavior: SnackBarBehavior.floating),
         );
       }
     }
@@ -413,7 +479,12 @@ class _ContentCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFF1F5F9)),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 12, offset: const Offset(0, 3))],
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 12,
+              offset: const Offset(0, 3))
+        ],
       ),
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -422,31 +493,54 @@ class _ContentCard extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(color: accentColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                    color: accentColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20)),
                 child: Row(
                   children: [
                     Icon(tagIcon, size: 11, color: accentColor),
                     const SizedBox(width: 5),
-                    Text(tagLabel, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: accentColor)),
+                    Text(tagLabel,
+                        style: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: accentColor)),
                   ],
                 ),
               ),
               const SizedBox(width: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(color: _difficultyColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
-                child: Text(difficulty, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: _difficultyColor)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                    color: _difficultyColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20)),
+                child: Text(difficulty,
+                    style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: _difficultyColor)),
               ),
               const Spacer(),
-              if (done) const Icon(LucideIcons.checkCircle2, size: 18, color: Color(0xFF22C55E)),
+              if (done)
+                const Icon(LucideIcons.checkCircle2,
+                    size: 18, color: Color(0xFF22C55E)),
             ],
           ),
           const SizedBox(height: 12),
-          Text(title, style: GoogleFonts.sora(fontSize: 16, fontWeight: FontWeight.w700, color: const Color(0xFF0F172A), height: 1.4)),
+          Text(title,
+              style: GoogleFonts.sora(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF0F172A),
+                  height: 1.4)),
           if (body != null && body!.isNotEmpty) ...[
             const SizedBox(height: 8),
-            Text(body!, style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748B), height: 1.5)),
+            Text(body!,
+                style: GoogleFonts.inter(
+                    fontSize: 13, color: const Color(0xFF64748B), height: 1.5)),
           ],
           if (referenceLink != null) ...[
             const SizedBox(height: 12),
@@ -454,20 +548,31 @@ class _ContentCard extends StatelessWidget {
               onTap: () => _openLink(context, referenceLink!),
               borderRadius: BorderRadius.circular(10),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(color: accentColor.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(10)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                    color: accentColor.withValues(alpha: 0.06),
+                    borderRadius: BorderRadius.circular(10)),
                 child: Row(
                   children: [
-                    Icon(LucideIcons.externalLink, size: 13, color: accentColor),
+                    Icon(LucideIcons.externalLink,
+                        size: 13, color: accentColor),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        referenceLink!.length > 50 ? '${referenceLink!.substring(0, 50)}…' : referenceLink!,
-                        style: GoogleFonts.inter(fontSize: 12, color: accentColor),
+                        referenceLink!.length > 50
+                            ? '${referenceLink!.substring(0, 50)}…'
+                            : referenceLink!,
+                        style:
+                            GoogleFonts.inter(fontSize: 12, color: accentColor),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    Text('Open →', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: accentColor)),
+                    Text('Open →',
+                        style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: accentColor)),
                   ],
                 ),
               ),
@@ -479,12 +584,14 @@ class _ContentCard extends StatelessWidget {
               width: double.infinity,
               child: FilledButton.icon(
                 onPressed: done ? null : onMarkComplete,
-                icon: Icon(done ? LucideIcons.checkCircle2 : LucideIcons.check, size: 16),
+                icon: Icon(done ? LucideIcons.checkCircle2 : LucideIcons.check,
+                    size: 16),
                 label: Text(done ? 'Completed for today' : 'Mark Complete'),
                 style: FilledButton.styleFrom(
                   backgroundColor: done ? const Color(0xFF22C55E) : accentColor,
                   padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
                 ),
               ),
             ),
@@ -524,7 +631,11 @@ class _AptitudeQuestionCardState extends State<_AptitudeQuestionCard> {
         children: [
           Text(
             'Q${widget.index + 1}. ${widget.question.question}',
-            style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFF1E293B), height: 1.4),
+            style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF1E293B),
+                height: 1.4),
           ),
           const SizedBox(height: 10),
           ...widget.question.options.asMap().entries.map((e) {
@@ -548,13 +659,24 @@ class _AptitudeQuestionCardState extends State<_AptitudeQuestionCard> {
               onTap: answered ? null : () => setState(() => _selected = e.key),
               child: Container(
                 margin: const EdgeInsets.only(bottom: 6),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(10), border: Border.all(color: border)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                    color: bg,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: border)),
                 child: Row(
                   children: [
-                    Expanded(child: Text(e.value, style: GoogleFonts.inter(fontSize: 12, color: text))),
-                    if (answered && isCorrect) const Icon(LucideIcons.check, size: 14, color: Color(0xFF22C55E)),
-                    if (answered && isSelected && !isCorrect) const Icon(LucideIcons.x, size: 14, color: Color(0xFFEF4444)),
+                    Expanded(
+                        child: Text(e.value,
+                            style:
+                                GoogleFonts.inter(fontSize: 12, color: text))),
+                    if (answered && isCorrect)
+                      const Icon(LucideIcons.check,
+                          size: 14, color: Color(0xFF22C55E)),
+                    if (answered && isSelected && !isCorrect)
+                      const Icon(LucideIcons.x,
+                          size: 14, color: Color(0xFFEF4444)),
                   ],
                 ),
               ),

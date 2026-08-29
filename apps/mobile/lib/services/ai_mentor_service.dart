@@ -40,7 +40,7 @@ class AiMentorService {
   /// Tries each model in [_modelChain] in order.
   /// Returns null if all models fail.
   Future<String?> _callOpenRouter({
-    required String systemPrompt,
+    required String intent,
     required String userMessage,
     int maxTokens = 300,
   }) async {
@@ -55,7 +55,7 @@ class AiMentorService {
               'Content-Type': 'application/json'
             },
             body: jsonEncode({
-              'system_prompt': systemPrompt,
+              'intent': intent,
               'message': userMessage,
               'max_tokens': maxTokens
             }),
@@ -94,12 +94,6 @@ class AiMentorService {
     final userAnswer = question.options[userAnswerIndex];
     final correctAnswer = question.options[correctOption];
 
-    const systemPrompt =
-        'You are a concise placement-prep tutor for MCA students. '
-        'When shown a question, the student\'s wrong answer, and the correct answer, '
-        'explain WHY the correct answer is right in 2–4 short sentences. '
-        'Be specific, use examples where helpful, and keep it encouraging.';
-
     final userMessage = 'Question: ${question.questionText}\n'
         'Student answered: $userAnswer\n'
         'Correct answer: $correctAnswer\n'
@@ -107,7 +101,7 @@ class AiMentorService {
         'Please explain why the correct answer is right.';
 
     final aiResponse = await _callOpenRouter(
-      systemPrompt: systemPrompt,
+      intent: 'answer_explanation',
       userMessage: userMessage,
       maxTokens: 200,
     );
@@ -139,17 +133,13 @@ class AiMentorService {
     final weakTopic = weakest.key;
     final weakPct = (weakest.value * 100).toStringAsFixed(0);
 
-    const systemPrompt = 'You are an encouraging placement-prep coach. '
-        'Give a student a short motivational note (2–3 sentences) about their '
-        'weakest topic, with one specific actionable tip to improve. Be warm and direct.';
-
     final greeting = name != null ? 'Hey $name! ' : 'Hey! ';
     final userMessage =
         '${greeting}My weakest topic this week is "$weakTopic" ($weakPct% accuracy). '
         'My current streak is $currentStreak days. Give me a quick tip.';
 
     final aiResponse = await _callOpenRouter(
-      systemPrompt: systemPrompt,
+      intent: 'weekly_coaching',
       userMessage: userMessage,
       maxTokens: 150,
     );
@@ -168,16 +158,8 @@ class AiMentorService {
     required List<Map<String, String>> history,
     bool isResumeFeedback = false,
   }) async {
-    final systemPrompt = isResumeFeedback
-        ? 'You are an experienced technical recruiter reviewing an MCA student\'s resume. '
-            'Give specific, constructive feedback on content, formatting, and impact. '
-            'Focus on placement readiness for software engineering roles.'
-        : 'You are a senior software engineer conducting a friendly mock technical interview '
-            'for an MCA student. Ask one question at a time, give feedback, then move on. '
-            'Cover DSA, OS, DBMS, CN, and aptitude. Keep a conversational tone.';
-
     final aiResponse = await _callOpenRouter(
-      systemPrompt: systemPrompt,
+      intent: isResumeFeedback ? 'resume_feedback' : 'companion_chat',
       userMessage: message,
       maxTokens: 400,
     );

@@ -1,163 +1,52 @@
-'use client';
+'use client'
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Settings, User, Users, Shield, Save, Linkedin, Globe, ToggleRight, ToggleLeft } from 'lucide-react';
+import React from 'react'
+import { Linkedin, Save, Settings, ShieldCheck, ToggleLeft, ToggleRight } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+import { getCurrentProfile } from '@/lib/current-profile'
+
+type ProfileForm = { id: string; name: string; regNo: string; batch: string; email: string; company: string; role: string; linkedin: string; github: string; skills: string; mentorshipOpen: boolean }
 
 export default function AlumniSettingsPage() {
-  const [activeTab, setActiveTab] = useState<'profile' | 'mentorship' | 'account'>('profile');
-  const [saved, setSaved] = useState(false);
-  const [mentorshipActive, setMentorshipActive] = useState(true);
+  const supabase = React.useMemo(() => createClient(), [])
+  const [form, setForm] = React.useState<ProfileForm | null>(null)
+  const [loading, setLoading] = React.useState(true)
+  const [busy, setBusy] = React.useState(false)
+  const [message, setMessage] = React.useState('')
+  const [error, setError] = React.useState('')
 
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
-  };
+  React.useEffect(() => { void (async () => {
+    try {
+      const me = await getCurrentProfile(supabase)
+      if (!me) throw new Error('Your alumni profile could not be loaded.')
+      setForm({ id: me.id, name: me.name, regNo: me.reg_no, batch: me.batch, email: me.email, company: me.current_company ?? '', role: me.current_role_title ?? '', linkedin: me.linkedin_url ?? '', github: me.github_url ?? '', skills: (me.skills ?? []).join(', '), mentorshipOpen: me.mentorship_open })
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Your profile could not be loaded.') }
+    finally { setLoading(false) }
+  })() }, [supabase])
 
-  return (
-    <div className="max-w-[900px] mx-auto space-y-8 pb-8">
-      <div>
-        <h1 className="text-[24px] font-black text-text-main tracking-tight flex items-center gap-2">
-          <Settings className="w-6 h-6 text-primary-purple" /> Settings
-        </h1>
-        <p className="text-[13px] text-text-muted mt-0.5">Manage your alumni profile and mentorship preferences.</p>
-      </div>
+  async function save() {
+    if (!form) return
+    setBusy(true); setError(''); setMessage('')
+    const { error: updateError } = await supabase.from('users').update({ name: form.name.trim(), current_company: form.company.trim() || null, current_role_title: form.role.trim() || null, linkedin_url: form.linkedin.trim() || null, github_url: form.github.trim() || null, skills: form.skills.split(',').map((skill) => skill.trim()).filter(Boolean), mentorship_open: form.mentorshipOpen }).eq('id', form.id)
+    if (updateError) setError(updateError.message)
+    else setMessage('Your alumni profile and mentorship preference are up to date.')
+    setBusy(false)
+  }
 
-      {/* Tabs */}
-      <div className="flex gap-6 border-b border-border-light">
-        {(['profile', 'mentorship', 'account'] as const).map((tab) => (
-          <button key={tab} onClick={() => setActiveTab(tab)} className={`pb-4 px-1 text-[14px] font-bold capitalize transition-colors border-b-2 ${activeTab === tab ? 'text-primary-purple border-primary-purple' : 'text-text-muted border-transparent hover:text-text-main'}`}>
-            {tab}
-          </button>
-        ))}
-      </div>
+  if (loading) return <div className="mx-auto h-96 max-w-4xl animate-pulse rounded-3xl bg-white" />
+  if (!form) return <div role="alert" className="mx-auto max-w-4xl rounded-2xl border border-red-200 bg-red-50 p-5 text-sm font-bold text-red-700">{error}</div>
 
-      {activeTab === 'profile' && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-          {/* Avatar */}
-          <div className="bg-white rounded-[20px] border border-border-light shadow-[0_2px_12px_rgba(0,0,0,0.02)] p-6">
-            <h3 className="text-[15px] font-bold text-text-main mb-5">Profile Picture</h3>
-            <div className="flex items-center gap-6">
-              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary-purple to-deep-violet flex items-center justify-center text-white text-3xl font-black shadow-lg">R</div>
-              <div>
-                <button className="px-5 py-2 bg-primary-purple text-white rounded-xl text-[13px] font-bold hover:bg-deep-violet transition-colors">Upload Photo</button>
-                <p className="text-[12px] text-text-muted mt-2">This photo is shown to your junior in the lineage view.</p>
-              </div>
-            </div>
-          </div>
+  return <div className="mx-auto max-w-4xl space-y-6 pb-10">
+    <header><div className="mb-2 flex items-center gap-2 text-xs font-black uppercase tracking-[.16em] text-primary-purple"><Settings className="h-4 w-4"/> Alumni identity</div><h1 className="text-3xl font-black tracking-tight">Account & mentorship</h1><p className="mt-2 text-sm text-text-muted">Keep the professional context juniors rely on accurate. Identity fields remain tied to the verified roster.</p></header>
+    {error && <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700">{error}</div>}
+    {message && <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-bold text-emerald-800">{message}</div>}
+    <section className="rounded-3xl border border-border-light bg-white p-6 shadow-sm"><h2 className="text-lg font-black">Verified identity</h2><div className="mt-4 grid gap-3 sm:grid-cols-3">{[['Register number', form.regNo], ['Batch', form.batch], ['Login email', form.email]].map(([label, value]) => <div key={label} className="rounded-2xl bg-page-bg p-4"><p className="text-[10px] font-black uppercase tracking-wider text-text-muted">{label}</p><p className="mt-1 break-all text-sm font-bold">{value}</p></div>)}</div></section>
+    <section className="rounded-3xl border border-border-light bg-white p-6 shadow-sm"><h2 className="text-lg font-black">Professional context</h2><div className="mt-5 grid gap-4 sm:grid-cols-2"><Field label="Display name" value={form.name} onChange={(name) => setForm({...form, name})}/><Field label="Current organisation" value={form.company} onChange={(company) => setForm({...form, company})}/><Field label="Current role" value={form.role} onChange={(role) => setForm({...form, role})}/><Field label="Skills (comma separated)" value={form.skills} onChange={(skills) => setForm({...form, skills})}/><Field label="LinkedIn URL" value={form.linkedin} onChange={(linkedin) => setForm({...form, linkedin})} icon={<Linkedin className="h-3.5 w-3.5"/>}/><Field label="GitHub URL" value={form.github} onChange={(github) => setForm({...form, github})}/></div></section>
+    <section className="rounded-3xl border border-border-light bg-white p-6 shadow-sm"><div className="flex items-center justify-between gap-5"><div><h2 className="text-lg font-black">Open to mentorship</h2><p className="mt-1 text-sm leading-6 text-text-muted">Students can send structured requests inside PSGMX. Your private contact details are never published by this switch.</p></div><button aria-pressed={form.mentorshipOpen} onClick={() => setForm({...form, mentorshipOpen: !form.mentorshipOpen})}>{form.mentorshipOpen ? <ToggleRight className="h-11 w-11 text-emerald-600"/> : <ToggleLeft className="h-11 w-11 text-text-muted"/>}</button></div></section>
+    <div className="flex flex-col gap-3 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900 sm:flex-row sm:items-center sm:justify-between"><div className="flex gap-3"><ShieldCheck className="h-5 w-5 shrink-0"/><p>PSGMX uses email OTP. There is no password to create or manage here.</p></div><button disabled={busy} onClick={() => void save()} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-primary-purple px-5 py-3 text-sm font-black text-white disabled:opacity-50"><Save className="h-4 w-4"/>{busy ? 'Saving…' : 'Save changes'}</button></div>
+  </div>
+}
 
-          {/* Read-only Info */}
-          <div className="bg-white rounded-[20px] border border-border-light shadow-[0_2px_12px_rgba(0,0,0,0.02)] p-6">
-            <h3 className="text-[15px] font-bold text-text-main mb-5">Alumni Identity (Read-only)</h3>
-            <div className="grid grid-cols-2 gap-4">
-              {[
-                { label: 'Roll Number', value: '23MX301' },
-                { label: 'Graduation Batch', value: '23MX · Class of 2025' },
-                { label: 'Alumni Since', value: 'June 2025' },
-                { label: 'Department', value: 'MCA — Computer Applications' },
-              ].map((f, i) => (
-                <div key={i} className="p-4 bg-page-bg rounded-xl">
-                  <p className="text-[11px] font-bold text-text-muted uppercase tracking-wider">{f.label}</p>
-                  <p className="text-[14px] font-bold text-text-main mt-1">{f.value}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Editable Profile */}
-          <div className="bg-white rounded-[20px] border border-border-light shadow-[0_2px_12px_rgba(0,0,0,0.02)] p-6">
-            <h3 className="text-[15px] font-bold text-text-main mb-5">Professional Details</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="text-[12px] font-bold text-text-muted uppercase tracking-wider block mb-2">Display Name</label>
-                <input type="text" defaultValue="Riya Menon" className="w-full bg-page-bg border border-border-light rounded-xl px-4 py-3 text-[14px] text-text-main outline-none focus:border-primary-purple transition-colors" />
-              </div>
-              <div>
-                <label className="text-[12px] font-bold text-text-muted uppercase tracking-wider block mb-2">Current Company</label>
-                <input type="text" defaultValue="Zoho Corporation" className="w-full bg-page-bg border border-border-light rounded-xl px-4 py-3 text-[14px] text-text-main outline-none focus:border-primary-purple transition-colors" />
-              </div>
-              <div>
-                <label className="text-[12px] font-bold text-text-muted uppercase tracking-wider block mb-2">Current Role / Title</label>
-                <input type="text" defaultValue="Software Engineer" className="w-full bg-page-bg border border-border-light rounded-xl px-4 py-3 text-[14px] text-text-main outline-none focus:border-primary-purple transition-colors" />
-              </div>
-              <div>
-                <label className="text-[12px] font-bold text-text-muted uppercase tracking-wider block mb-2 flex items-center gap-2"><Linkedin className="w-3.5 h-3.5 text-primary-purple" /> LinkedIn URL</label>
-                <input type="url" placeholder="https://linkedin.com/in/your-profile" className="w-full bg-page-bg border border-border-light rounded-xl px-4 py-3 text-[14px] text-text-main outline-none focus:border-primary-purple transition-colors" />
-              </div>
-              <div>
-                <label className="text-[12px] font-bold text-text-muted uppercase tracking-wider block mb-2 flex items-center gap-2"><Globe className="w-3.5 h-3.5 text-text-muted" /> Personal Website</label>
-                <input type="url" placeholder="https://yourwebsite.com" className="w-full bg-page-bg border border-border-light rounded-xl px-4 py-3 text-[14px] text-text-main outline-none focus:border-primary-purple transition-colors" />
-              </div>
-              <div>
-                <label className="text-[12px] font-bold text-text-muted uppercase tracking-wider block mb-2">Short Bio (shown in lineage card)</label>
-                <textarea rows={3} defaultValue="Stay consistent. The score takes care of itself." className="w-full bg-page-bg border border-border-light rounded-xl px-4 py-3 text-[14px] text-text-main outline-none focus:border-primary-purple transition-colors resize-none" />
-              </div>
-            </div>
-            <div className="flex items-center gap-3 mt-6">
-              <button onClick={handleSave} className="flex items-center gap-2 px-6 py-3 bg-primary-purple text-white rounded-xl text-[14px] font-bold hover:bg-deep-violet transition-colors">
-                <Save className="w-4 h-4" /> Save Changes
-              </button>
-              {saved && <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[13px] font-bold text-electric-blue">✓ Saved!</motion.span>}
-            </div>
-          </div>
-        </motion.div>
-      )}
-
-      {activeTab === 'mentorship' && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-          <div className="bg-white rounded-[20px] border border-border-light shadow-[0_2px_12px_rgba(0,0,0,0.02)] p-6">
-            <h3 className="text-[15px] font-bold text-text-main mb-5">Mentorship Preferences</h3>
-            <div className="flex items-center justify-between p-4 bg-page-bg rounded-xl mb-5">
-              <div>
-                <p className="text-[14px] font-bold text-text-main">Available for Mentorship</p>
-                <p className="text-[12px] text-text-muted mt-0.5">Your junior (25MX301) can see your contact information</p>
-              </div>
-              <button onClick={() => setMentorshipActive(!mentorshipActive)} className="transition-transform active:scale-95">
-                {mentorshipActive ? <ToggleRight className="w-10 h-10 text-electric-blue" /> : <ToggleLeft className="w-10 h-10 text-border-light" />}
-              </button>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className="text-[12px] font-bold text-text-muted uppercase tracking-wider block mb-2">Preferred Contact Method</label>
-                <select className="w-full bg-page-bg border border-border-light rounded-xl px-4 py-3 text-[14px] text-text-main outline-none focus:border-primary-purple transition-colors">
-                  <option>LinkedIn</option>
-                  <option>Email</option>
-                  <option>Platform Message</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-[12px] font-bold text-text-muted uppercase tracking-wider block mb-2">Availability Note</label>
-                <input type="text" defaultValue="Best reached evenings on weekdays." className="w-full bg-page-bg border border-border-light rounded-xl px-4 py-3 text-[14px] text-text-main outline-none focus:border-primary-purple transition-colors" />
-              </div>
-              <button onClick={handleSave} className="flex items-center gap-2 px-6 py-3 bg-primary-purple text-white rounded-xl text-[14px] font-bold hover:bg-deep-violet transition-colors">
-                <Save className="w-4 h-4" /> Save Mentorship Settings
-              </button>
-            </div>
-          </div>
-        </motion.div>
-      )}
-
-      {activeTab === 'account' && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-          <div className="bg-white rounded-[20px] border border-border-light shadow-[0_2px_12px_rgba(0,0,0,0.02)] p-6">
-            <h3 className="text-[15px] font-bold text-text-main mb-5">Change Password</h3>
-            <div className="space-y-4">
-              <input type="password" placeholder="Current password" className="w-full bg-page-bg border border-border-light rounded-xl px-4 py-3 text-[14px] outline-none focus:border-primary-purple transition-colors" />
-              <input type="password" placeholder="New password" className="w-full bg-page-bg border border-border-light rounded-xl px-4 py-3 text-[14px] outline-none focus:border-primary-purple transition-colors" />
-              <input type="password" placeholder="Confirm new password" className="w-full bg-page-bg border border-border-light rounded-xl px-4 py-3 text-[14px] outline-none focus:border-primary-purple transition-colors" />
-            </div>
-            <button className="mt-4 px-6 py-3 bg-primary-purple text-white rounded-xl text-[14px] font-bold hover:bg-deep-violet transition-colors">Update Password</button>
-          </div>
-
-          <div className="bg-white rounded-[20px] border border-deep-violet/30 p-6">
-            <h3 className="text-[15px] font-bold text-deep-violet mb-2">Sign Out</h3>
-            <p className="text-[13px] text-text-muted mb-4">You'll need your alumni credentials to sign back in.</p>
-            <button onClick={async () => { try { await fetch('/api/auth/logout', { method: 'POST' }); } catch {} window.location.href = '/login'; }} className="px-6 py-3 bg-deep-violet text-white rounded-xl text-[14px] font-bold hover:opacity-90 transition-opacity">
-              Sign Out
-            </button>
-          </div>
-        </motion.div>
-      )}
-    </div>
-  );
+function Field({ label, value, onChange, icon }: { label: string; value: string; onChange: (value: string) => void; icon?: React.ReactNode }) {
+  return <label><span className="mb-2 flex items-center gap-2 text-[11px] font-black uppercase tracking-wider text-text-muted">{icon}{label}</span><input value={value} onChange={(event) => onChange(event.target.value)} className="w-full rounded-xl border border-border-light bg-page-bg px-4 py-3 text-sm outline-none focus:border-primary-purple"/></label>
 }

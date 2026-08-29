@@ -1,232 +1,114 @@
-'use client';
+'use client'
 
-import React from 'react';
-import { motion } from 'framer-motion';
-import { Target, Plus, Search, Filter, Phone, Mail, BookOpen, Clock, HeartHandshake, FileText, ChevronRight, Activity, CheckCircle, AlertTriangle } from 'lucide-react';
-import Link from 'next/link';
-import { InitialsAvatar } from '@/components/basic/InitialsAvatar';
+import React from 'react'
+import { CalendarCheck, CheckCircle2, HeartHandshake, Plus, Search, ShieldCheck } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+import { getCurrentProfile } from '@/lib/current-profile'
+import type { Database } from '@/../../supabase/types/database.types'
 
-import { AnimatePresence } from 'framer-motion';
+type SupportCase = Database['public']['Tables']['support_cases']['Row']
+type Student = Pick<Database['public']['Tables']['users']['Row'], 'id' | 'name' | 'reg_no'>
 
-export default function FacultyRecoveryHubDashboard() {
-  const [searchQuery, setSearchQuery] = React.useState('');
+const initialForm = { studentId: '', title: '', context: '', goal: '', reviewAt: '' }
 
-  const cases = [
-    { id: 1, name: 'Rohan Verma', issue: 'Consistent low attendance and poor performance in OS.', status: 'High Priority', color: 'bg-page-bg text-deep-violet border-deep-violet/30', date: 'Opened May 10' },
-    { id: 2, name: 'Ali Raza', issue: 'Struggling with FYP progress. Needs technical guidance.', status: 'In Progress', color: 'bg-white text-electric-blue border-primary-purple/30', date: 'Opened May 12' },
-    { id: 3, name: 'Zoya Fatima', issue: 'Requested extension due to health reasons.', status: 'Resolved', color: 'bg-white text-electric-blue border-electric-blue/30', date: 'Closed May 15' },
-  ];
+export default function FacultyRecoveryHubPage() {
+  const supabase = React.useMemo(() => createClient(), [])
+  const [cases, setCases] = React.useState<SupportCase[]>([])
+  const [students, setStudents] = React.useState<Student[]>([])
+  const [query, setQuery] = React.useState('')
+  const [status, setStatus] = React.useState('open')
+  const [form, setForm] = React.useState(initialForm)
+  const [showForm, setShowForm] = React.useState(false)
+  const [loading, setLoading] = React.useState(true)
+  const [busy, setBusy] = React.useState(false)
+  const [error, setError] = React.useState('')
+  const [message, setMessage] = React.useState('')
 
-  const filteredCases = cases.filter(c => 
-    c.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    c.issue.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.status.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const load = React.useCallback(async () => {
+    setLoading(true)
+    setError('')
+    try {
+      const [caseResult, studentResult] = await Promise.all([
+        supabase.from('support_cases').select('*').order('updated_at', { ascending: false }),
+        supabase.from('users').select('id,name,reg_no').eq('role_label', 'Student').order('name'),
+      ])
+      if (caseResult.error) throw caseResult.error
+      if (studentResult.error) throw studentResult.error
+      setCases(caseResult.data ?? [])
+      setStudents(studentResult.data ?? [])
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Recovery cases could not be loaded.')
+    } finally {
+      setLoading(false)
+    }
+  }, [supabase])
 
-  return (
-    <div className="max-w-[1400px] mx-auto space-y-8 pb-8">
-      
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-primary-purple flex items-center justify-center shadow-lg shadow-md shadow-primary-purple/10 shrink-0">
-            <Target className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <motion.h1 
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-[26px] font-bold text-text-main tracking-tight mb-0.5"
-            >
-              Recovery Hub
-            </motion.h1>
-            <motion.p 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.1 }}
-              className="text-[14px] text-text-muted"
-            >
-              Identify at-risk students, provide interventions, and track recovery progress.
-            </motion.p>
-          </div>
-        </div>
-        <button className="flex items-center gap-2 px-6 py-3 bg-primary-purple text-white rounded-xl text-[14px] font-bold shadow-md shadow-md shadow-primary-purple/10 hover:bg-[#5B21B6] transition-colors shrink-0">
-          <Plus className="w-4 h-4" /> Add Resource
-        </button>
-      </div>
+  React.useEffect(() => { void load() }, [load])
 
-      {/* 4 Stat Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {[
-          { title: 'Students Assisted', value: '45', trend: '↑ 12 this semester', color: "var(--primary-purple)", bg: 'bg-page-bg', icon: HeartHandshake },
-          { title: 'Active Interventions', value: '12', trend: 'In progress', color: "var(--primary-purple)", bg: 'bg-page-bg', icon: Activity },
-          { title: 'Resolved Cases', value: '28', trend: '↑ 8% recovery rate', color: "var(--electric-blue)", bg: 'bg-white', icon: CheckCircle },
-          { title: 'High Priority', value: '5', trend: 'Needs immediate action', color: "var(--deep-violet)", bg: 'bg-page-bg', icon: AlertTriangle },
-        ].map((stat, i) => (
-          <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 * i }} className="bg-white rounded-[20px] p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-border-light relative overflow-hidden flex flex-col justify-between h-[140px]">
-            <div className="flex justify-between items-start">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-full ${stat.bg} flex items-center justify-center`}>
-                  <stat.icon className="w-5 h-5" style={{ color: stat.color }} />
-                </div>
-                <p className="text-[12px] font-bold text-text-muted">{stat.title}</p>
-              </div>
-            </div>
-            <div className="flex items-end justify-between mt-auto">
-              <div>
-                <h3 className="text-[32px] font-black text-text-main leading-none mb-2">{stat.value}</h3>
-                <p className={`text-[11px] font-bold ${stat.trend.includes('Needs') ? 'text-deep-violet' : stat.trend.includes('progress') ? 'text-electric-blue' : 'text-electric-blue'}`}>{stat.trend}</p>
-              </div>
-            </div>
-          </motion.div>
-        ))}
-      </div>
+  async function createCase(event: React.FormEvent) {
+    event.preventDefault()
+    setBusy(true)
+    setError('')
+    setMessage('')
+    try {
+      const me = await getCurrentProfile(supabase)
+      if (!me) throw new Error('Your faculty profile could not be loaded.')
+      const { error: createError } = await supabase.from('support_cases').insert({
+        student_id: form.studentId,
+        case_type: 'evidence_gap',
+        title: form.title.trim(),
+        context: form.context.trim(),
+        status: 'active',
+        owner_id: me.id,
+        goal: form.goal.trim() || null,
+        review_at: form.reviewAt ? new Date(form.reviewAt).toISOString() : null,
+        created_by: me.id,
+      })
+      if (createError) throw createError
+      setForm(initialForm)
+      setShowForm(false)
+      setMessage('Support plan started. The student can now see the goal and review date.')
+      await load()
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Support plan could not be created.')
+    } finally {
+      setBusy(false)
+    }
+  }
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* Left Column */}
-        <div className="lg:col-span-2 space-y-8">
-          
-          {/* Support Resources */}
-          <div>
-            <h3 className="text-[18px] font-bold text-text-main mb-4">Support Resources</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {[
-                { title: 'Academic Tutoring', desc: 'Connect students with peer tutors for difficult subjects.', icon: BookOpen, color: "var(--primary-purple)", bg: 'bg-page-bg' },
-                { title: 'Mental Health Support', desc: 'Confidential counseling services for stress and anxiety.', icon: HeartHandshake, color: "var(--electric-blue)", bg: 'bg-white' },
-                { title: 'Time Management Workshop', desc: 'Resources to help students balance coursework and projects.', icon: Clock, color: "var(--illus-gold)", bg: 'bg-white' },
-                { title: 'Study Material Archive', desc: 'Access to simplified notes and past question papers.', icon: FileText, color: "var(--primary-purple)", bg: 'bg-white' },
-              ].map((res, i) => (
-                <div key={i} className="bg-white p-5 rounded-[20px] border border-border-light shadow-[0_2px_12px_rgba(0,0,0,0.02)] hover:border-border-light hover:shadow-sm transition-all cursor-pointer group">
-                  <div className={`w-12 h-12 rounded-[12px] ${res.bg} flex items-center justify-center mb-4`}>
-                    <res.icon className="w-6 h-6" style={{ color: res.color }} />
-                  </div>
-                  <h4 className="text-[15px] font-bold text-text-main mb-1 group-hover:text-primary-purple transition-colors">{res.title}</h4>
-                  <p className="text-[13px] text-text-muted leading-relaxed mb-4">{res.desc}</p>
-                  <div className="text-[12px] font-bold text-primary-purple flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-[-10px] group-hover:translate-x-0">
-                    Explore Resource <ChevronRight className="w-3.5 h-3.5" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+  async function updateCase(item: SupportCase, nextStatus: SupportCase['status']) {
+    setError('')
+    const { error: updateError } = await supabase.from('support_cases').update({
+      status: nextStatus,
+      resolution: nextStatus === 'resolved' ? 'Recovery goal reviewed with the student.' : item.resolution,
+      updated_at: new Date().toISOString(),
+    }).eq('id', item.id)
+    if (updateError) return setError(updateError.message)
+    setCases((current) => current.map((value) => value.id === item.id ? { ...value, status: nextStatus } : value))
+  }
 
-          {/* Recent Support Cases */}
-          <div className="bg-white rounded-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-border-light overflow-hidden flex flex-col">
-            <div className="p-6 border-b border-border-light flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <h3 className="text-[18px] font-bold text-text-main">Recent Support Cases</h3>
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
-                  <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search cases..." className="pl-9 pr-4 py-2 border border-border-light rounded-xl text-[13px] w-[200px] outline-none focus:border-primary-purple transition-colors bg-white" />
-                </div>
-                <button className="flex items-center gap-2 px-3 py-2 border border-border-light rounded-xl text-[13px] font-bold text-text-main hover:bg-page-bg transition-colors">
-                  <Filter className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-            
-            <div className="p-6 space-y-4">
-              <AnimatePresence mode="popLayout">
-                {filteredCases.length === 0 ? (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="py-8 text-center text-text-muted text-[13px] font-semibold">
-                    No support cases match your search.
-                  </motion.div>
-                ) : (
-                  filteredCases.map((case_) => (
-                    <motion.div layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} key={case_.id} className="p-4 rounded-[16px] border border-border-light hover:border-border-light transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white">
-                      <div className="flex items-center gap-4">
-                        <InitialsAvatar name={case_.name} size={40} />
-                        <div>
-                          <h4 className="text-[14px] font-bold text-text-main">{case_.name}</h4>
-                          <p className="text-[12px] text-text-muted mt-0.5">{case_.issue}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0">
-                        <span className="text-[11px] font-semibold text-text-muted hidden md:block">{case_.date}</span>
-                        <span className={`px-3 py-1 rounded-full text-[11px] font-bold border ${case_.color} w-[110px] text-center`}>
-                          {case_.status}
-                        </span>
-                      </div>
-                    </motion.div>
-                  ))
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
+  const studentMap = new Map(students.map((student) => [student.id, student]))
+  const filtered = cases.filter((item) => {
+    const student = studentMap.get(item.student_id)
+    const matchesSearch = `${item.title} ${item.context} ${student?.name ?? ''} ${student?.reg_no ?? ''}`.toLowerCase().includes(query.toLowerCase())
+    const matchesStatus = status === 'all' || (status === 'open'
+      ? !['resolved', 'closed'].includes(item.status)
+      : item.status === status)
+    return matchesSearch && matchesStatus
+  })
 
-        </div>
+  return <div className="mx-auto max-w-7xl space-y-6">
+    <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"><div><div className="mb-2 flex items-center gap-2 text-xs font-black uppercase tracking-[.16em] text-primary-purple"><HeartHandshake className="h-4 w-4"/> Evidence-led support</div><h1 className="text-3xl font-black tracking-tight">Recovery Hub</h1><p className="mt-2 max-w-3xl text-sm leading-6 text-text-muted">Turn sustained evidence gaps or student requests into a private, time-bound support plan. Automation may suggest; faculty decides.</p></div><button onClick={() => setShowForm((value) => !value)} className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary-purple px-5 py-3 text-sm font-black text-white"><Plus className="h-4 w-4"/>{showForm ? 'Close' : 'Start support plan'}</button></header>
+    <div className="flex gap-3 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-xs font-semibold leading-5 text-blue-900"><ShieldCheck className="mt-0.5 h-5 w-5 shrink-0"/>Recovery is private support, never a public label. PR and peers cannot see faculty notes or individual readiness evidence.</div>
+    {error && <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700">{error}</div>}
+    {message && <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-bold text-emerald-800">{message}</div>}
 
-        {/* Right Column */}
-        <div className="space-y-6">
-          
-          {/* Need Immediate Help? */}
-          <div className="bg-primary-purple rounded-[20px] p-6 text-white relative overflow-hidden">
-            <div className="relative z-10">
-              <div className="w-12 h-12 rounded-[14px] bg-white/20 flex items-center justify-center mb-5 backdrop-blur-sm">
-                <Target className="w-6 h-6 text-white" />
-              </div>
-              <h3 className="text-[18px] font-bold mb-2">Need Immediate Help?</h3>
-              <p className="text-[13px] text-white/80 leading-relaxed mb-6">If you or a student are experiencing an emergency, please contact the campus support services immediately.</p>
-              
-              <div className="space-y-3">
-                <button className="w-full py-3 bg-white text-primary-purple rounded-xl text-[13px] font-bold flex items-center justify-center gap-2 hover:bg-page-bg transition-colors">
-                  <Phone className="w-4 h-4" /> Call Campus Security
-                </button>
-                <button className="w-full py-3 bg-white/10 text-white border border-white/20 rounded-xl text-[13px] font-bold flex items-center justify-center gap-2 hover:bg-white/20 transition-colors">
-                  <Mail className="w-4 h-4" /> Email Counselor
-                </button>
-              </div>
-            </div>
-            
-            <div className="absolute -bottom-10 -right-10 w-48 h-48 bg-white/10 rounded-full blur-3xl"></div>
-            <div className="absolute -top-10 -left-10 w-32 h-32 bg-primary-purple/20 rounded-full blur-2xl"></div>
-          </div>
+    {showForm && <form onSubmit={createCase} className="grid gap-4 rounded-3xl border border-border-light bg-white p-6 shadow-sm md:grid-cols-2"><div className="md:col-span-2"><h2 className="text-lg font-black">New support plan</h2><p className="mt-1 text-xs text-text-muted">Review the student's context before starting a case.</p></div><label className="text-xs font-bold text-text-muted">Student<select required value={form.studentId} onChange={(event) => setForm({ ...form, studentId: event.target.value })} className="mt-2 w-full rounded-xl border border-border-light px-4 py-3 text-sm"><option value="">Choose student</option>{students.map((student) => <option key={student.id} value={student.id}>{student.name} · {student.reg_no}</option>)}</select></label><label className="text-xs font-bold text-text-muted">Review date<input required type="datetime-local" value={form.reviewAt} onChange={(event) => setForm({ ...form, reviewAt: event.target.value })} className="mt-2 w-full rounded-xl border border-border-light px-4 py-3 text-sm"/></label><label className="text-xs font-bold text-text-muted md:col-span-2">Support title<input required value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} placeholder="Refresh DBMS evidence with a guided sprint" className="mt-2 w-full rounded-xl border border-border-light px-4 py-3 text-sm outline-none focus:border-primary-purple"/></label><label className="text-xs font-bold text-text-muted">Context<textarea required minLength={10} value={form.context} onChange={(event) => setForm({ ...form, context: event.target.value })} placeholder="What evidence or request led to this plan?" className="mt-2 min-h-28 w-full rounded-xl border border-border-light px-4 py-3 text-sm outline-none focus:border-primary-purple"/></label><label className="text-xs font-bold text-text-muted">Agreed goal<textarea value={form.goal} onChange={(event) => setForm({ ...form, goal: event.target.value })} placeholder="A small, observable outcome" className="mt-2 min-h-28 w-full rounded-xl border border-border-light px-4 py-3 text-sm outline-none focus:border-primary-purple"/></label><button disabled={busy} className="rounded-xl bg-primary-purple px-5 py-3 text-sm font-black text-white disabled:opacity-50 md:col-span-2">{busy ? 'Starting…' : 'Start private support plan'}</button></form>}
 
-          {/* Intervention Success Rate */}
-          <div className="bg-white rounded-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-border-light p-6">
-            <h3 className="text-[16px] font-bold text-text-main mb-6">Intervention Success Rate</h3>
-            
-            <div className="flex flex-col items-center">
-              {/* Fake Donut Chart via CSS SVG */}
-              <div className="relative w-36 h-36 shrink-0 mb-6">
-                <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
-                  <circle cx="18" cy="18" r="16" fill="none" className="stroke-[#F1F5F9]" strokeWidth="4"></circle>
-                  <circle cx="18" cy="18" r="16" fill="none" className="stroke-electric-blue" strokeWidth="4" strokeDasharray="72 100" strokeDashoffset="0"></circle>
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-[28px] font-black text-text-main leading-none">72%</span>
-                  <span className="text-[9px] font-bold text-text-muted uppercase mt-1">Success Rate</span>
-                </div>
-              </div>
-              
-              <div className="w-full space-y-4">
-                {[
-                  { label: 'Successful Interventions', val: '28 cases', color: 'bg-electric-blue' },
-                  { label: 'Ongoing Support', val: '12 cases', color: 'bg-electric-blue' },
-                  { label: 'Unsuccessful/Dropped', val: '5 cases', color: 'bg-[#94A3B8]' },
-                ].map((s, i) => (
-                  <div key={i} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2"><div className={`w-2.5 h-2.5 rounded-full ${s.color}`}></div><span className="text-[12px] font-bold text-text-main">{s.label}</span></div>
-                    <span className="text-[12px] text-text-muted font-semibold">{s.val}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+    <div className="flex flex-col gap-3 rounded-2xl border border-border-light bg-white p-3 sm:flex-row"><label className="relative flex-1"><Search className="absolute left-3 top-3 h-4 w-4 text-text-muted"/><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search student or support context" className="w-full rounded-xl bg-page-bg py-2.5 pl-10 pr-4 text-sm outline-none"/></label><select value={status} onChange={(event) => setStatus(event.target.value)} className="rounded-xl border border-border-light px-4 py-2.5 text-sm font-bold"><option value="open">Open work</option><option value="requested">Requested</option><option value="active">Active</option><option value="review_due">Review due</option><option value="resolved">Resolved</option><option value="all">All cases</option></select></div>
 
-          {/* Bottom Banner */}
-          <div className="w-full bg-page-bg rounded-[20px] p-6 border border-primary-purple/20 relative overflow-hidden group">
-            <div className="relative z-10">
-              <h4 className="text-[15px] font-bold text-primary-purple mb-1 flex items-center gap-2"><Target className="w-4 h-4" /> It's okay to take a step back.</h4>
-              <p className="text-[12px] text-text-muted font-medium leading-relaxed">Encourage students to use the wellness room in Block B if they are feeling overwhelmed.</p>
-            </div>
-          </div>
-
-        </div>
-
-      </div>
-    </div>
-  );
+    {loading && <div className="h-44 animate-pulse rounded-3xl bg-white"/>}
+    {!loading && filtered.length === 0 && <div className="rounded-3xl border border-dashed border-border-light bg-white p-14 text-center"><CheckCircle2 className="mx-auto h-10 w-10 text-emerald-600"/><h2 className="mt-4 text-lg font-black">No support case needs attention</h2><p className="mt-2 text-sm text-text-muted">Student requests and reviewed evidence gaps will appear here.</p></div>}
+    <div className="grid gap-4 lg:grid-cols-2">{filtered.map((item) => { const student = studentMap.get(item.student_id); return <article key={item.id} className="rounded-3xl border border-border-light bg-white p-6 shadow-sm"><div className="flex items-start justify-between gap-4"><div><span className="text-[10px] font-black uppercase tracking-[.14em] text-primary-purple">{item.status.replace('_', ' ')}</span><h2 className="mt-2 text-lg font-black">{item.title}</h2><p className="mt-1 text-xs font-bold text-text-muted">{student?.name ?? 'Student'} · {student?.reg_no ?? 'Register unavailable'}</p></div><HeartHandshake className="h-6 w-6 text-primary-purple"/></div><p className="mt-4 text-sm leading-6 text-text-muted">{item.context}</p>{item.goal && <div className="mt-4 rounded-2xl bg-page-bg p-4"><p className="text-[10px] font-black uppercase tracking-wider text-text-muted">Agreed goal</p><p className="mt-1 text-sm font-semibold">{item.goal}</p></div>}<div className="mt-5 flex flex-wrap items-center gap-3">{item.review_at && <span className="mr-auto flex items-center gap-1.5 text-xs font-bold text-text-muted"><CalendarCheck className="h-4 w-4"/>{new Date(item.review_at).toLocaleDateString('en-IN', { dateStyle: 'medium' })}</span>}{!['resolved','closed'].includes(item.status) && <button onClick={() => void updateCase(item, 'review_due')} className="rounded-xl border border-border-light px-3 py-2 text-xs font-black">Mark review due</button>}{!['resolved','closed'].includes(item.status) && <button onClick={() => void updateCase(item, 'resolved')} className="rounded-xl bg-emerald-600 px-3 py-2 text-xs font-black text-white">Resolve with student</button>}</div></article>})}</div>
+  </div>
 }

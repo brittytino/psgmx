@@ -26,7 +26,7 @@ export default function SessionSchedulingPage() {
   const [saving, setSaving] = React.useState(false);
 
   const [form, setForm] = React.useState({
-    topic: '', session_type: 'Placement Drive', session_mode: 'Offline',
+    topic: '', session_type: 'Skill Workshop', session_mode: 'Offline',
     location: '', date: '', time: '', duration_minutes: 60,
   });
 
@@ -63,7 +63,7 @@ export default function SessionSchedulingPage() {
         duration_minutes: form.duration_minutes,
         scheduled_by: me.id,
       });
-      setForm({ topic: '', session_type: 'Placement Drive', session_mode: 'Offline', location: '', date: '', time: '', duration_minutes: 60 });
+      setForm({ topic: '', session_type: 'Skill Workshop', session_mode: 'Offline', location: '', date: '', time: '', duration_minutes: 60 });
       setShowForm(false);
       await load();
     } finally {
@@ -108,7 +108,7 @@ export default function SessionSchedulingPage() {
               <label className="text-[12px] font-bold text-text-muted block mb-1.5">Type</label>
               <select value={form.session_type} onChange={(e) => setForm({ ...form, session_type: e.target.value })} className="w-full border border-border-light rounded-lg px-3 py-2 text-[14px] outline-none">
                 {/* Matches apps/mobile/lib/ui/admin/schedule_placement_session_screen.dart _types exactly, so sessions created here read correctly on mobile. */}
-                <option value="Placement Drive">Placement Drive</option>
+                <option value="Skill Workshop">Skill Workshop</option>
                 <option value="Mock Test">Mock Test</option>
                 <option value="Workshop">Workshop</option>
                 <option value="Webinar">Webinar</option>

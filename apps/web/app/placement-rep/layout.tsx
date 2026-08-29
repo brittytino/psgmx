@@ -3,21 +3,21 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Users, CalendarClock, LogOut, Menu, X, UserRoundCog, ClipboardCheck, ListTodo, Building2, Megaphone, LibraryBig, BarChart3, Rocket } from 'lucide-react';
+import { LayoutDashboard, Users, CalendarClock, LogOut, Menu, X, UserRoundCog, ClipboardCheck, ListTodo, Route, Megaphone, LibraryBig, BarChart3, Rocket } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
 
 const sidebarLinks = [
   { name: 'Command Center', href: '/placement-rep', icon: LayoutDashboard },
   { name: 'Members & Access', href: '/placement-rep/members', icon: UserRoundCog },
-  { name: 'Team Management', href: '/placement-rep/teams', icon: Users },
-  { name: 'Session Scheduling', href: '/placement-rep/sessions', icon: CalendarClock },
-  { name: 'Attendance', href: '/placement-rep/attendance', icon: ClipboardCheck },
-  { name: 'Daily Tasks', href: '/placement-rep/tasks', icon: ListTodo },
-  { name: 'Companies', href: '/placement-rep/companies', icon: Building2 },
-  { name: 'Announcements', href: '/placement-rep/announcements', icon: Megaphone },
+  { name: 'Preparation Squads', href: '/placement-rep/teams', icon: Users },
+  { name: 'Programme Calendar', href: '/placement-rep/sessions', icon: CalendarClock },
+  { name: 'Participation', href: '/placement-rep/attendance', icon: ClipboardCheck },
+  { name: 'Quest Studio', href: '/placement-rep/tasks', icon: ListTodo },
+  { name: 'Preparation Tracks', href: '/placement-rep/tracks', icon: Route },
+  { name: 'Communication', href: '/placement-rep/announcements', icon: Megaphone },
   { name: 'Question Bank', href: '/placement-rep/questions', icon: LibraryBig },
-  { name: 'Reports & Audit', href: '/placement-rep/reports', icon: BarChart3 },
+  { name: 'Preparation Health', href: '/placement-rep/reports', icon: BarChart3 },
   { name: 'Staged Rollout', href: '/placement-rep/rollout', icon: Rocket },
 ];
 
@@ -62,8 +62,8 @@ export default function PlacementRepLayout({ children }: { children: React.React
       <aside className="w-[260px] h-full bg-white flex-col shrink-0 border-r border-border-light shadow-[4px_0_24px_rgba(0,0,0,0.02)] hidden lg:flex">
         <div className="h-[88px] flex items-center px-8 shrink-0">
           <div>
-            <h2 className="text-[17px] font-black tracking-tight text-text-main leading-tight">Placement Rep</h2>
-            <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Web Console</p>
+            <h2 className="text-[17px] font-black tracking-tight text-text-main leading-tight">Readiness Representative</h2>
+            <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Preparation Console</p>
           </div>
         </div>
         <nav className="flex-1 px-4 py-4 space-y-1.5">

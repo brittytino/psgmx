@@ -10,25 +10,25 @@ enum UserPermission {
   /// Can set team size, run auto-distribution, and move students between teams.
   configureTeams,
 
-  /// Can schedule new placement sessions (classes, mock sessions, workshops).
-  schedulePlacementSessions,
+  /// Can schedule preparation sessions (clinics, mocks, workshops).
+  schedulePreparationSessions,
 
-  /// Can mark placement-session attendance.
+  /// Can mark preparation-session participation.
   /// For Team Leaders this is scoped to their own team by convention
   /// (enforced in the service layer, not in this enum).
-  markPlacementAttendance,
+  markPreparationParticipation,
 
-  /// Can publish daily tasks (LeetCode + core subject) and manage question bank.
-  publishTasks,
+  /// Can publish preparation quests and manage the question bank.
+  publishQuests,
 
   /// Can publish general announcements.
   publishAnnouncements,
 
-  /// Can create and edit company records in the Placement Log.
-  manageCompanyRecords,
+  /// Can create and edit preparation tracks.
+  managePreparationTracks,
 
-  /// Can moderate (edit/hide) experience entries written by students.
-  moderatePlacementLog,
+  /// Can triage interview-pattern submissions before faculty review.
+  moderateInterviewPatterns,
 
   /// Can read batch-wide analytics, leaderboards, and attendance summaries.
   viewBatchAnalytics,
@@ -45,18 +45,18 @@ extension UserPermissionExtension on UserPermission {
         return 'manage_members';
       case UserPermission.configureTeams:
         return 'configure_teams';
-      case UserPermission.schedulePlacementSessions:
-        return 'schedule_placement_sessions';
-      case UserPermission.markPlacementAttendance:
-        return 'mark_placement_attendance';
-      case UserPermission.publishTasks:
-        return 'publish_tasks';
+      case UserPermission.schedulePreparationSessions:
+        return 'schedule_preparation_sessions';
+      case UserPermission.markPreparationParticipation:
+        return 'mark_preparation_participation';
+      case UserPermission.publishQuests:
+        return 'publish_quests';
       case UserPermission.publishAnnouncements:
         return 'publish_announcements';
-      case UserPermission.manageCompanyRecords:
-        return 'manage_company_records';
-      case UserPermission.moderatePlacementLog:
-        return 'moderate_placement_log';
+      case UserPermission.managePreparationTracks:
+        return 'manage_preparation_tracks';
+      case UserPermission.moderateInterviewPatterns:
+        return 'moderate_interview_patterns';
       case UserPermission.viewBatchAnalytics:
         return 'view_batch_analytics';
       case UserPermission.viewAiMentor:
@@ -65,6 +65,14 @@ extension UserPermissionExtension on UserPermission {
   }
 
   static UserPermission? fromDbKey(String key) {
+    const legacyAliases = {
+      'schedule_placement_sessions': UserPermission.schedulePreparationSessions,
+      'mark_placement_attendance': UserPermission.markPreparationParticipation,
+      'publish_tasks': UserPermission.publishQuests,
+      'manage_company_records': UserPermission.managePreparationTracks,
+      'moderate_placement_log': UserPermission.moderateInterviewPatterns,
+    };
+    if (legacyAliases.containsKey(key)) return legacyAliases[key];
     for (final p in UserPermission.values) {
       if (p.dbKey == key) return p;
     }
@@ -78,18 +86,18 @@ extension UserPermissionExtension on UserPermission {
         return 'Manage Members';
       case UserPermission.configureTeams:
         return 'Configure Teams';
-      case UserPermission.schedulePlacementSessions:
-        return 'Schedule Placement Sessions';
-      case UserPermission.markPlacementAttendance:
-        return 'Mark Placement Attendance';
-      case UserPermission.publishTasks:
-        return 'Publish Tasks';
+      case UserPermission.schedulePreparationSessions:
+        return 'Schedule Preparation Sessions';
+      case UserPermission.markPreparationParticipation:
+        return 'Mark Preparation Participation';
+      case UserPermission.publishQuests:
+        return 'Publish Quests';
       case UserPermission.publishAnnouncements:
         return 'Publish Announcements';
-      case UserPermission.manageCompanyRecords:
-        return 'Manage Company Records';
-      case UserPermission.moderatePlacementLog:
-        return 'Moderate Placement Log';
+      case UserPermission.managePreparationTracks:
+        return 'Manage Preparation Tracks';
+      case UserPermission.moderateInterviewPatterns:
+        return 'Moderate Interview Patterns';
       case UserPermission.viewBatchAnalytics:
         return 'View Batch Analytics';
       case UserPermission.viewAiMentor:
@@ -102,11 +110,11 @@ extension UserPermissionExtension on UserPermission {
 const Set<UserPermission> kPlacementRepPermissions = {
   UserPermission.manageMembers,
   UserPermission.configureTeams,
-  UserPermission.schedulePlacementSessions,
-  UserPermission.markPlacementAttendance,
-  UserPermission.publishTasks,
-  UserPermission.manageCompanyRecords,
-  UserPermission.moderatePlacementLog,
+  UserPermission.schedulePreparationSessions,
+  UserPermission.markPreparationParticipation,
+  UserPermission.publishQuests,
+  UserPermission.managePreparationTracks,
+  UserPermission.moderateInterviewPatterns,
   UserPermission.viewBatchAnalytics,
   UserPermission.publishAnnouncements,
   UserPermission.viewAiMentor,
@@ -114,6 +122,6 @@ const Set<UserPermission> kPlacementRepPermissions = {
 
 /// Default permissions for a Team Leader (only attendance marking by default).
 const Set<UserPermission> kTeamLeaderPermissions = {
-  UserPermission.markPlacementAttendance,
+  UserPermission.markPreparationParticipation,
   UserPermission.viewAiMentor,
 };

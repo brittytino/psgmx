@@ -24,9 +24,12 @@ export default function AttendancePage() {
       const me = await getCurrentProfile(supabase)
       if (!me?.batch_id) return
       setActorId(me.id)
+      const teamLeaderOnly = Boolean(me.roles?.isTeamLeader) && !me.roles?.isPlacementRep
+      let studentQuery = supabase.from('users').select('id,name,reg_no').eq('batch_id', me.batch_id).eq('role_label', 'Student').order('reg_no')
+      if (teamLeaderOnly && me.team_uuid) studentQuery = studentQuery.eq('team_uuid', me.team_uuid)
       const [{ data: sessionRows }, { data: studentRows }] = await Promise.all([
         supabase.from('placement_sessions').select('id,topic,session_datetime,is_locked').eq('batch_id', me.batch_id).order('session_datetime', { ascending: false }).limit(30),
-        supabase.from('users').select('id,name,reg_no').eq('batch_id', me.batch_id).eq('role_label', 'Student').order('reg_no'),
+        studentQuery,
       ])
       setSessions(sessionRows ?? [])
       setStudents(studentRows ?? [])
@@ -58,19 +61,19 @@ export default function AttendancePage() {
       marked_at: new Date().toISOString(),
     }))
     const { error } = await supabase.from('placement_attendance').upsert(rows, { onConflict: 'session_id,user_id' })
-    setMessage(error ? error.message : `Attendance saved for ${rows.length} students.`)
+    setMessage(error ? error.message : `Participation saved for ${rows.length} students.`)
     setSaving(false)
   }
 
   const session = sessions.find((item) => item.id === selected)
   return <div className="max-w-5xl space-y-6">
-    <div><h1 className="text-2xl font-black">Placement Attendance</h1><p className="mt-1 text-sm text-text-muted">Mark the complete batch roster for one scheduled session.</p></div>
+    <div><h1 className="text-2xl font-black">Preparation Participation</h1><p className="mt-1 text-sm text-text-muted">Record participation for one preparation session. Team leaders only manage their assigned squad.</p></div>
     <div className="rounded-2xl border border-border-light bg-white p-5">
       <label className="mb-2 block text-xs font-bold uppercase text-text-muted">Session</label>
       <select value={selected} onChange={(e) => setSelected(e.target.value)} className="w-full rounded-xl border border-border-light px-4 py-3 text-sm outline-none">
         {sessions.map((item) => <option key={item.id} value={item.id}>{new Date(item.session_datetime).toLocaleString()} — {item.topic}</option>)}
       </select>
-      {sessions.length === 0 && <p className="text-sm text-text-muted">Schedule a placement session first.</p>}
+      {sessions.length === 0 && <p className="text-sm text-text-muted">Schedule a preparation session first.</p>}
     </div>
 
     {session && <div className="rounded-2xl border border-border-light bg-white">
@@ -84,7 +87,7 @@ export default function AttendancePage() {
           <div className="flex gap-2">{(['present', 'absent', 'excused'] as const).map((status) => <button key={status} onClick={() => setStatuses((old) => ({ ...old, [student.id]: status }))} className={`rounded-lg px-3 py-2 text-xs font-bold capitalize ${statuses[student.id] === status ? status === 'present' ? 'bg-green-600 text-white' : status === 'absent' ? 'bg-red-600 text-white' : 'bg-amber-500 text-white' : 'bg-page-bg text-text-muted'}`}>{status === 'present' ? <CheckCircle2 className="mr-1 inline h-3.5 w-3.5" /> : status === 'absent' ? <CircleX className="mr-1 inline h-3.5 w-3.5" /> : null}{status}</button>)}</div>
         </div>)}
       </div>
-      <div className="flex items-center justify-between border-t border-border-light p-5"><p className="text-sm font-semibold text-text-muted">{message}</p><button onClick={save} disabled={saving || session.is_locked === true} className="flex items-center gap-2 rounded-xl bg-primary-purple px-5 py-3 text-sm font-bold text-white disabled:opacity-50"><Save className="h-4 w-4" />{saving ? 'Saving…' : session.is_locked ? 'Session locked' : 'Save attendance'}</button></div>
+      <div className="flex items-center justify-between border-t border-border-light p-5"><p className="text-sm font-semibold text-text-muted">{message}</p><button onClick={save} disabled={saving || session.is_locked === true} className="flex items-center gap-2 rounded-xl bg-primary-purple px-5 py-3 text-sm font-bold text-white disabled:opacity-50"><Save className="h-4 w-4" />{saving ? 'Saving…' : session.is_locked ? 'Session locked' : 'Save participation'}</button></div>
     </div>}
   </div>
 }

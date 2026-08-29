@@ -98,7 +98,6 @@ class _TodayScreenState extends State<TodayScreen> {
             : 'Good evening';
     final batchCode =
         RegExp(r'\d{2}MX').firstMatch(user.regNo)?.group(0) ?? 'MCA';
-    final campusIndex = user.isActiveSenior ? 3 : 2;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FA),
@@ -271,9 +270,7 @@ class _TodayScreenState extends State<TodayScreen> {
                                   ? 'Refresh your academic attendance'
                                   : '${ecampus.attendance!.summary.overallPercentage.toStringAsFixed(1)}% overall attendance',
                               done: ecampus.attendance != null,
-                              onTap: () => context
-                                  .read<NavigationProvider>()
-                                  .setIndex(campusIndex)),
+                              onTap: () => context.push('/campus')),
                           const SizedBox(height: 10),
                           _LoopTile(
                               icon: LucideIcons.brain,
@@ -337,7 +334,7 @@ class _TodayScreenState extends State<TodayScreen> {
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                    Text('Placement readiness',
+                                    Text('Readiness progress',
                                         style: GoogleFonts.inter(
                                             fontSize: 14,
                                             fontWeight: FontWeight.w800)),
@@ -345,13 +342,18 @@ class _TodayScreenState extends State<TodayScreen> {
                                     Text(
                                         readiness == null
                                             ? 'Your score appears as you build a routine.'
-                                            : 'Small daily actions are moving your score.',
+                                            : 'Open Progress to see the evidence behind this score.',
                                         style: GoogleFonts.inter(
                                             fontSize: 12,
                                             color: const Color(0xFF64748B)))
                                   ])),
-                              const Icon(LucideIcons.trendingUp,
-                                  color: Color(0xFF16A34A))
+                              IconButton(
+                                  tooltip: 'Open progress',
+                                  onPressed: () => context
+                                      .read<NavigationProvider>()
+                                      .setIndex(2),
+                                  icon: const Icon(LucideIcons.chevronRight,
+                                      color: Color(0xFF16A34A)))
                             ])))),
                 if (announcements.isNotEmpty)
                   SliverToBoxAdapter(

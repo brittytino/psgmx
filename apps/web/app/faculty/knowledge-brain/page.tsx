@@ -1,303 +1,101 @@
-'use client';
+'use client'
 
-import React from 'react';
-import { motion } from 'framer-motion';
-import { BookOpen, Plus, FileText, Database, Code, Share2, Box, Eye, Bookmark, MoreVertical, Search, Filter, ChevronDown, CheckCircle, Clock, AlertCircle, Target } from 'lucide-react';
-import Link from 'next/link';
-import { InitialsAvatar } from '@/components/basic/InitialsAvatar';
+import React from 'react'
+import { BookOpenCheck, CheckCircle2, Clock3, Search, ShieldCheck, XCircle } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+import { getCurrentProfile } from '@/lib/current-profile'
 
-import { AnimatePresence } from 'framer-motion';
+type QueueItem = {
+  id: string
+  source: 'article' | 'pattern'
+  title: string
+  summary: string
+  content: string
+  authorId: string
+  status: string
+  createdAt: string
+  tags: string[]
+}
 
-export default function FacultyKnowledgeBrainDashboard() {
-  const [activeTab, setActiveTab] = React.useState('All Articles');
-  
-  const [articles, setArticles] = React.useState([
-    { id: 1, title: 'Dynamic Programming – Problem Solving Guide', desc: 'Comprehensive guide to dynamic programming concepts with solved examples and practice problems.', icon: FileText, color: "var(--primary-purple)", bg: 'bg-page-bg', badge: 'Approved', badgeColor: 'bg-white text-electric-blue', author: '25MX301', date: 'May 14, 2025', ai: true, reviewer: 'Dr. Arunkumar', reviewDate: 'May 14, 2025', views: 342, state: 'Approved', bookmarked: false },
-    { id: 2, title: 'Database Normalization – Quick Notes', desc: 'Quick reference for normalization forms with examples and use cases.', icon: Database, color: "var(--primary-purple)", bg: 'bg-page-bg', badge: 'Approved', badgeColor: 'bg-white text-electric-blue', author: '25MX205', date: 'May 12, 2025', ai: false, reviewer: 'Dr. Pavithra', reviewDate: 'May 12, 2025', views: 275, state: 'Approved', bookmarked: true },
-    { id: 3, title: 'React useEffect Hook – Complete Guide', desc: 'Deep dive into useEffect hook with cleanup, dependencies and real-world examples.', icon: Code, color: "var(--deep-violet)", bg: 'bg-page-bg', badge: 'Approved', badgeColor: 'bg-white text-electric-blue', author: '25MX114', date: 'May 10, 2025', ai: false, reviewer: 'Dr. Karthikeyan', reviewDate: 'May 10, 2025', views: 198, state: 'Approved', bookmarked: false },
-    { id: 4, title: 'Operating Systems – Process Scheduling', desc: 'Overview of CPU scheduling algorithms with time complexity analysis.', icon: Share2, color: "var(--illus-gold)", bg: 'bg-white', badge: 'Pending Review', badgeColor: 'bg-white text-illus-gold', author: '25MX402', date: 'May 15, 2025', ai: false, reviewer: 'Dr. Pavithra', reviewDate: 'May 15, 2025', views: 96, state: 'Submitted', bookmarked: false },
-    { id: 5, title: 'Machine Learning – Overfitting Explained', desc: 'Understanding overfitting in ML models with visualization and code samples.', icon: Box, color: '#8B5CF6', bg: 'bg-page-bg', badge: 'Needs Changes', badgeColor: 'bg-page-bg text-deep-violet', author: '25MX301', date: 'May 13, 2025', ai: false, reviewer: 'Dr. Arunkumar', reviewDate: 'May 14, 2025', views: 112, state: 'Needs changes', bookmarked: false },
-  ]);
+export default function FacultyKnowledgeBrainPage() {
+  const supabase = React.useMemo(() => createClient(), [])
+  const [items, setItems] = React.useState<QueueItem[]>([])
+  const [query, setQuery] = React.useState('')
+  const [filter, setFilter] = React.useState('pending')
+  const [loading, setLoading] = React.useState(true)
+  const [busyId, setBusyId] = React.useState('')
+  const [error, setError] = React.useState('')
+  const [message, setMessage] = React.useState('')
 
-  const [isLoadingMore, setIsLoadingMore] = React.useState(false);
-  const [visibleCount, setVisibleCount] = React.useState(3);
-  const [searchQuery, setSearchQuery] = React.useState('');
-  const [toastMessage, setToastMessage] = React.useState('');
+  const load = React.useCallback(async () => {
+    setLoading(true)
+    setError('')
+    try {
+      const [articleResult, patternResult] = await Promise.all([
+        supabase.from('knowledge_brain_articles').select('id,title,summary,content,author_id,approval_status,created_at,tags').order('created_at', { ascending: false }),
+        supabase.from('interview_patterns').select('id,title,historical_context,preparation_helped,mistakes,advice,author_id,approval_status,created_at,pattern_type').order('created_at', { ascending: false }),
+      ])
+      if (articleResult.error) throw articleResult.error
+      if (patternResult.error) throw patternResult.error
+      const articles: QueueItem[] = (articleResult.data ?? []).map((item) => ({
+        id: item.id, source: 'article', title: item.title,
+        summary: item.summary ?? 'No summary provided.', content: item.content,
+        authorId: item.author_id, status: item.approval_status,
+        createdAt: item.created_at, tags: item.tags,
+      }))
+      const patterns: QueueItem[] = (patternResult.data ?? []).map((item) => ({
+        id: item.id, source: 'pattern', title: item.title,
+        summary: item.historical_context ?? 'Historical context not provided.',
+        content: [`Preparation that helped: ${item.preparation_helped}`, item.mistakes ? `Mistakes: ${item.mistakes}` : '', `Advice: ${item.advice}`].filter(Boolean).join('\n\n'),
+        authorId: item.author_id, status: item.approval_status,
+        createdAt: item.created_at, tags: [item.pattern_type],
+      }))
+      setItems([...articles, ...patterns].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()))
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Knowledge review queue could not be loaded.')
+    } finally {
+      setLoading(false)
+    }
+  }, [supabase])
 
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(''), 3000);
-  };
+  React.useEffect(() => { void load() }, [load])
 
-  const toggleBookmark = (id: number) => {
-    setArticles(prev => prev.map(a => a.id === id ? { ...a, bookmarked: !a.bookmarked } : a));
-  };
+  async function review(item: QueueItem, decision: 'approved' | 'rejected') {
+    setBusyId(item.id)
+    setError('')
+    setMessage('')
+    try {
+      const me = await getCurrentProfile(supabase)
+      if (!me) throw new Error('Your faculty profile could not be loaded.')
+      const reviewedAt = new Date().toISOString()
+      const result = item.source === 'article'
+        ? await supabase.from('knowledge_brain_articles').update({ approval_status: decision, reviewed_by: me.id, reviewed_at: reviewedAt, updated_at: reviewedAt }).eq('id', item.id)
+        : await supabase.from('interview_patterns').update({ approval_status: decision, reviewed_by: me.id, reviewed_at: reviewedAt, updated_at: reviewedAt }).eq('id', item.id)
+      if (result.error) throw result.error
+      setItems((current) => current.map((value) => value.id === item.id && value.source === item.source ? { ...value, status: decision } : value))
+      setMessage(decision === 'approved' ? 'Approved content is now eligible for student search and AI grounding.' : 'The contribution was rejected and remains visible in audit history.')
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'The review decision could not be saved.')
+    } finally {
+      setBusyId('')
+    }
+  }
 
-  const filteredArticles = articles.filter(a => {
-    const matchesSearch = a.title.toLowerCase().includes(searchQuery.toLowerCase()) || a.desc.toLowerCase().includes(searchQuery.toLowerCase());
-    if (!matchesSearch) return false;
+  const filtered = items.filter((item) => {
+    const matchesQuery = `${item.title} ${item.summary} ${item.content} ${item.tags.join(' ')}`.toLowerCase().includes(query.toLowerCase())
+    const matchesFilter = filter === 'all' || item.status === filter
+    return matchesQuery && matchesFilter
+  })
+  const pending = items.filter((item) => item.status === 'pending').length
 
-    if (activeTab === 'Pending Review') return a.badge === 'Pending Review' || a.badge === 'Needs Changes';
-    if (activeTab === 'Published') return a.badge === 'Approved';
-    if (activeTab === 'Archived') return false; // simulated empty
-    return true;
-  });
-
-  const displayedArticles = filteredArticles.slice(0, visibleCount);
-
-  const handleLoadMore = () => {
-    setIsLoadingMore(true);
-    setTimeout(() => {
-      setIsLoadingMore(false);
-    }, 1000);
-  };
-
-  return (
-    <div className="max-w-[1400px] mx-auto space-y-8 pb-8 relative">
-      <AnimatePresence>
-        {toastMessage && (
-          <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 50 }} className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-rich-black text-white px-6 py-3 rounded-xl shadow-xl flex items-center gap-3">
-            <div className="w-2 h-2 rounded-full bg-electric-blue"></div>
-            <span className="text-[13px] font-bold">{toastMessage}</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-      
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-primary-purple flex items-center justify-center shadow-lg shadow-md shadow-primary-purple/10 shrink-0">
-            <BookOpen className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <motion.h1 
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-[26px] font-bold text-text-main tracking-tight mb-0.5"
-            >
-              Knowledge Brain
-            </motion.h1>
-            <motion.p 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.1 }}
-              className="text-[14px] text-text-muted"
-            >
-              Curated knowledge. Verified by mentors. Accessible for all.
-            </motion.p>
-          </div>
-        </div>
-        <button onClick={() => showToast('Opening Article Editor...')} className="flex items-center gap-2 px-6 py-3 bg-primary-purple text-white rounded-xl text-[14px] font-bold shadow-md shadow-md shadow-primary-purple/10 hover:bg-[#5B21B6] transition-colors shrink-0">
-          <Plus className="w-4 h-4" /> Create Article
-        </button>
-      </div>
-
-      {/* 4 Stat Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {[
-          { title: 'Total Articles', value: '128', trend: '↑ 14 this month', color: "var(--primary-purple)", bg: 'bg-page-bg' },
-          { title: 'Approved Articles', value: '112', trend: '↑ 10 this month', color: "var(--primary-purple)", bg: 'bg-page-bg' },
-          { title: 'Pending Review', value: '8', trend: '↓ 2 this week', color: "var(--illus-gold)", bg: 'bg-white' },
-          { title: 'Total Views', value: '4.2K', trend: '↑ 22% this month', color: "var(--deep-violet)", bg: 'bg-page-bg' },
-        ].map((stat, i) => (
-          <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 * i }} className="bg-white rounded-[20px] p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-border-light relative overflow-hidden flex flex-col justify-between h-[140px]">
-            <div className="flex justify-between items-start">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-full ${stat.bg} flex items-center justify-center`}>
-                  <BookOpen className="w-5 h-5" style={{ color: stat.color }} />
-                </div>
-                <p className="text-[12px] font-bold text-text-muted">{stat.title}</p>
-              </div>
-            </div>
-            <div className="flex items-end justify-between mt-auto">
-              <div>
-                <h3 className="text-[32px] font-black text-text-main leading-none mb-2">{stat.value}</h3>
-                <p className={`text-[11px] font-bold ${stat.trend.includes('↓') ? 'text-illus-gold' : 'text-electric-blue'}`}>{stat.trend}</p>
-              </div>
-              <div className="w-24 h-8">
-                <svg viewBox="0 0 100 30" className="w-full h-full fill-none" style={{ stroke: stat.color }} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                  <path d={i === 0 ? "M0,25 C20,25 30,15 50,15 C70,15 80,5 100,5" : i === 1 ? "M0,20 C20,25 40,5 60,15 C80,25 90,10 100,5" : i === 2 ? "M0,5 C10,5 30,20 50,10 C70,0 80,25 100,25" : "M0,20 C20,10 40,25 60,15 C80,5 90,20 100,10"} />
-                </svg>
-              </div>
-            </div>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* Left Column - Articles */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white rounded-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-border-light p-6 flex flex-col h-full">
-            
-            {/* Tabs & Controls */}
-            <div className="border-b border-border-light flex flex-col md:flex-row md:items-end justify-between gap-4 pb-0 mb-6">
-              <div className="flex items-center gap-6 overflow-x-auto custom-scrollbar pb-[-1px]">
-                {['All Articles', 'Pending Review', 'Published', 'Archived'].map(tab => (
-                  <button 
-                    key={tab}
-                    onClick={() => setActiveTab(tab)}
-                    className={`text-[14px] pb-4 px-1 whitespace-nowrap transition-colors ${activeTab === tab ? 'font-bold text-primary-purple border-b-2 border-primary-purple' : 'font-semibold text-text-muted hover:text-text-main border-b-2 border-transparent'}`}
-                  >
-                    {tab}
-                  </button>
-                ))}
-              </div>
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 pb-4 w-full md:w-auto">
-                <div className="relative flex-1 md:w-[200px]">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
-                  <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search articles..." className="pl-9 pr-4 py-2 border border-border-light rounded-xl text-[13px] w-full outline-none focus:border-primary-purple transition-colors" />
-                </div>
-                <div className="flex items-center gap-1 border border-border-light rounded-xl px-3 py-2 text-[13px] font-bold text-text-main cursor-pointer hover:bg-page-bg shrink-0">
-                  Latest First <ChevronDown className="w-4 h-4 ml-1" />
-                </div>
-                <button className="flex items-center gap-2 px-3 py-2 border border-border-light rounded-xl text-[13px] font-bold text-text-main hover:bg-page-bg transition-colors shrink-0">
-                  <Filter className="w-4 h-4" /> Filters
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <AnimatePresence mode="popLayout">
-                {displayedArticles.length === 0 ? (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="py-12 text-center text-text-muted text-[13px] font-semibold">
-                    No articles found for this tab.
-                  </motion.div>
-                ) : (
-                  displayedArticles.map((article) => (
-                    <motion.div 
-                      layout
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      key={article.id} 
-                      className="p-5 rounded-[16px] border border-border-light hover:border-border-light hover:shadow-sm transition-all flex flex-col sm:flex-row sm:items-start gap-4 bg-white"
-                    >
-                      <div className={`w-14 h-14 rounded-[12px] ${article.bg} flex flex-col items-center justify-center shrink-0 relative`}>
-                        <article.icon className="w-6 h-6" style={{ color: article.color }} />
-                        {article.ai && <span className="absolute -bottom-2 -right-2 bg-white text-[9px] font-black px-1.5 py-0.5 rounded-md border border-border-light shadow-sm" style={{ color: article.color }}>AI</span>}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          <h4 className="text-[15px] font-bold text-text-main truncate">{article.title}</h4>
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border border-transparent ${article.badgeColor}`}>{article.badge}</span>
-                        </div>
-                        <p className="text-[12px] font-semibold text-text-muted mb-2">
-                          {article.ai ? 'AI Generated • ' : ''}By <span className="text-text-muted">{article.author}</span> • {article.date}
-                        </p>
-                        <p className="text-[13px] text-text-muted leading-relaxed line-clamp-2 max-w-xl">{article.desc}</p>
-                      </div>
-                      <div className="flex flex-col items-end gap-3 shrink-0 mt-2 sm:mt-0">
-                        <div className="flex items-center gap-3 text-text-muted">
-                          <div className="flex items-center gap-1"><Eye className="w-4 h-4" /><span className="text-[12px] font-bold">{article.views}</span></div>
-                          <Bookmark 
-                            onClick={() => toggleBookmark(article.id)} 
-                            className={`w-4 h-4 cursor-pointer transition-colors ${article.bookmarked ? 'text-primary-purple fill-[#6C3DFF]' : 'hover:text-primary-purple'}`} 
-                          />
-                          <MoreVertical className="w-4 h-4 cursor-pointer hover:text-text-main" />
-                        </div>
-                        <div className="flex items-center gap-2 mt-auto">
-                          <InitialsAvatar name={article.reviewer} size={28} />
-                          <div className="text-right">
-                            <p className="text-[12px] font-bold text-text-main">{article.reviewer}</p>
-                            <p className="text-[10px] font-semibold text-text-muted">{article.state ? article.state : 'Reviewed'} {article.reviewDate}</p>
-                          </div>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))
-                )}
-              </AnimatePresence>
-            </div>
-
-            <AnimatePresence>
-              {visibleCount < filteredArticles.length && (
-                <motion.button layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setVisibleCount(prev => prev + 3)} className="mt-6 w-full py-3.5 bg-page-bg text-primary-purple rounded-[12px] text-[13px] font-bold flex items-center justify-center gap-2 hover:bg-page-bg transition-colors">
-                  Load More Articles <ChevronDown className="w-4 h-4" />
-                </motion.button>
-              )}
-            </AnimatePresence>
-          </div>
-        </div>
-
-        {/* Right Column - Top Contributors & Categories */}
-        <div className="space-y-6">
-          
-          {/* Top Contributors */}
-          <div className="bg-white rounded-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-border-light p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-[16px] font-bold text-text-main">Top Contributors</h3>
-              <Link href="#" className="text-[12px] font-bold text-primary-purple">View All</Link>
-            </div>
-            <div className="space-y-4">
-              {[
-                { name: 'Dr. Arunkumar', count: '32 articles', crown: 'text-yellow-500' },
-                { name: 'Dr. Pavithra', count: '28 articles', crown: 'text-gray-400' },
-                { name: 'Dr. Karthikeyan', count: '18 articles', crown: 'text-amber-600' },
-              ].map((prof, i) => (
-                <div key={i} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <InitialsAvatar name={prof.name} size={40} />
-                    <div>
-                      <p className="text-[14px] font-bold text-text-main">{prof.name}</p>
-                      <p className="text-[12px] text-text-muted">{prof.count}</p>
-                    </div>
-                  </div>
-                  <div className={`w-6 h-6 rounded-full bg-white border border-border-light shadow-sm flex items-center justify-center ${prof.crown}`}>
-                    <span className="text-[10px] font-black">♚</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Categories */}
-          <div className="bg-white rounded-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-border-light p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-[16px] font-bold text-text-main">Categories</h3>
-              <Link href="#" className="text-[12px] font-bold text-primary-purple">View All</Link>
-            </div>
-            <div className="space-y-3">
-              {[
-                { name: 'Programming', count: 45, icon: Code, color: 'text-primary-purple', bg: 'bg-page-bg' },
-                { name: 'Database', count: 22, icon: Database, color: 'text-electric-blue', bg: 'bg-white' },
-                { name: 'Web Development', count: 18, icon: BookOpen, color: 'text-electric-blue', bg: 'bg-white' },
-                { name: 'Operating Systems', count: 16, icon: Share2, color: 'text-electric-blue', bg: 'bg-page-bg' },
-                { name: 'Computer Networks', count: 12, icon: Target, color: 'text-illus-gold', bg: 'bg-white' },
-                { name: 'Others', count: 15, icon: FileText, color: 'text-deep-violet', bg: 'bg-page-bg' },
-              ].map((cat, i) => (
-                <div key={i} className="flex items-center justify-between group cursor-pointer p-2 -mx-2 rounded-xl hover:bg-page-bg transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-lg ${cat.bg} flex items-center justify-center`}>
-                      <cat.icon className={`w-4 h-4 ${cat.color}`} />
-                    </div>
-                    <p className="text-[13px] font-bold text-text-main">{cat.name}</p>
-                  </div>
-                  <span className="text-[12px] font-bold text-text-muted group-hover:text-text-muted">{cat.count}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Popular Tags */}
-          <div className="bg-white rounded-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-border-light p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-[16px] font-bold text-text-main">Popular Tags</h3>
-              <Link href="#" className="text-[12px] font-bold text-primary-purple">View All</Link>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {['JavaScript', 'Python', 'DBMS', 'React', 'DSA', 'OS', 'SQL', 'Machine Learning', 'OOP', 'Algorithms'].map((tag, i) => (
-                <span key={i} className="px-3 py-1.5 bg-page-bg text-text-muted rounded-lg text-[12px] font-semibold cursor-pointer hover:bg-border-light transition-colors">
-                  {tag}
-                </span>
-              ))}
-            </div>
-          </div>
-
-        </div>
-
-      </div>
-    </div>
-  );
+  return <div className="mx-auto max-w-7xl space-y-6">
+    <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"><div><div className="mb-2 flex items-center gap-2 text-xs font-black uppercase tracking-[.16em] text-primary-purple"><BookOpenCheck className="h-4 w-4"/> Department intelligence</div><h1 className="text-3xl font-black tracking-tight">Knowledge Brain Review</h1><p className="mt-2 max-w-3xl text-sm leading-6 text-text-muted">Review articles and interview patterns before they reach students or ground AI Senior answers.</p></div><div className="rounded-2xl border border-border-light bg-white px-5 py-4 text-center shadow-sm"><div className="text-3xl font-black text-primary-purple">{pending}</div><div className="text-[10px] font-black uppercase tracking-wider text-text-muted">Awaiting review</div></div></header>
+    <div className="flex gap-3 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-xs font-semibold leading-5 text-blue-900"><ShieldCheck className="mt-0.5 h-5 w-5 shrink-0"/><span>Check privacy, usefulness, accuracy, historical context and whether claims could be mistaken for current official placement information.</span></div>
+    {error && <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700">{error}</div>}
+    {message && <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-bold text-emerald-800">{message}</div>}
+    <div className="flex flex-col gap-3 rounded-2xl border border-border-light bg-white p-3 sm:flex-row"><label className="relative flex-1"><Search className="absolute left-3 top-3 h-4 w-4 text-text-muted"/><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search title, theme or claim" className="w-full rounded-xl bg-page-bg py-2.5 pl-10 pr-4 text-sm outline-none"/></label><select value={filter} onChange={(event) => setFilter(event.target.value)} className="rounded-xl border border-border-light px-4 py-2.5 text-sm font-bold"><option value="pending">Awaiting review</option><option value="approved">Approved</option><option value="rejected">Rejected</option><option value="all">All content</option></select></div>
+    {loading && <div className="grid gap-4 lg:grid-cols-2">{[1,2,3,4].map((item) => <div key={item} className="h-56 animate-pulse rounded-3xl bg-white"/>)}</div>}
+    {!loading && filtered.length === 0 && <div className="rounded-3xl border border-dashed border-border-light bg-white p-14 text-center"><CheckCircle2 className="mx-auto h-10 w-10 text-emerald-600"/><h2 className="mt-4 text-lg font-black">The selected queue is clear</h2><p className="mt-2 text-sm text-text-muted">New contributions appear here with their full review context.</p></div>}
+    <div className="grid gap-4 lg:grid-cols-2">{filtered.map((item) => <article key={`${item.source}-${item.id}`} className="rounded-3xl border border-border-light bg-white p-6 shadow-sm"><div className="flex items-start justify-between gap-4"><div><span className="text-[10px] font-black uppercase tracking-[.14em] text-primary-purple">{item.source.replace('_', ' ')} · {item.status.replace('_', ' ')}</span><h2 className="mt-2 text-lg font-black">{item.title}</h2></div>{item.status === 'pending' ? <Clock3 className="h-6 w-6 text-amber-600"/> : item.status === 'approved' ? <CheckCircle2 className="h-6 w-6 text-emerald-600"/> : <XCircle className="h-6 w-6 text-red-600"/>}</div><p className="mt-3 text-sm leading-6 text-text-muted">{item.summary}</p><details className="mt-4 rounded-2xl bg-page-bg p-4"><summary className="cursor-pointer text-xs font-black">Review full content</summary><p className="mt-3 whitespace-pre-wrap text-xs leading-6 text-text-muted">{item.content}</p></details><div className="mt-4 flex flex-wrap gap-2">{item.tags.map((tag) => <span key={tag} className="rounded-lg bg-page-bg px-2.5 py-1.5 text-[10px] font-bold text-text-muted">{tag}</span>)}</div>{item.status === 'pending' && <div className="mt-5 flex justify-end gap-2"><button disabled={busyId === item.id} onClick={() => void review(item, 'rejected')} className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 px-3 py-2 text-xs font-black text-red-700 disabled:opacity-50"><XCircle className="h-4 w-4"/>Reject</button><button disabled={busyId === item.id} onClick={() => void review(item, 'approved')} className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-black text-white disabled:opacity-50"><CheckCircle2 className="h-4 w-4"/>Approve</button></div>}</article>)}</div>
+  </div>
 }

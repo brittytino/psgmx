@@ -28,9 +28,9 @@ const sidebarLinks = [
   { name: 'Knowledge Brain', href: '/alumni/knowledge-brain', icon: BookOpen },
   { name: 'My Journey', href: '/alumni/journey', icon: Award },
   { name: 'My Lineage', href: '/alumni/lineage', icon: Users },
-  { name: 'Marketplace', href: '/alumni/marketplace', icon: Briefcase },
-  { name: 'Announcements', href: '/alumni/announcements', icon: Megaphone, badge: 2 },
-  { name: 'Settings', href: '/alumni/settings', icon: Settings },
+  { name: 'Community Board', href: '/alumni/community-board', icon: Briefcase },
+  { name: 'Inbox', href: '/alumni/announcements', icon: Megaphone },
+  { name: 'Account', href: '/alumni/settings', icon: Settings },
 ];
 
 const getSidebarCardContent = (pathname: string) => {
@@ -46,8 +46,8 @@ const getSidebarCardContent = (pathname: string) => {
   if (pathname.includes('/lineage')) {
     return { title: 'Your junior has the same suffix. Be the senior you needed.', desc: '', icon: Users };
   }
-  if (pathname.includes('/marketplace')) {
-    return { title: 'Post opportunities. Hire from your own batch.', desc: 'Give back to the department network.', icon: Briefcase };
+  if (pathname.includes('/community-board') || pathname.includes('/marketplace')) {
+    return { title: 'Collaborate without replacing NEO PAT.', desc: 'Projects, mentoring and clearly unofficial community information.', icon: Briefcase };
   }
   if (pathname.includes('/settings')) {
     return { title: 'Your alumni profile is your department legacy.', desc: 'Keep it current for your junior.', icon: Settings };
@@ -102,13 +102,6 @@ export default function AlumniLayout({ children }: { children: React.ReactNode }
                   <link.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-text-muted group-hover:text-primary-purple'}`} />
                   <span className={`text-[14px] ${isActive ? 'font-bold' : 'font-semibold'}`}>{link.name}</span>
                 </div>
-                {link.badge && (
-                  <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                    isActive ? 'bg-white text-primary-purple' : 'bg-primary-purple text-white'
-                  }`}>
-                    {link.badge}
-                  </span>
-                )}
               </Link>
             );
           })}

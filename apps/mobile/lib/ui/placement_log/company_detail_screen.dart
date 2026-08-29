@@ -58,7 +58,7 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
     final theme = Theme.of(context);
     final userProvider = context.watch<UserProvider>();
     final canModerate =
-        userProvider.hasPermission(UserPermission.moderatePlacementLog);
+        userProvider.hasPermission(UserPermission.moderateInterviewPatterns);
     final provider = context.watch<PlacementLogProvider>();
 
     return Scaffold(
@@ -83,12 +83,12 @@ class _CompanyDetailScreenState extends State<CompanyDetailScreen> {
     final logs = provider.entriesFor(widget.company.id);
 
     // Filter out unapproved if not moderator
-    final visibleLogs = canModerate
-        ? logs
-        : logs.where((l) => !l.isModerated).toList();
+    final visibleLogs =
+        canModerate ? logs : logs.where((l) => !l.isModerated).toList();
 
     if (visibleLogs.isEmpty) {
-      return const Center(child: Text('No experiences shared yet. Be the first!'));
+      return const Center(
+          child: Text('No experiences shared yet. Be the first!'));
     }
 
     final dateFormat = DateFormat('MMM d, yyyy');
@@ -303,7 +303,8 @@ class _AddLogSheetState extends State<_AddLogSheet> {
                           value: 'rejected', child: Text('Rejected')),
                       DropdownMenuItem(
                           value: 'interviewing', child: Text('Interviewing')),
-                      DropdownMenuItem(value: 'no_show', child: Text('No Show')),
+                      DropdownMenuItem(
+                          value: 'no_show', child: Text('No Show')),
                     ],
                     onChanged: (v) => setState(() => _outcome = v!),
                   ),
@@ -332,7 +333,8 @@ class _AddLogSheetState extends State<_AddLogSheet> {
             const SizedBox(height: AppSpacing.md),
             SwitchListTile(
               title: const Text('Post Anonymously'),
-              subtitle: const Text('Your name will be hidden from other students.'),
+              subtitle:
+                  const Text('Your name will be hidden from other students.'),
               value: _isAnonymous,
               onChanged: (v) => setState(() => _isAnonymous = v),
             ),

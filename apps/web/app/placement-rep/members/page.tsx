@@ -8,12 +8,14 @@ import { parseCsv } from '@/lib/csv'
 
 const permissionOptions = [
   ['configure_teams', 'Teams'],
-  ['schedule_placement_sessions', 'Sessions'],
-  ['mark_placement_attendance', 'Attendance'],
-  ['publish_tasks', 'Tasks'],
-  ['manage_company_records', 'Companies'],
-  ['moderate_placement_log', 'Moderation'],
+  ['schedule_preparation_sessions', 'Programme'],
+  ['mark_preparation_participation', 'Participation'],
+  ['publish_quests', 'Quests'],
+  ['publish_announcements', 'Communication'],
+  ['manage_preparation_tracks', 'Tracks'],
+  ['moderate_interview_patterns', 'Patterns'],
   ['view_batch_analytics', 'Analytics'],
+  ['view_ai_mentor', 'AI Senior'],
 ] as const
 
 type Member = {

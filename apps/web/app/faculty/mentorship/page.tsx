@@ -1,313 +1,95 @@
-'use client';
+'use client'
 
-import React from 'react';
-import { motion } from 'framer-motion';
-import { Users, Plus, Search, Filter, ChevronDown, MoreVertical, Calendar, Clock, CheckCircle, AlertCircle, FileText, Video, MessageSquare } from 'lucide-react';
-import Link from 'next/link';
-import { InitialsAvatar } from '@/components/basic/InitialsAvatar';
+import React from 'react'
+import { CheckCircle2, Clock3, GraduationCap, MessageSquareText, Search, UserRoundCheck, XCircle } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+import { getCurrentProfile } from '@/lib/current-profile'
+import type { Database } from '@/../../supabase/types/database.types'
 
-import { AnimatePresence } from 'framer-motion';
+type Request = Database['public']['Tables']['mentorship_requests']['Row']
+type Student = Pick<Database['public']['Tables']['users']['Row'], 'id' | 'name' | 'reg_no'>
 
-export default function FacultyMentorshipDashboard() {
-  const [activeTab, setActiveTab] = React.useState('All Mentees');
-  const [searchQuery, setSearchQuery] = React.useState('');
-  const [showScheduleModal, setShowScheduleModal] = React.useState(false);
-  const [visibleCount, setVisibleCount] = React.useState(3);
-  const [toastMessage, setToastMessage] = React.useState('');
+export default function FacultyMentorshipPage() {
+  const supabase = React.useMemo(() => createClient(), [])
+  const [requests, setRequests] = React.useState<Request[]>([])
+  const [students, setStudents] = React.useState<Student[]>([])
+  const [query, setQuery] = React.useState('')
+  const [filter, setFilter] = React.useState('active')
+  const [notes, setNotes] = React.useState<Record<string, string>>({})
+  const [loading, setLoading] = React.useState(true)
+  const [error, setError] = React.useState('')
+  const [message, setMessage] = React.useState('')
 
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(''), 3000);
-  };
+  const load = React.useCallback(async () => {
+    setLoading(true)
+    setError('')
+    try {
+      const [requestResult, studentResult] = await Promise.all([
+        supabase.from('mentorship_requests').select('*').order('updated_at', { ascending: false }),
+        supabase.from('users').select('id,name,reg_no').eq('role_label', 'Student').order('name'),
+      ])
+      if (requestResult.error) throw requestResult.error
+      if (studentResult.error) throw studentResult.error
+      setRequests(requestResult.data ?? [])
+      setStudents(studentResult.data ?? [])
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Mentorship requests could not be loaded.')
+    } finally {
+      setLoading(false)
+    }
+  }, [supabase])
 
-  const mentees = [
-    { id: 1, name: 'Arjun Mehta', roll: '25MX301', next: 'May 18, 10:00 AM', status: 'On Track', statusColor: 'bg-white text-electric-blue border-electric-blue/30', progress: 85 },
-    { id: 2, name: 'Sara Khan', roll: '25MX205', next: 'May 20, 2:30 PM', status: 'Needs Attention', statusColor: 'bg-white text-illus-gold border-illus-gold/30', progress: 55 },
-    { id: 3, name: 'Rohan Verma', roll: '25MX114', next: 'No upcoming sessions', status: 'Critical', statusColor: 'bg-page-bg text-deep-violet border-deep-violet/30', progress: 30 },
-    { id: 4, name: 'Neha Sharma', roll: '25MX402', next: 'May 22, 11:00 AM', status: 'On Track', statusColor: 'bg-white text-electric-blue border-electric-blue/30', progress: 92 },
-    { id: 5, name: 'Ali Raza', roll: '25MX310', next: 'May 25, 3:00 PM', status: 'On Track', statusColor: 'bg-white text-electric-blue border-electric-blue/30', progress: 78 },
-  ];
+  React.useEffect(() => { void load() }, [load])
 
-  const filteredMentees = mentees.filter(m => {
-    const matchesSearch = m.name.toLowerCase().includes(searchQuery.toLowerCase()) || m.roll.toLowerCase().includes(searchQuery.toLowerCase());
-    if (!matchesSearch) return false;
-    
-    if (activeTab === 'Needs Attention') return m.status === 'Needs Attention' || m.status === 'Critical';
-    if (activeTab === 'Recent Activity') return m.progress > 70; // simulated logic
-    return true; // All
-  });
+  async function transition(item: Request, status: Request['status']) {
+    setError('')
+    setMessage('')
+    try {
+      const me = await getCurrentProfile(supabase)
+      if (!me) throw new Error('Your faculty profile could not be loaded.')
+      const resolution = notes[item.id]?.trim() || null
+      const { error: updateError } = await supabase.from('mentorship_requests').update({
+        mentor_id: status === 'accepted' || status === 'answered' ? me.id : item.mentor_id,
+        status,
+        resolution_note: resolution,
+        resolved_at: ['answered', 'declined', 'redirected'].includes(status) ? new Date().toISOString() : null,
+        updated_at: new Date().toISOString(),
+      }).eq('id', item.id)
+      if (updateError) throw updateError
+      setMessage(status === 'accepted' ? 'Mentorship request accepted. Agree one small next step with the student.' : 'Mentorship request updated.')
+      await load()
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'The mentorship request could not be updated.')
+    }
+  }
 
-  const displayedMentees = filteredMentees.slice(0, visibleCount);
+  const studentMap = new Map(students.map((student) => [student.id, student]))
+  const filtered = requests.filter((item) => {
+    const student = studentMap.get(item.requester_id)
+    const matchesQuery = `${item.topic} ${item.context} ${student?.name ?? ''} ${student?.reg_no ?? ''}`.toLowerCase().includes(query.toLowerCase())
+    const matchesFilter = filter === 'all' || (filter === 'active'
+      ? ['requested', 'accepted'].includes(item.status)
+      : item.status === filter)
+    return matchesQuery && matchesFilter
+  })
+  const awaiting = requests.filter((item) => item.status === 'requested').length
+  const active = requests.filter((item) => item.status === 'accepted').length
+  const resolved = requests.filter((item) => item.status === 'answered').length
 
-  return (
-    <div className="max-w-[1400px] mx-auto space-y-8 pb-8 relative">
-      <AnimatePresence>
-        {toastMessage && (
-          <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 50 }} className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-rich-black text-white px-6 py-3 rounded-xl shadow-xl flex items-center gap-3">
-            <div className="w-2 h-2 rounded-full bg-electric-blue"></div>
-            <span className="text-[13px] font-bold">{toastMessage}</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-      
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-primary-purple flex items-center justify-center shadow-lg shadow-md shadow-primary-purple/10 shrink-0">
-            <GraduationCapIcon className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <motion.h1 
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-[26px] font-bold text-text-main tracking-tight mb-0.5"
-            >
-              Mentorship
-            </motion.h1>
-            <motion.p 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.1 }}
-              className="text-[14px] text-text-muted"
-            >
-              Manage mentees, schedule 1-on-1 sessions, and track their holistic progress.
-            </motion.p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3 shrink-0">
-          <button onClick={() => showToast('Opening Messenger...')} className="flex items-center gap-2 px-6 py-3 bg-white border border-border-light text-text-main rounded-xl text-[14px] font-bold shadow-sm hover:bg-page-bg transition-colors">
-            <MessageSquare className="w-4 h-4" /> Message All
-          </button>
-          <button onClick={() => setShowScheduleModal(true)} className="flex items-center gap-2 px-6 py-3 bg-primary-purple text-white rounded-xl text-[14px] font-bold shadow-md shadow-md shadow-primary-purple/10 hover:bg-[#5B21B6] transition-colors">
-            <Plus className="w-4 h-4" /> Schedule Session
-          </button>
-        </div>
-      </div>
+  return <div className="mx-auto max-w-7xl space-y-6">
+    <header><div className="mb-2 flex items-center gap-2 text-xs font-black uppercase tracking-[.16em] text-primary-purple"><GraduationCap className="h-4 w-4"/> Structured support</div><h1 className="text-3xl font-black tracking-tight">Mentorship</h1><p className="mt-2 max-w-3xl text-sm leading-6 text-text-muted">Respond to a real topic, agree one useful next step, and close the loop. Private conversation content is not exposed to PR or peers.</p></header>
+    {error && <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700">{error}</div>}
+    {message && <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-bold text-emerald-800">{message}</div>}
 
-      {/* Schedule Modal */}
-      <AnimatePresence>
-        {showScheduleModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-rich-black/20 backdrop-blur-sm" onClick={() => setShowScheduleModal(false)}></div>
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 relative z-10 border border-border-light">
-              <h3 className="text-[18px] font-bold text-text-main mb-4">Schedule a Session</h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="text-[12px] font-bold text-text-muted block mb-1">Select Mentee</label>
-                  <select className="w-full border border-border-light rounded-xl px-4 py-3 text-[14px] font-semibold text-text-main outline-none focus:border-primary-purple">
-                    <option>Arjun Mehta</option>
-                    <option>Sara Khan</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-[12px] font-bold text-text-muted block mb-1">Date & Time</label>
-                  <input type="datetime-local" className="w-full border border-border-light rounded-xl px-4 py-3 text-[14px] font-semibold text-text-main outline-none focus:border-primary-purple" />
-                </div>
-                <button onClick={() => setShowScheduleModal(false)} className="w-full py-3 bg-primary-purple text-white rounded-xl text-[14px] font-bold shadow-md mt-2">
-                  Confirm Schedule
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+    <section className="grid gap-4 sm:grid-cols-3"><Metric icon={Clock3} label="Awaiting response" value={awaiting}/><Metric icon={UserRoundCheck} label="Active conversations" value={active}/><Metric icon={CheckCircle2} label="Questions resolved" value={resolved}/></section>
+    <div className="flex flex-col gap-3 rounded-2xl border border-border-light bg-white p-3 sm:flex-row"><label className="relative flex-1"><Search className="absolute left-3 top-3 h-4 w-4 text-text-muted"/><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search student, topic or context" className="w-full rounded-xl bg-page-bg py-2.5 pl-10 pr-4 text-sm outline-none"/></label><select value={filter} onChange={(event) => setFilter(event.target.value)} className="rounded-xl border border-border-light px-4 py-2.5 text-sm font-bold"><option value="active">Needs attention</option><option value="requested">Requested</option><option value="accepted">Accepted</option><option value="answered">Resolved</option><option value="declined">Declined</option><option value="all">All</option></select></div>
 
-      {/* 4 Stat Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {[
-          { title: 'Total Mentees', value: '24', trend: 'Assigned for 2021-2025', color: "var(--primary-purple)", bg: 'bg-page-bg', icon: Users },
-          { title: 'Sessions This Month', value: '16', trend: '↑ 4 vs last month', color: "var(--primary-purple)", bg: 'bg-page-bg', icon: Video },
-          { title: 'Pending Feedback', value: '3', trend: 'Needs your review', color: "var(--illus-gold)", bg: 'bg-white', icon: FileText },
-          { title: 'Avg. Rating', value: '4.8 / 5', trend: '↑ 0.2 from students', color: '#FCD34D', bg: 'bg-page-bg', icon: StarIcon },
-        ].map((stat, i) => (
-          <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 * i }} className="bg-white rounded-[20px] p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-border-light relative overflow-hidden flex flex-col justify-between h-[140px]">
-            <div className="flex justify-between items-start">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-full ${stat.bg} flex items-center justify-center`}>
-                  <stat.icon className="w-5 h-5" style={{ color: stat.color }} />
-                </div>
-                <p className="text-[12px] font-bold text-text-muted">{stat.title}</p>
-              </div>
-            </div>
-            <div className="flex items-end justify-between mt-auto">
-              <div>
-                <h3 className="text-[32px] font-black text-text-main leading-none mb-2">{stat.value}</h3>
-                <p className={`text-[11px] font-bold ${stat.trend.includes('Needs') ? 'text-illus-gold' : 'text-electric-blue'}`}>{stat.trend}</p>
-              </div>
-            </div>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* Left Column - Mentees List */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white rounded-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-border-light overflow-hidden flex flex-col h-full">
-            
-            {/* Tabs & Controls */}
-            <div className="px-6 pt-6 border-b border-border-light flex flex-col md:flex-row md:items-end justify-between gap-4">
-              <div className="flex items-center gap-6 overflow-x-auto custom-scrollbar pb-[-1px]">
-                {['All Mentees', 'Needs Attention', 'Recent Activity'].map(tab => (
-                  <button 
-                    key={tab}
-                    onClick={() => setActiveTab(tab)}
-                    className={`text-[14px] pb-4 px-1 whitespace-nowrap transition-colors ${activeTab === tab ? 'font-bold text-primary-purple border-b-2 border-primary-purple' : 'font-semibold text-text-muted hover:text-text-main border-b-2 border-transparent'}`}
-                  >
-                    {tab}
-                  </button>
-                ))}
-              </div>
-              <div className="flex items-center gap-3 pb-4">
-                <div className="relative">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
-                  <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search mentees..." className="pl-9 pr-4 py-2 border border-border-light rounded-xl text-[13px] w-[200px] outline-none focus:border-primary-purple transition-colors bg-white" />
-                </div>
-                <button className="flex items-center gap-2 px-3 py-2 border border-border-light rounded-xl text-[13px] font-bold text-text-main hover:bg-page-bg transition-colors">
-                  <Filter className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
-            {/* List */}
-            <div className="overflow-x-auto p-6">
-              <div className="space-y-4">
-                <AnimatePresence mode="popLayout">
-                  {displayedMentees.length === 0 ? (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="py-8 text-center text-text-muted text-[13px] font-semibold">
-                      No mentees found matching your search.
-                    </motion.div>
-                  ) : (
-                    displayedMentees.map((mentee) => (
-                      <motion.div layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} key={mentee.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-[16px] border border-border-light hover:border-border-light hover:shadow-sm transition-all gap-4 bg-white">
-                        <div className="flex items-center gap-4">
-                          <InitialsAvatar name={mentee.name} size={48} className="border border-border-light" />
-                          <div>
-                            <h4 className="text-[14px] font-bold text-text-main cursor-pointer hover:text-primary-purple transition-colors">{mentee.name}</h4>
-                            <p className="text-[12px] text-text-muted">{mentee.roll}</p>
-                          </div>
-                        </div>
-                        
-                        <div className="flex-1 max-w-[200px] hidden md:block">
-                          <p className="text-[11px] font-bold text-text-muted mb-1">Overall Progress</p>
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 h-1.5 bg-page-bg rounded-full overflow-hidden">
-                              <div className={`h-full rounded-full ${mentee.progress > 80 ? 'bg-electric-blue' : mentee.progress > 50 ? 'bg-illus-gold' : 'bg-deep-violet'}`} style={{ width: `${mentee.progress}%` }}></div>
-                            </div>
-                            <span className="text-[11px] font-bold text-text-main">{mentee.progress}%</span>
-                          </div>
-                        </div>
-
-                        <div className="hidden lg:block">
-                          <p className="text-[11px] font-bold text-text-muted mb-1">Next Session</p>
-                          <p className={`text-[12px] font-semibold ${mentee.next.includes('No') ? 'text-text-muted' : 'text-text-main'}`}>{mentee.next}</p>
-                        </div>
-
-                        <div className="flex items-center justify-between sm:justify-end gap-6 shrink-0 w-full sm:w-auto">
-                          <span className={`px-3 py-1 rounded-full text-[11px] font-bold border ${mentee.statusColor} flex items-center gap-1.5 w-[120px] justify-center`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${mentee.status === 'On Track' ? 'bg-electric-blue' : mentee.status === 'Needs Attention' ? 'bg-illus-gold' : 'bg-deep-violet'}`}></span>
-                            {mentee.status}
-                          </span>
-                          <button className="p-2 text-text-muted hover:text-text-main hover:bg-page-bg rounded-lg transition-colors">
-                            <MoreVertical className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </motion.div>
-                    ))
-                  )}
-                </AnimatePresence>
-              </div>
-            </div>
-
-            <div className="p-6 pt-0 mt-auto">
-              <AnimatePresence>
-                {visibleCount < filteredMentees.length && (
-                  <motion.button layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setVisibleCount(prev => prev + 3)} className="w-full py-3.5 bg-page-bg text-primary-purple rounded-[12px] text-[13px] font-bold flex items-center justify-center gap-2 hover:bg-page-bg transition-colors">
-                    View All {filteredMentees.length} Mentees <ChevronDown className="w-4 h-4" />
-                  </motion.button>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column */}
-        <div className="space-y-6">
-          
-          {/* Mentorship Overview Donut */}
-          <div className="bg-white rounded-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-border-light p-6">
-            <h3 className="text-[16px] font-bold text-text-main mb-6">Mentee Status Overview</h3>
-            
-            <div className="flex items-center gap-6">
-              <div className="relative w-28 h-28 shrink-0">
-                <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
-                  <circle cx="18" cy="18" r="16" fill="none" className="stroke-[#F1F5F9]" strokeWidth="6"></circle>
-                  <circle cx="18" cy="18" r="16" fill="none" className="stroke-electric-blue" strokeWidth="6" strokeDasharray="62 100" strokeDashoffset="0"></circle>
-                  <circle cx="18" cy="18" r="16" fill="none" className="stroke-illus-gold" strokeWidth="6" strokeDasharray="25 100" strokeDashoffset="-62"></circle>
-                  <circle cx="18" cy="18" r="16" fill="none" className="stroke-deep-violet" strokeWidth="6" strokeDasharray="13 100" strokeDashoffset="-87"></circle>
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-[24px] font-black text-text-main leading-none">24</span>
-                  <span className="text-[9px] font-bold text-text-muted uppercase mt-0.5">Mentees</span>
-                </div>
-              </div>
-              
-              <div className="flex-1 space-y-3">
-                {[
-                  { label: 'On Track', count: 15, color: 'bg-electric-blue' },
-                  { label: 'Needs Attention', count: 6, color: 'bg-illus-gold' },
-                  { label: 'Critical', count: 3, color: 'bg-deep-violet' },
-                ].map((s, i) => (
-                  <div key={i} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2"><div className={`w-2.5 h-2.5 rounded-full ${s.color}`}></div><span className="text-[12px] font-bold text-text-main">{s.label}</span></div>
-                    <span className="text-[12px] text-text-muted font-semibold">{s.count}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Upcoming Sessions */}
-          <div className="bg-white rounded-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-border-light p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-[16px] font-bold text-text-main">Upcoming Sessions</h3>
-              <Link href="#" className="text-[12px] font-bold text-primary-purple">Calendar</Link>
-            </div>
-            
-            <div className="space-y-4">
-              {[
-                { name: 'Arjun Mehta', topic: 'FYP Topic Discussion', time: 'Tomorrow, 10:00 AM', type: 'Video Call', icon: Video },
-                { name: 'Sara Khan', topic: 'Career Guidance', time: 'May 20, 2:30 PM', type: 'In Person', icon: Users },
-                { name: 'Neha Sharma', topic: 'Resume Review', time: 'May 22, 11:00 AM', type: 'Video Call', icon: Video },
-              ].map((session, i) => (
-                <div key={i} className="flex items-start gap-4 p-4 rounded-[16px] border border-border-light bg-page-bg/50 hover:bg-page-bg transition-colors">
-                  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm shrink-0 border border-border-light">
-                    <session.icon className="w-4 h-4 text-primary-purple" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-bold text-text-main truncate mb-0.5">{session.topic}</p>
-                    <p className="text-[12px] font-semibold text-text-muted mb-2">with {session.name}</p>
-                    <div className="flex items-center gap-3">
-                      <span className="flex items-center gap-1 text-[11px] font-bold text-text-muted"><Clock className="w-3 h-3" /> {session.time}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-        </div>
-
-      </div>
-    </div>
-  );
+    {loading && <div className="h-44 animate-pulse rounded-3xl bg-white"/>}
+    {!loading && filtered.length === 0 && <div className="rounded-3xl border border-dashed border-border-light bg-white p-14 text-center"><CheckCircle2 className="mx-auto h-10 w-10 text-emerald-600"/><h2 className="mt-4 text-lg font-black">No mentorship request needs attention</h2><p className="mt-2 text-sm text-text-muted">New structured student requests will appear here.</p></div>}
+    <div className="grid gap-4 lg:grid-cols-2">{filtered.map((item) => { const student = studentMap.get(item.requester_id); return <article key={item.id} className="rounded-3xl border border-border-light bg-white p-6 shadow-sm"><div className="flex items-start justify-between gap-4"><div><span className="text-[10px] font-black uppercase tracking-[.14em] text-primary-purple">{item.status} · {item.preferred_response.replace('_', ' ')}</span><h2 className="mt-2 text-lg font-black">{item.topic}</h2><p className="mt-1 text-xs font-bold text-text-muted">{student?.name ?? 'Student'} · {student?.reg_no ?? 'Register unavailable'}</p></div><MessageSquareText className="h-6 w-6 text-primary-purple"/></div><div className="mt-4 rounded-2xl bg-page-bg p-4 text-sm leading-6 text-text-muted">{item.context}</div>{item.resolution_note && <div className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50 p-4"><p className="text-[10px] font-black uppercase tracking-wider text-emerald-700">Recorded outcome</p><p className="mt-1 text-sm font-semibold text-emerald-900">{item.resolution_note}</p></div>}{['requested','accepted'].includes(item.status) && <><label className="mt-4 block text-xs font-bold text-text-muted">Response or agreed next step<textarea value={notes[item.id] ?? ''} onChange={(event) => setNotes({ ...notes, [item.id]: event.target.value })} placeholder="Record only the useful next step; keep sensitive notes elsewhere." className="mt-2 min-h-20 w-full rounded-xl border border-border-light px-3 py-2.5 text-sm outline-none focus:border-primary-purple"/></label><div className="mt-4 flex flex-wrap justify-end gap-2">{item.status === 'requested' && <button onClick={() => void transition(item, 'declined')} className="inline-flex items-center gap-1.5 rounded-xl border border-border-light px-3 py-2 text-xs font-black text-text-muted"><XCircle className="h-4 w-4"/>Decline</button>}{item.status === 'requested' && <button onClick={() => void transition(item, 'accepted')} className="inline-flex items-center gap-1.5 rounded-xl bg-primary-purple px-3 py-2 text-xs font-black text-white"><UserRoundCheck className="h-4 w-4"/>Accept</button>}{item.status === 'accepted' && <button onClick={() => void transition(item, 'answered')} disabled={!notes[item.id]?.trim()} className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-black text-white disabled:opacity-50"><CheckCircle2 className="h-4 w-4"/>Resolve with next step</button>}</div></>}</article>})}</div>
+  </div>
 }
 
-function GraduationCapIcon(props: any) {
-  return <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21.42 10.922a2 2 0 0 1-.019 3.07l-9.28 8.1a2 2 0 0 1-2.634.024l-9.26-8.05a2.043 2.043 0 0 1 .023-3.092l9.27-8.01a2 2 0 0 1 2.628-.018z"/><path d="M14 11.6V17"/><path d="M10 11.6V17"/></svg>
-}
-
-function StarIcon(props: any) {
-  return <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+function Metric({ icon: Icon, label, value }: { icon: React.ComponentType<{ className?: string }>; label: string; value: number }) {
+  return <div className="rounded-3xl border border-border-light bg-white p-5 shadow-sm"><Icon className="h-5 w-5 text-primary-purple"/><div className="mt-4 text-3xl font-black">{value}</div><div className="mt-1 text-xs font-bold text-text-muted">{label}</div></div>
 }

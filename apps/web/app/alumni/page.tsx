@@ -9,7 +9,7 @@ import { InitialsAvatar } from '@/components/basic/InitialsAvatar';
 import { getCurrentProfile } from '@/lib/current-profile';
 
 interface ArticleRow { id: string; title: string; approval_status: string; view_count: number; created_at: string }
-interface ActivityItem { id: string; text: string; time: string; kind: 'company' | 'article' | 'announcement' }
+interface ActivityItem { id: string; text: string; time: string; kind: 'pattern' | 'article' | 'announcement' }
 interface JuniorInfo { id: string; name: string; batchCode: string }
 
 export default function AlumniDashboard() {
@@ -41,7 +41,7 @@ export default function AlumniDashboard() {
       { data: articleRows },
       { data: lineageRows },
       { data: announcements },
-      { data: companies },
+      { data: patterns },
       { data: batchStreaks },
       { data: batchLeetcode },
       { data: batchExamResults },
@@ -51,7 +51,7 @@ export default function AlumniDashboard() {
       supabase.from('knowledge_brain_articles').select('id, title, approval_status, view_count, created_at').eq('author_id', me.id).order('created_at', { ascending: false }),
       supabase.from('lineage_map').select('id, student_id, users!lineage_map_student_id_fkey(name, batch_id)').eq('senior_user_id', me.id),
       supabase.from('announcements').select('id, title, created_at').order('created_at', { ascending: false }).limit(3),
-      supabase.from('companies').select('id, name, visit_date').order('visit_date', { ascending: false }).limit(2),
+      supabase.from('interview_patterns').select('id,title,created_at').eq('approval_status', 'approved').order('created_at', { ascending: false }).limit(2),
       me.batch_id ? supabase.from('daily_five_streaks').select('longest_streak, user_id, users!inner(batch_id)').eq('users.batch_id', me.batch_id).order('longest_streak', { ascending: false }).limit(1) : Promise.resolve({ data: [] }),
       me.batch_id ? supabase.from('leetcode_stats').select('total_solved, user_id, users!inner(batch_id)').eq('users.batch_id', me.batch_id) : Promise.resolve({ data: [] }),
       me.batch_id ? supabase.from('mock_exam_results').select('id, mock_exams!inner(batch_id)').eq('mock_exams.batch_id', me.batch_id).eq('status', 'submitted') : Promise.resolve({ data: [] }),
@@ -66,7 +66,7 @@ export default function AlumniDashboard() {
     setJunior(firstJunior?.users ? { id: firstJunior.student_id, name: firstJunior.users.name, batchCode: '' } : null);
 
     const feed: ActivityItem[] = [
-      ...(companies || []).map((c: any) => ({ id: `c-${c.id}`, text: `${c.name} campus drive logged`, time: c.visit_date, kind: 'company' as const })),
+      ...(patterns || []).map((pattern) => ({ id: `p-${pattern.id}`, text: `Interview pattern published: ${pattern.title}`, time: pattern.created_at, kind: 'pattern' as const })),
       ...(announcements || []).map((a: any) => ({ id: `a-${a.id}`, text: a.title, time: a.created_at, kind: 'announcement' as const })),
     ].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()).slice(0, 5);
     setActivityFeed(feed);
@@ -206,7 +206,7 @@ export default function AlumniDashboard() {
             ) : (
               <div className="space-y-4">
                 {activityFeed.map((a) => {
-                  const Icon = a.kind === 'company' ? Briefcase : a.kind === 'article' ? BookOpen : Award;
+                  const Icon = a.kind === 'pattern' ? Briefcase : a.kind === 'article' ? BookOpen : Award;
                   return (
                     <div key={a.id} className="flex items-start gap-3">
                       <div className="w-8 h-8 rounded-full bg-page-bg flex items-center justify-center shrink-0">
@@ -297,19 +297,20 @@ export default function AlumniDashboard() {
             </Link>
           </div>
 
-          {/* Marketplace Quick */}
+          {/* Community board quick action */}
           <div className="bg-white rounded-[20px] border border-border-light shadow-[0_2px_12px_rgba(0,0,0,0.02)] p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Briefcase className="w-5 h-5 text-primary-purple" />
-                <h3 className="text-[14px] font-bold text-text-main">Marketplace</h3>
+                <h3 className="text-[14px] font-bold text-text-main">Community Board</h3>
               </div>
-              <Link href="/alumni/marketplace" className="text-[12px] font-bold text-primary-purple hover:underline">View All</Link>
+              <Link href="/alumni/community-board" className="text-[12px] font-bold text-primary-purple hover:underline">View All</Link>
             </div>
-            <Link href="/alumni/marketplace" className="block w-full py-3 bg-primary-purple text-white rounded-xl text-[13px] font-bold text-center hover:bg-deep-violet transition-colors">
-              + Post an Opportunity
+            <Link href="/alumni/community-board" className="block w-full py-3 bg-primary-purple text-white rounded-xl text-[13px] font-bold text-center hover:bg-deep-violet transition-colors">
+              + Share with the Community
             </Link>
-            <p className="text-[11px] text-text-muted mt-3 text-center">Jobs · Internships · Collaborations · Events</p>
+            <p className="text-[11px] text-text-muted mt-3 text-center">Projects · Mentorship · Learning events · Unofficial career information</p>
+            <p className="mt-2 text-center text-[10px] font-semibold text-amber-700">Official placement operations remain in NEO PAT.</p>
           </div>
         </div>
       </div>

@@ -29,7 +29,10 @@ class _QuestionBankScreenState extends State<QuestionBankScreen> {
   }
 
   Future<void> _loadQuestions() async {
-    setState(() { _isLoading = true; _error = null; });
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
     try {
       final questions = await _service.fetchAllQuestions();
       if (mounted) {
@@ -65,11 +68,12 @@ class _QuestionBankScreenState extends State<QuestionBankScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final userProvider = context.watch<UserProvider>();
-    
-    if (!userProvider.hasPermission(UserPermission.publishTasks)) {
+
+    if (!userProvider.hasPermission(UserPermission.publishQuests)) {
       return Scaffold(
         appBar: AppBar(title: const Text('Question Bank')),
-        body: const Center(child: Text('You do not have permission to manage questions.')),
+        body: const Center(
+            child: Text('You do not have permission to manage questions.')),
       );
     }
 
@@ -77,21 +81,25 @@ class _QuestionBankScreenState extends State<QuestionBankScreen> {
       appBar: AppBar(
         title: const Text('Question Bank'),
         actions: [
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadQuestions),
+          IconButton(
+              icon: const Icon(Icons.refresh), onPressed: _loadQuestions),
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(60),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, AppSpacing.md),
+            padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md, 0, AppSpacing.md, AppSpacing.md),
             child: TextField(
               decoration: InputDecoration(
                 hintText: 'Search topic or text...',
                 prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.lg)),
                 filled: true,
                 fillColor: theme.colorScheme.surface,
               ),
-              onChanged: (val) => setState(() => _searchQuery = val.toLowerCase()),
+              onChanged: (val) =>
+                  setState(() => _searchQuery = val.toLowerCase()),
             ),
           ),
         ),
@@ -119,14 +127,14 @@ class _QuestionBankScreenState extends State<QuestionBankScreen> {
         ),
       );
     }
-    
+
     if (_questions == null || _questions!.isEmpty) {
       return const Center(child: Text('Question bank is empty.'));
     }
 
     final filtered = _questions!.where((q) {
-      return q.topic.toLowerCase().contains(_searchQuery) || 
-             q.questionText.toLowerCase().contains(_searchQuery);
+      return q.topic.toLowerCase().contains(_searchQuery) ||
+          q.questionText.toLowerCase().contains(_searchQuery);
     }).toList();
 
     return ListView.builder(
@@ -137,9 +145,15 @@ class _QuestionBankScreenState extends State<QuestionBankScreen> {
         return Card(
           margin: const EdgeInsets.only(bottom: AppSpacing.sm),
           child: ListTile(
-            title: Text(q.questionText, maxLines: 2, overflow: TextOverflow.ellipsis),
-            subtitle: Text('${q.topic.toUpperCase()} • ${q.difficulty}', style: TextStyle(color: theme.colorScheme.primary)),
-            trailing: q.isActive ? null : const Chip(label: Text('Inactive'), visualDensity: VisualDensity.compact),
+            title: Text(q.questionText,
+                maxLines: 2, overflow: TextOverflow.ellipsis),
+            subtitle: Text('${q.topic.toUpperCase()} • ${q.difficulty}',
+                style: TextStyle(color: theme.colorScheme.primary)),
+            trailing: q.isActive
+                ? null
+                : const Chip(
+                    label: Text('Inactive'),
+                    visualDensity: VisualDensity.compact),
             onTap: () => _showEditor(q),
           ),
         );
@@ -153,7 +167,8 @@ class _QuestionEditorSheet extends StatefulWidget {
   final DailyFiveQuestion? initialQuestion;
   final VoidCallback onSaved;
 
-  const _QuestionEditorSheet({required this.service, this.initialQuestion, required this.onSaved});
+  const _QuestionEditorSheet(
+      {required this.service, this.initialQuestion, required this.onSaved});
 
   @override
   State<_QuestionEditorSheet> createState() => _QuestionEditorSheetState();
@@ -174,7 +189,8 @@ class _QuestionEditorSheetState extends State<_QuestionEditorSheet> {
     super.initState();
     final q = widget.initialQuestion;
     _textCtrl = TextEditingController(text: q?.questionText ?? '');
-    _optCtrls = List.generate(4, (i) => TextEditingController(text: q?.options[i] ?? ''));
+    _optCtrls = List.generate(
+        4, (i) => TextEditingController(text: q?.options[i] ?? ''));
     _topic = q?.topic ?? 'dsa';
     _difficulty = q?.difficulty ?? 'medium';
     _correctIdx = q?.correctOption ?? 0;
@@ -184,18 +200,20 @@ class _QuestionEditorSheetState extends State<_QuestionEditorSheet> {
   @override
   void dispose() {
     _textCtrl.dispose();
-    for (var c in _optCtrls) { c.dispose(); }
+    for (var c in _optCtrls) {
+      c.dispose();
+    }
     super.dispose();
   }
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isSaving = true);
-    
+
     try {
       final user = context.read<UserProvider>().currentUser!;
       final options = _optCtrls.map((c) => c.text.trim()).toList();
-      
+
       if (widget.initialQuestion == null) {
         await widget.service.createQuestion(
           createdBy: user.uid,
@@ -216,7 +234,7 @@ class _QuestionEditorSheetState extends State<_QuestionEditorSheet> {
           isActive: _isActive,
         );
       }
-      
+
       if (mounted) {
         Navigator.pop(context);
         widget.onSaved();
@@ -224,7 +242,8 @@ class _QuestionEditorSheetState extends State<_QuestionEditorSheet> {
     } catch (e) {
       if (mounted) {
         setState(() => _isSaving = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     }
   }
@@ -235,10 +254,13 @@ class _QuestionEditorSheetState extends State<_QuestionEditorSheet> {
       key: _formKey,
       child: Scaffold(
         appBar: AppBar(
-          title: Text(widget.initialQuestion == null ? 'New Question' : 'Edit Question'),
+          title: Text(widget.initialQuestion == null
+              ? 'New Question'
+              : 'Edit Question'),
           leading: CloseButton(onPressed: () => Navigator.pop(context)),
           actions: [
-            TextButton(onPressed: _isSaving ? null : _save, child: const Text('Save')),
+            TextButton(
+                onPressed: _isSaving ? null : _save, child: const Text('Save')),
           ],
         ),
         body: ListView(
@@ -249,14 +271,17 @@ class _QuestionEditorSheetState extends State<_QuestionEditorSheet> {
                 Expanded(
                   child: DropdownButtonFormField<String>(
                     initialValue: _topic,
-                    decoration: const InputDecoration(labelText: 'Topic', border: OutlineInputBorder()),
+                    decoration: const InputDecoration(
+                        labelText: 'Topic', border: OutlineInputBorder()),
                     items: const [
                       DropdownMenuItem(value: 'dsa', child: Text('DSA')),
                       DropdownMenuItem(value: 'dbms', child: Text('DBMS')),
                       DropdownMenuItem(value: 'os', child: Text('OS')),
-                      DropdownMenuItem(value: 'networks', child: Text('Networks')),
+                      DropdownMenuItem(
+                          value: 'networks', child: Text('Networks')),
                       DropdownMenuItem(value: 'oops', child: Text('OOPs')),
-                      DropdownMenuItem(value: 'aptitude', child: Text('Aptitude')),
+                      DropdownMenuItem(
+                          value: 'aptitude', child: Text('Aptitude')),
                     ],
                     onChanged: (v) => setState(() => _topic = v!),
                   ),
@@ -265,7 +290,8 @@ class _QuestionEditorSheetState extends State<_QuestionEditorSheet> {
                 Expanded(
                   child: DropdownButtonFormField<String>(
                     initialValue: _difficulty,
-                    decoration: const InputDecoration(labelText: 'Difficulty', border: OutlineInputBorder()),
+                    decoration: const InputDecoration(
+                        labelText: 'Difficulty', border: OutlineInputBorder()),
                     items: const [
                       DropdownMenuItem(value: 'easy', child: Text('Easy')),
                       DropdownMenuItem(value: 'medium', child: Text('Medium')),
@@ -277,18 +303,16 @@ class _QuestionEditorSheetState extends State<_QuestionEditorSheet> {
               ],
             ),
             const SizedBox(height: AppSpacing.xl),
-            
             TextFormField(
               controller: _textCtrl,
-              decoration: const InputDecoration(labelText: 'Question Text', border: OutlineInputBorder()),
+              decoration: const InputDecoration(
+                  labelText: 'Question Text', border: OutlineInputBorder()),
               maxLines: 4,
               validator: (v) => v!.isEmpty ? 'Required' : null,
             ),
             const SizedBox(height: AppSpacing.xl),
-            
             const Text('Options (Select the correct one)'),
             const SizedBox(height: AppSpacing.sm),
-            
             ...List.generate(4, (i) {
               return Padding(
                 padding: const EdgeInsets.only(bottom: AppSpacing.sm),
@@ -305,7 +329,9 @@ class _QuestionEditorSheetState extends State<_QuestionEditorSheet> {
                     Expanded(
                       child: TextFormField(
                         controller: _optCtrls[i],
-                        decoration: InputDecoration(labelText: 'Option ${i+1}', border: const OutlineInputBorder()),
+                        decoration: InputDecoration(
+                            labelText: 'Option ${i + 1}',
+                            border: const OutlineInputBorder()),
                         validator: (v) => v!.isEmpty ? 'Required' : null,
                       ),
                     ),
@@ -313,7 +339,6 @@ class _QuestionEditorSheetState extends State<_QuestionEditorSheet> {
                 ),
               );
             }),
-            
             if (widget.initialQuestion != null) ...[
               const SizedBox(height: AppSpacing.xl),
               SwitchListTile(

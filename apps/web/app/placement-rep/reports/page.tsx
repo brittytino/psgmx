@@ -32,7 +32,7 @@ export default function ReportsPage() {
   })() }, [supabase])
 
   function exportCsv() {
-    const csv = [['reg_no','name','email','placement_attendance_pct','readiness_score','daily_five_days_30d'], ...rows.map((r) => [r.reg_no,r.name,r.email,r.attendance,r.readiness,r.dailyFive])].map((r) => r.map(escapeCsv).join(',')).join('\n')
+    const csv = [['reg_no','name','email','preparation_participation_pct','readiness_score','daily_five_days_30d'], ...rows.map((r) => [r.reg_no,r.name,r.email,r.attendance,r.readiness,r.dailyFive])].map((r) => r.map(escapeCsv).join(',')).join('\n')
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); const a = document.createElement('a'); a.href = url; a.download = `psgmx-batch-report-${new Date().toISOString().slice(0,10)}.csv`; a.click(); URL.revokeObjectURL(url)
   }
   const avg = (key: 'attendance'|'readiness') => rows.length ? Math.round(rows.reduce((sum, row) => sum + row[key], 0) / rows.length) : 0

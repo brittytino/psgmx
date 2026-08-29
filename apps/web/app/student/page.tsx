@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Award, BrainCircuit, BookOpen, ClipboardList, Users, ArrowRight, Calendar, Flame, FileText, Building2, Star, ChevronRight } from 'lucide-react';
+import { Award, BrainCircuit, BookOpen, ClipboardList, Users, ArrowRight, Calendar, Flame, FileText, Route, Star, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { getCurrentProfile } from '@/lib/current-profile';
@@ -46,7 +46,7 @@ interface DashboardData {
   upcomingExams: { id: string; title: string; examDate: string; durationMinutes: number }[];
   senior: { name: string; quote: string | null } | null;
   leaderboard: { userId: string; name: string; score: number; isYou: boolean }[];
-  recentCompanies: { id: string; name: string; role: string; visitDate: string }[];
+  preparationTracks: { id: string; title: string; stage: string; weeks: number }[];
 }
 
 export default function StudentDashboard() {
@@ -78,7 +78,7 @@ export default function StudentDashboard() {
         { data: exams },
         { data: lineage },
         { data: leaderboardRows },
-        { data: companies },
+        { data: tracks },
       ] = await Promise.all([
         batchId ? supabase.from('batches').select('batch_code').eq('id', batchId).single() : Promise.resolve({ data: null }),
         supabase.from('current_readiness_scores').select('score, components_json').eq('user_id', me.id).maybeSingle(),
@@ -106,7 +106,7 @@ export default function StudentDashboard() {
               .order('score', { ascending: false })
               .limit(5)
           : Promise.resolve({ data: [] }),
-        supabase.from('companies').select('id, name, roles_offered, visit_date').order('visit_date', { ascending: false }).limit(2),
+        batchId ? supabase.from('preparation_tracks').select('id,title,stage,estimated_weeks').eq('batch_id', batchId).eq('is_active', true).order('created_at', { ascending: false }).limit(2) : Promise.resolve({ data: [] }),
       ]);
 
       const { count: articlesCount } = await supabase
@@ -153,11 +153,11 @@ export default function StudentDashboard() {
           score: r.score,
           isYou: r.user_id === me.id,
         })),
-        recentCompanies: (companies || []).map((c: any) => ({
-          id: c.id,
-          name: c.name,
-          role: Array.isArray(c.roles_offered) ? c.roles_offered[0] || '' : (c.roles_offered || ''),
-          visitDate: c.visit_date,
+        preparationTracks: (tracks || []).map((track) => ({
+          id: track.id,
+          title: track.title,
+          stage: track.stage,
+          weeks: track.estimated_weeks,
         })),
       });
       setLoading(false);
@@ -214,7 +214,7 @@ export default function StudentDashboard() {
             Welcome back, {data?.userName?.split(' ')[0] || 'Scholar'} 👋
           </motion.h1>
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }} className="text-[14px] text-text-muted">
-            Here's your placement readiness snapshot for today.
+            Here is your preparation story and the most useful next move for today.
           </motion.p>
         </div>
         <div className="flex items-center gap-3 bg-white border border-border-light rounded-2xl px-5 py-3 shadow-sm shrink-0">
@@ -344,7 +344,7 @@ export default function StudentDashboard() {
               <input
                 type="text" value={aiQuery} onChange={(e) => setAiQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAiAsk()}
-                placeholder="E.g. Which companies visit MCA for placements? or How do I improve my LeetCode score?"
+                placeholder="E.g. How should I improve arrays this week using approved department guidance?"
                 className="w-full bg-page-bg border border-border-light rounded-xl px-4 py-3 pr-12 text-[14px] text-text-main placeholder-text-muted outline-none focus:border-primary-purple transition-colors"
               />
               <button onClick={handleAiAsk} disabled={isAiLoading} className="absolute right-2 top-2 p-1.5 bg-primary-purple hover:bg-deep-violet rounded-lg text-white transition-colors disabled:opacity-50">
@@ -445,28 +445,28 @@ export default function StudentDashboard() {
             <p className="text-[10px] text-text-muted mt-3 text-center">Full leaderboard available in Flutter app</p>
           </div>
 
-          {/* Placement Log Teaser */}
+          {/* Preparation track teaser */}
           <div className="bg-white rounded-[20px] border border-border-light shadow-[0_2px_12px_rgba(0,0,0,0.02)] p-6">
             <div className="flex items-center gap-2 mb-4">
-              <Building2 className="w-5 h-5 text-primary-purple" />
-              <h3 className="text-[14px] font-bold text-text-main">Recent Drives</h3>
+              <Route className="w-5 h-5 text-primary-purple" />
+              <h3 className="text-[14px] font-bold text-text-main">Active Preparation Tracks</h3>
             </div>
-            {(data?.recentCompanies.length ?? 0) === 0 && (
-              <p className="text-[13px] text-text-muted">No drives recorded yet.</p>
+            {(data?.preparationTracks.length ?? 0) === 0 && (
+              <p className="text-[13px] text-text-muted">No batch track is active. Daily Five and skill progress still continue.</p>
             )}
-            {data?.recentCompanies.map((d) => (
-              <div key={d.id} className="flex items-center gap-3 mb-3 last:mb-0">
+            {data?.preparationTracks.map((track) => (
+              <div key={track.id} className="flex items-center gap-3 mb-3 last:mb-0">
                 <div className="w-8 h-8 rounded-lg bg-page-bg flex items-center justify-center text-[13px] font-black text-primary-purple shrink-0">
-                  {d.name[0]}
+                  {track.title[0]}
                 </div>
                 <div>
-                  <p className="text-[13px] font-bold text-text-main">{d.name}</p>
-                  <p className="text-[11px] text-text-muted">{d.role} · {new Date(d.visitDate).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                  <p className="text-[13px] font-bold text-text-main">{track.title}</p>
+                  <p className="text-[11px] text-text-muted">{track.stage.replace('_', ' ')} · {track.weeks} weeks</p>
                 </div>
               </div>
             ))}
-            <Link href="/student/placement-log" className="mt-3 flex items-center gap-1.5 text-[13px] font-bold text-primary-purple hover:underline">
-              Read All Experiences <ArrowRight className="w-4 h-4" />
+            <Link href="/student/interview-patterns" className="mt-3 flex items-center gap-1.5 text-[13px] font-bold text-primary-purple hover:underline">
+              Explore Interview Patterns <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         </div>

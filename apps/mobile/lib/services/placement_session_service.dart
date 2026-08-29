@@ -15,7 +15,7 @@ class PlacementSessionService {
   // ── Scheduling ─────────────────────────────────────────────────────────────
 
   /// Creates a new placement session.
-  /// Caller must hold [UserPermission.schedulePlacementSessions] — enforced by RLS.
+  /// Caller must hold [UserPermission.schedulePreparationSessions] — enforced by RLS.
   Future<PlacementSession> schedulePlacementSession({
     required String batchId,
     required String scheduledBy,
@@ -41,8 +41,11 @@ class PlacementSessionService {
       'target_team_ids': targetTeamIds,
     };
 
-    final response =
-        await _supabase.from('placement_sessions').insert(data).select().single();
+    final response = await _supabase
+        .from('placement_sessions')
+        .insert(data)
+        .select()
+        .single();
 
     // Audit
     await _supabase.from('audit_logs').insert({
@@ -50,7 +53,10 @@ class PlacementSessionService {
       'action': 'SCHEDULE_PLACEMENT_SESSION',
       'entity_type': 'placement_sessions',
       'entity_id': null,
-      'metadata': {'topic': topic, 'datetime': sessionDatetime.toIso8601String()},
+      'metadata': {
+        'topic': topic,
+        'datetime': sessionDatetime.toIso8601String()
+      },
     });
 
     debugPrint('[PlacementSessionService] Scheduled session: $topic');
@@ -93,10 +99,7 @@ class PlacementSessionService {
 
   /// Deletes a session. Caller must have scheduling permission.
   Future<void> deleteSession(String sessionId, String deletedBy) async {
-    await _supabase
-        .from('placement_sessions')
-        .delete()
-        .eq('id', sessionId);
+    await _supabase.from('placement_sessions').delete().eq('id', sessionId);
 
     await _supabase.from('audit_logs').insert({
       'actor_id': deletedBy,
@@ -116,9 +119,7 @@ class PlacementSessionService {
         .select()
         .eq('batch_id', batchId)
         .order('session_datetime', ascending: false);
-    return (response as List)
-        .map((r) => PlacementSession.fromMap(r))
-        .toList();
+    return (response as List).map((r) => PlacementSession.fromMap(r)).toList();
   }
 
   /// Returns upcoming sessions for a given [teamId].
@@ -226,8 +227,7 @@ class PlacementSessionService {
 
   /// Returns the list of [AppUser]s who are eligible for a given session
   /// (i.e. their team was targeted or the session is batch-wide).
-  Future<List<AppUser>> fetchEligibleStudents(
-      PlacementSession session) async {
+  Future<List<AppUser>> fetchEligibleStudents(PlacementSession session) async {
     if (session.isBatchWide) {
       // All students in the batch
       final response = await _supabase

@@ -1,6 +1,6 @@
-/// PSGMX - Placement Excellence Program
+/// PSGMX - MCA Readiness Companion
 ///
-/// A comprehensive placement preparation platform for PSG Technology - MCA
+/// A continuous preparation, progress and alumni companion for PSG Tech MCA.
 ///
 /// Author: Tino Britty J
 /// GitHub: https://github.com/brittytino
@@ -196,7 +196,7 @@ class _PsgMxAppInnerState extends State<PsgMxAppInner> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'PSGMX - Placement Excellence',
+      title: 'PSGMX - MCA Companion',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),

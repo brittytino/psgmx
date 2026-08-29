@@ -58,8 +58,7 @@ class _PulseRankingsScreenState extends State<PulseRankingsScreen> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      bottomNavigationBar: SharedBottomNavigationBar(
-          showPlacementLog: userProvider.currentUser?.isActiveSenior ?? false),
+      bottomNavigationBar: const SharedBottomNavigationBar(),
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(LucideIcons.chevronLeft),

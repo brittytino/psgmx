@@ -5,8 +5,8 @@ import '../providers/navigation_provider.dart';
 import '../core/utils/responsive_helper.dart';
 import 'today/today_screen.dart';
 import 'tasks/tasks_screen.dart';
-import 'placement_log/placement_log_screen.dart';
-import 'bunker/bunker_screen.dart';
+import 'progress/progress_screen.dart';
+import 'community/community_screen.dart';
 import 'profile/profile_screen.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'widgets/shared_bottom_navigation_bar.dart';
@@ -29,13 +29,13 @@ class _RootLayoutState extends State<RootLayout> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    // Dynamic Screen List based on ACTIVE Role (respects simulation)
-    final showPlacementLog = user.isActiveSenior;
+    // The companion journey is stable across batches. The content inside each
+    // destination adapts to junior/senior status instead of moving navigation.
     final screens = <Widget>[
       const TodayScreen(),
       const TasksScreen(),
-      if (showPlacementLog) const PlacementLogScreen(),
-      const BunkerScreen(),
+      const ProgressScreen(),
+      const CommunityScreen(),
       const ProfileScreen(),
     ];
 
@@ -47,21 +47,20 @@ class _RootLayoutState extends State<RootLayout> {
               color: Theme.of(context).colorScheme.primary),
           label: 'Today'),
       NavigationDestination(
-          icon: const Icon(LucideIcons.calendarCheck),
-          selectedIcon: Icon(LucideIcons.calendarCheck,
+          icon: const Icon(LucideIcons.target),
+          selectedIcon: Icon(LucideIcons.target,
               color: Theme.of(context).colorScheme.primary),
-          label: 'Quests'),
-      if (showPlacementLog)
+          label: 'Train'),
       NavigationDestination(
-          icon: const Icon(LucideIcons.bookOpen),
-          selectedIcon: Icon(LucideIcons.bookOpen,
+          icon: const Icon(LucideIcons.chartNoAxesCombined),
+          selectedIcon: Icon(LucideIcons.chartNoAxesCombined,
               color: Theme.of(context).colorScheme.primary),
-          label: 'Log'),
+          label: 'Progress'),
       NavigationDestination(
-          icon: const Icon(LucideIcons.graduationCap),
-          selectedIcon: Icon(LucideIcons.graduationCap,
+          icon: const Icon(LucideIcons.users),
+          selectedIcon: Icon(LucideIcons.users,
               color: Theme.of(context).colorScheme.primary),
-          label: 'Campus'),
+          label: 'Community'),
       NavigationDestination(
           icon: const Icon(LucideIcons.user),
           selectedIcon: Icon(LucideIcons.user,
@@ -109,8 +108,7 @@ class _RootLayoutState extends State<RootLayout> {
     // Mobile layout with bottom navigation
     return Scaffold(
       body: screens[currentIndex],
-      bottomNavigationBar:
-          SharedBottomNavigationBar(showPlacementLog: showPlacementLog),
+      bottomNavigationBar: const SharedBottomNavigationBar(),
     );
   }
 }

@@ -45,7 +45,6 @@ const PUBLIC_ROUTES = [
   '/',
   '/login',
   '/join-alumni',
-  '/change-password',
   '/download',        // Android download landing page
   '/api/auth',        // covers /api/auth/login, /api/auth/verify, /api/auth/logout, etc.
   '/api/health',

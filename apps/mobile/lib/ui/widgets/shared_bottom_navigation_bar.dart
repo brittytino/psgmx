@@ -5,8 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../providers/navigation_provider.dart';
 
 class SharedBottomNavigationBar extends StatelessWidget {
-  const SharedBottomNavigationBar({super.key, required this.showPlacementLog});
-  final bool showPlacementLog;
+  const SharedBottomNavigationBar({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -35,12 +34,11 @@ class SharedBottomNavigationBar extends StatelessWidget {
           const NavigationDestination(
               icon: Icon(LucideIcons.home), label: 'Today'),
           const NavigationDestination(
-              icon: Icon(LucideIcons.calendarCheck), label: 'Quests'),
-          if (showPlacementLog)
-            const NavigationDestination(
-                icon: Icon(LucideIcons.bookOpen), label: 'Log'),
+              icon: Icon(LucideIcons.target), label: 'Train'),
           const NavigationDestination(
-              icon: Icon(LucideIcons.graduationCap), label: 'Campus'),
+              icon: Icon(LucideIcons.chartNoAxesCombined), label: 'Progress'),
+          const NavigationDestination(
+              icon: Icon(LucideIcons.users), label: 'Community'),
           const NavigationDestination(
               icon: Icon(LucideIcons.user), label: 'You'),
         ],

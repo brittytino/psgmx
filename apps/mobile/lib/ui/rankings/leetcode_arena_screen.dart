@@ -8,7 +8,6 @@ import '../widgets/rive_placeholder.dart';
 
 import 'package:provider/provider.dart';
 import '../../providers/leetcode_provider.dart';
-import '../../providers/user_provider.dart';
 import '../../models/leetcode_stats.dart';
 import '../widgets/shared_bottom_navigation_bar.dart';
 import '../widgets/avatar_widget.dart';
@@ -72,10 +71,7 @@ class _LeetcodeArenaScreenState extends State<LeetcodeArenaScreen> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      bottomNavigationBar: SharedBottomNavigationBar(
-          showPlacementLog:
-              context.watch<UserProvider>().currentUser?.isActiveSenior ??
-                  false),
+      bottomNavigationBar: const SharedBottomNavigationBar(),
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(LucideIcons.chevronLeft),

@@ -27,16 +27,16 @@ import { createClient } from '@/lib/supabase/client';
 import { getCurrentProfile } from '@/lib/current-profile';
 
 const sidebarLinks = [
-  { name: 'Dashboard', href: '/student', icon: Home },
+  { name: 'Overview', href: '/student', icon: Home },
   { name: 'AI Senior', href: '/student/ai-senior', icon: BrainCircuit },
-  { name: 'Knowledge Brain', href: '/student/knowledge-brain', icon: BookOpen },
-  { name: 'Mock Exams', href: '/student/exams', icon: ClipboardList },
-  { name: 'Readiness Score', href: '/student/readiness', icon: Award },
-  { name: 'Your Lineage', href: '/student/lineage', icon: Users },
-  { name: 'FYP Portfolio', href: '/student/fyp', icon: Folder },
-  { name: 'Placement Log', href: '/student/placement-log', icon: Building2 },
-  { name: 'Announcements', href: '/student/announcements', icon: Megaphone },
-  { name: 'Settings', href: '/student/settings', icon: Settings },
+  { name: 'Learn Together', href: '/student/knowledge-brain', icon: BookOpen },
+  { name: 'Mock Assessments', href: '/student/exams', icon: ClipboardList },
+  { name: 'Progress', href: '/student/readiness', icon: Award },
+  { name: 'Lineage & Mentors', href: '/student/lineage', icon: Users },
+  { name: 'Build Portfolio', href: '/student/fyp', icon: Folder },
+  { name: 'Interview Patterns', href: '/student/interview-patterns', icon: Building2 },
+  { name: 'Inbox', href: '/student/announcements', icon: Megaphone },
+  { name: 'Account', href: '/student/settings', icon: Settings },
 ];
 
 const getSidebarCardContent = (pathname: string) => {
@@ -59,7 +59,7 @@ const getSidebarCardContent = (pathname: string) => {
     return { title: 'Document your progress. Every step counts.', desc: 'Your project journey, logged and tracked.', icon: Folder };
   }
   if (pathname.includes('/placement-log')) {
-    return { title: 'Real experiences from real seniors.', desc: 'Read everything. Your turn will come.', icon: Building2 };
+    return { title: 'Practise patterns, not company rumours.', desc: 'Reviewed historical insight for reusable preparation.', icon: Building2 };
   }
   if (pathname.includes('/announcements')) {
     return { title: 'Stay in the loop. Never miss what matters.', desc: 'Department updates and important notices.', icon: Megaphone };
