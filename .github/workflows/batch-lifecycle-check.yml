@@ -1,0 +1,36 @@
+name: Batch Lifecycle Check
+
+# Checks if any batch should transition stage and executes the transition idempotently.
+# Transitions: active_junior -> active_senior (start of second year)
+#              active_senior -> graduated (after graduation date)
+# Runs every day at midnight IST (18:30 UTC previous day).
+# Replaces pg_cron — free alternative via GitHub Actions.
+# See: docs/user-flow.md Chapter 8.2
+
+on:
+  schedule:
+    - cron: '30 18 * * *'  # Every day 00:00 IST (18:30 UTC)
+  workflow_dispatch:
+
+jobs:
+  batch-lifecycle:
+    name: Check and execute batch stage transitions
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call batch-lifecycle-check Edge Function
+        run: |
+          HTTP_STATUS=$(curl -s -o /tmp/lifecycle_response.json -w "%{http_code}" \
+            -X POST \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            "${{ secrets.SUPABASE_URL }}/functions/v1/batch-lifecycle-check")
+
+          echo "Batch lifecycle check HTTP status: $HTTP_STATUS"
+          cat /tmp/lifecycle_response.json
+
+          if [ "$HTTP_STATUS" != "200" ]; then
+            echo "ERROR: batch-lifecycle-check returned $HTTP_STATUS"
+            exit 1
+          fi
+
+          echo "Batch lifecycle check completed."

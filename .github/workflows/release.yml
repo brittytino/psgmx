@@ -1,9 +1,13 @@
 name: Release PSGMX
+# Triggers on push to release/* branches and version tags.
+# PRD Appendix A decision 6: Android APK distributed via GitHub Releases only.
+# Push to release/v4.2.0 -> builds APK, creates GitHub Release, uploads signed APK.
+# See: docs/user-flow.md Chapter 11.6
 
 on:
   push:
     branches:
-      - main
+      - 'release/*'  # e.g. release/v4.2.0
     tags:
       - 'v*'
   workflow_dispatch:

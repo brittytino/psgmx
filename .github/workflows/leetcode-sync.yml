@@ -1,0 +1,35 @@
+name: LeetCode Stats Sync
+
+# Refreshes LeetCode stats for all connected users every 6 hours.
+# Uses the LeetCode public API (no auth required).
+# Results are cached in the database for 6 hours.
+# Replaces pg_cron — free alternative via GitHub Actions.
+# See: docs/user-flow.md Chapter 4.5
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'  # Every 6 hours: 00:00, 06:00, 12:00, 18:00 UTC
+  workflow_dispatch:
+
+jobs:
+  sync-leetcode:
+    name: Sync LeetCode stats for all connected users
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call sync-leetcode Edge Function
+        run: |
+          HTTP_STATUS=$(curl -s -o /tmp/leetcode_response.json -w "%{http_code}" \
+            -X POST \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            "${{ secrets.SUPABASE_URL }}/functions/v1/sync-leetcode")
+
+          echo "LeetCode sync HTTP status: $HTTP_STATUS"
+          cat /tmp/leetcode_response.json
+
+          if [ "$HTTP_STATUS" != "200" ]; then
+            echo "ERROR: sync-leetcode returned $HTTP_STATUS"
+            exit 1
+          fi
+
+          echo "LeetCode sync completed successfully."

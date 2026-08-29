@@ -1,1182 +1,999 @@
-# PSGMX Companion Application — Complete Product and User Flow Specification
+# PSGMX — Frozen Product Requirements Document
+### Placement Readiness Companion · MCA Department · PSG Tech
+**Version:** 1.1-FREEZE · **Date:** 2026-08-29 · **Status:** ✅ FROZEN — Development starts after this document
 
-> Product blueprint for the PSG Tech MCA readiness companion across Flutter mobile, Next.js web, Placement Readiness Representative administration, faculty, HOD, alumni, and future batches.
->
-> This is a flow specification, not a release report. It describes the continuous experience the product should provide, identifies current repository gaps, and defines the recommended destination.
+> This is the single source of truth. Every screen, backend route, AI call, and database table must trace back to a story in this document. Agent.md files in `apps/mobile` and `apps/web` exist only to point here and add app-specific build instructions; they do not redefine product decisions.
 
-## 1. The product promise
+> **Free Tier Constraint (frozen):** Every service used in this product must have a free tier sufficient for fewer than 250 concurrent users. No paid plans, no VPS, no self-hosted servers. If a feature cannot be implemented on free services, it is either redesigned or moved to a future phase.
 
-PSGMX is the MCA department's continuous readiness companion. It helps every student understand what to improve, practise the right thing, receive support, learn from earlier batches, demonstrate progress, and eventually return as an alumnus who strengthens the same system.
+---
 
-The product has no terminal “success” screen. Its lifecycle continues:
+## Preamble — Why This Exists
 
-```mermaid
-flowchart LR
-    A[Join MCA] --> B[Discover baseline]
-    B --> C[Build foundations]
-    C --> D[Practise consistently]
-    D --> E[Prove skills]
-    E --> F[Become placement-ready]
-    F --> G[Graduate]
-    G --> H[Preserve journey]
-    H --> I[Mentor and contribute]
-    I --> J[Strengthen future batches]
-    J --> C
+Picture a first-year MCA student walking into PSG Tech on day one. They carry a laptop, a semester fee receipt, and a vague hope that two years of this programme will get them a decent job. Nobody in that room has told them what gap exists between where they are and where they need to be. They do not know whether to study DBMS first, grind LeetCode, improve their English communication, or polish a project idea. Nobody has the bandwidth to tell each of them individually.
+
+PSGMX is the answer to that silence.
+
+It is not a placement portal. It does not schedule drives, issue hall tickets, or announce packages. PSG Tech's NEO PAT system already does all of that. PSGMX is the daily companion that lives *before* all of that — the system that watches a student's preparation evidence accumulate over two years, tells them what to do next, verifies that they actually did it, escalates when they are stuck, and then remembers their journey forever as an alumni archive that helps the next batch.
+
+The product serves fewer than 250 people at any moment — students of two active batches, faculty, a handful of staff, and a small alumni cohort. This is deliberately small. Small means we can build something genuinely excellent rather than something merely large.
+
+---
+
+## Chapter 0 — Service Stack and Free Tier Limits (Read First)
+
+Every technology decision in this document is constrained to services with a free tier adequate for under 250 users. This chapter is the canonical reference; no chapter below introduces a service not listed here.
+
+### 0.1 Approved Services and Their Free Limits
+
+| Service | Role | Free Tier Limit | What Happens If We Hit It |
+|---|---|---|---|
+| **Supabase Free** | Database, Auth, Storage, Realtime, Edge Functions | 500MB DB, 1GB Storage, 50K Edge Function invocations/month, 200 Realtime concurrent connections, 2 emails/hour (overridden by Resend) | Upgrade to Pro ($25/mo) — but for <250 users this should never happen |
+| **Vercel Hobby** | Next.js web app hosting | 100GB bandwidth/month, 1 Cron job | More than enough for <250 users |
+| **Firebase Spark** | Flutter web hosting (`app.psgmx.tech`), FCM push notifications | 1GB hosting storage, 10GB/month bandwidth, FCM free forever | More than enough |
+| **GitHub Actions** | Android APK builds, all scheduled jobs (replaces pg_cron) | 2,000 minutes/month (private repo) or unlimited (public repo) | Use public repo or keep workflows efficient |
+| **GitHub Releases** | Android APK distribution | Free forever | N/A |
+| **OpenRouter (free models only)** | All AI inference | Rate-limited per model, see Section 0.2 | Fallback chain: if first model fails, try next free model, then show pre-written tip |
+| **Piston API** | Code execution sandbox for CodeBox | Free public API at `emkc.org/api/v2/piston` — supports 20+ languages | Sufficient for <250 users; rate limits are per-IP not per-user |
+| **Resend Free** | OTP email delivery (custom SMTP for Supabase Auth) | 3,000 emails/month, 100/day | More than enough for <250 users doing OTP login |
+| **LeetCode Public API** | LeetCode stats sync | Free, no auth required | Respect their rate limits with caching |
+
+### 0.2 Approved Free OpenRouter Models (Fallback Chain Order)
+
+The backend maintains a fallback chain. It tries models in this order and uses the first one that responds:
+
+| Priority | Model ID | Best For |
+|---|---|---|
+| 1st | `google/gemini-2.0-flash-exp:free` | General purpose: AI Senior Q&A, communication evaluation, moderation |
+| 2nd | `meta-llama/llama-3.3-70b-instruct:free` | Strong reasoning fallback |
+| 3rd | `deepseek/deepseek-r1:free` | Code evaluation, technical reasoning |
+| 4th | `microsoft/phi-4:free` | Lightweight fallback when rate limits hit |
+| Final fallback | Pre-written tip from a local tips bank | Shown when all models are unavailable — app never shows an error |
+
+The backend selects the appropriate starting model for each task type:
+- **Code evaluation (CodeBox):** Start at `deepseek/deepseek-r1:free`
+- **AI Senior Q&A:** Start at `google/gemini-2.0-flash-exp:free`
+- **Communication practice evaluation:** Start at `google/gemini-2.0-flash-exp:free`
+- **Knowledge moderation pre-screen:** Start at `meta-llama/llama-3.3-70b-instruct:free`
+- **FYP explanation coaching:** Start at `deepseek/deepseek-r1:free`
+
+All free models have rate limits. The system queues and retries with exponential backoff. AI evaluation is non-blocking — the student always gets their test results immediately; the AI feedback arrives within seconds asynchronously.
+
+### 0.3 What We Don't Use (and Why)
+
+| Service | Why Not |
+|---|---|
+| pg_cron | Requires Supabase Pro. Replaced with GitHub Actions scheduled workflows. |
+| Docker containers (self-hosted) | Requires a VPS. Replaced with Piston API. |
+| Supabase Pro features | Not needed for <250 users on free tier |
+| Play Store | No budget, no intent. GitHub Releases + sideloading only. |
+| Any paid OpenRouter model | Budget constraint. Free models are sufficient for our scale. |
+| Video recording for communication practice | Would exhaust 1GB Supabase Storage quickly. Audio only (MP3, 2-minute max ≈ 2MB per recording). |
+
+### 0.4 Supabase Free Tier: The Inactivity Pause Problem
+
+Supabase Free projects pause after 1 week of inactivity (no database queries). This would be a problem during semester breaks. Solution: a GitHub Actions scheduled workflow runs every Sunday at 10:00 AM IST and makes a lightweight authenticated query to the Supabase database (e.g., `SELECT 1` via Edge Function ping endpoint). This keeps the project active indefinitely without any manual intervention.
+
+---
+
+## Chapter 1 — The World PSGMX Operates In
+
+### 1.1 The Four-Year Loop
+
+PSGMX lifecycle matches a human arc:
+
+```
+New Student joins MCA
+        |
+        v
+[PSGMX onboards them — PR bulk import, the only entry point]
+        |
+        v
+Foundation year: calibration -> daily habit -> evidence accumulates
+        |
+        v
+Senior year: proof -> mock readiness -> FYP storytelling -> interview patterns
+        |
+        v
+Graduation: batch is archived, journey is preserved, alumnus role begins
+        |
+        v
+PR of that batch formally hands the baton to the incoming batch PR
+        |
+        v
+Alumni: lightweight contributions, mentoring, knowledge review
+        |
+        v
+Their knowledge helps the next batch -> loop continues
 ```
 
-The emotional promise is equally important:
+No step in this loop requires a student to manually click "I completed this task." The system knows because it has verified the evidence.
 
-- A student should open PSGMX and immediately know, “What is the best useful action I can complete now?”
-- A faculty member should immediately know, “Who needs help, why, and what is the next responsible intervention?”
-- A Placement Readiness Representative should know, “Is the preparation programme running well, and what needs action today?”
-- The HOD should know, “Is each batch becoming healthier without exposing or humiliating individuals?”
-- An alumnus should know, “What small contribution from my experience will help a real junior this week?”
+### 1.2 What PSGMX Is Not
 
-## 2. Locked product boundary: PSGMX and NEO PAT are different systems
+PSGMX must never become:
 
-PSGMX must not become a placement-drive management system. PSG Tech already uses NEO PAT for official placement operations.
+- A placement-drive management system. NEO PAT owns drives, shortlists, and packages. PSGMX shows a single deep-link: *"Open NEO PAT for official drive details."*
+- A surveillance tool. All readiness data is private by default and shared only with the student and faculty through explicit consent flows.
+- A manual-record system. Every preparation claim is verified by the AI engine, a backend automated check, or a faculty-confirmed milestone. Humans do not press "mark complete" buttons; evidence does.
 
-### NEO PAT owns
+### 1.3 The Two Surfaces
 
-- Official placement-drive creation and scheduling.
-- Company registration and company visit administration.
-- Eligibility, applications, shortlists, hall tickets, and official selection status.
-- Package records and official placement outcomes.
-- Any action that claims to represent the college placement office.
+| Surface | URL | Technology | Primary Use |
+|---|---|---|---|
+| Mobile App | `app.psgmx.tech` | Flutter + Firebase Spark | Daily companion, quick practice, push notifications |
+| Landing + Web App | `psgmx.tech` | Next.js + Vercel Hobby | Deep work: exams, FYP, admin console, CodeBox, AI analysis |
 
-### PSGMX owns
+Android builds are released as signed APKs through **GitHub Releases** on the project repository. There is no Play Store distribution. The `psgmx.tech/download` page always links to the latest release.
 
-- Readiness diagnosis and personalised preparation.
-- Daily aptitude, coding, core-CS, communication, and interview practice.
-- Mock assessments and evidence-backed improvement plans.
-- Faculty mentorship and early intervention.
-- Peer squads, practice sessions, and preparation accountability.
-- LeetCode progress and coding consistency.
-- Knowledge shared by seniors, faculty, and alumni.
-- FYP progress, portfolio evidence, and explanation practice.
-- Alumni lineage, mentoring, and reusable career knowledge.
-- The student's preparation story before, during, and after the MCA programme.
+### 1.4 The AI Layer — OpenRouter (Free Models Only)
 
-### Required product changes
+All AI capabilities in PSGMX route through **OpenRouter** using only free-tier models (see Section 0.2). OpenRouter API keys are stored server-side only — never in the Flutter app or Next.js client bundle.
 
-The current `Companies & Drives`, company CRUD, and drive-oriented Placement Log flows should not remain primary PSGMX features.
+The system is designed so that AI failure is graceful. If all models are rate-limited, the student still completes their task and sees a pre-written fallback tip. AI is an enhancement layer, not a dependency.
 
-They should be replaced as follows:
+---
 
-- `Companies & Drives` becomes **Preparation Tracks**.
-- `Placement Log` becomes **Interview Pattern Library**.
-- Company-specific records become reusable, non-official patterns such as “multi-round coding interview,” “service-company aptitude pattern,” or “product-company DSA pattern.”
-- Package bands, eligibility, and official visit dates are removed from the PSGMX authoring flow.
-- A senior or alumnus may share a personal experience, but it must be presented as historical preparation insight, never as an official current drive.
-- If an official drive is mentioned, PSGMX shows: “Open NEO PAT for official drive details.” PSGMX does not copy or maintain that data.
+## Chapter 2 — Roles and the Power Each One Holds
 
-This boundary keeps PSGMX focused, trustworthy, and maintainable for the next five batches.
+Every person in PSGMX has one logical identity. Roles are capability layers attached to the same profile. A PR is still a student who has a second workspace. A Team Leader is still a student who sees their squad participation. A faculty member can review knowledge and mentor; they cannot see another student's private score without a consent flow.
 
-## 3. Experience principles
+### Role Hierarchy (enforced in RLS + RPC + API + UI)
 
-### 3.1 One useful next action
-
-Dashboards must not be collections of unrelated cards. The first section always answers:
-
-1. What should I do next?
-2. Why does it matter to me?
-3. How long will it take?
-4. What progress will it create?
-
-### 3.2 Progress must be explained
-
-A score without an explanation creates anxiety. Every score must show the evidence, freshness, strongest dimension, most valuable next improvement, and realistic effect of the suggested action.
-
-### 3.3 Mobile is the daily companion; web is the depth workspace
-
-- Mobile is for today, short practice, check-ins, reminders, quick reflection, campus pulse, and progress.
-- Web is for mock exams, long-form knowledge, AI research, FYP work, detailed analytics, moderation, and administration.
-- A task started on one channel must be resumable on the other when the task type allows it.
-- The user should never need to understand that two technology stacks exist.
-
-### 3.4 Roles add capabilities; they do not replace identity
-
-A Team Leader, Coordinator, or PR is still a student. Administrative capability appears as an additional workspace, not as a completely different personality or home experience.
-
-### 3.5 Ethical engagement, not dark-pattern addiction
-
-PSGMX should earn repeat use through visible growth and community responsibility. It must not use infinite feeds, fake urgency, shame, manipulative countdowns, or rewards for screen time.
-
-### 3.6 Every state is designed
-
-Every data-driven screen requires a meaningful loading state, first-use state, recoverable error, stale-data state, success state with a next action, and an offline state where safe cached content remains available.
-
-## 4. Roles and access model
-
-### 4.1 Student — active junior
-
-The current junior cohort, such as `26MX`, is in the foundation stage. They receive more guided learning, calibration, exploration, and habit-building.
-
-### 4.2 Student — active senior
-
-The current senior cohort, such as `25MX`, is in the proof and interview-readiness stage. They receive more timed practice, mock interviews, portfolio proof, reflection, and contribution opportunities.
-
-### 4.3 Team Leader
-
-A student with delegated responsibility for a small preparation squad. They coordinate participation and encourage peers but do not become a disciplinary authority.
-
-### 4.4 Coordinator
-
-A student with selected operational permissions such as publishing practice tasks, scheduling preparation sessions, or posting announcements.
-
-### 4.5 Placement Readiness Representative (PR)
-
-The main student administrator for the preparation programme. In PSGMX, “PR” should mean **Placement Readiness Representative**, not placement-drive operator. The PR manages access, squads, preparation programming, participation, question content, communication, rollout, and audit visibility.
-
-### 4.6 Faculty
-
-A department mentor and academic reviewer. Faculty guide students, moderate shared knowledge, author assessments, review FYP progress, and intervene when evidence indicates that support is needed.
-
-### 4.7 HOD and authorised governance administrator
-
-The current HOD and any explicitly retained former HOD may have governance access. The implementation should separate:
-
-- Display title: current HOD, former HOD, faculty.
-- Security capability: `governance_admin`.
-
-This is safer than labelling two people as the current HOD merely to grant the same access. Dr. Ilayaraja N can be the current HOD while Dr. Chitra A retains authorised governance access.
-
-### 4.8 Alumni
-
-A graduated student whose journey becomes an archive and whose new value comes from mentoring, reviewing, contributing knowledge, and creating continuity across batches.
-
-### 4.9 System automation
-
-Scheduled and event-driven processes handle identity aliasing, score recomputation, batch rotation, knowledge review reminders, notifications, data freshness, and lifecycle transitions.
-
-## 5. Continuous lifecycle
-
-### 5.1 Admission and pre-onboarding
-
-1. The HOD or authorised PR creates or activates the intake batch.
-2. The roster is imported with register number, name, personal email when available, and deterministic future college email.
-3. The system validates duplicates by register number, personal email, and college email alias.
-4. Each student has one logical identity even if they later switch from personal email to `rollnumber@psgtech.ac.in`.
-5. The student receives a welcome message that explains PSGMX as a preparation companion, not a placement portal.
-
-### 5.2 Junior foundation stage
-
-The student establishes a baseline, builds a daily practice habit, connects coding identity, learns core concepts, and discovers the department's knowledge network.
-
-### 5.3 Senior proof stage
-
-The student moves from “learning topics” to “proving readiness” through timed practice, mock assessments, communication drills, FYP storytelling, and interview-pattern reflection.
-
-### 5.4 Graduation transition
-
-The batch does not disappear. The student's active preparation dashboard becomes a journey archive. Delegated permissions are removed, final evidence is preserved, and alumni onboarding begins.
-
-### 5.5 Alumni continuity
-
-The alumnus receives lightweight, relevant prompts: answer a junior's question, review one article, share one pattern, update a career milestone, or volunteer for a mentoring window.
-
-### 5.6 Return loop
-
-Alumni contributions improve the Knowledge Brain, AI Senior, preparation tracks, and mentorship for current students. Current students later graduate and continue the same loop.
-
-## 6. Universal identity and authentication flow
-
-### 6.1 Student OTP login — mobile and web
-
-1. The user enters either an approved personal email or college email.
-2. The client normalises case and whitespace.
-3. The server resolves the email against direct roster fields and email aliases.
-4. If the email matches the MCA college pattern, the register number is derived and attached to the existing roster identity when safe.
-5. The server returns a generic response whether or not the address exists, preventing account discovery.
-6. A six-digit OTP is sent to a real, active inbox.
-7. The user enters the OTP.
-8. The server verifies the code and resolves the authenticated account to one logical PSGMX profile.
-9. Role, batch status, permissions, and onboarding state decide the destination.
-10. The session persists securely until expiry or sign-out.
-
-For students whose college inbox does not yet exist, the personal email remains the deliverable OTP address. The future college alias may be reserved, but PSGMX must never claim it sent mail to an inactive inbox.
-
-### 6.2 Faculty and HOD OTP login
-
-1. The faculty member enters the seeded department email.
-2. PSGMX confirms the email belongs to the faculty roster and provisions a missing auth profile if required.
-3. A normal OTP is sent and verified.
-4. During controlled testing only, `098765` may be accepted for seeded faculty if the server-side `ALLOW_STATIC_OTP` flag is exactly enabled.
-5. The static code must never work for students, alumni, unknown faculty emails, or production when the flag is off.
-6. Faculty route to the faculty workspace. Users with governance capability also see governance sections.
-
-### 6.3 Alumni first-time join
-
-1. The alumnus selects **Join alumni network**.
-2. They enter full name, MCA register number, email, and optional LinkedIn URL.
-3. The UI derives and displays the intake batch before submission.
-4. The server confirms that the register number belongs to a graduated batch.
-5. Existing identities are reused; a register number or email linked to another person is rejected.
-6. The alumni profile and whitelist identity are created or updated.
-7. OTP is sent to the verified email.
-8. Successful verification opens a short alumni re-entry story, not a generic dashboard.
-9. The alumnus chooses contribution interests and whether they are open to mentoring.
-
-### 6.4 Returning alumni login
-
-Returning alumni use the normal OTP flow. Their personal and college aliases resolve to the same profile. If an email changed, a faculty/HOD identity-recovery workflow adds the new alias after verification rather than creating a second account.
-
-### 6.5 Authentication recovery states
-
-- **Unknown email:** show the generic send-code response, then provide “Need access help?” without revealing roster status.
-- **Expired OTP:** preserve the email, clear only the code, and offer resend after the cooldown.
-- **Too many attempts:** show the exact safe retry time and support route.
-- **Missing profile after valid auth:** hold the session in an account-recovery screen; do not redirect in a loop.
-- **Duplicate identity:** block automatic merging and create a governance review case.
-- **Inactive future college inbox:** explain that the personal email should be used until college mail activation.
-- **Wrong batch or name:** allow a correction request; do not let the student edit the register number directly.
-- **Offline:** do not attempt OTP; explain that a connection is required only for sign-in.
-
-## 7. First-session onboarding flow
-
-### 7.1 Story
-
-The opening story should communicate in under one minute that PSGMX learns from previous MX batches, gives a useful daily action, explains progress, and is separate from official NEO PAT drives. It may be skipped and should not replay unless opened from Help.
-
-### 7.2 Identity confirmation
-
-Show name, register number, detected batch, junior/senior stage, and login email. The user can confirm or request correction. They cannot silently change protected identity fields.
-
-### 7.3 Preparation calibration
-
-Replace a tiny generic calibration with a transparent baseline flow:
-
-- Goals and target role families, not company names.
-- Confidence across aptitude, coding, core CS, communication, and portfolio.
-- A short adaptive diagnostic sample.
-- Available weekly practice time and preferred reminder windows.
-- Connect LeetCode now or choose “do this later.”
-
-Self-reported confidence personalises the starting plan but does not directly inflate evidence-backed readiness.
-
-### 7.4 Outcome reveal
-
-Show a low-confidence starting plan, one strength, one foundation area, and a seven-day journey. Explain that recommendations become more accurate as verified evidence accumulates.
-
-### 7.5 First meaningful success
-
-Immediately offer one five-minute starter mission. Completion creates the first XP, starts the weekly journey, and opens Today. Onboarding must not end at an empty dashboard.
-
-## 8. Channel architecture
-
-### 8.1 Recommended mobile navigation
-
-Keep no more than five persistent destinations:
-
-1. **Today** — one prioritised plan, deadlines, announcements, and resume state.
-2. **Train** — Daily Five, adaptive practice, LeetCode, communication drills, and mock preparation.
-3. **Progress** — readiness dimensions, mastery map, evidence, streak, and personal bests.
-4. **Community** — lineage, Knowledge Brain, squads, mentoring, and approved announcements.
-5. **You** — profile, connected identities, preferences, help, and journey archive.
-
-Administrative students receive an Admin switch or shortcut inside You and Today. Mobile offers urgent quick actions; full administration remains on web.
-
-### 8.2 Recommended web navigation for students
-
-- **Overview** — current plan and cross-channel resume.
-- **Prepare** — assessments, practice tracks, AI Senior, and Interview Pattern Library.
-- **Build** — FYP, portfolio evidence, and project storytelling.
-- **Learn Together** — Knowledge Brain, lineage, squads, and mentoring.
-- **Progress** — readiness detail, history, evidence, and recovery plan.
-- **Inbox** — actionable announcements and notifications.
-- **Account** — identity, preferences, privacy, connected services, and support.
-
-### 8.3 Cross-channel handoff
-
-- A mobile card opens a web-only mock exam through a secure deep link.
-- A web AI Senior conversation can be resumed on mobile.
-- Saved Knowledge Brain content is available on both channels.
-- FYP updates may start on mobile as a quick note and finish on web.
-- Notification deep links resolve to an authenticated destination and safe fallback.
-- Progress uses the shared database; the user never manually “syncs apps.”
-
-## 9. Student flow — Today
-
-### 9.1 Entry priority
-
-1. Safety or account issue requiring action.
-2. Assessment or practice session starting soon.
-3. In-progress action that can be resumed.
-4. Personal best-next mission based on the weakest fresh readiness dimension.
-5. Daily habit such as Daily Five.
-6. Important batch announcement.
-7. Optional discovery or community content.
-
-Only one item is styled as the primary action.
-
-### 9.2 Today story
-
-The page reads as opening, tension, action, reward, and continuity. Example: “Your coding consistency is improving. Core CS evidence is 18 days old. Complete a seven-minute DBMS sprint to refresh it and finish two of three weekly missions.”
-
-### 9.3 Completion
-
-1. Show what was learned or verified.
-2. Update XP and mission state immediately.
-3. Mark score updates as recalculating until confirmed.
-4. Suggest either a short next action or a healthy stopping point.
-5. Never force another action to protect a streak.
-
-### 9.4 Return later
-
-If the student leaves midway, Today shows Resume with progress and remaining time. A partial quiz is restored only if assessment integrity permits it.
-
-## 10. Student flow — Train
-
-### 10.1 Daily Five
-
-1. Student sees topic mix, estimated time, current streak, and available freeze.
-2. The system chooses five questions using mastery gaps, recent repetition, difficulty, and curriculum coverage.
-3. Each answer is captured locally and safely submitted once.
-4. Explanations appear after submission, not during an active attempt.
-5. Results show accuracy by skill, one misconception, and a follow-up.
-6. Streak and XP update from the server.
-7. Reopening the same explanation earns no extra XP.
-
-Adaptation rules:
-
-- Do not quickly repeat a correctly mastered item.
-- Revisit a misconception with a different question after spaced delay.
-- Keep at least one confidence-building item in each set.
-- Avoid one-topic sets unless the student starts a focused sprint.
-- Report and review ambiguous questions.
-
-### 10.2 Adaptive skill sprint
-
-1. Student chooses the recommended sprint or a domain.
-2. They select 5, 10, or 20 minutes.
-3. Content adapts from quick recall to application.
-4. The end shows mastery movement and evidence confidence.
-5. Incorrect concepts enter a revisit queue.
-
-### 10.3 LeetCode
-
-1. Student enters a username, never a password.
-2. PSGMX validates format, checks duplicate ownership, and links it to the logical profile.
-3. Stats refresh in the background and show last verification time.
-4. The app recommends patterns or consistency goals without copying LeetCode content.
-5. Personal trend is primary; cohort percentile is secondary and requires fresh, sufficient data.
-6. Username changes are rate-limited and audited.
-
-For `26MX`, personal and deterministic college email both resolve to one account while LeetCode remains attached to the register-number identity.
-
-### 10.4 Communication and interview practice
-
-This missing pillar should include self-introduction rehearsal, FYP explanation, STAR story building, group-discussion practice, peer/alumni mock requests, and structured reflection. AI scores are coaching signals, not truth; human-reviewed evidence receives higher confidence.
-
-### 10.5 Mock assessment
-
-1. Faculty publishes target batch, availability, duration, topics, and integrity level.
-2. Student sees preparation guidance.
-3. Server records start time and attempt state.
-4. Questions load through answer-safe endpoints.
-5. Allowed interruptions preserve progress.
-6. Submission is idempotent.
-7. Results explain domain performance and link to remediation.
-8. Student records a short reflection.
-9. Faculty sees patterns and integrity flags, not only rank.
-
-## 11. Student flow — Progress and readiness
-
-### 11.1 Current limitation
-
-The current score uses Daily Five, LeetCode, mock exams, and preparation-session attendance. It is understandable but too narrow. Presence does not equal capability, and communication, core CS depth, portfolio proof, freshness, and confidence are underrepresented.
-
-### 11.2 Readiness Engine v2
-
-Use six evidence dimensions totalling 100:
-
-- **Aptitude and reasoning — 15:** adaptive practice and verified mocks.
-- **Coding and problem solving — 20:** LeetCode trend, coding assessments, and pattern mastery.
-- **Core computer science — 15:** DBMS, OS, networks, OOP, programming, and systems.
-- **Communication and interview expression — 15:** structured practice, human feedback, and mocks.
-- **Assessment performance — 20:** fresh, normalised results across domains.
-- **Portfolio and project proof — 15:** FYP milestones, repository quality, demos, and explanation readiness.
-
-Consistency modifies evidence confidence rather than rewarding raw app use. Session participation supports a dimension but does not independently imply readiness.
-
-### 11.3 Every dimension displays
-
-- Current score and band.
-- Confidence: low, medium, or high.
-- Last meaningful evidence date.
-- Trend over 30 and 90 days.
-- Contributing evidence.
-- Single most valuable next action.
-- “Why this changed” history.
-
-### 11.4 Fairness
-
-- Missing evidence is “not yet measured,” not failure.
-- Old evidence loses confidence before score.
-- Self-reported activity cannot create verified mastery.
-- Corrections require reason and audit.
-- Students can dispute a record.
-- Readiness is private by default.
-- PSGMX readiness alone must not decide hiring or official eligibility.
-
-### 11.5 Recovery plan
-
-Explain the weak/stale evidence, offer a small mission, provide a realistic window, connect support if difficulty repeats, and celebrate recovery from the student's own baseline.
-
-## 12. Student flow — Campus and academics
-
-1. Student securely configures eCampus access if required.
-2. The app displays attendance, CA marks, timetable, CGPA, and risk with last sync time.
-3. Credentials remain encrypted server-side and are never read back into the client model.
-4. Failure shows stale cached results and explicit refresh.
-5. Academic risk gently adjusts Today priorities.
-6. PSGMX must not gamify low attendance or encourage “safe bunking.”
-7. Faculty access follows department policy and RLS.
-
-## 13. Knowledge Brain, AI Senior, and pattern learning
-
-### 13.1 Knowledge discovery
-
-1. Search by skill, role family, pattern, FYP area, or question.
-2. Results identify source type, author role, batch, approval, and freshness.
-3. Save, mark useful, or report outdated information.
-4. Reading ends with retrieval check, related practice, or Ask AI Senior.
-5. Knowledge credit requires meaningful retrieval, not page views.
-
-### 13.2 AI Senior
-
-1. Student asks a preparation question.
-2. The system retrieves approved department knowledge.
-3. The answer separates source-backed guidance from general reasoning.
-4. Citations open exact sources.
-5. Weak evidence is disclosed with faculty/alumni escalation.
-6. The answer can become a saved practice plan.
-7. Sensitive student data is not exposed.
-8. Official-drive questions route to NEO PAT.
-
-### 13.3 Interview Pattern Library
-
-This replaces the company-centric Placement Log.
-
-1. A senior/alumnus selects aptitude screening, coding round, technical deep dive, FYP discussion, HR conversation, or group discussion.
-2. They describe helpful preparation, mistakes, themes, and advice.
-3. Company naming is optional historical context, not the structure.
-4. Faculty reviews privacy, accuracy, relevance, and expiry.
-5. Approved insight becomes searchable and may ground AI Senior.
-6. Old content enters re-review instead of remaining permanently trusted.
-
-## 14. FYP and portfolio proof
-
-1. Student creates title, problem, domain, team, guide, repository, and outcome.
-2. The system proposes stage-appropriate milestones.
-3. Student logs updates and evidence links.
-4. Faculty comments, requests changes, or confirms a milestone.
-5. PSGMX tracks ability to explain problem, architecture, trade-offs, contribution, testing, result, and future work.
-6. AI suggests questions but cannot fabricate implementation evidence.
-7. Finished FYP becomes a portfolio story and, with permission, a junior example.
-8. Graduation preserves it in the journey archive.
-
-## 15. Lineage, squads, and mentoring
-
-### 15.1 Lineage
-
-1. Register suffix creates a starting relationship across batches.
-2. Students see alumni only when privacy and mentoring settings permit it.
-3. Profiles explain the match and available topics.
-4. Requests include topic, context, and preferred response type.
-5. Alumni accept, decline, or answer asynchronously.
-6. Boundaries, reporting, and expectations are visible.
-
-Add opt-in topic matching because suffix-only lineage is too narrow when a match is unavailable or irrelevant.
-
-### 15.2 Preparation squads
-
-1. PR creates balanced squads or previews rule-based distribution.
-2. Each squad has one small weekly objective.
-3. Leaders see participation, not private score details.
-4. Students ask for help and share explanations.
-5. Squad competition uses improvement/completion bands, not raw ability.
-6. Students can report pressure or request a change.
-
-## 16. Junior-batch journey
-
-### First four weeks
-
-- Complete identity and baseline.
-- Connect LeetCode if available.
-- Learn readiness evidence.
-- Finish a seven-day starter journey.
-- Join a preparation squad.
-- Discover one lineage connection.
-- Save the first Knowledge Brain resource.
-
-### Foundation loop
-
-- Daily: one five-to-ten-minute mission.
-- Weekly: coding pattern, core-CS concept, aptitude checkpoint, and reflection.
-- Monthly: low-stakes diagnostic and faculty pulse.
-- Semester: evidence review, goal reset, and portfolio checkpoint.
-
-### Promotion to senior
-
-Show foundation growth and gaps, preserve achievements, introduce proof stage, shift to role-family tracks/timed practice, and invite one useful contribution to the incoming batch.
-
-## 17. Senior-batch journey
-
-Senior Today emphasises timed assessment, communication, project explanation, evidence freshness, interview-pattern practice, portfolio proof, and giving back.
-
-The weekly loop includes an adaptive sprint, timed checkpoint, interview response, FYP improvement, pattern review, and reflection.
-
-PSGMX must not show official eligibility, applications, shortlists, packages, active drive management, or an Apply action. Those belong in NEO PAT.
-
-## 18. Team Leader flow
-
-### 18.1 Activation
-
-1. PR grants selected capabilities.
-2. The student sees responsibility and privacy limits.
-3. They accept the assignment.
-4. Admin tools appear without removing their student companion.
-
-### 18.2 Practice-session participation
-
-1. Open an upcoming/recent preparation session.
-2. See only assigned squad members.
-3. Mark present, absent, excused, or remote where applicable.
-4. Avoid sensitive medical details in notes.
-5. Correct within a defined window.
-6. Audit actor, time, old value, and reason.
-7. Students can view and dispute their own record.
-
-### 18.3 Quest support and exit
-
-Leaders may see acknowledgement of a shared mission but not answers or readiness details. Their action is offer help, not punishment. Revoking capability preserves audit history and leaves the student's personal journey unchanged.
-
-## 19. Coordinator flow
-
-Coordinator access is capability-based.
-
-### 19.1 Schedule preparation session
-
-1. Choose coding lab, aptitude sprint, core-CS clinic, mock interview, group discussion, FYP review, or alumni talk.
-2. Select batch/squads.
-3. Set date, duration, location/link, capacity, and facilitator.
-4. Add expected preparation and outcome.
-5. Preview recipients and conflicts.
-6. Publish with deep-link notification.
-7. Capture participation and quality pulse afterward.
-
-### 19.2 Publish quest
-
-Choose template or create, define skill/difficulty/time/evidence/audience/window, preview mobile/accessibility, publish, monitor aggregate completion, then improve or retire based on feedback.
-
-### 19.3 Announcements
-
-Require audience, priority, expiry, action link, and owner. Priority is rare; expired items leave the active inbox but remain auditable.
-
-## 20. Placement Readiness Representative admin flow
-
-The PR web panel runs the preparation programme while respecting faculty/HOD boundaries.
-
-### 20.1 Command Center
-
-Show roster issues, unclosed participation, unusually low quest completion, stale question domains, correction requests, upcoming preparation, privacy-safe readiness movement, rollout health, and system warnings.
-
-### 20.2 Members and access
-
-1. Import CSV or add one roster member.
-2. Validate register number, name, batch, personal email, and derived college email.
-3. Preview creates, updates, duplicates, and rejects.
-4. Commit idempotently.
-5. Show one identity with all accepted aliases.
-6. Separate role label from capabilities.
-7. Grant least privilege through presets/custom selection.
-8. Confirm member-management delegation.
-9. Audit every change.
-10. Recover identity without exposing OTPs.
-
-PR must not create faculty/HOD governance access.
-
-### 20.3 Cohorts and squads
-
-PR views onboarding and identity health; lifecycle overrides require governance. Squad management previews size/balancing, avoids public score labels, assigns leaders, audits moves, and preserves history.
-
-### 20.4 Preparation programme calendar
-
-This replaces drive administration. It coordinates practice sessions, assessments, clinics, alumni interactions, and FYP checkpoints with conflict and audience validation.
-
-### 20.5 Participation
-
-PR sees session/squad status, closes/reopens correction windows, and resolves disputes. Participation is not treated as employability.
-
-### 20.6 Quest Studio
-
-Create, duplicate, schedule, pause, and retire quests. Each needs objective, domain, difficulty, duration, evidence, review material, audience, window, owner, and review date.
-
-### 20.7 Question Bank
-
-Add/import, validate answer/explanation/topic/difficulty/source, detect duplicates, review reported ambiguity, monitor quality, and retire safely without deleting history.
-
-### 20.8 Communication Center
-
-Publish targeted announcements with priority, expiry, and delivery/read state. Never publish private readiness details.
-
-### 20.9 Readiness Pulse
-
-Show aggregate movement, evidence coverage, practice engagement, and programme gaps. Sensitive component-level intervention belongs to faculty.
-
-### 20.10 Content moderation
-
-PR may triage pattern submissions if granted moderation; faculty retains final knowledge approval.
-
-### 20.11 Reports and audit
-
-Export preparation health: roster/access, participation, quest completion, evidence freshness, question quality, aggregate readiness, and permission audit. Exclude official drive, package, application, and outcome records.
-
-### 20.12 Staged rollout
-
-Select cohort/percentage, run identity/team/content/session/app checks, preview users, enable a small group, monitor errors and support, pause/rollback safely, then expand on health thresholds.
-
-### 20.13 PR mobile quick actions
-
-Mobile may show today's session status, quick attendance correction, approved announcement templates, urgent support, and pause quest. Imports, permissions, authoring, analytics, and rollout remain web-first.
-
-## 21. Faculty flow
-
-### 21.1 Dashboard
-
-Show mentees awaiting response, recovery cases, knowledge review, FYP feedback, assessment work, batch misconceptions, and progress worth acknowledging.
-
-### 21.2 Student explorer
-
-Filter by batch/squad/dimension/freshness/support; search identity; open consent-appropriate timeline; review evidence, assessment, participation, FYP, and interventions; then start a note, recovery mission, or check-in. Private faculty notes stay private.
-
-### 21.3 Recovery Hub
-
-1. Evidence gaps, repeated difficulty, academic risk, or a student request suggests a case.
-2. Faculty reviews context; automation does not label a student alone.
-3. Faculty sets goal, actions, owner, review date, and privacy.
-4. Student sees support, not punishment.
-5. Review on date.
-6. Close with outcome and maintenance action.
-7. Preserve private continuity history.
-
-### 21.4 Mentorship
-
-Requests include topic/outcome. Faculty accepts asynchronously, schedules, or redirects. Both record one next step; the system follows up once without spam. Verified evidence is created only when appropriate.
-
-### 21.5 Mock Assessment Studio
-
-1. Build from a domain/difficulty blueprint.
-2. Select reviewed questions.
-3. Configure window, duration, attempts, batch, integrity, accommodations, and feedback release.
-4. Preview as student.
-5. Publish and monitor.
-6. Analyse misconceptions and coverage.
-7. Publish remediation tracks.
-8. Retire while preserving history.
-
-This must become first-class faculty navigation.
-
-### 21.6 Knowledge moderation
-
-Sort by risk/age/impact; inspect source, claims, privacy, duplicates, and AI checks; approve/request changes/reject/set expiry; embed after approval; re-review material edits; remove outdated content from AI grounding.
-
-### 21.7 FYP Repository
-
-Browse live projects by batch/domain/guide/stage/support, review evidence/logs, give structured feedback, confirm milestones, use examples only with permission, and aggregate topics without exposing private repositories.
-
-### 21.8 AI Senior Insights and analytics
-
-Show aggregate demand, unanswered topics, citation gaps, reports, stale evidence, questionable items, and programme effectiveness. Do not expose identifiable private conversations without policy and escalation. Every metric needs an owner or action.
-
-### 21.9 Announcements and settings
-
-Publish guidance with audience, expiry, and action. Remove password forms while OTP is the principal authentication method unless password auth is deliberately implemented.
-
-## 22. HOD and governance flow
-
-### 22.1 Governance entry and health
-
-Capability-gated faculty navigation shows active/upcoming batches, identity/onboarding coverage, readiness evidence coverage, knowledge/FYP review health, privacy-safe recovery state, system errors, cron health, and stale integrations.
-
-### 22.2 Batch management
-
-Create/prepare future batch, set lifecycle dates, preview roster/aliases, activate onboarding, preview promotion/graduation, approve exceptional override with reason, and preserve history. Standard transitions are automatic and idempotent.
-
-### 22.3 Faculty management
-
-View seeded roster/auth state, provision approved email, separate title from security, grant/revoke governance with confirmation, preserve audit when roles change, and disable access without deleting authored work.
-
-### 22.4 Identity review
-
-Governance handles duplicate identities, changed emails, disputed register numbers, and unusual alumni claims using minimum data and recorded decisions.
-
-### 22.5 System governance
-
-Review audit, rollout, scheduled jobs, knowledge indexes, freshness, and privacy-safe summaries. Impersonation requires reason, visible banner, expiry, and full audit.
-
-## 23. Alumni flow
-
-### 23.1 Re-entry and home
-
-After OTP, show preserved batch journey, one career-profile request, interests, mentoring boundaries, and one small contribution. Home prioritises accepted requests, drafts, stale knowledge updates, lineage milestones, announcements, then memories.
-
-### 23.2 Journey archive
-
-Show final evidence, healthy streak, assessments, FYP, contributions, milestones, and batch memories. Career milestones may be added; verified history cannot be rewritten.
-
-### 23.3 Contribute knowledge
-
-1. Choose interview pattern, technical guide, career transition, FYP lesson, communication advice, or mentoring resource.
-2. Use a guided outline.
-3. Autosave drafts.
-4. Add historical context and accuracy date.
-5. Preview privacy/attribution.
-6. Submit for review.
-7. Address changes and resubmit.
-8. See impact through useful reads, saves, and resolved questions.
-
-Replace current static submissions/articles with this live lifecycle.
-
-### 23.4 Mentorship
-
-Opt in by topic/mode/frequency/availability; receive contextual requests; accept/decline/redirect/pause; communicate within boundaries; record resolution; automatically pause new requests after repeated non-response without public penalty.
-
-### 23.5 Community Board
-
-Convert Marketplace into a moderated board for project collaboration, open source, mentoring circles, learning events, career-information sessions, and clearly unofficial opportunities/referrals where policy permits. It must not imitate NEO PAT.
-
-### 23.6 Alumni lineage
-
-Show permitted junior context and issue specific contribution prompts based on real demand rather than generic “give back” banners.
-
-## 24. Gamification and motivation engine
-
-### 24.1 XP
-
-XP represents preparation evidence, not app use. Reward Daily Five, adaptive sprints, assessments, recovery after error, validated FYP evidence, accepted peer help, and approved knowledge. Do not reward opening, scrolling, refreshing, or duplicate content.
-
-### 24.2 Mastery
-
-Skills progress through Discovering, Practising, Applying, Demonstrating, and Maintaining. Different levels require different evidence; repetition alone cannot reach Demonstrating.
-
-### 24.3 Streaks
-
-- Prefer weekly consistency over punishing daily streaks.
-- Give two grace/freeze days monthly.
-- Support planned pause.
-- Broken streaks retain mastery and lifetime progress.
-- Never send late-night shame.
-- Celebrate return streaks.
-
-### 24.4 Weekly journeys and seasons
-
-Give three to five balanced missions: easy start, skill depth, and long-goal connection. Use academic seasons: Foundation, Core Mastery, Build/Portfolio, Interview Readiness, and Transition/Contribution.
-
-### 24.5 Social motivation
-
-Show personal best first, use opt-in squad goals, rank by improvement only with fresh/sufficient cohorts, never expose bottom performers, separate junior/senior rankings, and allow leaderboard opt-out.
-
-### 24.6 Evidence badges
-
-Examples: foundation finisher, DBMS misconception clearer, assessment reflection, FYP explanation ready, lineage helper, approved article, and returned after a break. Avoid badges for taps/logins.
-
-### 24.7 Anti-gaming
-
-Use server-authoritative timestamps, idempotent submissions, rotation/anomaly detection, no duplicate reward, human review for high-impact contributions, transparent corrections, and no secret penalties.
-
-## 25. Notification and inbox flow
-
-Classes are action required, scheduled reminder, progress, community, announcement, and system.
-
-Delivery respects category preferences and quiet hours, bundles low priority, deep-links exactly, synchronises read state, explains why it was sent, expires obsolete actions, and hides private score detail from lock screens.
-
-The weekly digest tells what was completed, which skill moved, what evidence is stale, one next focus, and one community resource.
-
-## 26. Offline, failure, and support
-
-### 26.1 Mobile offline
-
-Show last sync, read cached approved resources/progress, queue safe drafts, and reconcile idempotently. Do not blindly queue OTP, final exam submission, attendance authority changes, or permissions.
-
-### 26.2 Loading failure and empty state
-
-Keep successful modules usable and retry the failed module. Empty states explain why and who can create the first item. No assessment offers a preparation track; no mentor offers topic matching; no FYP starts setup; no announcement means up to date.
-
-### 26.3 Support
-
-User selects access, incorrect data, content, assessment, privacy, or technical issue; previews attached context; receives a case number; PR handles operations, faculty handles academic/content, HOD handles governance; resolution is in-app and auditable.
-
-## 27. Mobile visual and interaction standard
-
-- Design at 360 px first.
-- Use 44–48 px tap targets.
-- One dominant action per screen.
-- Keep navigation labels visible.
-- Preserve form input and use appropriate keyboards.
-- Convert admin tables to cards/detail views on small screens.
-- Match skeletons to final layout.
-- Support text scaling, screen readers, contrast, and reduced motion.
-- Motion confirms continuity without delay.
-- Share spacing, radius, typography, colour semantics, and status language across Flutter and Next.js.
-- Premium means calm hierarchy and trustworthy feedback, not excessive effects.
-
-## 28. Current repository problems and required corrections
-
-This section is grounded in current Flutter routes, web role layouts, services, and database flows.
-
-### 28.1 Mobile label/destination mismatch
-
-The senior-only bottom item says `Sessions` but opens `PlacementLogScreen`. Replace it with the new Train/Pattern flow or label it accurately during migration.
-
-### 28.2 Broken Daily Five deep link
-
-Mobile Home pushes `/spark-five`, but the router defines `/daily-five`. Use one named route and navigation tests.
-
-### 28.3 Duplicated Home and Today
-
-Consolidate into one authoritative Today composition to prevent divergent data, copy, and navigation.
-
-### 28.4 Duplicated graduation screens
-
-Use one lifecycle route and one persisted acknowledgement.
-
-### 28.5 Unsafe company-detail deep link
-
-The route expects a full Company object in extra state, which cold links may lack. Routes must load by stable ID with not-found/retry states.
-
-### 28.6 NEO PAT overlap
-
-PR Companies, company Placement Log, company prompts, package records, and visit records must migrate to Preparation Tracks and Interview Pattern Library.
-
-### 28.7 Narrow readiness
-
-Adopt v2 dimensions, confidence, and freshness; participation alone is not capability.
-
-### 28.8 Static faculty and alumni shells
-
-Static arrays remain in faculty Knowledge Brain, Mentorship, Recovery Hub, FYP presentation data, alumni Contribute, and alumni Knowledge Brain. Implement live loading, empty, error, mutation, and review states before calling these functional.
-
-### 28.9 Passwordless/settings conflict
-
-Faculty and alumni settings show password fields while login is OTP. Remove them or deliberately implement password authentication.
-
-### 28.10 Incomplete inbox
-
-Some notification bells only route to announcements. Build a unified actionable inbox with read state, category, expiry, and deep link.
-
-### 28.11 Mixed role labels and capability flags
-
-Make capabilities authoritative and apply identical guards in mobile, web, APIs, RPCs, and RLS. Labels are presentational.
-
-### 28.12 Team scope must be database-enforced
-
-Team Leader scope cannot rely on service convention. Enforce sensitive scope in RLS/RPC.
-
-### 28.13 Rollout needs real health
-
-Add telemetry thresholds, affected-user preview, rollback, and audit—not only static stages.
-
-### 28.14 Generic dashboard density
-
-Recompose cards around next action, progress story, and role queue.
-
-### 28.15 Analytics without decisions
-
-Remove or demote metrics with no owner, threshold, or action.
-
-### 28.16 Broad alumni asks
-
-Replace generic Contribute/Marketplace calls with specific, time-bounded prompts tied to student demand.
-
-### 28.17 Suffix-only lineage
-
-Keep the tradition but add topic-based opt-in matching and availability.
-
-## 29. System and automation flows
-
-### 29.1 Identity alias sync
-
-Validate and synchronise personal, college, and canonical aliases. Conflicts become review cases, never silent overwrites.
-
-### 29.2 Readiness recomputation
-
-Meaningful evidence triggers idempotent recomputation with dimension history, algorithm version, and freshness. Failures retry and alert system health.
-
-### 29.3 LeetCode refresh
-
-Refresh linked users within rate limits, detect anomalies, store last success/error, and never lower verified history because of temporary upstream failure.
-
-### 29.4 Knowledge lifecycle
-
-Submission → review → approval → embedding → searchable → cited → feedback → scheduled re-review → revision/retirement.
-
-### 29.5 Batch lifecycle
-
-Prepared → pending onboarding → active junior → active senior → graduated. Yearly transition previews changes, runs idempotently, clears student-admin capability, preserves history, and opens the relevant chapter.
-
-### 29.6 Community health
-
-Scheduled checks identify unanswered mentoring, stale content, support cases, and programme gaps. Automation suggests; humans decide sensitive outcomes.
-
-### 29.7 App version and rollout
-
-Check minimum, recommended, and emergency-block versions. Optional updates do not block; forced updates explain why and preserve safe drafts.
-
-## 30. Product analytics and success measures
-
-The objective is regular useful behaviour, not maximum time.
-
-### 30.1 North star
-
-**Weekly Prepared Students:** percentage of active students completing at least two meaningful preparation actions in different readiness dimensions during a week.
-
-### 30.2 Supporting measures
-
-- First useful action within 24 hours.
-- Four-week retained preparation habit.
-- Fresh evidence in at least four dimensions.
-- Recovery completion/return.
-- Assessment reflection completion.
-- Knowledge questions resolved with approved sources.
-- Alumni requests answered within availability.
-- FYP milestones with evidence.
-- Support resolution time.
-- OTP success and duplicate-identity rate.
-- Crash-free sessions and failed deep links.
-
-### 30.3 Guardrails
-
-- Notification opt-out/complaints.
-- Late-night use from streak pressure.
-- Leaderboard opt-out.
-- Disputed scores/attendance.
-- AI answers with weak citations.
-- Faculty workload per case.
-- Alumni request overload.
-
-### 30.4 Event model
-
-Events include stable user, role, batch, channel, flow, object, result, duration, version, and correlation ID. Never log answer content, OTPs, passwords, or private notes.
-
-Track OTP stages, onboarding, mission lifecycle, assessment/recovery/reflection, readiness/explanation, knowledge search/use, mentoring lifecycle, permission/import/rollout/correction actions.
-
-## 31. Implementation sequence
-
-### Phase 1 — Trust and focus
-
-1. Remove Companies & Drives from primary navigation.
-2. Replace Placement Log with Interview Pattern Library.
-3. Fix `/spark-five` and `/daily-five`.
-4. Consolidate Home/Today and graduation.
-5. Correct labels and ID-based deep links.
-6. Remove misleading password settings.
-7. Align capability guards through clients, APIs, RPCs, and RLS.
-
-### Phase 2 — Daily companion
-
-1. Build prioritised Today.
-2. Add cross-channel resume.
-3. Add adaptive sprints and revisit queue.
-4. Build unified inbox.
-5. Add weekly journeys, ethical streaks, XP, and mastery.
-
-### Phase 3 — Complete readiness
-
-1. Introduce versioned Readiness v2 with confidence.
-2. Add communication/interview practice.
-3. Turn FYP into portfolio evidence.
-4. Add Mock Assessment Studio and live Recovery Hub.
-
-### Phase 4 — Community continuity
-
-1. Complete live alumni drafts/review.
-2. Add structured mentoring and topic matching.
-3. Convert Marketplace to Community Board.
-4. Add contribution impact and knowledge re-review.
-
-### Phase 5 — Scalable governance
-
-1. Separate title from governance capability.
-2. Complete lifecycle previews/exceptions.
-3. Add rollout health/rollback/audit.
-4. Add privacy-safe five-batch analytics.
-
-## 32. Definition of complete by role
-
-### Student
-
-Authenticate with either valid identity, understand stage, complete a useful action, see explained progress, recover from gaps, practise all dimensions, ask for help, build evidence, and continue across channels.
-
-### Team Leader and Coordinator
-
-Perform only assigned preparation operations within scope, with correction and audit, while retaining the student experience.
-
-### PR
-
-Run roster access, squads, sessions, quests, participation, question bank, communication, readiness pulse, support, reports, audit, and rollout without official drive management.
-
-### Faculty
-
-Identify support needs, mentor, author/analyse assessments, moderate live knowledge, review FYP evidence, and close recovery loops with current data.
-
-### HOD/governance
-
-Safely manage batches, faculty access, identity exceptions, health, lifecycle, and privacy-safe outcomes with auditability.
-
-### Alumni
-
-Join by OTP, preserve journey, update context, contribute reviewed knowledge, mentor within boundaries, and remain useful without student placement features.
-
-## 33. The never-ending companion loop
-
-```mermaid
-flowchart TD
-    A[Understand current evidence] --> B[Choose one useful action]
-    B --> C[Practise or contribute]
-    C --> D[Receive explanation or feedback]
-    D --> E[Update mastery and confidence]
-    E --> F[Reflect and plan]
-    F --> G{Life stage}
-    G -->|Junior| H[Build foundations]
-    G -->|Senior| I[Prove readiness]
-    G -->|Alumni| J[Guide and contribute]
-    G -->|Faculty or PR| K[Support the ecosystem]
-    H --> A
-    I --> A
-    J --> A
-    K --> A
+```
+governance_admin (HOD / authorised governance holder)
+    └── faculty (department mentor, knowledge moderator, assessment author)
+            └── placement_readiness_representative (PR — student admin, batch-scoped)
+                    └── coordinator (student — scheduling, quest publishing)
+                            └── team_leader (student — squad participation marking)
+                                    └── student (active junior or senior)
+                                            └── alumni (graduated, lightweight)
 ```
 
-There is no end of PSGMX. The relationship changes from learner to practitioner, contributor, mentor, and steward.
+**Rule zero:** hiding a button is never access control. Every capability is enforced at four layers: UI navigation gate, API authorization middleware, Supabase RPC permission check, and PostgreSQL Row-Level Security policy. A curl request with a student JWT must fail on any PR-only endpoint, even if the UI never shows that button.
 
-## Appendix A — Current mobile route disposition
+---
 
-This map prevents existing Flutter routes and screens from being lost during the companion redesign.
+## Chapter 3 — The Onboarding Story (How Students Arrive)
 
-- `/splash`: keep as a short bootstrap that resolves auth, profile, app-version, offline, and lifecycle state. It must never become a long branded delay.
-- `/onboarding`: rewrite copy around readiness companionship and the NEO PAT boundary; show only before first login or from Help.
-- `/login`: keep approved personal/college email plus OTP and full recovery states.
-- `/batch-confirmation`: keep as protected identity confirmation, with correction request rather than editable register number.
-- `/calibration`: expand into the transparent baseline defined in Section 7.
-- `/outcome`: convert from score theatre into a low-confidence starting plan and first mission.
-- `/`: replace overlapping Home/Today compositions with the single Today destination.
-- `/notifications`: keep and upgrade into the unified actionable Inbox.
-- `/settings`: keep under You; align every control with actual backend persistence and OTP authentication.
-- `/daily-five`: keep as the canonical route. Remove every `/spark-five` reference.
-- `/placement-log`: migrate to `/interview-patterns` and remove official drive/company structure.
-- `/placement-log/company/:id`: retire. New pattern detail routes load by stable pattern ID rather than router extra state.
-- `/ai-mentor`: rename consistently to AI Senior or choose one product name; keep source-grounded preparation flow.
-- `/pulse-rankings`: move under Progress; make comparison opt-in, stage-aware, improvement-based, and privacy-safe.
-- `/leetcode-arena`: keep under Train/Progress with personal trend first.
-- `/credits`: keep under About inside You; it is not a primary journey.
-- `/help-support`: keep and add trackable support cases.
-- `/proctored-exam`: keep only if the assessment rules can be enforced on the device; otherwise deep-link to the web exam with explanation.
-- `/graduation`: keep one canonical graduation transition and delete/merge duplicate presentation logic.
+### 3.1 The PR Bulk Import — The Only Entry Point for Students
 
-The repository also contains mobile admin screens for command centre, team management, scheduling, question bank, and member permissions that are not present in the active router. Choose one of two explicit outcomes for each:
+A new MCA batch does not self-register on PSGMX. There is no public signup form for students. The story begins in late July. The PR opens the PSGMX web console at `psgmx.tech/placement-rep/members`, downloads the **Import Template** CSV:
 
-1. Add a capability-gated Admin route and use it only for the PR quick actions in Section 20.13.
-2. Remove the orphaned screen after confirming the web console covers the operation.
+| Column | Required | Notes |
+|---|---|---|
+| `register_number` | Yes | Unique identifier, immutable after import |
+| `full_name` | Yes | Display name |
+| `personal_email` | Yes | OTP delivery until college mail activates |
+| `college_email` | Auto-derived | System derives from rollnumber@psgtech.ac.in |
+| `batch_year` | Yes | e.g., 2026 |
+| `stage` | Auto-set | junior for new batch |
+| `phone` | Optional | SMS fallback |
+| `github_username` | Optional | Pre-linked GitHub integration |
+| `leetcode_username` | Optional | Pre-linked LeetCode integration |
 
-Do not leave invisible, untested admin code that appears functional in the repository but cannot be reached safely by a user.
+The PR uploads the filled CSV. Before committing a single row, the system:
 
-## Appendix B — Current web route disposition
+1. **Parses and validates** every row — register number format, email uniqueness across entire database, name not empty.
+2. **Detects conflicts** — highlights any register number or email already in the system with a different name.
+3. **Preview screen** — PR sees three columns: Will Create (green), Will Update (amber), Will Reject (red). No row commits without PR reviewing.
+4. **PR confirms** — the system commits all valid rows idempotently in a single transaction via a Supabase Edge Function (bypassing RLS with service role, audited).
+5. Each new student receives a **welcome email** via Resend — not a generic registered email, but one explaining PSGMX as a preparation companion with the APK download link and a QR code.
 
-### Public and authentication
+> **Critical:** The PR cannot edit a student's register number after import. Only a governance administrator can resolve corrections after an audit-logged identity review.
 
-- `/`: keep as the clear public explanation of PSGMX readiness companionship.
-- `/login`: keep as the shared OTP entry and role router.
-- `/join-alumni`: keep as graduated-batch enrolment plus OTP.
-- `/onboarding` and `/onboarding/first-login`: consolidate role-aware first-session logic and prevent loops.
-- `/change-password`: retire while OTP-only authentication is authoritative, or deliberately enable and document password auth.
-- `/download`: keep as a trusted mobile download/install page with version and integrity information.
-- `/app`: keep only if it has a deliberate handoff purpose; avoid a second generic landing page.
-- `/exam/[examId]`: keep as the canonical deep web assessment route with secure resume and submission.
-- `/knowledge/search`: merge with the role-aware Knowledge Brain search unless a public/global search use case is intentional.
-- `/hod`: redirect to the capability-gated faculty governance workspace; do not maintain a second HOD portal.
+### 3.2 Student First Login
 
-### Student workspace
+The student opens `app.psgmx.tech` (installed via the GitHub Release APK link from the welcome email) or `psgmx.tech` on a browser.
 
-- `/student`: becomes Overview with the same next action and resume state as mobile Today.
-- `/student/ai-senior`: keep under Prepare and ground every answer in approved sources.
-- `/student/knowledge-brain`: keep under Learn Together.
-- `/student/exams`: keep under Prepare with upcoming, in-progress, completed, and remediation states.
-- `/student/readiness`: keep under Progress and migrate to Readiness Engine v2.
-- `/student/lineage`: keep under Learn Together and add topic-based matching.
-- `/student/fyp`: keep under Build and expand to portfolio evidence.
-- `/student/placement-log`: transform into Interview Pattern Library.
-- `/student/announcements`: merge into the unified Inbox while retaining an announcement filter.
-- `/student/recovery-hub`: surface the active recovery plan inside Progress and Today; retain a detail route for history.
-- `/student/settings`: keep under Account with identity aliases, connected services, privacy, notifications, and support.
+**Step 1 — Email entry.** They type their personal email. If not in the roster: *"We couldn't find an account for this email. Check your welcome email or contact your batch PR."* No roster status is exposed to outsiders.
 
-### PR workspace
+**Step 2 — OTP.** Supabase Auth sends a 6-digit OTP via Resend (custom SMTP). Three wrong attempts lock for 15 minutes with the exact unlock time shown.
 
-- `/placement-rep`: keep as preparation Command Center.
-- `/placement-rep/members`: keep as Members & Access with import preview, identity aliasing, least privilege, and audit.
-- `/placement-rep/teams`: rename to Preparation Squads and preserve scoped history.
-- `/placement-rep/sessions`: keep as Preparation Programme Calendar.
-- `/placement-rep/attendance`: rename to Participation and add dispute/correction windows.
-- `/placement-rep/tasks`: rename to Quest Studio.
-- `/placement-rep/companies`: remove company/drive CRUD and replace the route with Preparation Tracks, or redirect to the new route during migration.
-- `/placement-rep/announcements`: keep as Communication Center.
-- `/placement-rep/questions`: keep as reviewed Question Bank.
-- `/placement-rep/reports`: keep as Preparation Health & Audit, excluding official placement outcomes.
-- `/placement-rep/rollout`: keep and add live readiness checks, thresholds, rollback, and impact preview.
+**Step 3 — Identity confirmation.** They see name, register number, batch, and stage. They can flag a correction — this creates a support case. They cannot self-edit register numbers.
 
-### Faculty workspace
+**Step 4 — The 5-minute calibration.**
+- Target role family: Product engineering / Service engineering / Research / I don't know yet
+- Confidence rating in Aptitude, Coding, Core CS, Communication (3-point scale)
+- LeetCode username (optional, can skip and do later)
+- Days available to practice per week and preferred reminder window
+- A short 5-question adaptive sample across all dimensions (calibration only, not graded)
 
-- `/faculty`: keep as the role-specific action queue.
-- `/faculty/ai-insights`: keep for aggregate demand, citation gaps, and safety/quality review.
-- `/faculty/knowledge-brain`: replace static presentation data with the live moderation lifecycle.
-- `/faculty/fyp-repository`: complete the live repository, feedback, milestone, and evidence flow.
-- `/faculty/recovery-hub`: replace static cases with real suggested/active/reviewed/closed cases.
-- `/faculty/students`: keep as Student Explorer with evidence timelines.
-- `/faculty/mentorship`: replace static mentees with live assignments, requests, next steps, and follow-up.
-- `/faculty/analytics`: keep only decision-oriented analytics.
-- `/faculty/announcements`: keep as faculty communication with audience and expiry.
-- `/faculty/settings`: keep profile, preferences, privacy, and notifications; remove misleading password controls.
-- `/faculty/batch-management`: governance-capability only.
-- `/faculty/faculty-management`: governance-capability only.
-- `/faculty/governance`: governance-capability only, including identity exceptions, health, jobs, audit, and rollout oversight.
+**Step 5 — Starting plan reveal.** Low-confidence first plan with one strength, one focus area, and a 7-day starter journey.
 
-Add a first-class faculty Assessment Studio route instead of making assessment creation an implicit or disconnected operation.
+**Step 6 — First success in 5 minutes.** One starter mission completed before closing the app. First XP awarded. App opens to Today.
 
-### Alumni workspace
+---
 
-- `/alumni`: keep as contribution/mentorship action queue, not a frozen statistics dashboard.
-- `/alumni/contribute`: replace static submissions with autosaved drafts, review, revision, and impact.
-- `/alumni/knowledge-brain`: replace static articles with live approved search and contribution context.
-- `/alumni/journey`: keep as immutable verified history plus editable career milestones.
-- `/alumni/lineage`: keep with privacy, topic matching, and structured requests.
-- `/alumni/marketplace`: transform into the moderated Community Board and clearly separate it from official placement operations.
-- `/alumni/announcements`: merge into unified Inbox with an announcement filter.
-- `/alumni/settings`: keep career context, mentoring availability, privacy, identity aliases, and notifications; remove password-only UI.
+## Chapter 4 — The Daily Life of a Student
 
-## Appendix C — Capability ownership and approval boundaries
+### 4.1 Today — The Only Screen That Matters Every Morning
 
-- **Manage own profile/preferences:** every authenticated user, excluding protected identity fields.
-- **Request identity correction:** every user; PR triages; governance approves exceptional merges/register changes.
-- **Import active student roster:** PR; governance may review unusual conflicts.
-- **Manage squads:** granted PR/coordinator capability, scoped to permitted batch.
-- **Mark session participation:** granted Team Leader/coordinator/PR capability, strictly scoped in the database.
-- **Create preparation sessions:** granted coordinator/PR capability.
-- **Create quests:** granted coordinator/PR capability.
-- **Author question-bank content:** granted PR/coordinator or faculty capability; review policy determines publication.
-- **Publish operational announcements:** granted PR/coordinator capability, scoped by audience.
-- **Publish academic guidance:** faculty/HOD.
-- **View a student's full readiness evidence:** the student and authorised faculty/HOD; PR sees only operationally necessary or aggregate data.
-- **Create and close recovery cases:** faculty/HOD.
-- **Approve Knowledge Brain content:** faculty/HOD.
-- **Triage reported content:** explicitly granted PR/faculty capability.
-- **Review FYP milestones:** assigned faculty/HOD.
-- **Create mock assessments:** faculty/HOD.
-- **Manage student administrative capabilities:** PR with `manage_members`, limited to student roles and batch scope.
-- **Manage faculty/governance access:** governance administrator only.
-- **Create/override batch lifecycle:** governance administrator only; normal rotation remains automated.
-- **Change rollout:** PR for preparation features within allowed scope; governance for department-wide or security-sensitive features.
-- **View sensitive audit:** governance; PR sees audit relevant to PR-managed operations.
-- **Impersonate for support:** governance only, reason-bound, time-bound, visibly indicated, and audited.
+A student opens the app and sees a single coherent story — not a dashboard of widgets:
 
-Every capability must be enforced in four places: visible navigation, server/API or RPC authorization, PostgreSQL RLS, and automated tests. Hiding a button is never access control.
+> *"Good morning, Vikram. Your coding consistency is your strongest signal right now — you've solved 12 LeetCode problems this month. But your Core CS evidence is 18 days old and starting to fade. Today's best action: a 7-minute DBMS sprint. It will refresh that dimension and bring you 2/3 of the way through this week's mission."*
+
+One primary card — the recommended action. Below it: urgent items only. No infinite scroll. No feed. No 15 competing cards.
+
+Priority order for Today:
+1. Account or safety issue requiring action
+2. Timed assessment starting in less than 2 hours
+3. In-progress action that can be resumed (saved CodeBox attempt, paused quiz)
+4. Personal best-next mission (weakest fresh readiness dimension)
+5. Daily Five (the daily habit)
+6. Important batch announcement from PR or faculty
+7. Optional: squad update, alumni resource, lineage ping
+
+### 4.2 Train — Where Growth Actually Happens
+
+**Daily Five:** Five questions chosen by the question selection engine by mastery gaps, spaced repetition schedules, curriculum coverage, and recent error patterns. The student answers, submits, sees explanations. Streak and XP update from the server — the client never self-reports completion. Opening Daily Five twice awards XP only once (idempotent).
+
+**Adaptive Skill Sprint:** Student picks a domain (or accepts the system recommendation) and a duration (5, 10, or 20 minutes). Questions escalate from recall to application. Session ends with a mastery movement report. Wrong concepts enter a revisit queue automatically.
+
+---
+
+### 4.3 CodeBox — The Verified Coding Environment
+
+When a coding task is assigned, the student does not see a "Submit" button next to a PDF. They see an embedded code editor — a **CodeBox** — built on Monaco Editor (same engine as VS Code), rendered inside the web app at `psgmx.tech` and accessible via deep link from the Flutter app.
+
+**The CodeBox experience:**
+
+1. Problem statement in the left panel — description, input/output format, constraints, examples.
+2. Code editor on the right. Language defaults to student preference (Python, Java, C++). Syntax highlighting, auto-indent, Monaco IntelliSense.
+3. Student clicks **Run** to test against visible sample cases.
+
+   > **How Run works (free tier):** The Next.js backend calls the **Piston API** at `https://emkc.org/api/v2/piston/execute` with the student's code, language, and sample input. Response arrives in under 3 seconds. The student sees their output vs. expected output for visible cases only. No Docker containers. No VPS. Piston is a free public code execution API.
+
+4. Student clicks **Submit**. The backend (Supabase Edge Function):
+   - Captures the code snapshot with timestamp and student identity
+   - Calls Piston API with each hidden test case (run sequentially, up to 10 cases)
+   - Collects all test results: passed/failed/timeout per case
+   - Sends code + problem statement + test results to OpenRouter (starting with `deepseek/deepseek-r1:free`): *"Evaluate this solution for correctness, time complexity, edge case handling, and code quality. Return JSON: { passed_tests, total_tests, time_complexity, space_complexity, issues[], quality_score (0-10), brief_feedback }"*
+   - AI response + test results together = verification evidence
+5. A task is **Verified Complete** only when: minimum test cases pass (default 7/10, configurable per task) AND AI quality score meets the floor (default 5/10 minimum). Submitting broken code does not mark the task complete.
+6. Student sees: *"7/10 test cases passed. Your approach handles the main case correctly but fails on empty input (test case 3). Time complexity: O(n²) — there is a more efficient approach. Hint: think about using a hash map."*
+7. Student can fix and resubmit (up to the attempt limit set by the task author).
+8. Verification result updates the Coding dimension readiness score automatically.
+
+> **There is no manual completion button for coding tasks.** Piston runs the code, the AI evaluates, and the system records the outcome.
+
+**CodeBox also handles:**
+- **SQL tasks:** Piston API supports PostgreSQL queries against a problem-defined schema (passed as setup code before the student's query).
+- **System design tasks (text-based):** student writes a design document, AI evaluates against a faculty-authored rubric.
+- **Debugging tasks:** student receives broken code and must fix it. Same Piston + AI pipeline.
+
+**Piston API safety notes:**
+- Piston runs in an isolated, resource-limited environment by design
+- Student code never runs on our servers
+- All Piston calls go through the Supabase Edge Function (server-side) — the student never calls Piston directly
+- Piston has execution timeouts per language (usually 3 seconds). Tasks with complex algorithms must be designed to complete within this limit.
+
+### 4.4 Communication and Interview Practice
+
+The student records a **2-minute audio clip** (MP3) for a prompt (e.g., *"Tell me about a challenge you faced in a team project"*).
+
+> **Audio only (not video):** Supabase Storage free tier is 1GB. A 2-minute MP3 ≈ 2MB. Even if every student records 100 clips, that is 250 × 100 × 2MB = 50GB — which exceeds free tier. So we enforce: maximum 2-minute clip, MP3 only, maximum 10 saved clips per student (oldest is deleted when the 11th is saved). This keeps storage per student under 20MB, total under 5GB. Faculty-reviewed clips are never deleted until the student deletes them.
+
+The audio is processed by the backend:
+1. Upload to Supabase Storage (student's own bucket, RLS-protected)
+2. Edge Function downloads the file and sends it to OpenRouter with a transcription prompt: *"This is an audio recording. Please evaluate the spoken response based on: clarity of speech, answer structure (does it have beginning, middle, end), use of filler words (um, uh, like), and relevance to the prompt. Return JSON: { clarity_score (0-10), structure_score (0-10), filler_word_count, relevance_score (0-10), brief_feedback, suggested_improvement }."*
+
+   > **Note:** Free OpenRouter models do not natively process audio files. The workflow uses a speech-to-text step first: the backend sends the MP3 to a free speech-to-text service (OpenAI Whisper via a free Hugging Face inference endpoint) to get a transcript, then sends the transcript to OpenRouter for evaluation. If the free STT endpoint is unavailable, the student is told: *"AI evaluation is temporarily unavailable. Your recording is saved. Try evaluating in a few minutes."*
+
+3. AI returns score and feedback. Student sees it in their communication practice timeline.
+4. Human-reviewed responses (by faculty or alumni) receive higher confidence weight in the readiness score than AI-only evaluations.
+
+### 4.5 LeetCode Integration
+
+Student connects LeetCode username (never password). Backend syncs public stats on a schedule (via GitHub Actions — see Section 11.3): problems solved by difficulty, recent submissions, acceptance rate, streak. Results are cached in the database for 6 hours. This feeds the Coding readiness dimension as external, independently verified evidence.
+
+### 4.6 GitHub Contribution Integration (Planned — Phase 5)
+
+> **Designed, not in first release.**
+
+Student generates a GitHub Personal Access Token with `read:user` and `repo` (public only) scopes and pastes it into Settings > Connected Services. Backend stores it encrypted at rest. GitHub Actions scheduled job polls the GitHub API for: commits per week, streak, repository count, language distribution.
+
+This data appears in: Progress > Coding dimension as additional evidence, and a GitHub Contribution heatmap on their profile.
+
+Student can revoke the token at any time from Settings > Connected Services — deleted from the database immediately.
+
+---
+
+## Chapter 5 — The Readiness Engine
+
+### 5.1 What the Score Means
+
+Every student has a Readiness Score from 0 to 100. It never appears without explanation. The student always sees:
+- What evidence feeds this number
+- How fresh that evidence is
+- What one action would move it most meaningfully this week
+- "This changed because..." history for the last 3 events
+
+The score is **private by default**. Faculty see it with student awareness. PR sees only batch-level aggregate trends. HOD sees programme-level trends. No peer sees another peer's raw score.
+
+### 5.2 The Six Dimensions
+
+| Dimension | Weight | Primary Evidence Sources |
+|---|---|---|
+| Aptitude and Reasoning | 15% | Daily Five (aptitude), adaptive sprints, mock assessments |
+| Coding and Problem Solving | 20% | CodeBox verified tasks, LeetCode stats, coding mock assessments, GitHub contributions |
+| Core Computer Science | 15% | Daily Five (CS topics), adaptive sprints, Core CS assessments |
+| Communication and Interview | 15% | Audio practice (AI-evaluated), mock interviews, human-reviewed responses |
+| Assessment Performance | 20% | Faculty-published mock exams, normalised across attempts |
+| Portfolio and Project Proof | 15% | FYP milestones confirmed by faculty, GitHub repo quality, demo recordings |
+
+### 5.3 How Evidence Ages — The Freshness Job
+
+The Freshness Job runs every Sunday via GitHub Actions (not pg_cron — free tier). For each student, for each dimension:
+
+```
+evidence_age < 30 days   -> confidence = high
+evidence_age 30-60 days  -> confidence = medium (score penalty: -10%)
+evidence_age > 60 days   -> confidence = low   (score penalty: -25%)
+```
+
+The GitHub Actions workflow calls a Supabase Edge Function endpoint (`/functions/v1/freshness-daemon`) which runs the computation in the database. This is equivalent to pg_cron but uses free GitHub Actions instead of paid Supabase Pro.
+
+---
+
+## Chapter 6 — The PR World (Placement Readiness Representative)
+
+### 6.1 Who the PR Is
+
+The PR is a student — a trusted, capable, batch-scoped administrator appointed by the HOD or faculty. Their web console at `psgmx.tech/placement-rep` is where 90% of their administration happens. On mobile, a quick-action panel handles urgent items only.
+
+### 6.2 The Batch Handover Ceremony
+
+This is the most important lifecycle event in PSGMX's operational calendar.
+
+**The scenario:** It is late May. The `25MX` batch is graduating. Their PR, Keerthana, has run the programme for two years. The incoming batch `27MX` is about to join. Their PR, Arjun, has been selected.
+
+**Step 1 — HOD initiates the Handover Workflow** from `psgmx.tech/faculty/batch-management`. They nominate outgoing PR, incoming PR, and formal handover date.
+
+**Step 2 — System generates a Handover Checklist** visible to both PRs:
+- All open participation records closed
+- All pending quest completions reviewed
+- Question bank access transferred to incoming PR
+- Squad structure archived (preserved for history)
+- Active announcements transferred or expired
+- Support cases resolved or transferred to faculty
+- Final batch health report generated
+
+**Step 3 — Keerthana reviews and signs off** each item. Incomplete items are flagged and routed to faculty resolution before sign-off can proceed.
+
+**Step 4 — System executes the Batch Graduation Transition** (via Supabase Edge Function called by the HOD's confirmation click):
+- `25MX` batch lifecycle status: `active_senior` → `graduated`
+- All `25MX` students' PR, coordinator, and team_leader capabilities: automatically revoked
+- Keerthana's PR capability removed; her student identity remains
+- Arjun's PR capability provisioned for `27MX` batch
+- Arjun receives PR Activation briefing in his console
+
+**Step 5 — Alumni transition for 25MX:**
+- Each `25MX` student gets a personalised graduation email via Resend
+- Their Today dashboard becomes Journey Archive — all evidence, streaks, FYP, assessment history preserved
+- One prompt: *"Welcome to the PSGMX alumni network. Would you like to receive mentoring requests from your juniors?"*
+
+> **This entire handover is managed by the system.** HOD clicks "Initiate Handover." Checklist tracks progress. Transition runs idempotently on confirmation. No manual database edits.
+
+### 6.3 Day-to-Day PR Operations
+
+**Quest Studio:** PR creates coding, aptitude, core CS, or communication tasks. Every coding task must include:
+- Problem statement (Markdown with LaTeX support)
+- Input/output specification
+- At least 5 hidden test cases (stored in Supabase Storage, never sent to the client)
+- Piston execution configuration: language, time limit (max 3 seconds per Piston's constraint)
+- Minimum pass rate for verification (default: 7/10 tests + AI score 5/10)
+- Allowed languages
+- Due date window
+- Target batch/squad
+
+**Question Bank:** Multiple-choice and subjective questions for Daily Five and mock exams. Imported via CSV or written inline. Duplicate detection uses pgvector embedding similarity. Faculty must approve before entering the live pool.
+
+**Preparation Calendar:** Coding lab, aptitude sprint, core CS clinic, mock interview, group discussion, FYP review, alumni talk. Each session: facilitator, time slot, location/link, target batch/squad, expected outcome. Students get FCM push notifications.
+
+**Readiness Pulse:** Batch-level aggregate dashboard — no individual student names visible to PR. Flagged students (decline signals) go to faculty for intervention.
+
+### 6.4 PR Cannot Do These Things
+
+- See individual student private readiness scores (only aggregate trends)
+- Create faculty or HOD accounts
+- Modify NEO PAT placement data
+- Override graduation or batch transitions without HOD/faculty approval
+- Delete student historical evidence or assessment records
+
+---
+
+## Chapter 7 — The Faculty World
+
+### 7.1 The Faculty Dashboard — A Queue, Not a Report
+
+When a faculty member opens `psgmx.tech/faculty`, they see an **action queue** with every item having an owner and a due date. Metrics without an owner are removed.
+
+### 7.2 The Mock Assessment Studio
+
+Faculty are the sole authors of mock assessments at `psgmx.tech/faculty/assessment-studio`:
+
+1. Faculty selects a domain blueprint, difficulty distribution, total marks.
+2. System suggests questions from the approved Question Bank.
+3. Faculty configures integrity level: **Relaxed** (open notes), **Proctored** (timed, tab-switching detection via Page Visibility API — web only), or **Structured** (timed, one question at a time, no back-navigation).
+4. After the window closes: system auto-grades objective questions. Subjective answers go to OpenRouter (free model fallback chain) with a faculty-authored rubric for first-pass scoring. Faculty reviews flagged borderline answers.
+5. **Misconception analysis:** *"42% of students who attempted the transaction isolation question selected Read Uncommitted incorrectly. Recommended: a Core CS clinic on ACID properties."*
+6. Faculty publishes a remediation track — a custom adaptive sprint. Appears in affected students' Today.
+
+### 7.3 Knowledge Moderation
+
+Every Knowledge Brain item goes through faculty review before publication or use as AI Senior grounding context.
+
+Review flow:
+1. Submission arrives. OpenRouter (free model) pre-screens: offensive content, privacy violations, factual errors.
+2. Faculty reviews: source claims, accuracy, privacy, relevance.
+3. Three outcomes: **Approve** (optional expiry), **Request Changes**, or **Reject**.
+4. Approved content gets a vector embedding via `generate-embedding` Edge Function using the Supabase `gte-small` model (free, built-in) and becomes searchable in Knowledge Brain and AI Senior.
+5. Content older than 18 months is flagged for re-review automatically (GitHub Actions weekly job).
+
+### 7.4 The Recovery Hub
+
+When evidence suggests a student is struggling, the system creates a Recovery Case suggestion routed to assigned faculty. Automation suggests; faculty decides.
+
+Faculty sets goal, assigns actions, sets review date. The student's Today shows a support message — not a punishment label. Faculty reviews on the set date, records outcome, closes or extends. All history is preserved privately.
+
+---
+
+## Chapter 8 — The HOD World (Governance)
+
+### 8.1 Governance Dashboard
+
+The HOD's view at `psgmx.tech/faculty/governance` (capability-gated for any `governance_admin` user) shows a health dashboard:
+- Batch lifecycle status and next handover date
+- Onboarding coverage percentage
+- Identity health (unresolved duplicate conflicts)
+- Knowledge Brain health (review queue depth)
+- System health (GitHub Actions job status, OpenRouter availability, LeetCode sync status)
+- Privacy-safe recovery state (open recovery cases by duration — no student names)
+
+### 8.2 Batch Lifecycle Management
+
+Standard transitions — junior to senior at start of second year, active_senior to graduated at graduation — are **automatic and idempotent**, triggered by GitHub Actions on the configured dates. The HOD intervenes only for exceptions.
+
+### 8.3 Faculty and Governance Access Management
+
+The HOD provisions and manages faculty accounts. `governance_admin` capability is separate from the faculty role. Former HODs retain governance access as "Faculty (Governance)." The current HOD is one person.
+
+---
+
+## Chapter 9 — The Alumni World
+
+### 9.1 The Re-Entry Story
+
+Alumni open `psgmx.tech/join-alumni`, enter register number and email, verify via OTP (Resend). System reactivates their profile with the alumni role and shows their Journey Archive — immutable. They add career milestones and set mentoring availability.
+
+### 9.2 What Alumni Actually Do
+
+Alumni see specific, time-bounded prompts — not generic banners:
+- A specific junior's question that their contribution answers
+- A gap in the Knowledge Brain that matches their experience
+- A lineage connection request with specific context
+
+Every contribution goes through the faculty review pipeline before going live.
+
+---
+
+## Chapter 10 — Team Leader and Coordinator
+
+### 10.1 Team Leader
+
+A Team Leader's additional capability is narrow: they can view their squad's session participation status and mark attendance during or after a preparation session. They cannot see readiness scores, CodeBox submissions, or assessment answers.
+
+### 10.2 Coordinator
+
+Broader operational permissions: scheduling preparation sessions, publishing quests (pending PR/faculty review if configured), and sending approved announcement templates. Permissions are defined at grant time — specific permission bits, not just the role label.
+
+---
+
+## Chapter 11 — The Technical Architecture
+
+### 11.1 System Architecture (Free Tier Optimised)
+
+```
+psgmx.tech (Next.js, Vercel Hobby)
+app.psgmx.tech (Flutter, Firebase Spark Hosting)
+        |
+        v
+Supabase Free Project
+  |-- PostgreSQL + pgvector (500MB free)
+  |-- Row-Level Security (RLS) on every table
+  |-- Supabase Auth (OTP via Resend custom SMTP)
+  |-- Edge Functions (Deno, 50K invocations/month free)
+  |-- Supabase Storage (1GB free)
+  |-- Supabase Realtime (200 concurrent connections free)
+        |
+        v
+External Services (all free)
+  |-- Piston API (emkc.org) — code execution for CodeBox
+  |-- OpenRouter (free models) — all AI inference
+  |-- Resend (free tier) — OTP and notification emails
+  |-- Firebase Cloud Messaging — push notifications (free forever)
+  |-- LeetCode Public API — stats sync (no auth required)
+  |-- GitHub Actions — all scheduled jobs (replaces pg_cron)
+  |-- GitHub Releases — Android APK distribution
+```
+
+### 11.2 CodeBox Code Execution via Piston API
+
+```
+Student submits code (via web app)
+        |
+        v
+Next.js API route receives code + language + questId
+        |
+        v
+Supabase Edge Function (compute-codebox-result):
+  |-- Fetch hidden test suite for questId from Supabase Storage
+  |       (never sent to client, fetched server-side via service role)
+  |
+  |-- For each test case (sequential, max 10):
+  |     POST https://emkc.org/api/v2/piston/execute
+  |     Body: { language, version, files: [{ content: setup + student_code }], stdin: test_input }
+  |     Response: { run: { stdout, stderr, code, signal } }
+  |     Compare stdout to expected_output
+  |
+  |-- Compile test results: { passed: N, total: 10, case_results: [...] }
+  |
+  |-- Call OpenRouter (deepseek/deepseek-r1:free) with:
+  |     code + problem + test_results -> evaluation JSON
+  |     (fallback chain if rate-limited)
+  |
+  |-- Compute: is_verified = (passed/total >= min_pass_rate)
+  |                      AND (ai_quality_score >= min_quality_floor)
+  |
+  v
+Store in code_submissions:
+  student_id, quest_id, attempt, submitted_at,
+  code_encrypted (AES-256), test_results_json,
+  ai_evaluation_json, is_verified, verification_reason
+
+Update evidence_events -> triggers readiness_score recomputation
+```
+
+**Piston API language support for CodeBox tasks:**
+- Python 3.10, Java 17, C++ (GCC), JavaScript (Node.js), Go, Rust, C, SQL
+
+**Piston constraints to design tasks around:**
+- Max execution time: 3 seconds per test case
+- Max memory: 256MB
+- Network access: disabled (no internet calls from student code)
+- Filesystem: ephemeral, read-only
+
+### 11.3 Scheduled Jobs via GitHub Actions (replaces pg_cron)
+
+| Job Name | Schedule | What It Does |
+|---|---|---|
+| `freshness-daemon` | Every Sunday 10:00 AM IST | Calls `/functions/v1/freshness-daemon` — applies evidence age penalties to all student readiness scores |
+| `leetcode-sync` | Every 6 hours | Calls `/functions/v1/sync-leetcode` — refreshes LeetCode stats for all connected users |
+| `knowledge-review-reminder` | Every Monday 9:00 AM IST | Flags knowledge items >18 months old for re-review; notifies faculty |
+| `supabase-keepalive` | Every Sunday 8:00 AM IST | `SELECT 1` via Supabase REST API — prevents free tier inactivity pause |
+| `batch-lifecycle-check` | Every day at midnight IST | Checks if any batch should transition stage; runs idempotently |
+| `apk-build-and-release` | On push to `release/*` | `flutter build apk --release` + sign + GitHub Release |
+
+All scheduled jobs are implemented as GitHub Actions workflows (`.github/workflows/`). Each workflow calls a corresponding Supabase Edge Function endpoint with a secret `CRON_SECRET` header for authentication.
+
+### 11.4 Core Database Tables
+
+```sql
+-- Identity
+profiles          (id, register_number, full_name, stage, batch_year, created_at)
+email_aliases     (profile_id, email, type, is_primary)
+role_assignments  (profile_id, role, batch_scope, capabilities[], granted_by, granted_at, revoked_at)
+
+-- Readiness
+readiness_scores  (id, profile_id, dimension, score, confidence, evidence_date, algorithm_version)
+evidence_events   (id, profile_id, dimension, source_type, source_id, weight, recorded_at)
+
+-- Coding
+quests            (id, title, type, problem_md, test_suite_path, min_pass_rate, min_ai_quality,
+                   allowed_languages, time_limit_seconds, due_at, target_batch, target_squads)
+code_submissions  (id, quest_id, profile_id, attempt, code_encrypted, test_results_json,
+                   ai_evaluation_json, is_verified, verification_reason, submitted_at)
+
+-- Assessment
+assessments         (id, faculty_id, title, blueprint, integrity_level, window_start, window_end, ...)
+assessment_attempts (id, assessment_id, profile_id, started_at, submitted_at, score, ai_analysis, ...)
+
+-- Batch lifecycle
+batch_lifecycles  (id, batch_year, stage, transitioned_at, transitioned_by)
+batch_handovers   (id, from_pr_id, to_pr_id, from_batch, to_batch, initiated_by, completed_at, checklist_state)
+
+-- Knowledge
+knowledge_items   (id, author_id, type, content_md, status, approved_by, embedding vector(384),
+                   expires_at, review_due_at, ...)
+
+-- Communication practice
+communication_attempts (id, profile_id, prompt_id, audio_path, transcript, ai_scores_json,
+                        faculty_reviewed, faculty_score, created_at)
+```
+
+Every table has `created_at`, `updated_at`, and an audit trigger writing to an append-only `audit_log` table. The `audit_log` is INSERT-only — no row can ever be deleted.
+
+### 11.5 Deployment Architecture
+
+| Component | Platform | Free Tier Used |
+|---|---|---|
+| Web App (psgmx.tech) | Vercel Hobby | 100GB bandwidth/month |
+| Mobile App (app.psgmx.tech) | Firebase Hosting Spark | 10GB/month bandwidth |
+| Android APK | GitHub Releases | Free forever |
+| Database | Supabase Free | 500MB PostgreSQL |
+| Auth + OTP | Supabase Auth + Resend | Supabase handles auth; Resend sends emails (3K/month free) |
+| Storage | Supabase Storage | 1GB free |
+| Realtime | Supabase Realtime | 200 concurrent connections free |
+| Edge Functions | Supabase Edge Functions | 50K invocations/month free |
+| Scheduled Jobs | GitHub Actions | 2,000 min/month (private) or unlimited (public) |
+| Code Execution | Piston API (emkc.org) | Free public API |
+| AI Inference | OpenRouter (free models) | Rate-limited, fallback chain |
+| Push Notifications | Firebase Cloud Messaging | Free forever |
+| Vector Embeddings | Supabase gte-small (built-in) | Free on all Supabase plans |
+| Monitoring | Supabase Dashboard | Free |
+
+### 11.6 Android Release via GitHub
+
+GitHub Actions workflow (`.github/workflows/android-release.yml`) triggers on push to `release/*` branch:
+1. `flutter build apk --release`
+2. Sign with project keystore (stored as GitHub Secret: `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`)
+3. Create GitHub Release with signed APK as asset and auto-generated changelog
+4. `psgmx.tech/download` always links to the latest GitHub Release APK
+
+The app checks for new versions on launch by querying `/api/version` (Next.js API route that reads the latest GitHub Release tag via GitHub API). Mandatory update screen if below minimum version.
+
+---
+
+## Chapter 12 — The AI Senior (Knowledge Q&A)
+
+### 12.1 How AI Senior Works
+
+Student asks: *"What is the best way to prepare for a system design interview as an MCA student?"*
+
+The backend:
+1. Embeds the query using Supabase's built-in `gte-small` embedding model (free, no external API needed).
+2. Does a pgvector similarity search against all approved Knowledge Brain content (similarity threshold: 0.75, top 5 results).
+3. Sends top 5 matching knowledge chunks + student readiness profile summary to OpenRouter (free model fallback chain).
+4. System prompt: *"You are AI Senior, a preparation companion for MCA students at PSG Tech. Answer using the provided approved knowledge as your primary source. Always cite which knowledge item you are drawing from. If no approved knowledge directly answers the question, say so and provide general guidance while noting its lower confidence. Never fabricate faculty names, company names as official partners, or official drive details. If the question is about an active drive or placement portal, respond: For official drive details, please check NEO PAT."*
+5. Response streams back with citations — each citation links to the Knowledge Brain item.
+6. Query patterns stored anonymously for faculty insight.
+
+### 12.2 What AI Senior Cannot Do
+
+- Reveal a student's private readiness score to another student
+- Access NEO PAT data
+- Confirm eligibility for any official drive
+- Mark any task as complete on a student's behalf
+
+---
+
+## Chapter 13 — Notifications and Inbox
+
+### 13.1 Notification Delivery
+
+Push notifications use **Firebase Cloud Messaging (FCM)** — free forever on Firebase Spark plan. The Supabase Edge Function calls the FCM HTTP v1 API with the device token (stored in a `device_tokens` table, one row per user-device pair).
+
+For web (Next.js), browser push notifications use the Web Push API with FCM as the delivery mechanism.
+
+### 13.2 Email Notifications
+
+All transactional emails (OTP, welcome, weekly digest, graduation ceremony message, knowledge review reminders) use **Resend** free tier (3,000/month, 100/day). This is more than enough for <250 users.
+
+### 13.3 Weekly Digest
+
+Every Sunday evening via the GitHub Actions `knowledge-review-reminder` job, a personalised digest email is sent via Resend to each active student: what they completed this week, which skill moved, what evidence is stale, one next focus, one new Knowledge Brain resource.
+
+### 13.4 Delivery Rules
+
+- FCM push notifications respect user-configured quiet hours (default: no pushes 10 PM to 7 AM)
+- Low-priority notifications are bundled into a single push per day
+- Every notification has an expiry
+- Read state syncs across mobile and web via Supabase Realtime
+- Lock screen previews never show readiness scores or recovery case details
+
+---
+
+## Chapter 14 — Squads, Lineage, and Community
+
+### 14.1 Preparation Squads
+
+Groups of 6-8 students created by the PR. Automatic balancing by current readiness band creates heterogeneous squads. Each squad has: a Team Leader (optional), a weekly squad objective, and a squad feed (completion updates, not scores). Competition is by completion band, not raw readiness score.
+
+### 14.2 Lineage
+
+Connects current students to alumni whose register suffix matches theirs. Students can send connection requests with a specific topic and question. Alumni can accept, decline, or redirect. Topic-based matching available as opt-in for both sides.
+
+### 14.3 Community Board
+
+Moderated board for: project collaboration, open source opportunities, alumni-hosted learning events, career information sessions (not official drives), mentoring circles. Every post is moderated. Posts resembling official drive announcements are removed.
+
+---
+
+## Chapter 15 — FYP and Portfolio
+
+### 15.1 FYP as Evidence
+
+Student creates their FYP record: title, problem statement, domain, team members, guide faculty, linked GitHub repository (optional), target outcome. System proposes milestones. Each milestone is logged by the student, reviewed by faculty guide, confirmed or sent back. Faculty confirmation creates a verified Portfolio evidence event.
+
+### 15.2 FYP Explanation Practice
+
+Student records a 2-minute audio clip explaining their project (same audio-only constraint as communication practice). AI evaluates: problem clarity, technical explanation, quantified results. Student can re-record; improvement trend is shown.
+
+---
+
+## Chapter 16 — Privacy, Ethics, and Guardrails
+
+### 16.1 Privacy Model
+
+| Data | Who Sees It |
+|---|---|
+| Raw readiness score | Student + assigned faculty + HOD |
+| Readiness dimension breakdown | Student + faculty (requires opening student profile) |
+| CodeBox submissions + code | Student + faculty (recovery cases only) |
+| Communication audio recordings | Student + faculty (mentoring review only) |
+| Recovery case notes | Assigned faculty + HOD only |
+| Assessment answers | Student (after release) + faculty |
+| Aggregate batch trends | PR (no individual names) + faculty + HOD |
+| Alumni career profile | Alumni-controlled |
+
+### 16.2 Ethical Engagement Rules
+
+PSGMX must not:
+- Send push notifications after 10 PM or before 7 AM
+- Show a student's rank to peers without the student opting in
+- Use shame language in any automated message
+- Create fake urgency countdowns
+- Reward opening the app without doing something meaningful
+- Penalise a student for not using the app during exam season
+
+### 16.3 Anti-Gaming
+
+The backend is the source of truth for all XP and evidence:
+- Every submission has a server-side timestamp
+- Duplicate submissions are rejected (idempotent submission IDs)
+- Anomaly detection: a student submitting 50 Daily Five sessions in one day is flagged for review
+- XP from contributions requires human approval
+- High-impact XP events are audited automatically
+
+---
+
+## Chapter 17 — North Star Metric and Success
+
+### 17.1 The One Number That Matters
+
+**Weekly Prepared Students:** the percentage of active students who complete at least two meaningful preparation actions in different readiness dimensions during a given week.
+
+Target: 60% in the first semester, 75% by end of first year.
+
+### 17.2 Supporting Metrics
+
+| Metric | Target |
+|---|---|
+| First useful action within 24 hours of onboarding | > 85% |
+| 4-week retained preparation habit | > 60% |
+| CodeBox verified completion rate | > 50% of assigned tasks |
+| Fresh evidence in 4+ dimensions per student | > 50% of active students |
+| Recovery case closure within 30 days | > 70% |
+| AI Senior answers with 1+ approved citation | > 80% |
+| OTP delivery success rate | > 99% |
+| Crash-free sessions | > 99.5% |
+
+### 17.3 Guardrails
+
+- Notification complaint rate > 5% in any week: pause non-essential notifications
+- Late-night app opens > 15% of daily sessions: investigate streak pressure
+- OpenRouter error rate > 5%: verify fallback chain is working
+- Piston API unavailable: disable CodeBox task submission; show *"Code evaluation is temporarily offline. Your code is saved. Try again in a few minutes."* — student work is never lost
+- Supabase keepalive missed 2 weeks: alert via GitHub Actions failure notification
+
+---
+
+## Chapter 18 — Implementation Phases
+
+### Phase 1 — Foundation (Weeks 1-4)
+
+- Review and update Supabase schema (align existing 21 migrations with this PRD's data model)
+- OTP authentication via Supabase Auth + Resend custom SMTP
+- PR bulk import (CSV, preview, commit)
+- Flutter app: login, OTP, identity confirmation, calibration, Today (initial version)
+- Next.js: login, PR console (members, import), faculty dashboard (stub)
+- FCM push notification setup
+- GitHub Actions: Flutter APK build + release + version endpoint
+- GitHub Actions: supabase-keepalive workflow
+- `psgmx.tech/download` with latest release link
+
+### Phase 2 — Daily Companion (Weeks 5-10)
+
+- Daily Five (question engine, mastery tracking, XP, streak)
+- Adaptive Skill Sprint
+- Readiness Engine v1 (6 dimensions, freshness via GitHub Actions)
+- LeetCode integration (username link, GitHub Actions sync)
+- Unified Inbox (FCM + in-app, read state via Supabase Realtime, expiry)
+- Weekly digest via Resend
+- Squad creation and Team Leader participation marking
+
+### Phase 3 — CodeBox and Assessment (Weeks 11-18)
+
+- CodeBox editor (Monaco, language support, Run via Piston API for visible cases)
+- Quest Studio (PR creates coding tasks with hidden test suites stored in Supabase Storage)
+- Quest verification pipeline (Piston API hidden tests + OpenRouter AI = verified/not verified)
+- Mock Assessment Studio (faculty authors, structured/proctored modes)
+- Assessment attempt pipeline (auto-grade + OpenRouter AI analysis + misconception report)
+- Remediation tracks (faculty publishes after assessment)
+
+### Phase 4 — AI Senior, Knowledge Brain, Community (Weeks 19-26)
+
+- Knowledge Brain submission flow (author, OpenRouter pre-screen, faculty review, approved)
+- Vector embedding of approved knowledge (Supabase gte-small built-in)
+- AI Senior (RAG-based Q&A with OpenRouter free models, citations, streamed response)
+- Interview Pattern Library (replaces company-based placement log)
+- Communication practice (audio recording + free STT + OpenRouter evaluation)
+- FYP module (milestones, faculty confirmation, portfolio evidence)
+- Alumni onboarding and contribution flow
+- Lineage connections and mentoring requests
+- Community Board (moderated)
+
+### Phase 5 — Governance, Handover, and GitHub (Weeks 27-34)
+
+- Batch Handover Workflow (checklist, automated transition, PR provisioning)
+- HOD governance dashboard (batch lifecycle, faculty management, identity review)
+- Recovery Hub (faculty creates, student sees support, review cycle)
+- GitHub contribution integration (personal token, contribution heatmap)
+- Full audit log viewer (governance only)
+- Feature rollout controls
+- Full Readiness Engine v2 (all 6 dimensions, confidence, freshness, history)
+- Analytics dashboards (faculty insight, PR readiness pulse, HOD governance)
+
+---
+
+## Chapter 19 — Capability Ownership Reference
+
+| Capability | Student | TL | Coord | PR | Faculty | HOD |
+|---|---|---|---|---|---|---|
+| Manage own profile (except register number) | Yes | Yes | Yes | Yes | Yes | Yes |
+| Connect LeetCode / GitHub | Yes | Yes | Yes | Yes | — | — |
+| Submit CodeBox task | Yes | Yes | Yes | Yes | — | — |
+| View own readiness score | Yes | Yes | Yes | Yes | — | — |
+| View squad participation | — | Own squad | Assigned | Yes | Yes | Yes |
+| Create quests / tasks | — | — | Review req. | Yes | Yes | — |
+| Create mock assessments | — | — | — | — | Yes | Yes |
+| Approve Knowledge Brain content | — | — | — | — | Yes | Yes |
+| View student readiness detail | — | — | — | Aggregate only | Assigned | Yes |
+| Create / close recovery cases | — | — | — | — | Yes | Yes |
+| Import student roster | — | — | — | Yes | — | Yes |
+| Grant student-level roles (TL, coord) | — | — | — | Yes | — | Yes |
+| Grant faculty / governance access | — | — | — | No | — | Yes |
+| Initiate batch handover | — | — | — | — | — | Yes |
+| Override batch lifecycle | — | — | — | — | — | Yes |
+| View audit log | — | — | — | PR-scope | — | Yes |
+| Impersonate for support | — | — | — | — | — | Yes (time-bound) |
+
+---
+
+## Chapter 20 — Route Map
+
+### Web Routes — psgmx.tech
+
+| Route | Purpose | Auth |
+|---|---|---|
+| / | Public landing | Public |
+| /download | Android APK download | Public |
+| /login | OTP login for all roles | Public |
+| /join-alumni | Alumni first-time registration + OTP | Public |
+| /onboarding | First-session calibration wizard | Student (new) |
+| /student | Student Overview (Today on web) | Student |
+| /student/train | Adaptive sprint, communication practice | Student |
+| /student/codebox/:questId | CodeBox task environment (Monaco + Piston) | Student |
+| /student/exams | Mock assessments list | Student |
+| /student/exam/:id | Assessment attempt | Student |
+| /student/progress | Readiness Engine detail | Student |
+| /student/ai-senior | AI Senior Q&A | Student |
+| /student/knowledge-brain | Knowledge search + save | Student |
+| /student/fyp | FYP module | Student |
+| /student/lineage | Lineage + mentoring | Student |
+| /student/squads | Squad view | Student |
+| /student/inbox | Unified inbox | Student |
+| /student/settings | Account, connected services, privacy | Student |
+| /placement-rep | PR Command Center | PR |
+| /placement-rep/members | Roster + import + access management | PR |
+| /placement-rep/squads | Squad management | PR |
+| /placement-rep/sessions | Preparation Calendar | PR |
+| /placement-rep/quest-studio | Quest + CodeBox task authoring | PR/Coordinator |
+| /placement-rep/question-bank | Question bank CRUD | PR/Faculty |
+| /placement-rep/participation | Session participation + disputes | PR |
+| /placement-rep/communication | Announcements | PR |
+| /placement-rep/pulse | Readiness Pulse (aggregate only) | PR |
+| /placement-rep/reports | Export + audit | PR |
+| /faculty | Faculty action queue | Faculty |
+| /faculty/assessment-studio | Mock assessment authoring | Faculty |
+| /faculty/students | Student Explorer | Faculty |
+| /faculty/recovery-hub | Recovery cases | Faculty |
+| /faculty/knowledge-brain | Knowledge moderation | Faculty |
+| /faculty/fyp-repository | FYP review | Faculty |
+| /faculty/mentorship | Mentoring management | Faculty |
+| /faculty/ai-insights | AI Senior demand analytics | Faculty |
+| /faculty/governance | Governance dashboard | Governance |
+| /faculty/batch-management | Batch lifecycle + handover | Governance |
+| /faculty/faculty-management | Faculty provisioning | Governance |
+| /alumni | Alumni action queue | Alumni |
+| /alumni/journey | Journey archive | Alumni |
+| /alumni/contribute | Knowledge contribution | Alumni |
+| /alumni/lineage | Lineage + mentoring | Alumni |
+| /alumni/community | Community Board | Alumni |
+| /alumni/settings | Account + availability | Alumni |
+
+### Mobile Routes — Flutter App
+
+| Route | Purpose |
+|---|---|
+| /splash | Auth + version + lifecycle resolution |
+| /login | OTP login |
+| /onboarding | Calibration wizard |
+| / | Today (daily companion home) |
+| /train | Daily Five + sprint selector |
+| /train/daily-five | Daily Five session |
+| /train/sprint | Adaptive sprint |
+| /train/communication | Communication practice (audio) |
+| /progress | Readiness dimensions overview |
+| /progress/dimension/:dim | Dimension detail |
+| /community | Squads + lineage + Knowledge Brain |
+| /community/knowledge-brain | Knowledge search |
+| /community/lineage | Lineage view |
+| /community/squads | Squad view |
+| /you | Profile + settings + help + archive |
+| /you/settings | Account settings |
+| /you/connected-services | LeetCode + GitHub |
+| /you/archive | Journey archive |
+| /inbox | Unified inbox |
+| /admin | PR quick actions (capability-gated) |
+
+---
+
+## Appendix A — Frozen Boundary Decisions
+
+1. **No student self-registration.** Students are created by PR bulk import only.
+2. **No manual task completion button for coding tasks.** Piston API + OpenRouter AI pipeline is the only path to verified complete.
+3. **No official placement data in PSGMX.** NEO PAT owns drives. A deep link is the only connection.
+4. **No readiness score shared between peers.** Private by default.
+5. **No password authentication.** OTP only, everywhere.
+6. **Android via GitHub Releases.** No Play Store.
+7. **All AI via OpenRouter free models.** No paid models. Fallback chain for all calls.
+8. **No Docker/VPS for code execution.** Piston API only.
+9. **No pg_cron.** GitHub Actions scheduled workflows only.
+10. **Batch handover is a workflow, not a manual database edit.** The system handles capability transitions.
+11. **PR cannot grant faculty or governance access.** Only governance admin can.
+12. **Audit log is append-only and permanent.** No record can be deleted.
+13. **Audio only for communication practice (no video).** Supabase Storage 1GB free tier constraint.
+14. **Supabase keepalive via GitHub Actions.** Prevents free tier project pause.
+
+---
+
+## Appendix B — Glossary
+
+| Term | Meaning |
+|---|---|
+| PR | Placement Readiness Representative — student admin, batch-scoped |
+| CodeBox | PSGMX embedded code editor (Monaco) + execution (Piston API) + AI evaluation (OpenRouter) |
+| Piston API | Free public code execution API at emkc.org — runs student code in isolated environment |
+| Daily Five | The 5-question daily adaptive practice set |
+| Readiness Engine | Backend system computing the 6-dimension readiness score |
+| Freshness Job | GitHub Actions workflow (Sunday) that applies evidence age penalties |
+| Keepalive Job | GitHub Actions workflow (Sunday) that prevents Supabase free tier project pause |
+| Journey Archive | An alumnus's immutable history of their MCA preparation years |
+| Batch Handover | Formal lifecycle event where one PR's batch graduates and the next PR takes over |
+| OpenRouter | AI inference gateway — only free models are used in this product |
+| Knowledge Brain | Curated, faculty-approved repository of preparation knowledge |
+| AI Senior | RAG-powered Q&A system grounded in the Knowledge Brain |
+| Interview Pattern Library | Alumni/senior-contributed patterns of real interview structures |
+| Lineage | Register-suffix-based connection between current students and batch predecessors |
+| Recovery Case | Faculty-managed support plan for a student showing decline signals |
+| Governance Admin | HOD or explicitly authorised faculty member with system-wide admin access |
+| Resend | Free transactional email service used for OTP and notifications |
+| RLS | Row-Level Security — PostgreSQL per-row access control system |
+| RPC | Remote Procedure Call — Supabase server-side functions with JWT-aware authorization |
+
+---
+
+*Document frozen at v1.1. Development begins. All future decisions must be captured as amendments, not undocumented implementation choices.*
+*Free tier constraint is non-negotiable. Any feature that cannot be built on the services listed in Chapter 0 must be redesigned or deferred.*
