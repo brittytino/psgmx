@@ -21,6 +21,8 @@ import '../ui/profile/help_support_screen.dart';
 import '../ui/settings/settings_screen.dart';
 import '../ui/exam/proctored_exam_screen.dart';
 import '../ui/splash/splash_screen.dart';
+import '../ui/train/train_hub_screen.dart';
+import '../ui/train/communication_practice_screen.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -67,6 +69,14 @@ class AppRouter {
         GoRoute(
           path: '/settings',
           builder: (context, state) => const SettingsScreen(),
+        ),
+        GoRoute(
+          path: '/train',
+          builder: (context, state) => const TrainHubScreen(),
+        ),
+        GoRoute(
+          path: '/train/communication',
+          builder: (context, state) => const CommunicationPracticeScreen(),
         ),
         GoRoute(
           path: '/daily-five',
