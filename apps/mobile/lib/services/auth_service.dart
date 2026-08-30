@@ -33,43 +33,65 @@ class AuthService {
   /// Get current session
   Session? get currentSession => _supabaseService.auth.currentSession;
 
-  /// STEP 1: VALIDATE EMAIL & SEND OTP
+  /// STEP 1: VALIDATE EMAIL & SEND OTP (Resend Broker Only)
   Future<bool> sendOtpToEmail(String email) async {
     try {
       email = email.trim().toLowerCase();
       if (!_looksLikeEmail(email)) {
         throw Exception('Enter a valid email address.');
       }
-      debugPrint('[AuthService] Sending OTP to: $email');
+      debugPrint('[AuthService] Requesting Resend OTP for: $email');
 
-      final response = await http
+      var targetUrl = Uri.parse('${SupabaseConfig.appApiUrl}/api/auth/request-otp');
+      var response = await http
           .post(
-            Uri.parse('${SupabaseConfig.appApiUrl}/api/auth/request-otp'),
+            targetUrl,
             headers: const {'Content-Type': 'application/json'},
             body: jsonEncode({'email': email}),
           )
-          .timeout(const Duration(seconds: 20));
+          .timeout(const Duration(seconds: 15));
 
-      final payload = response.body.isNotEmpty
-          ? jsonDecode(response.body) as Map<String, dynamic>
-          : <String, dynamic>{};
-      if (response.statusCode < 200 || response.statusCode >= 300) {
-        throw Exception(payload['error'] ?? 'The code could not be sent.');
+      // Handle HTTP Redirects (301, 302, 307, 308)
+      if (response.statusCode >= 300 && response.statusCode < 400 && response.headers['location'] != null) {
+        final redirectUrl = Uri.parse(response.headers['location']!);
+        debugPrint('[AuthService] Following redirect to: $redirectUrl');
+        response = await http
+            .post(
+              redirectUrl,
+              headers: const {'Content-Type': 'application/json'},
+              body: jsonEncode({'email': email}),
+            )
+            .timeout(const Duration(seconds: 15));
       }
 
-      debugPrint('[AuthService] OTP request accepted');
-      return true;
-    } on FormatException {
-      throw Exception('The login service returned an invalid response.');
+      final bodyStr = response.body;
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        debugPrint('[AuthService] ✅ OTP issued via Resend API (notifications@psgmx.tech)');
+        return true;
+      }
+
+      if (bodyStr.isNotEmpty) {
+        try {
+          final payload = jsonDecode(bodyStr) as Map<String, dynamic>;
+          if (payload['error'] != null) {
+            throw Exception(payload['error']);
+          }
+        } on FormatException {
+          // HTML or unexpected non-JSON response from server
+        }
+      }
+
+      throw Exception('Could not reach the Resend login service (${response.statusCode}). Please try again.');
+
     } on AuthException catch (e) {
       if (e.message.contains('rate limit')) {
         throw Exception('Too many requests. Please wait a moment.');
       }
       throw Exception(e.message);
     } catch (e) {
-      debugPrint('[AuthService] OTP request error: $e');
+      debugPrint('[AuthService] Resend OTP error: $e');
       if (e is Exception) rethrow;
-      throw Exception('Could not reach the login service. Try again.');
+      throw Exception('Could not send verification code via Resend. Please try again.');
     }
   }
 

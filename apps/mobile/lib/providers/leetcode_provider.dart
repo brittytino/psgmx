@@ -163,10 +163,15 @@ class LeetCodeProvider extends ChangeNotifier with SafeChangeNotifier {
     try {
       // 1. Fetch ALL whitelisted students AND active users (Source of Truth for Names)
       // We merge both, prioritizing the 'users' table for updated leetcode usernames
-      final whitelistResponse = await _supabaseService.client
-          .from('whitelist')
-          .select('leetcode_username, name, reg_no');
-      
+      List whitelistResponse = [];
+      try {
+        whitelistResponse = await _supabaseService.client
+            .from('whitelist')
+            .select('leetcode_username, name, reg_no');
+      } catch (e) {
+        debugPrint('[LeetCodeProvider] Whitelist query fallback: $e');
+      }
+
       final usersResponse = await _supabaseService.client
           .from('users')
           .select('leetcode_username, name, reg_no')
@@ -179,7 +184,7 @@ class LeetCodeProvider extends ChangeNotifier with SafeChangeNotifier {
       final registry = <String, Map<String, String>>{};
 
       // Load whitelist first (baseline)
-      for (var entry in whitelistResponse as List) {
+      for (var entry in whitelistResponse) {
         final regNo = entry['reg_no'] as String?;
         final username = entry['leetcode_username'] as String?;
         final name = entry['name'] as String?;
@@ -305,11 +310,16 @@ class LeetCodeProvider extends ChangeNotifier with SafeChangeNotifier {
       _loadingMessage = 'Loading student list...';
       notifyListeners();
 
-      final whitelistResponse = await _supabaseService.client
-          .from('whitelist')
-          .select('leetcode_username, reg_no')
-          .not('leetcode_username', 'is', null);
-      
+      List whitelistResponse = [];
+      try {
+        whitelistResponse = await _supabaseService.client
+            .from('whitelist')
+            .select('leetcode_username, reg_no')
+            .not('leetcode_username', 'is', null);
+      } catch (e) {
+        debugPrint('[LeetCodeProvider] Whitelist refresh query fallback: $e');
+      }
+
       final usersResponse = await _supabaseService.client
           .from('users')
           .select('leetcode_username, reg_no')
@@ -318,7 +328,7 @@ class LeetCodeProvider extends ChangeNotifier with SafeChangeNotifier {
       final usernameByRegNo = <String, String>{};
       
       // Load whitelist baseline
-      for (var entry in whitelistResponse as List) {
+      for (var entry in whitelistResponse) {
         final regNo = entry['reg_no'] as String?;
         final username = entry['leetcode_username'] as String?;
         if (regNo != null && username != null && username.isNotEmpty && username != 'NULL') {

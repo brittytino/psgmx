@@ -41,12 +41,25 @@ class PerformanceService {
       final username = data['username'] as String;
       final weeklyScore = data['weekly_score'] as int? ?? 0;
 
-      // Get the user's name from whitelist
-      final nameResponse = await _supabase
-          .from('whitelist')
-          .select('name')
-          .eq('leetcode_username', username)
-          .maybeSingle();
+      // Get the user's name from users table (or whitelist as fallback)
+      Map<String, dynamic>? nameResponse;
+      try {
+        nameResponse = await _supabase
+            .from('users')
+            .select('name')
+            .eq('leetcode_username', username)
+            .maybeSingle();
+      } catch (_) {}
+
+      if (nameResponse == null) {
+        try {
+          nameResponse = await _supabase
+              .from('whitelist')
+              .select('name')
+              .eq('leetcode_username', username)
+              .maybeSingle();
+        } catch (_) {}
+      }
 
       final name = nameResponse?['name'] as String? ?? username;
 

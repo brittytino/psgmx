@@ -27,7 +27,14 @@ async function isApprovedIdentity(email: string) {
     .select('email')
     .or(`email.eq.${email},personal_email.eq.${email},college_email.eq.${email}`)
     .maybeSingle()
-  return Boolean(roster)
+  if (roster) return true
+
+  const { data: user } = await supabaseAdmin
+    .from('users')
+    .select('email')
+    .or(`email.eq.${email},personal_email.eq.${email},college_email.eq.${email}`)
+    .maybeSingle()
+  return Boolean(user)
 }
 
 async function ensureAuthIdentity(email: string) {

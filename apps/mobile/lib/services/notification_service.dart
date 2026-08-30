@@ -612,10 +612,15 @@ class NotificationService extends ChangeNotifier {
           '[Notification] 🎂 Checking birthdays for today: $todayStr (${now.year}-${now.month}-${now.day})');
 
       // Check BOTH whitelist AND users tables for birthdays
-      final whitelistResponse = await _supabase
-          .from('whitelist')
-          .select('email, name, dob')
-          .not('dob', 'is', null);
+      List whitelistResponse = [];
+      try {
+        whitelistResponse = await _supabase
+            .from('whitelist')
+            .select('email, name, dob')
+            .not('dob', 'is', null);
+      } catch (e) {
+        debugPrint('[Notification] Whitelist birthday query skipped/restricted: $e');
+      }
 
       final usersResponse = await _supabase
           .from('users')
@@ -626,7 +631,7 @@ class NotificationService extends ChangeNotifier {
       final Map<String, Map<String, dynamic>> allUsersMap = {};
 
       // Add whitelist entries first
-      for (var user in whitelistResponse as List) {
+      for (var user in whitelistResponse) {
         final email = user['email'] as String?;
         if (email != null) {
           allUsersMap[email] = user;

@@ -18,7 +18,7 @@ class SupabaseConfig {
   /// No shared eCampus or AI secret is ever compiled into the mobile app.
   static String get appApiUrl => _envAppApiUrl.isNotEmpty
       ? _envAppApiUrl.replaceAll(RegExp(r'/$'), '')
-      : 'https://psgmx.tech';
+      : 'https://www.psgmx.tech';
 
   /// Returns true if the minimum required config for app startup is present.
   static bool get isConfigured =>

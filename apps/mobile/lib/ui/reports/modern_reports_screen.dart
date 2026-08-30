@@ -41,8 +41,13 @@ class _ModernReportsScreenState extends State<ModernReportsScreen> {
   Future<void> _loadStats() async {
     setState(() => _isLoading = true);
     try {
-      // Get whitelist count (source of truth - all 123 students)
-      final whitelistCount = await _supabase.from('whitelist').count();
+      // Get whitelist count (or users table fallback)
+      int whitelistCount = 0;
+      try {
+        whitelistCount = await _supabase.from('whitelist').count();
+      } catch (_) {
+        whitelistCount = await _supabase.from('users').count().eq('role_label', 'Student');
+      }
 
       // Get today's attendance
       final today = DateTime.now().toIso8601String().split('T')[0];
