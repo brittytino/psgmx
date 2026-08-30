@@ -167,6 +167,12 @@ class AppRouter {
             currentPath == '/outcome';
 
         if (isAuthenticated) {
+          // PR is a student with an additional workspace. Keep the companion
+          // available to them, while protecting the PR console from students
+          // who do not hold that capability.
+          if (currentPath == '/admin' && !userProvider.isPlacementRep) {
+            return '/';
+          }
           if (userProvider.needsGraduationScreen &&
               currentPath != '/graduation') {
             return '/graduation';

@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Users, CalendarClock, LogOut, Menu, X, UserRoundCog, ClipboardCheck, ListTodo, Route, Megaphone, LibraryBig, BarChart3, Rocket, Activity } from 'lucide-react';
+import { LayoutDashboard, Users, CalendarClock, LogOut, Menu, X, UserRoundCog, ClipboardCheck, ListTodo, Megaphone, LibraryBig, BarChart3, Activity, GraduationCap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
 
@@ -69,6 +69,12 @@ export default function PlacementRepLayout({ children }: { children: React.React
           <NavLinks pathname={pathname} />
         </nav>
         <div className="p-4 shrink-0">
+          <Link
+            href="/student"
+            className="mb-1 flex w-full items-center gap-3 rounded-[12px] border border-primary-purple/20 bg-primary-purple/5 px-4 py-3 text-[14px] font-bold text-primary-purple transition-colors hover:bg-primary-purple/10"
+          >
+            <GraduationCap className="h-5 w-5" /> Student Companion
+          </Link>
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-[12px] text-text-muted hover:bg-page-bg hover:text-deep-violet font-semibold text-[14px] transition-colors"
@@ -98,6 +104,13 @@ export default function PlacementRepLayout({ children }: { children: React.React
               </div>
               <nav className="flex-1 px-4 py-4 space-y-1.5">
                 <NavLinks pathname={pathname} onNavigate={() => setMobileMenuOpen(false)} />
+                <Link
+                  href="/student"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="mt-4 flex items-center gap-3.5 rounded-[12px] border border-primary-purple/20 bg-primary-purple/5 px-4 py-3 text-[14px] font-bold text-primary-purple"
+                >
+                  <GraduationCap className="h-5 w-5" /> Student Companion
+                </Link>
               </nav>
             </motion.aside>
           </>

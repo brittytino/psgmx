@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
@@ -12,12 +12,12 @@ import {
   ClipboardList, 
   Users, 
   ArrowRight, 
-  Sparkles,
   Clock,
   ShieldCheck,
-  Check
+  Loader2,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { getCurrentProfile } from '@/lib/current-profile'
 
 export type NotificationItem = {
   id: string
@@ -30,57 +30,85 @@ export type NotificationItem = {
   actionLabel: string
 }
 
-const INITIAL_NOTIFICATIONS: NotificationItem[] = [
-  {
-    id: 'notif-1',
-    type: 'announcement',
-    title: 'Zoho & TCS Digital Bootcamp Scheduled',
-    description: 'Special technical preparation sessions for MCA 2025/2026 cohorts start this week.',
-    timeAgo: '15m ago',
-    unread: true,
-    link: '/student/announcements',
-    actionLabel: 'Read Announcement'
-  },
-  {
-    id: 'notif-2',
-    type: 'quest',
-    title: 'Daily Five Quest Streak Active',
-    description: 'Solve today’s 5 curated problems in the Train Gymnasium to boost your readiness index.',
-    timeAgo: '1h ago',
-    unread: true,
-    link: '/student/train',
-    actionLabel: 'Open Gymnasium'
-  },
-  {
-    id: 'notif-3',
-    type: 'exam',
-    title: 'TCS Digital / Prime Mock Assessment Open',
-    description: 'Proctored speed assessment is ready. Test your problem-solving accuracy.',
-    timeAgo: '3h ago',
-    unread: false,
-    link: '/student/exams',
-    actionLabel: 'Take Assessment'
-  },
-  {
-    id: 'notif-4',
-    type: 'lineage',
-    title: 'Lineage Senior Mentorship Insight',
-    description: 'Your alumni senior from roll suffix #354 shared insights on core OS & database questions.',
-    timeAgo: 'Yesterday',
-    unread: false,
-    link: '/student/lineage',
-    actionLabel: 'View Senior Advice'
-  }
-]
+type NotificationRow = {
+  id: string
+  title: string
+  message: string
+  notification_type: string
+  category: string | null
+  generated_at: string
+  action_path: string | null
+}
+
+function relativeTime(value: string) {
+  const elapsed = Math.max(0, Date.now() - new Date(value).getTime())
+  const minutes = Math.floor(elapsed / 60_000)
+  if (minutes < 1) return 'Now'
+  if (minutes < 60) return `${minutes}m ago`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.floor(hours / 24)
+  return days === 1 ? 'Yesterday' : `${days}d ago`
+}
+
+function displayType(row: NotificationRow): NotificationItem['type'] {
+  if (row.category === 'community') return 'lineage'
+  if (row.notification_type === 'reminder' || row.category === 'scheduled_reminder') return 'quest'
+  if (row.category === 'action_required') return 'exam'
+  return 'announcement'
+}
 
 interface NotificationDrawerProps {
   isOpen: boolean
   onClose: () => void
+  onUnreadCountChange?: (count: number) => void
 }
 
-export function NotificationDrawer({ isOpen, onClose }: NotificationDrawerProps) {
-  const [notifications, setNotifications] = useState<NotificationItem[]>(INITIAL_NOTIFICATIONS)
+export function NotificationDrawer({ isOpen, onClose, onUnreadCountChange }: NotificationDrawerProps) {
+  const supabase = React.useMemo(() => createClient(), [])
+  const [userId, setUserId] = useState('')
+  const [notifications, setNotifications] = useState<NotificationItem[]>([])
   const [activeTab, setActiveTab] = useState<'all' | 'announcement' | 'quest' | 'exam'>('all')
+  const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
+
+  const loadNotifications = useCallback(async () => {
+    setLoading(true)
+    setLoadError('')
+    try {
+      const me = await getCurrentProfile(supabase)
+      if (!me?.id) throw new Error('Sign in again to load notifications.')
+      setUserId(me.id)
+      const [{ data: rows, error: rowsError }, { data: reads, error: readsError }] = await Promise.all([
+        supabase
+          .from('notifications')
+          .select('id,title,message,notification_type,category,generated_at,action_path')
+          .eq('is_active', true)
+          .or(`valid_until.is.null,valid_until.gt.${new Date().toISOString()}`)
+          .order('generated_at', { ascending: false })
+          .limit(50),
+        supabase.from('notification_reads').select('notification_id').eq('user_id', me.id),
+      ])
+      if (rowsError || readsError) throw rowsError || readsError
+      const readIds = new Set((reads ?? []).map((read) => read.notification_id))
+      setNotifications(((rows ?? []) as NotificationRow[]).map((row) => ({
+        id: row.id,
+        type: displayType(row),
+        title: row.title,
+        description: row.message,
+        timeAgo: relativeTime(row.generated_at),
+        unread: !readIds.has(row.id),
+        link: row.action_path || '/student/inbox',
+        actionLabel: row.action_path ? 'Open update' : 'View in inbox',
+      })))
+    } catch (cause) {
+      setLoadError(cause instanceof Error ? cause.message : 'Notifications could not be loaded.')
+    } finally {
+      setLoading(false)
+    }
+  }, [supabase])
+
+  useEffect(() => { void loadNotifications() }, [loadNotifications])
 
   // Close on Escape key
   useEffect(() => {
@@ -95,11 +123,26 @@ export function NotificationDrawer({ isOpen, onClose }: NotificationDrawerProps)
 
   const unreadCount = notifications.filter(n => n.unread).length
 
-  const markAllAsRead = () => {
+  useEffect(() => { onUnreadCountChange?.(unreadCount) }, [onUnreadCountChange, unreadCount])
+
+  const markAllAsRead = async () => {
+    const unread = notifications.filter((item) => item.unread).map((item) => item.id)
+    if (!userId || unread.length === 0) return
+    const { error } = await supabase.from('notification_reads').upsert(
+      unread.map((notification_id) => ({ notification_id, user_id: userId })),
+      { onConflict: 'notification_id,user_id' },
+    )
+    if (error) return setLoadError(error.message)
     setNotifications(prev => prev.map(n => ({ ...n, unread: false })))
   }
 
-  const markAsRead = (id: string) => {
+  const markAsRead = async (id: string) => {
+    if (!userId || !notifications.find((item) => item.id === id)?.unread) return
+    const { error } = await supabase.from('notification_reads').upsert(
+      { notification_id: id, user_id: userId },
+      { onConflict: 'notification_id,user_id' },
+    )
+    if (error) return setLoadError(error.message)
     setNotifications(prev => prev.map(n => n.id === id ? ({ ...n, unread: false }) : n))
   }
 
@@ -203,7 +246,7 @@ export function NotificationDrawer({ isOpen, onClose }: NotificationDrawerProps)
 
                   {unreadCount > 0 && (
                     <button
-                      onClick={markAllAsRead}
+                      onClick={() => void markAllAsRead()}
                       className="text-xs font-bold text-primary-purple hover:underline flex items-center gap-1"
                     >
                       <CheckCheck className="w-3.5 h-3.5" /> Mark read
@@ -214,7 +257,13 @@ export function NotificationDrawer({ isOpen, onClose }: NotificationDrawerProps)
 
               {/* Drawer Content Body */}
               <div className="flex-1 overflow-y-auto p-6 space-y-3 custom-scrollbar">
-                {filtered.length === 0 ? (
+                {loading ? (
+                  <div className="grid min-h-48 place-items-center"><Loader2 className="h-6 w-6 animate-spin text-primary-purple" /></div>
+                ) : loadError ? (
+                  <div className="rounded-2xl bg-red-50 p-4 text-center text-xs font-bold text-red-700">
+                    {loadError} <button onClick={() => void loadNotifications()} className="underline">Retry</button>
+                  </div>
+                ) : filtered.length === 0 ? (
                   <div className="text-center py-16 space-y-3">
                     <div className="w-14 h-14 rounded-full bg-page-bg flex items-center justify-center mx-auto text-text-muted">
                       <Bell className="w-6 h-6" />
@@ -228,7 +277,7 @@ export function NotificationDrawer({ isOpen, onClose }: NotificationDrawerProps)
                   filtered.map((item) => (
                     <div
                       key={item.id}
-                      onClick={() => markAsRead(item.id)}
+                      onClick={() => void markAsRead(item.id)}
                       className={`group relative p-4 rounded-2xl border transition-all duration-200 ${
                         item.unread
                           ? 'bg-violet-50/40 border-primary-purple/30 shadow-sm'

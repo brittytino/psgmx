@@ -84,7 +84,9 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [profileOpen, setProfileOpen] = React.useState(false);
   const [notificationsOpen, setNotificationsOpen] = React.useState(false);
+  const [unreadNotifications, setUnreadNotifications] = React.useState(0);
   const [identity, setIdentity] = React.useState({ name: 'Student', regNo: '', batchCode: 'MCA' });
+  const [isPlacementRep, setIsPlacementRep] = React.useState(false);
   const cardContent = getSidebarCardContent(pathname);
 
   React.useEffect(() => { void (async () => {
@@ -92,6 +94,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
       const supabase = createClient();
       const me = await getCurrentProfile(supabase);
       if (!me) return;
+      setIsPlacementRep(me.roles?.isPlacementRep === true);
       let batchCode = 'MCA';
       if (me.batch_id) {
         const { data: batch } = await supabase.from('batches').select('batch_code').eq('id', me.batch_id).single();
@@ -144,6 +147,15 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
               </Link>
             );
           })}
+          {isPlacementRep && (
+            <Link
+              href="/placement-rep"
+              className="mt-4 flex items-center gap-3.5 rounded-[12px] border border-primary-purple/20 bg-primary-purple/5 px-4 py-3 text-primary-purple transition-colors hover:bg-primary-purple/10"
+            >
+              <ShieldCheck className="h-5 w-5" />
+              <span className="text-[14px] font-bold">PR Console</span>
+            </Link>
+          )}
         </nav>
 
         {/* Dynamic Callout Card */}
@@ -200,6 +212,16 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
                     </Link>
                   );
                 })}
+                {isPlacementRep && (
+                  <Link
+                    href="/placement-rep"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="mt-4 flex items-center gap-3.5 rounded-[12px] border border-primary-purple/20 bg-primary-purple/5 px-4 py-3 text-primary-purple"
+                  >
+                    <ShieldCheck className="h-5 w-5" />
+                    <span className="text-[14px] font-bold">PR Console</span>
+                  </Link>
+                )}
               </nav>
             </motion.aside>
           </>
@@ -230,16 +252,19 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
                 aria-label="Open Notifications"
               >
                 <Bell className="w-5 h-5" />
-                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary-purple text-[10px] font-black text-white shadow-sm">
-                  2
-                </span>
+                {unreadNotifications > 0 && (
+                  <span className="absolute -top-1 -right-1 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-primary-purple px-1 text-[10px] font-black text-white shadow-sm">
+                    {unreadNotifications > 99 ? '99+' : unreadNotifications}
+                  </span>
+                )}
               </button>
             </div>
 
-            <NotificationDrawer 
-              isOpen={notificationsOpen} 
-              onClose={() => setNotificationsOpen(false)} 
-            />
+              <NotificationDrawer
+                isOpen={notificationsOpen}
+                onClose={() => setNotificationsOpen(false)}
+                onUnreadCountChange={setUnreadNotifications}
+              />
 
             {/* Profile */}
             <div className="relative">
@@ -259,6 +284,11 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
                         <p className="text-[12px] text-text-muted">{identity.regNo || 'Register pending'} · {identity.batchCode}</p>
                       </div>
                       <div className="p-2">
+                        {isPlacementRep && (
+                          <Link href="/placement-rep" onClick={() => setProfileOpen(false)} className="flex items-center gap-2 w-full p-2 text-[13px] font-semibold text-primary-purple hover:bg-page-bg rounded-xl transition-colors">
+                            <ShieldCheck className="w-4 h-4" /> Open PR Console
+                          </Link>
+                        )}
                         <Link href="/student/settings" onClick={() => setProfileOpen(false)} className="flex items-center gap-2 w-full p-2 text-[13px] font-semibold text-text-muted hover:bg-page-bg hover:text-text-main rounded-xl transition-colors">
                           <Settings className="w-4 h-4" /> Account Settings
                         </Link>

@@ -44,14 +44,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text('You',
-                            style: GoogleFonts.sora(fontSize: 26, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A), letterSpacing: -0.5)),
+                            style: GoogleFonts.sora(
+                                fontSize: 26,
+                                fontWeight: FontWeight.bold,
+                                color: const Color(0xFF0F172A),
+                                letterSpacing: -0.5)),
                         const SizedBox(height: 4),
                         Row(
                           children: [
                             Text('Your profile, your journey.',
-                                style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748B))),
+                                style: GoogleFonts.inter(
+                                    fontSize: 13,
+                                    color: const Color(0xFF64748B))),
                             const SizedBox(width: 4),
-                            const Icon(LucideIcons.sparkles, size: 12, color: AppTheme.illusGold),
+                            const Icon(LucideIcons.sparkles,
+                                size: 12, color: AppTheme.illusGold),
                           ],
                         ),
                       ],
@@ -62,14 +69,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         GestureDetector(
                           onTap: () => context.push('/settings'),
                           child: Container(
-                            width: 40, height: 40,
+                            width: 40,
+                            height: 40,
                             decoration: BoxDecoration(
                               color: Colors.white,
                               shape: BoxShape.circle,
-                              border: Border.all(color: const Color(0xFFE2E8F0)),
-                              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8)],
+                              border:
+                                  Border.all(color: const Color(0xFFE2E8F0)),
+                              boxShadow: [
+                                BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.04),
+                                    blurRadius: 8)
+                              ],
                             ),
-                            child: const Center(child: Icon(LucideIcons.settings, size: 18, color: Color(0xFF1E293B))),
+                            child: const Center(
+                                child: Icon(LucideIcons.settings,
+                                    size: 18, color: Color(0xFF1E293B))),
                           ),
                         ),
                       ],
@@ -81,6 +96,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 // ── Profile Card ──────────────────────────────────────
                 _ProfileCard(user: user),
                 const SizedBox(height: 24),
+
+                if (userProvider.isPlacementRep) ...[
+                  _buildSectionHeader('YOUR WORKSPACES'),
+                  _buildCard([
+                    _NavTile(
+                      icon: LucideIcons.shieldCheck,
+                      iconColor: AppTheme.accentCoral,
+                      label: 'PR Command Center',
+                      subtitle: 'Manage readiness, squads and participation',
+                      onTap: () => context.push('/admin'),
+                    ),
+                  ]),
+                  const SizedBox(height: 20),
+                ],
 
                 // ── ACCOUNT ───────────────────────────────────────────
                 _buildSectionHeader('ACCOUNT'),
@@ -105,7 +134,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     icon: LucideIcons.code,
                     iconColor: const Color(0xFFEF4444),
                     label: 'LeetCode Username',
-                    subtitle: user?.leetcodeUsername?.isNotEmpty == true ? user!.leetcodeUsername! : 'Not set',
+                    subtitle: user?.leetcodeUsername?.isNotEmpty == true
+                        ? user!.leetcodeUsername!
+                        : 'Not set',
                     onTap: () => _showLeetcodeSheet(context, userProvider),
                   ),
                 ]),
@@ -142,17 +173,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                 // ── Sign Out ──────────────────────────────────────────
                 OutlinedButton.icon(
-                  onPressed: _signingOut ? null : () => _confirmSignOut(context, userProvider),
+                  onPressed: _signingOut
+                      ? null
+                      : () => _confirmSignOut(context, userProvider),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: const Color(0xFFEF4444),
-                    side: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
+                    side:
+                        const BorderSide(color: Color(0xFFEF4444), width: 1.5),
                     padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
                   ),
                   icon: _signingOut
-                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Color(0xFFEF4444), strokeWidth: 2))
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                              color: Color(0xFFEF4444), strokeWidth: 2))
                       : const Icon(LucideIcons.logOut, size: 16),
-                  label: Text('Sign Out', style: GoogleFonts.sora(fontSize: 15, fontWeight: FontWeight.bold)),
+                  label: Text('Sign Out',
+                      style: GoogleFonts.sora(
+                          fontSize: 15, fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
@@ -183,13 +224,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFF1F5F9)),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 12, offset: const Offset(0, 3))],
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 12,
+              offset: const Offset(0, 3))
+        ],
       ),
       child: Column(children: children),
     );
   }
 
-  Widget _divider() => const Divider(height: 1, indent: 52, endIndent: 16, color: Color(0xFFF1F5F9));
+  Widget _divider() => const Divider(
+      height: 1, indent: 52, endIndent: 16, color: Color(0xFFF1F5F9));
 
   Future<void> _launchUrl(String url) async {
     final uri = Uri.tryParse(url);
@@ -200,13 +247,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _showLeetcodeSheet(BuildContext context, UserProvider userProvider) {
-    final ctrl = TextEditingController(text: userProvider.currentUser?.leetcodeUsername ?? '');
+    final ctrl = TextEditingController(
+        text: userProvider.currentUser?.leetcodeUsername ?? '');
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        padding:
+            EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
         child: Container(
           padding: const EdgeInsets.all(24),
           decoration: const BoxDecoration(
@@ -217,11 +266,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: const Color(0xFFE2E8F0), borderRadius: BorderRadius.circular(2)))),
+              Center(
+                  child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                          color: const Color(0xFFE2E8F0),
+                          borderRadius: BorderRadius.circular(2)))),
               const SizedBox(height: 20),
-              Text('LeetCode Username', style: GoogleFonts.sora(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF0F172A))),
+              Text('LeetCode Username',
+                  style: GoogleFonts.sora(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF0F172A))),
               const SizedBox(height: 6),
-              Text('Link your LeetCode profile to track your progress.', style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748B))),
+              Text('Link your LeetCode profile to track your progress.',
+                  style: GoogleFonts.inter(
+                      fontSize: 13, color: const Color(0xFF64748B))),
               const SizedBox(height: 20),
               TextField(
                 controller: ctrl,
@@ -229,10 +290,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 decoration: InputDecoration(
                   labelText: 'Username',
                   hintText: 'e.g. john_doe or a LeetCode profile URL',
-                  helperText: 'Used for your live progress and batch leaderboard.',
-                  labelStyle: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF64748B)),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppTheme.accentCoral)),
+                  helperText:
+                      'Used for your live progress and batch leaderboard.',
+                  labelStyle: GoogleFonts.inter(
+                      fontSize: 14, color: const Color(0xFF64748B)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                  focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide:
+                          const BorderSide(color: AppTheme.accentCoral)),
                 ),
               ),
               const SizedBox(height: 20),
@@ -244,9 +311,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(color: Color(0xFFE2E8F0)),
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14)),
                       ),
-                      child: Text('Cancel', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                      child: Text('Cancel',
+                          style:
+                              GoogleFonts.inter(fontWeight: FontWeight.w600)),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -273,9 +343,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       style: FilledButton.styleFrom(
                         backgroundColor: AppTheme.accentCoral,
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14)),
                       ),
-                      child: Text('Save', style: GoogleFonts.sora(fontWeight: FontWeight.bold)),
+                      child: Text('Save',
+                          style: GoogleFonts.sora(fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ],
@@ -288,21 +360,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Future<void> _confirmSignOut(BuildContext context, UserProvider userProvider) async {
+  Future<void> _confirmSignOut(
+      BuildContext context, UserProvider userProvider) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Sign Out', style: GoogleFonts.sora(fontWeight: FontWeight.bold)),
-        content: Text('Are you sure you want to sign out?', style: GoogleFonts.inter()),
+        title: Text('Sign Out',
+            style: GoogleFonts.sora(fontWeight: FontWeight.bold)),
+        content: Text('Are you sure you want to sign out?',
+            style: GoogleFonts.inter()),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text('Cancel', style: GoogleFonts.inter(color: const Color(0xFF64748B))),
+            child: Text('Cancel',
+                style: GoogleFonts.inter(color: const Color(0xFF64748B))),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text('Sign Out', style: GoogleFonts.sora(color: const Color(0xFFEF4444), fontWeight: FontWeight.bold)),
+            child: Text('Sign Out',
+                style: GoogleFonts.sora(
+                    color: const Color(0xFFEF4444),
+                    fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -338,29 +417,51 @@ class _ProfileCard extends StatelessWidget {
           colors: [Color(0xFF1E293B), Color(0xFF334155)],
         ),
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: const Color(0xFF1E293B).withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, 8))],
+        boxShadow: [
+          BoxShadow(
+              color: const Color(0xFF1E293B).withValues(alpha: 0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 8))
+        ],
       ),
       child: Row(
         children: [
           // Avatar
           Container(
-            width: 64, height: 64,
+            width: 64,
+            height: 64,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 2),
+              border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.2), width: 2),
             ),
-            child: AvatarWidget(avatarUrl: user?.avatarUrl, name: name, gender: user?.gender, radius: 30),
+            child: AvatarWidget(
+                avatarUrl: user?.avatarUrl,
+                name: name,
+                gender: user?.gender,
+                radius: 30),
           ),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name, style: GoogleFonts.sora(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                Text(name,
+                    style: GoogleFonts.sora(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white)),
                 const SizedBox(height: 4),
-                Text(reg, style: GoogleFonts.inter(fontSize: 13, color: Colors.white.withValues(alpha: 0.7))),
+                Text(reg,
+                    style: GoogleFonts.inter(
+                        fontSize: 13,
+                        color: Colors.white.withValues(alpha: 0.7))),
                 const SizedBox(height: 2),
-                Text(email, style: GoogleFonts.inter(fontSize: 12, color: Colors.white.withValues(alpha: 0.5)), overflow: TextOverflow.ellipsis),
+                Text(email,
+                    style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: Colors.white.withValues(alpha: 0.5)),
+                    overflow: TextOverflow.ellipsis),
               ],
             ),
           ),
@@ -398,8 +499,11 @@ class _NavTile extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              width: 36, height: 36,
-              decoration: BoxDecoration(color: iconColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                  color: iconColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10)),
               child: Icon(icon, size: 16, color: iconColor),
             ),
             const SizedBox(width: 14),
@@ -407,14 +511,21 @@ class _NavTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(label, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: const Color(0xFF1E293B))),
+                  Text(label,
+                      style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF1E293B))),
                   const SizedBox(height: 1),
-                  Text(subtitle, style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF94A3B8))),
+                  Text(subtitle,
+                      style: GoogleFonts.inter(
+                          fontSize: 12, color: const Color(0xFF94A3B8))),
                 ],
               ),
             ),
             if (showChevron)
-              const Icon(LucideIcons.chevronRight, size: 16, color: Color(0xFF94A3B8)),
+              const Icon(LucideIcons.chevronRight,
+                  size: 16, color: Color(0xFF94A3B8)),
           ],
         ),
       ),
