@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/app_theme.dart';
 
 class CreditsScreen extends StatelessWidget {
@@ -74,9 +76,14 @@ class CreditsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             
-            Text(
-              'Build v2.4.1  •  18 May 2024',
-              style: GoogleFonts.inter(fontSize: 9, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5)),
+            FutureBuilder<PackageInfo>(
+              future: PackageInfo.fromPlatform(),
+              builder: (context, snapshot) => Text(
+                snapshot.hasData
+                    ? 'Version ${snapshot.data!.version} (${snapshot.data!.buildNumber})'
+                    : 'Checking installed version…',
+                style: GoogleFonts.inter(fontSize: 9, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5)),
+              ),
             ),
             const SizedBox(height: 48),
             
@@ -140,65 +147,19 @@ class CreditsScreen extends StatelessWidget {
                   const SizedBox(height: 24),
                   
                   // GitHub Button
-                  Container(
-                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surface,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppTheme.accentCoral.withValues(alpha: 0.2)),
-                      boxShadow: [
-                        BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 4)),
-                      ],
+                  OutlinedButton.icon(
+                    onPressed: () => launchUrl(
+                      Uri.parse('https://github.com/brittytino/psgmx/issues'),
+                      mode: LaunchMode.externalApplication,
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.code, size: 16),
-                        const SizedBox(width: 16),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Click me on GitHub', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.accentCoral)),
-                            Text('and give your pull request', style: GoogleFonts.inter(fontSize: 9, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6))),
-                          ],
-                        ),
-                      ],
-                    ),
+                    icon: const Icon(Icons.code, size: 16),
+                    label: const Text('Report an issue on GitHub'),
                   ),
                   const SizedBox(height: 32),
-                  
-                  // Contributors
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'Top Contributors',
-                      style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  Container(
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surface,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: theme.dividerColor.withValues(alpha: 0.1)),
-                    ),
-                    child: Column(
-                      children: [
-                        _buildContributorItem('Rohan Mehta', '@rohanmehta', '15+ PRs', theme),
-                        Divider(height: 1, indent: 64, color: theme.dividerColor.withValues(alpha: 0.1)),
-                        _buildContributorItem('Ananya Singh', '@ananyasingh', '8+ PRs', theme),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text('and many more amazing people ', style: GoogleFonts.inter(fontSize: 9, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6))),
-                      const Icon(LucideIcons.sparkles, color: AppTheme.illusGold, size: 12),
-                    ],
+                  Text(
+                    'Contributions are reviewed in the public repository so fixes remain traceable and safe for future MX batches.',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.inter(fontSize: 9, height: 1.5, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.65)),
                   ),
                 ],
               ),
@@ -222,37 +183,4 @@ class CreditsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildContributorItem(String name, String handle, String prs, ThemeData theme) {
-    return Padding(
-      padding: const EdgeInsets.all(12.0),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 20,
-            backgroundColor: theme.colorScheme.surfaceContainerHighest,
-            child: const Icon(LucideIcons.user, size: 16),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(name, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface)),
-                Text(handle, style: GoogleFonts.inter(fontSize: 9, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5))),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFF8F5),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppTheme.accentCoral.withValues(alpha: 0.3)),
-            ),
-            child: Text(prs, style: GoogleFonts.inter(fontSize: 8, fontWeight: FontWeight.bold, color: AppTheme.accentCoral)),
-          ),
-        ],
-      ),
-    );
-  }
 }

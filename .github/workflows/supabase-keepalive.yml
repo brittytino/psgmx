@@ -18,7 +18,7 @@ jobs:
     steps:
       - name: Ping keepalive endpoint
         run: |
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+          HTTP_STATUS=$(curl --location --silent --show-error -o /dev/null -w "%{http_code}" \
             "${{ vars.APP_API_URL }}/api/health")
 
           echo "Keepalive HTTP status: $HTTP_STATUS"

@@ -24,16 +24,16 @@ jobs:
     steps:
       - name: Validate secrets
         run: |
-          test -n "${{ secrets.APP_URL }}" || (echo "ERROR: APP_URL secret not set" && exit 1)
+          test -n "${{ vars.APP_API_URL }}" || (echo "ERROR: APP_API_URL variable not set" && exit 1)
           test -n "${{ secrets.CRON_SECRET }}" || (echo "ERROR: CRON_SECRET secret not set" && exit 1)
 
       - name: Generate weekly mock test via AI
         env:
-          APP_URL: ${{ secrets.APP_URL }}
+          APP_URL: ${{ vars.APP_API_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           echo "Calling AI mock test generator..."
-          HTTP_STATUS=$(curl --silent --show-error \
+          HTTP_STATUS=$(curl --location --silent --show-error \
             --output /tmp/mock_test_response.json \
             --write-out "%{http_code}" \
             --request POST \

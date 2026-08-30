@@ -24,7 +24,7 @@ jobs:
         run: |
           test -n "$APP_URL"
           test -n "$CRON_SECRET"
-          HTTP_STATUS=$(curl -s -o /tmp/freshness_response.json -w "%{http_code}" \
+          HTTP_STATUS=$(curl --location --silent --show-error -o /tmp/freshness_response.json -w "%{http_code}" \
             -X POST \
             -H "Authorization: Bearer $CRON_SECRET" \
             -H "Content-Type: application/json" \

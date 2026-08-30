@@ -1,10 +1,10 @@
 name: psgmx_mobile
 description: Placement Preparation Program App for PSG Technology - MCA. A comprehensive platform for placement tracking, LeetCode integration, and student management.
 publish_to: 'none'
-version: 4.0.1+1
-homepage: https://github.com/brittytino/psgmx-flutter
-repository: https://github.com/brittytino/psgmx-flutter
-issue_tracker: https://github.com/brittytino/psgmx-flutter/issues
+version: 4.0.2+2
+homepage: https://www.psgmx.tech
+repository: https://github.com/brittytino/psgmx
+issue_tracker: https://github.com/brittytino/psgmx/issues
 
 environment:
   sdk: '>=3.2.0 <4.0.0'

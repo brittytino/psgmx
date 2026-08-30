@@ -16,7 +16,7 @@ jobs:
         run: |
           test -n "$APP_URL"
           test -n "$CRON_SECRET"
-          status=$(curl --silent --show-error --output /tmp/maintenance.json --write-out "%{http_code}" \
+          status=$(curl --location --silent --show-error --output /tmp/maintenance.json --write-out "%{http_code}" \
             --request POST \
             --header "Authorization: Bearer $CRON_SECRET" \
             --header "Content-Type: application/json" \

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
+import '../providers/navigation_provider.dart';
 import '../ui/auth/auth_screen.dart';
 import '../ui/auth/onboarding_story_screen.dart';
 import '../ui/auth/batch_confirmation_screen.dart';
@@ -62,6 +64,38 @@ class AppRouter {
         GoRoute(
           path: '/',
           builder: (context, state) => const RootLayout(),
+        ),
+        GoRoute(
+          path: '/progress',
+          builder: (context, state) => const _CompanionTabRoute(index: 2),
+        ),
+        GoRoute(
+          path: '/progress/dimension/:dimension',
+          builder: (context, state) => const _CompanionTabRoute(index: 2),
+        ),
+        GoRoute(
+          path: '/community',
+          builder: (context, state) => const _CompanionTabRoute(index: 3),
+        ),
+        GoRoute(
+          path: '/community/knowledge-brain',
+          builder: (context, state) => const _CompanionTabRoute(index: 3),
+        ),
+        GoRoute(
+          path: '/community/lineage',
+          builder: (context, state) => const _CompanionTabRoute(index: 3),
+        ),
+        GoRoute(
+          path: '/community/squads',
+          builder: (context, state) => const _CompanionTabRoute(index: 3),
+        ),
+        GoRoute(
+          path: '/you',
+          builder: (context, state) => const _CompanionTabRoute(index: 4),
+        ),
+        GoRoute(
+          path: '/you/connected-services',
+          builder: (context, state) => const _CompanionTabRoute(index: 4),
         ),
         GoRoute(
           path: '/notifications',
@@ -198,4 +232,28 @@ class AppRouter {
       },
     );
   }
+}
+
+class _CompanionTabRoute extends StatefulWidget {
+  final int index;
+  const _CompanionTabRoute({required this.index});
+
+  @override
+  State<_CompanionTabRoute> createState() => _CompanionTabRouteState();
+}
+
+class _CompanionTabRouteState extends State<_CompanionTabRoute> {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final navigation = context.read<NavigationProvider>();
+    if (navigation.currentIndex != widget.index) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) navigation.setIndex(widget.index);
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => const RootLayout();
 }
