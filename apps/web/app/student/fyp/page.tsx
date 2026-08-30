@@ -3,7 +3,7 @@
 import React from 'react'
 import { ExternalLink, Folder, Loader2, Plus, Save, GitBranch, Sparkles } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { getCurrentProfile, DEFAULT_STUDENT_UUID } from '@/lib/current-profile'
+import { getCurrentProfile } from '@/lib/current-profile'
 
 type Project = { id: string; title: string; description: string | null; guide_name: string | null; team_members_count: number; status: string; repository_url: string | null; updated_at: string }
 type Log = { id: string; note: string; created_at: string }
@@ -12,17 +12,12 @@ const inputClass = 'w-full rounded-xl border border-border-light bg-page-bg px-4
 
 export default function FYPPage() {
   const supabase = React.useMemo(() => createClient(), [])
-  const [userId, setUserId] = React.useState(DEFAULT_STUDENT_UUID)
+  const [userId, setUserId] = React.useState('')
   const [batchId, setBatchId] = React.useState<string | null>(null)
   const [project, setProject] = React.useState<Project | null>(null)
   const [logs, setLogs] = React.useState<Log[]>([])
   const [feedback, setFeedback] = React.useState<Feedback[]>([])
-  const [form, setForm] = React.useState({ 
-    title: 'PSGMX Placement OS & Intelligence Platform', 
-    description: 'A full-stack placement readiness companion with AI-grounded mentorship, daily gym problem tracking, and code verification.', 
-    guide_name: 'Dr. Faculty Mentor', 
-    repository_url: 'https://github.com/brittytino/psgmx' 
-  })
+  const [form, setForm] = React.useState({ title: '', description: '', guide_name: '', repository_url: '' })
   const [note, setNote] = React.useState('')
   const [loading, setLoading] = React.useState(true)
   const [busy, setBusy] = React.useState(false)
@@ -32,12 +27,12 @@ export default function FYPPage() {
     setLoading(true)
     try {
       const me = await getCurrentProfile(supabase)
-      const validId = me?.id || DEFAULT_STUDENT_UUID
+      if (!me?.id) throw new Error('Sign in again to load your project portfolio.')
+      const validId = me.id
       setUserId(validId)
       setBatchId(me?.batch_id || null)
 
-      try {
-        const { data: projectRow } = await supabase
+      const { data: projectRow, error: projectError } = await supabase
           .from('fyp_projects')
           .select('id,title,description,guide_name,team_members_count,status,repository_url,updated_at')
           .eq('student_id', validId)
@@ -45,19 +40,18 @@ export default function FYPPage() {
           .limit(1)
           .maybeSingle()
 
-        if (projectRow) {
+      if (projectError) throw projectError
+      if (projectRow) {
           setProject(projectRow)
-          const [{ data: logRows }, { data: feedbackRows }] = await Promise.all([
+          const [{ data: logRows, error: logError }, { data: feedbackRows, error: feedbackError }] = await Promise.all([
             supabase.from('fyp_progress_logs').select('id,note,created_at').eq('project_id', projectRow.id).order('created_at', { ascending: false }),
             supabase.from('fyp_feedback').select('id,comment,created_at').eq('project_id', projectRow.id).order('created_at', { ascending: false }),
           ])
+          if (logError || feedbackError) throw logError || feedbackError
           setLogs(logRows ?? [])
           setFeedback(feedbackRows ?? [])
-        }
-      } catch (e) {
-        console.warn('FYP DB query note:', e)
       }
-    } catch {}
+    } catch (cause) { setMessage(cause instanceof Error ? cause.message : 'Project portfolio could not be loaded.') }
     setLoading(false)
   }, [supabase])
 
@@ -66,61 +60,37 @@ export default function FYPPage() {
   async function createProject() {
     if (!form.title.trim()) return
     setBusy(true)
-    const validId = userId || DEFAULT_STUDENT_UUID
+    if (!userId) { setBusy(false); return setMessage('Sign in again before creating a project.') }
     try {
       const { error } = await supabase.from('fyp_projects').insert({
-        student_id: validId,
+        student_id: userId,
         batch_id: batchId,
         title: form.title.trim(),
         description: form.description.trim() || null,
         guide_name: form.guide_name.trim() || null,
         repository_url: form.repository_url.trim() || null,
       })
-      if (!error) {
-        setMessage('Your FYP portfolio is ready.')
-        await load()
-      } else {
-        setProject({
-          id: 'proj-' + Date.now(),
-          title: form.title,
-          description: form.description,
-          guide_name: form.guide_name,
-          team_members_count: 1,
-          status: 'in_progress',
-          repository_url: form.repository_url,
-          updated_at: new Date().toISOString(),
-        })
-        setMessage('Your FYP portfolio record is active.')
-      }
-    } catch {
-      setProject({
-        id: 'proj-' + Date.now(),
-        title: form.title,
-        description: form.description,
-        guide_name: form.guide_name,
-        team_members_count: 1,
-        status: 'in_progress',
-        repository_url: form.repository_url,
-        updated_at: new Date().toISOString(),
-      })
-      setMessage('Your FYP portfolio record is active.')
-    }
+      if (error) throw error
+      setMessage('Your FYP portfolio is ready.')
+      await load()
+    } catch (cause) { setMessage(cause instanceof Error ? cause.message : 'Project could not be created.') }
     setBusy(false)
   }
 
   async function addLog() {
     if (!project || !note.trim()) return
-    const validId = userId || DEFAULT_STUDENT_UUID
+    if (!userId) return setMessage('Sign in again before adding progress.')
     try {
-      await supabase.from('fyp_progress_logs').insert({ 
+      const { data, error } = await supabase.from('fyp_progress_logs').insert({
         project_id: project.id, 
-        student_id: validId,
+        student_id: userId,
         note: note.trim() 
-      } as any)
-    } catch {}
-    setLogs((prev) => [{ id: 'log-' + Date.now(), note: note.trim(), created_at: new Date().toISOString() }, ...prev])
-    setNote('')
-    setMessage('Progress logged.')
+      } as any).select('id,note,created_at').single()
+      if (error || !data) throw error || new Error('Progress was not recorded.')
+      setLogs((prev) => [data as Log, ...prev])
+      setNote('')
+      setMessage('Progress logged.')
+    } catch (cause) { setMessage(cause instanceof Error ? cause.message : 'Progress could not be saved.') }
     setBusy(false)
   }
 

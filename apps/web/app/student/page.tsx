@@ -43,7 +43,7 @@ interface DashboardData {
   articlesCount: number;
   examsTakenCount: number;
   recentArticles: { id: string; title: string; tag: string; authorName: string; authorRole: string }[];
-  upcomingExams: { id: string; title: string; examDate: string; durationMinutes: number }[];
+  upcomingExams: { id: string; title: string; examDate: string | null; durationMinutes: number }[];
   senior: { name: string; quote: string | null } | null;
   leaderboard: { userId: string; name: string; score: number; isYou: boolean }[];
   preparationTracks: { id: string; title: string; stage: string; weeks: number }[];
@@ -72,6 +72,7 @@ export default function StudentDashboard() {
       let streakRow: any = null;
       let articles: any[] = [];
       let exams: any[] = [];
+      let publishedExams: any[] = [];
       let lineage: any = null;
       let leaderboardRows: any[] = [];
       let tracks: any[] = [];
@@ -87,7 +88,8 @@ export default function StudentDashboard() {
           lineageRes,
           leaderboardRes,
           tracksRes,
-          articlesCountRes
+          articlesCountRes,
+          publishedExamsRes
         ] = await Promise.all([
           batchId ? supabase.from('batches').select('batch_code').eq('id', batchId).maybeSingle() : Promise.resolve({ data: null }),
           supabase.from('current_readiness_scores').select('score, components_json').eq('user_id', me.id).maybeSingle(),
@@ -119,7 +121,13 @@ export default function StudentDashboard() {
           supabase
             .from('knowledge_brain_articles')
             .select('id', { count: 'exact', head: true })
-            .eq('approval_status', 'approved')
+            .eq('approval_status', 'approved'),
+          supabase
+            .from('mock_exams')
+            .select('id,title,exam_date,duration_minutes')
+            .or(`exam_date.is.null,exam_date.gte.${new Date().toISOString()}`)
+            .order('exam_date', { ascending: true, nullsFirst: false })
+            .limit(3)
         ]);
 
         batch = batchRes?.data;
@@ -130,57 +138,28 @@ export default function StudentDashboard() {
         lineage = lineageRes?.data;
         leaderboardRows = leaderboardRes?.data ?? [];
         tracks = tracksRes?.data ?? [];
-        articlesCount = articlesCountRes?.count ?? 12;
+        articlesCount = articlesCountRes?.count ?? 0;
+        publishedExams = publishedExamsRes?.data ?? [];
       } catch (err) {
         console.warn('Dashboard DB load note:', err);
       }
 
       const examResultsList = (exams || []) as any[];
-      const examsTakenCount = examResultsList.filter((e) => e.status === 'submitted').length || 2;
-      const upcomingExams = examResultsList
-        .filter((e) => e.status === 'in_progress' && e.mock_exams?.exam_date && new Date(e.mock_exams.exam_date) > new Date())
-        .map((e) => ({
-          id: e.mock_exams.id,
-          title: e.mock_exams.title,
-          examDate: e.mock_exams.exam_date,
-          durationMinutes: e.mock_exams.duration_minutes,
-        }));
+      const examsTakenCount = examResultsList.filter((e) => ['submitted', 'auto_submitted'].includes(e.status)).length;
+      const upcomingExams = publishedExams.map((exam) => ({
+        id: exam.id, title: exam.title, examDate: exam.exam_date, durationMinutes: exam.duration_minutes,
+      }));
 
       if (cancelled) return;
 
-      const defaultArticles = [
-        { id: 'art-zoho', title: 'Zoho Corporation: Advanced Programming & CLI Architecture', tag: 'COMPANY_EXPERIENCE', authorName: 'Aravind S (24MX)', authorRole: 'Alumni Senior' },
-        { id: 'art-tcs', title: 'TCS Digital / Prime: Dynamic Programming & Asymptotics', tag: 'DSA_CORE', authorName: 'Kavitha R (24MX)', authorRole: 'Alumni Senior' },
-        { id: 'art-os', title: 'Operating Systems: Concurrency, Deadlocks & Memory Models', tag: 'CORE_CS', authorName: 'MCA Faculty', authorRole: 'Faculty' },
-      ];
-
-      const defaultLeaderboard = [
-        { userId: '1', name: 'Sanjay Kumar (25MX101)', score: 88, isYou: false },
-        { userId: '2', name: 'Krishna Priya M S (25MX115)', score: 84, isYou: false },
-        { userId: '3', name: 'Britty Tino (25MX354)', score: 78, isYou: true },
-        { userId: '4', name: 'Karthik Raja (25MX204)', score: 75, isYou: false },
-        { userId: '5', name: 'Deepa V (25MX312)', score: 72, isYou: false },
-      ];
-
-      const defaultTracks = [
-        { id: 'trk-1', title: 'Core DSA & Problem Solving Track', stage: 'Stage 2: Advanced', weeks: 4 },
-        { id: 'trk-2', title: 'Full Stack Systems & System Design', stage: 'Stage 1: Foundation', weeks: 3 },
-      ];
-
       setData({
-        userName: me?.name || 'Britty Tino',
+        userName: me.name,
         batchId,
-        batchCode: (batch as any)?.batch_code || '25MX',
-        score: scoreRow?.score ?? 78,
-        components: (scoreRow?.components_json as Record<string, number | null>) ?? {
-          daily_five_accuracy_pct: 82,
-          daily_five_adherence_pct: 79,
-          placement_attendance_pct: 94,
-          task_completion_rate_pct: 85,
-          leetcode_momentum_percentile: 71,
-        },
-        streak: streakRow?.current_streak ?? 4,
-        articlesCount: articlesCount || 12,
+        batchCode: (batch as any)?.batch_code || '—',
+        score: scoreRow?.score ?? null,
+        components: (scoreRow?.components_json as Record<string, number | null>) ?? {},
+        streak: streakRow?.current_streak ?? 0,
+        articlesCount,
         examsTakenCount,
         recentArticles: articles.length > 0 ? articles.map((a: any) => ({
           id: a.id,
@@ -188,25 +167,23 @@ export default function StudentDashboard() {
           tag: (a.tags && a.tags[0]) || 'DSA_CORE',
           authorName: a.users?.name || 'Senior Contributor',
           authorRole: a.users?.role_label || 'MCA Alumni',
-        })) : defaultArticles,
-        upcomingExams: upcomingExams.length > 0 ? upcomingExams : [
-          { id: 'tcs-digital-mock-01', title: 'TCS Digital Mock Speed Assessment', examDate: new Date(Date.now() + 86400000).toISOString(), durationMinutes: 60 }
-        ],
+        })) : [],
+        upcomingExams,
         senior: lineage?.users
           ? { name: (lineage.users as any).name, quote: lineage.senior_quote }
-          : { name: 'Aravind Swaminathan (24MX354)', quote: 'Focus on DSA fundamentals and OS internals. Consistency in Daily Five is your biggest differentiator.' },
-        leaderboard: leaderboardRows.length > 0 ? leaderboardRows.map((r: any) => ({
+          : null,
+        leaderboard: leaderboardRows.map((r: any) => ({
           userId: r.user_id,
           name: r.users?.name || 'Student',
           score: r.score,
           isYou: r.user_id === me.id,
-        })) : defaultLeaderboard,
-        preparationTracks: tracks.length > 0 ? tracks.map((track) => ({
+        })),
+        preparationTracks: tracks.map((track) => ({
           id: track.id,
           title: track.title,
           stage: track.stage,
           weeks: track.estimated_weeks,
-        })) : defaultTracks,
+        })),
       });
       setLoading(false);
     }
@@ -248,8 +225,9 @@ export default function StudentDashboard() {
     );
   }
 
+  const hasReadiness = data?.score !== null && data?.score !== undefined;
   const readinessScore = data?.score ?? 0;
-  const band = getBand(readinessScore);
+  const band = hasReadiness ? getBand(readinessScore) : { label: 'NOT MEASURED', color: 'bg-slate-500 text-white' };
   const componentEntries = Object.entries(data?.components || {}).filter(([, v]) => v !== null) as [string, number][];
 
   return (
@@ -291,7 +269,7 @@ export default function StudentDashboard() {
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-[44px] font-black text-text-main leading-none">{Math.round(readinessScore)}</span>
+              <span className="text-[44px] font-black text-text-main leading-none">{hasReadiness ? Math.round(readinessScore) : '—'}</span>
               <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">/ 100</span>
               <span className={`mt-2 text-[9px] font-bold px-2 py-0.5 rounded-full ${band.color}`}>{band.label}</span>
             </div>
@@ -330,7 +308,7 @@ export default function StudentDashboard() {
 
       {/* 4 Stat Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="Readiness Score" value={Math.round(readinessScore)} trend={band.label} icon={Award} color="bg-primary-purple" delay={0.1} />
+        <StatCard title="Readiness Score" value={hasReadiness ? Math.round(readinessScore) : '—'} trend={band.label} icon={Award} color="bg-primary-purple" delay={0.1} />
         <StatCard title="Current Streak" value={data?.streak ?? 0} trend="Days via Flutter App" icon={Flame} color="bg-deep-violet" delay={0.2} />
         <StatCard title="Exams Taken" value={data?.examsTakenCount ?? 0} trend="Lifetime" icon={ClipboardList} color="bg-illus-gold" delay={0.3} />
         <StatCard title="Articles Approved" value={data?.articlesCount ?? 0} trend="Across the Knowledge Brain" icon={BookOpen} color="bg-electric-blue" delay={0.4} />
@@ -356,7 +334,7 @@ export default function StudentDashboard() {
                 <p className="text-[13px] text-text-muted text-center py-4">No exams scheduled right now — check back soon.</p>
               )}
               {data?.upcomingExams.map((exam) => {
-                const daysLeft = Math.max(0, Math.ceil((new Date(exam.examDate).getTime() - Date.now()) / 86400000));
+                const daysLeft = Math.max(0, Math.ceil((new Date(exam.examDate || Date.now()).getTime() - Date.now()) / 86400000));
                 return (
                   <div key={exam.id} className="flex items-center justify-between p-4 rounded-[16px] border border-border-light hover:border-primary-purple/30 transition-colors group">
                     <div className="flex items-center gap-4">
@@ -366,7 +344,7 @@ export default function StudentDashboard() {
                       </div>
                       <div>
                         <h4 className="text-[14px] font-bold text-text-main mb-0.5">{exam.title}</h4>
-                        <p className="text-[11px] font-semibold text-text-muted">{new Date(exam.examDate).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })} · {exam.durationMinutes} min</p>
+                        <p className="text-[11px] font-semibold text-text-muted">{exam.examDate ? new Date(exam.examDate).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Open now'} · {exam.durationMinutes} min</p>
                       </div>
                     </div>
                     <Link href="/student/exams" className="px-4 py-2 bg-primary-purple text-white rounded-[10px] text-[12px] font-bold opacity-0 group-hover:opacity-100 transition-opacity shrink-0">

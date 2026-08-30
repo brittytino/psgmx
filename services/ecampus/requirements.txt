@@ -1,0 +1,6 @@
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+requests==2.33.0
+beautifulsoup4==4.12.3
+supabase==2.7.4
+lxml==6.0.2

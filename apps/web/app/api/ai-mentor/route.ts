@@ -3,6 +3,7 @@ import { getUserFromRequest } from '@/lib/auth'
 import { checkRateLimit } from '@/lib/limiter'
 import { logEvent, requestId } from '@/lib/observability'
 import { buildRAGContext, formatRAGContextForPrompt } from '@/lib/ai/rag'
+import { executeOpenRouterPrompt } from '@/lib/ai/openrouter-free-chain'
 
 const intentPrompts: Record<string, string> = {
   answer_explanation: 'You are a concise MCA tutor. Explain why the supplied correct answer is right in two to four short sentences. Be specific and encouraging.',
@@ -20,8 +21,6 @@ export async function POST(request: NextRequest) {
   const intent = typeof body.intent === 'string' ? body.intent : 'companion_chat'
   if (intent !== 'companion_chat' && !intentPrompts[intent]) return NextResponse.json({ error: 'Unsupported mentor intent.' }, { status: 400 })
   const maxTokens = Math.max(100, Math.min(Number(body.max_tokens) || 300, 500))
-  const apiKey = process.env.OPENROUTER_API_KEY
-  if (!apiKey) return NextResponse.json({ error: 'AI mentor is not configured.' }, { status: 503 })
   try {
     let system = intentPrompts[intent]
     let userMessage = body.message.trim()
@@ -32,17 +31,9 @@ export async function POST(request: NextRequest) {
       userMessage = `Approved Knowledge Brain context:\n${formatRAGContextForPrompt(context)}\n\nStudent question: ${userMessage}`
       sourcesCount = context.articles.length
     }
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST', headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json', 'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL ?? 'https://app.psgmx.tech', 'X-Title': 'PSGMX AI Mentor' },
-      body: JSON.stringify({ model: process.env.OPENROUTER_MENTOR_MODEL ?? 'google/gemma-3-27b-it:free', max_tokens: maxTokens, messages: [{ role: 'system', content: system }, { role: 'user', content: userMessage }] }),
-      signal: AbortSignal.timeout(20_000),
-    })
-    if (!response.ok) throw new Error(`Provider status ${response.status}`)
-    const data = await response.json()
-    const answer = data.choices?.[0]?.message?.content
-    if (!answer) throw new Error('Empty provider response')
-    logEvent('info', 'ai_mentor_completed', { trace_id: traceId, user_id: user.id })
-    return NextResponse.json({ answer, sources_count: sourcesCount }, { headers: { 'x-request-id': traceId } })
+    const result = await executeOpenRouterPrompt(userMessage, 'general', system, maxTokens)
+    logEvent('info', 'ai_mentor_completed', { trace_id: traceId, user_id: user.id, model: result.modelUsed })
+    return NextResponse.json({ answer: result.text, sources_count: sourcesCount, model_used: result.modelUsed }, { headers: { 'x-request-id': traceId } })
   } catch (error) {
     logEvent('error', 'ai_mentor_failed', { trace_id: traceId, user_id: user.id, message: String(error) })
     return NextResponse.json({ error: 'AI mentor is temporarily unavailable.' }, { status: 503 })

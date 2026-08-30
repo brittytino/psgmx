@@ -6,7 +6,6 @@ import LoadingBar from "@/components/basic/LoadingBar";
 import RouteLoadingOverlay from "@/components/basic/RouteLoadingOverlay";
 import { Suspense } from "react";
 import { UIProvider } from "@/components/providers/ui-provider";
-import ImpersonationBanner from "@/components/auth/ImpersonationBanner";
 import IOSInstallModal from "@/components/platform/IOSInstallModal";
 
 export const metadata: Metadata = {
@@ -42,7 +41,6 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased bg-page-bg text-text-main font-sans">
-        <ImpersonationBanner />
         <UIProvider>
           <Suspense fallback={null}>
             <LoadingBar />

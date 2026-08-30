@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { CalendarClock, CheckCircle2, ClipboardList, Plus, Send, ShieldCheck } from 'lucide-react'
+import { CalendarClock, CheckCircle2, ClipboardList, Plus, Send, ShieldCheck, WandSparkles } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { getCurrentProfile } from '@/lib/current-profile'
 import type { Database } from '@/../../supabase/types/database.types'
@@ -11,6 +11,7 @@ type Batch = Pick<Database['public']['Tables']['batches']['Row'], 'id' | 'batch_
 
 const examDefaults = { title: '', description: '', duration: 45, examDate: '', batchId: '' }
 const questionDefaults = { text: '', a: '', b: '', c: '', d: '', correct: 'A' as 'A' | 'B' | 'C' | 'D', marks: 1 }
+const blueprintDefaults = { batchId: '', title: 'Weekly readiness check', topics: '', count: 20, duration: 30, perWeek: 1, weekday: 6 }
 
 export default function AssessmentStudioPage() {
   const supabase = React.useMemo(() => createClient(), [])
@@ -24,21 +25,36 @@ export default function AssessmentStudioPage() {
   const [busy, setBusy] = React.useState(false)
   const [error, setError] = React.useState('')
   const [message, setMessage] = React.useState('')
+  const [blueprintForm, setBlueprintForm] = React.useState(blueprintDefaults)
+  const [facultyId, setFacultyId] = React.useState('')
 
   const load = React.useCallback(async () => {
     setLoading(true)
     setError('')
     try {
-      const [examResult, batchResult, questionResult] = await Promise.all([
+      const me = await getCurrentProfile(supabase)
+      if (!me) throw new Error('Your faculty profile could not be loaded.')
+      setFacultyId(me.id)
+      const [examResult, batchResult, questionResult, blueprintResult] = await Promise.all([
         supabase.from('mock_exams').select('*').order('exam_date', { ascending: false }),
         supabase.from('batches').select('id,batch_code,status').neq('status', 'graduated').order('start_year', { ascending: false }),
         supabase.from('mock_exam_questions').select('exam_id'),
+        (supabase as any).from('assessment_blueprints').select('*').eq('owner_faculty_id', me.id).eq('active', true).order('updated_at', { ascending: false }).limit(1).maybeSingle(),
       ])
       if (examResult.error) throw examResult.error
       if (batchResult.error) throw batchResult.error
       if (questionResult.error) throw questionResult.error
       setExams(examResult.data ?? [])
       setBatches(batchResult.data ?? [])
+      if (blueprintResult.data) setBlueprintForm({
+        batchId: blueprintResult.data.batch_id,
+        title: blueprintResult.data.title_prefix,
+        topics: (blueprintResult.data.topics || []).join(', '),
+        count: blueprintResult.data.question_count,
+        duration: blueprintResult.data.duration_minutes,
+        perWeek: blueprintResult.data.exams_per_week,
+        weekday: blueprintResult.data.publish_weekday,
+      })
       const counts: Record<string, number> = {}
       for (const row of questionResult.data ?? []) counts[row.exam_id] = (counts[row.exam_id] ?? 0) + 1
       setQuestionCount(counts)
@@ -50,6 +66,28 @@ export default function AssessmentStudioPage() {
   }, [supabase])
 
   React.useEffect(() => { void load() }, [load])
+
+  async function saveBlueprint(event: React.FormEvent) {
+    event.preventDefault()
+    if (!facultyId || !blueprintForm.batchId) return
+    setBusy(true); setError(''); setMessage('')
+    const topics = blueprintForm.topics.split(',').map((value) => value.trim()).filter(Boolean)
+    const { error: saveError } = await (supabase as any).from('assessment_blueprints').upsert({
+      batch_id: blueprintForm.batchId,
+      owner_faculty_id: facultyId,
+      title_prefix: blueprintForm.title.trim(),
+      topics,
+      question_count: blueprintForm.count,
+      duration_minutes: blueprintForm.duration,
+      exams_per_week: blueprintForm.perWeek,
+      publish_weekday: blueprintForm.weekday,
+      active: true,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'batch_id,owner_faculty_id' })
+    if (saveError) setError(saveError.message)
+    else setMessage('Automation blueprint saved. One or two assessments will be assembled weekly from the approved question bank.')
+    setBusy(false)
+  }
 
   async function createExam(event: React.FormEvent) {
     event.preventDefault()
@@ -121,6 +159,19 @@ export default function AssessmentStudioPage() {
     <div className="flex gap-3 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-xs font-semibold leading-5 text-blue-900"><ShieldCheck className="mt-0.5 h-5 w-5 shrink-0"/><span>Students receive question-level explanations only after submission. Every assessment should have a clear learning objective and a follow-up preparation path.</span></div>
     {error && <div role="alert" className="flex items-center justify-between rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700"><span>{error}</span><button onClick={() => void load()} className="rounded-lg px-3 py-1.5 hover:bg-red-100">Retry</button></div>}
     {message && <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-bold text-emerald-800">{message}</div>}
+
+    <form onSubmit={saveBlueprint} className="rounded-3xl border border-violet-200 bg-violet-50/60 p-6">
+      <div className="flex items-start gap-3"><WandSparkles className="mt-1 h-5 w-5 text-primary-purple"/><div><h2 className="text-lg font-black">Weekly automation blueprint</h2><p className="mt-1 text-xs leading-5 text-text-muted">Set the academic boundaries once. PSGMX automatically assembles one or two idempotent weekly mocks from approved bank questions; faculty ownership remains explicit.</p></div></div>
+      <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <label className="text-xs font-bold text-text-muted">Batch<select required value={blueprintForm.batchId} onChange={(event) => setBlueprintForm({ ...blueprintForm, batchId: event.target.value })} className="mt-2 w-full rounded-xl border border-border-light bg-white px-3 py-2.5 text-sm"><option value="">Choose batch</option>{batches.map((batch) => <option key={batch.id} value={batch.id}>{batch.batch_code}</option>)}</select></label>
+        <label className="text-xs font-bold text-text-muted">Assessments per week<select value={blueprintForm.perWeek} onChange={(event) => setBlueprintForm({ ...blueprintForm, perWeek: Number(event.target.value) })} className="mt-2 w-full rounded-xl border border-border-light bg-white px-3 py-2.5 text-sm"><option value={1}>One</option><option value={2}>Two</option></select></label>
+        <label className="text-xs font-bold text-text-muted">Questions<input type="number" min={5} max={50} value={blueprintForm.count} onChange={(event) => setBlueprintForm({ ...blueprintForm, count: Number(event.target.value) })} className="mt-2 w-full rounded-xl border border-border-light bg-white px-3 py-2.5 text-sm"/></label>
+        <label className="text-xs font-bold text-text-muted">Duration<input type="number" min={10} max={120} value={blueprintForm.duration} onChange={(event) => setBlueprintForm({ ...blueprintForm, duration: Number(event.target.value) })} className="mt-2 w-full rounded-xl border border-border-light bg-white px-3 py-2.5 text-sm"/></label>
+        <label className="text-xs font-bold text-text-muted md:col-span-2">Title prefix<input required minLength={3} value={blueprintForm.title} onChange={(event) => setBlueprintForm({ ...blueprintForm, title: event.target.value })} className="mt-2 w-full rounded-xl border border-border-light bg-white px-3 py-2.5 text-sm"/></label>
+        <label className="text-xs font-bold text-text-muted md:col-span-2">Question-bank topics (comma separated; blank uses all)<input value={blueprintForm.topics} onChange={(event) => setBlueprintForm({ ...blueprintForm, topics: event.target.value })} placeholder="dbms, oop, operating_systems" className="mt-2 w-full rounded-xl border border-border-light bg-white px-3 py-2.5 text-sm"/></label>
+      </div>
+      <div className="mt-4 flex justify-end"><button disabled={busy || !facultyId} className="rounded-xl bg-primary-purple px-5 py-2.5 text-sm font-black text-white disabled:opacity-50">Save automation blueprint</button></div>
+    </form>
 
     <div className="grid gap-6 xl:grid-cols-[.85fr_1.4fr]">
       <div className="space-y-6">

@@ -91,7 +91,10 @@ export default function MembersPage() {
     }));
   }, [supabase]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(timer);
+  }, [load]);
 
   // Download CSV Import Template per PRD Chapter 3.1
   const downloadTemplate = () => {

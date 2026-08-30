@@ -69,6 +69,8 @@ CREATE TABLE users (
     current_company     TEXT,
     current_role_title  TEXT,
     skills              TEXT[] NOT NULL DEFAULT '{}',
+    interests           TEXT[] NOT NULL DEFAULT '{}',
+    career_goal         TEXT,
     -- Active academic arrears/backlogs, e.g. [{"subject": "DBMS", "status": "pending"}].
     -- Read by apps/web/app/student/recovery-hub/page.tsx; no write path exists yet
     -- (no admin UI populates this) — defaults empty, which is a real, correct

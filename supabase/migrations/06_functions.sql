@@ -94,6 +94,13 @@ BEGIN
 END;
 $$;
 
+CREATE OR REPLACE FUNCTION is_hod(p_user_id UUID)
+RETURNS BOOLEAN
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
+AS $$
+    SELECT EXISTS (SELECT 1 FROM users WHERE id = p_user_id AND role_label = 'HOD');
+$$;
+
 -- ──────────────────────────────────────────────────────────────
 -- Scheduling helpers
 -- ──────────────────────────────────────────────────────────────

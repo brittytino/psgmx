@@ -1,0 +1,25 @@
+name: Daily Companion Maintenance
+
+on:
+  schedule:
+    - cron: '30 18 * * *'
+  workflow_dispatch:
+
+jobs:
+  maintain:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Refresh readiness, lifecycle, birthdays, and OTP audit retention
+        env:
+          APP_URL: ${{ vars.APP_API_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          test -n "$APP_URL"
+          test -n "$CRON_SECRET"
+          status=$(curl --silent --show-error --output /tmp/maintenance.json --write-out "%{http_code}" \
+            --request POST \
+            --header "Authorization: Bearer $CRON_SECRET" \
+            --header "Content-Type: application/json" \
+            "$APP_URL/api/cron/daily-maintenance")
+          cat /tmp/maintenance.json
+          test "$status" = "200"

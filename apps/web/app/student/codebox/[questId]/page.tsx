@@ -5,71 +5,7 @@ import Editor from '@monaco-editor/react';
 import { Play, Check, ChevronLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
-const STARTER_CODES: Record<string, string> = {
-  python: `class Solution:
-    def twoSum(self, nums: list[int], target: int) -> list[int]:
-        # Dictionary to map the value to its index
-        seen = {}
-        for index, num in enumerate(nums):
-            complement = target - num
-            if complement in seen:
-                return [seen[complement], index]
-            seen[num] = index
-        return []
-`,
-  javascript: `/**
- * @param {number[]} nums
- * @param {number} target
- * @return {number[]}
- */
-function twoSum(nums, target) {
-    const map = new Map();
-    for (let i = 0; i < nums.length; i++) {
-        const diff = target - nums[i];
-        if (map.has(diff)) {
-            return [map.get(diff), i];
-        }
-        map.set(nums[i], i);
-    }
-    return [];
-}
-`,
-  java: `import java.util.*;
-
-class Solution {
-    public int[] twoSum(int[] nums, int target) {
-        Map<Integer, Integer> map = new HashMap<>();
-        for (int i = 0; i < nums.length; i++) {
-            int complement = target - nums[i];
-            if (map.containsKey(complement)) {
-                return new int[] { map.get(complement), i };
-            }
-            map.put(nums[i], i);
-        }
-        return new int[] {};
-    }
-}
-`,
-  cpp: `#include <vector>
-#include <unordered_map>
-using namespace std;
-
-class Solution {
-public:
-    vector<int> twoSum(vector<int>& nums, int target) {
-        unordered_map<int, int> seen;
-        for (int i = 0; i < (int)nums.size(); ++i) {
-            int complement = target - nums[i];
-            if (seen.count(complement)) {
-                return {seen[complement], i};
-            }
-            seen[nums[i]] = i;
-        }
-        return {};
-    }
-};
-`
-};
+const EMPTY_STARTER = '# Read from stdin and print the exact required output.\n'
 
 export default function CodeBoxPage({ params }: { params: Promise<{ questId: string }> }) {
   const [questId, setQuestId] = useState<string>('');
@@ -81,7 +17,8 @@ export default function CodeBoxPage({ params }: { params: Promise<{ questId: str
   const [quest, setQuest] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [language, setLanguage] = useState('python');
-  const [code, setCode] = useState(STARTER_CODES.python);
+  const [code, setCode] = useState(EMPTY_STARTER);
+  const [loadError, setLoadError] = useState('');
   
   const [output, setOutput] = useState('');
   const [isEvaluating, setIsEvaluating] = useState(false);
@@ -100,9 +37,7 @@ export default function CodeBoxPage({ params }: { params: Promise<{ questId: str
 
   const handleLanguageChange = (newLang: string) => {
     setLanguage(newLang);
-    if (STARTER_CODES[newLang]) {
-      setCode(STARTER_CODES[newLang]);
-    }
+    setCode(quest?.starter_code_json?.[newLang] || '');
   };
 
   useEffect(() => {
@@ -120,24 +55,14 @@ export default function CodeBoxPage({ params }: { params: Promise<{ questId: str
 
         if (questData) {
           setQuest(questData);
+          setCode(questData.starter_code_json?.python || EMPTY_STARTER);
           setLoading(false);
           return;
         }
       } catch (err) {
-        console.warn('Could not load quest from Supabase, using default template:', err);
+        console.warn('Could not load quest from Supabase:', err);
       }
-
-      // Default sample quest template
-      setQuest({
-        id: questId,
-        title: 'Two Sum',
-        problem_md: 'Given an array of integers `nums` and an integer `target`, return indices of the two numbers such that they add up to `target`.\n\nYou may assume that each input would have exactly one solution, and you may not use the same element twice.\n\nYou can return the answer in any order.',
-        allowed_languages: ['python', 'java', 'cpp', 'javascript'],
-        sample_cases_json: [
-          { input: '[2,7,11,15]\n9', expected_output: '[0,1]' },
-          { input: '[3,2,4]\n6', expected_output: '[1,2]' }
-        ]
-      });
+      setLoadError('This quest is unavailable or is not assigned to your batch.');
       setLoading(false);
     };
     fetchQuest();
@@ -147,7 +72,8 @@ export default function CodeBoxPage({ params }: { params: Promise<{ questId: str
     setIsEvaluating(true);
     setOutput('Running test case in sandbox...');
     try {
-      const sample = quest?.sample_cases_json?.[0] || { input: '[2,7,11,15]\n9' };
+      const sample = quest?.sample_cases_json?.[0];
+      if (!sample) throw new Error('This quest has no visible sample case.');
       
       const res = await fetch('/api/codebox/run', {
         method: 'POST',
@@ -159,12 +85,12 @@ export default function CodeBoxPage({ params }: { params: Promise<{ questId: str
       if (res.ok) {
         let out = data.stdout || '';
         if (data.stderr) out += '\n' + data.stderr;
-        setOutput(out || '[0, 1]');
+        setOutput(out || '(program completed with no output)');
       } else {
         setOutput('Error: ' + (data.error || 'Execution failed.'));
       }
-    } catch {
-      setOutput('[0, 1]\nProgram executed successfully.');
+    } catch (error) {
+      setOutput(`Error: ${error instanceof Error ? error.message : 'Execution failed.'}`);
     }
     setIsEvaluating(false);
   };
@@ -181,14 +107,15 @@ export default function CodeBoxPage({ params }: { params: Promise<{ questId: str
       });
       
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Submission could not be verified.');
       setResult(data);
       if (data.is_verified_complete) {
         setOutput('Verification Passed! ✅ All test cases passed.');
       } else {
-        setOutput(`Verification Status: ${data.verdict}\nTests Passed: ${data.test_results?.passed_count || 2}/${data.test_results?.total_count || 2}`);
+        setOutput(`Verification status: ${data.verdict}\nTests passed: ${data.test_results?.passed_count ?? 0}/${data.test_results?.total_count ?? 0}${data.message ? `\n${data.message}` : ''}`);
       }
-    } catch {
-      setOutput('Verification Passed! ✅ All test cases passed.');
+    } catch (error) {
+      setOutput(`Submission error: ${error instanceof Error ? error.message : 'Verification failed.'}`);
     }
     setIsEvaluating(false);
   };
@@ -197,10 +124,14 @@ export default function CodeBoxPage({ params }: { params: Promise<{ questId: str
     return <div className="min-h-screen flex items-center justify-center bg-gray-50 text-gray-500 font-sans">Loading CodeBox...</div>;
   }
 
+  if (loadError || !quest) {
+    return <div className="grid min-h-screen place-items-center bg-gray-50 p-6"><div className="max-w-md rounded-2xl border border-gray-200 bg-white p-8 text-center"><h1 className="text-xl font-bold text-gray-900">Quest unavailable</h1><p className="mt-2 text-sm text-gray-600">{loadError}</p><Link href="/student/train" className="mt-5 inline-block font-bold text-primary-purple">Return to Train</Link></div></div>;
+  }
+
   return (
-    <div className="flex flex-col h-screen bg-gray-100 font-sans">
+    <div className="flex min-h-screen flex-col bg-gray-100 font-sans lg:h-screen">
       {/* Header */}
-      <header className="h-14 bg-white border-b border-gray-200 flex items-center justify-between px-6 shrink-0">
+      <header className="min-h-14 bg-white border-b border-gray-200 flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 shrink-0">
         <div className="flex items-center gap-4">
           <Link href="/student" className="text-gray-400 hover:text-gray-900 transition-colors">
             <ChevronLeft className="w-5 h-5" />
@@ -240,9 +171,9 @@ export default function CodeBoxPage({ params }: { params: Promise<{ questId: str
       </header>
 
       {/* Main Content */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-visible lg:flex-row lg:overflow-hidden">
         {/* Left Panel: Problem Statement */}
-        <div className="w-[40%] bg-white border-r border-gray-200 p-6 overflow-y-auto">
+        <div className="w-full bg-white border-r border-gray-200 p-5 sm:p-6 overflow-y-auto lg:w-[40%]">
           <h2 className="text-xl font-bold text-gray-900 mb-4">Problem Statement</h2>
           <div className="prose prose-sm text-gray-700 max-w-none whitespace-pre-wrap leading-relaxed">
             {quest.problem_md}
@@ -268,14 +199,14 @@ export default function CodeBoxPage({ params }: { params: Promise<{ questId: str
         </div>
 
         {/* Right Panel: Editor & Output */}
-        <div className="flex-1 flex flex-col bg-[#1e1e1e]">
-          <div className="flex-1 relative">
+        <div className="flex min-h-[720px] flex-1 flex-col bg-[#1e1e1e] lg:min-h-0">
+          <div className="min-h-[480px] flex-1 relative">
             <Editor
               height="100%"
               language={language === 'c' || language === 'cpp' ? 'cpp' : language}
               theme="vs-dark"
               value={code}
-              onChange={(val) => setCode(val || '')}
+              onChange={(val: string | undefined) => setCode(val || '')}
               options={{
                 minimap: { enabled: false },
                 fontSize: 14,

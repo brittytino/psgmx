@@ -52,6 +52,17 @@ class EcampusService {
     }
   }
 
+  Future<EcampusWeeklyTimetable?> getWeeklyTimetable(String rollno) async {
+    final result = await _supabase
+        .from('ecampus_weekly_timetable')
+        .select('reg_no, week_start, data, synced_at')
+        .eq('reg_no', rollno)
+        .maybeSingle();
+    return result == null
+        ? null
+        : EcampusWeeklyTimetable.fromSupabase(result);
+  }
+
   Stream<EcampusAttendance?> attendanceStream(String rollno) {
     return _supabase
         .from('ecampus_attendance')
@@ -59,5 +70,16 @@ class EcampusService {
         .eq('reg_no', rollno)
         .map((rows) =>
             rows.isEmpty ? null : EcampusAttendance.fromSupabase(rows.first));
+  }
+
+
+  Stream<EcampusWeeklyTimetable?> timetableStream(String rollno) {
+    return _supabase
+        .from('ecampus_weekly_timetable')
+        .stream(primaryKey: ['id'])
+        .eq('reg_no', rollno)
+        .map((rows) => rows.isEmpty
+            ? null
+            : EcampusWeeklyTimetable.fromSupabase(rows.first));
   }
 }

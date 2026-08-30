@@ -3,27 +3,16 @@
 import React, { useState, useEffect } from 'react'
 import { Bell, Github, Linkedin, Loader2, LogOut, Save, Settings, ShieldCheck, UserRound, Code2, Sparkles, CheckCircle2, Sliders, Volume2, Globe } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { getCurrentProfile, DEFAULT_STUDENT_UUID } from '@/lib/current-profile'
+import { getCurrentProfile } from '@/lib/current-profile'
 
 export default function StudentSettingsPage() {
   const supabase = React.useMemo(() => createClient(), [])
   const [profile, setProfile] = useState<any>({
-    id: DEFAULT_STUDENT_UUID,
-    name: 'Britty Tino',
-    email: '25mx354@psgtech.ac.in',
-    reg_no: '25MX354',
-    role_label: 'Student',
-    batch: '25MX (G1)',
+    id: '', name: '', email: '', reg_no: '', role_label: '', batch: '',
     batch_id: null,
-    linkedin_url: 'https://linkedin.com/in/brittytino',
-    github_url: 'https://github.com/brittytino',
-    leetcode_username: 'brittytino',
-    skills: 'Python, TypeScript, React, PostgreSQL, Docker',
-    mentorship_open: true,
-    task_reminders_enabled: true,
-    attendance_alerts_enabled: true,
-    announcements_enabled: true,
-    leetcode_notifications_enabled: true,
+    linkedin_url: '', github_url: '', leetcode_username: '', skills: '',
+    mentorship_open: false, task_reminders_enabled: true, attendance_alerts_enabled: true,
+    announcements_enabled: true, leetcode_notifications_enabled: true,
   })
 
   const [loading, setLoading] = useState(true)
@@ -41,22 +30,18 @@ export default function StudentSettingsPage() {
           setProfile((prev: any) => ({
             ...prev,
             ...me,
-            name: me.name || prev.name,
-            email: me.email || prev.email,
-            reg_no: me.reg_no || prev.reg_no,
-            batch: me.batch || prev.batch,
-            role_label: me.role_label || prev.role_label,
-            linkedin_url: me.linkedin_url || me.linkedin || prev.linkedin_url,
-            github_url: me.github_url || me.github || prev.github_url,
-            leetcode_username: me.leetcode_username || prev.leetcode_username,
-            skills: me.skills || prev.skills,
+            name: me.name || '', email: me.email || '', reg_no: me.reg_no || '',
+            batch: me.batch || '', role_label: me.role_label || '',
+            linkedin_url: me.linkedin_url || me.linkedin || '',
+            github_url: me.github_url || me.github || '',
+            leetcode_username: me.leetcode_username || '', skills: me.skills || '',
             mentorship_open: me.mentorship_open ?? prev.mentorship_open,
             task_reminders_enabled: me.task_reminders_enabled ?? prev.task_reminders_enabled,
             attendance_alerts_enabled: me.attendance_alerts_enabled ?? prev.attendance_alerts_enabled,
             announcements_enabled: me.announcements_enabled ?? prev.announcements_enabled,
             leetcode_notifications_enabled: me.leetcode_notifications_enabled ?? prev.leetcode_notifications_enabled,
           }))
-        }
+        } else setMessage('Your signed-in profile could not be loaded.')
       } catch (err) {
         console.warn('Profile loading note:', err)
       } finally {
@@ -88,13 +73,11 @@ export default function StudentSettingsPage() {
         })
       })
 
-      if (res.ok) {
-        setMessage('Your settings and preferences have been successfully updated!')
-      } else {
-        setMessage('Preferences saved to your local profile session.')
-      }
-    } catch {
-      setMessage('Preferences saved to your local profile session.')
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(body.error || 'Settings could not be saved.')
+      setMessage('Your settings and preferences have been updated.')
+    } catch (cause) {
+      setMessage(cause instanceof Error ? cause.message : 'Settings could not be saved.')
     } finally {
       setSaving(false)
       setTimeout(() => setMessage(''), 4000)
@@ -137,15 +120,15 @@ export default function StudentSettingsPage() {
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
           <div className="rounded-2xl bg-page-bg p-4 border border-border-light">
             <p className="text-[10px] font-black uppercase tracking-wider text-text-muted">Register Number</p>
-            <p className="mt-1 font-black text-text-main text-base">{profile.reg_no || '25MX354'}</p>
+            <p className="mt-1 font-black text-text-main text-base">{profile.reg_no || '—'}</p>
           </div>
           <div className="rounded-2xl bg-page-bg p-4 border border-border-light">
             <p className="text-[10px] font-black uppercase tracking-wider text-text-muted">Assigned Batch</p>
-            <p className="mt-1 font-black text-text-main text-base">{profile.batch || '25MX (G1)'}</p>
+            <p className="mt-1 font-black text-text-main text-base">{profile.batch || '—'}</p>
           </div>
           <div className="rounded-2xl bg-page-bg p-4 border border-border-light">
             <p className="text-[10px] font-black uppercase tracking-wider text-text-muted">Role & Permission</p>
-            <p className="mt-1 font-black text-primary-purple text-base">{profile.role_label || 'Student'}</p>
+            <p className="mt-1 font-black text-primary-purple text-base">{profile.role_label || '—'}</p>
           </div>
         </div>
 

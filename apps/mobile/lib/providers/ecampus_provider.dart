@@ -11,14 +11,17 @@ class EcampusProvider extends ChangeNotifier {
   final EcampusService _service = EcampusService();
   EcampusStatus _status = EcampusStatus.initial;
   EcampusAttendance? _attendance;
+  EcampusWeeklyTimetable? _timetable;
   String? _errorMessage;
   String? _currentRollno;
   DateTime? _lastSyncedAt;
   bool _isLoginFailed = false;
   StreamSubscription<EcampusAttendance?>? _subscription;
+  StreamSubscription<EcampusWeeklyTimetable?>? _timetableSubscription;
 
   EcampusStatus get status => _status;
   EcampusAttendance? get attendance => _attendance;
+  EcampusWeeklyTimetable? get timetable => _timetable;
   String? get errorMessage => _errorMessage;
   DateTime? get lastSyncedAt => _lastSyncedAt;
   bool get isLoading => _status == EcampusStatus.loading;
@@ -31,13 +34,24 @@ class EcampusProvider extends ChangeNotifier {
     _currentRollno = rollno;
     _setStatus(EcampusStatus.loading);
     try {
-      _attendance = await _service.getAttendance(rollno);
+      final results = await Future.wait([
+        _service.getAttendance(rollno),
+        _service.getWeeklyTimetable(rollno),
+      ]);
+      _attendance = results[0] as EcampusAttendance?;
+      _timetable = results[1] as EcampusWeeklyTimetable?;
       _lastSyncedAt = _attendance?.syncedAt;
       _setStatus(EcampusStatus.loaded);
       await _subscription?.cancel();
       _subscription = _service.attendanceStream(rollno).listen((attendance) {
         _attendance = attendance;
         _lastSyncedAt = attendance?.syncedAt;
+        notifyListeners();
+      });
+      await _timetableSubscription?.cancel();
+      _timetableSubscription =
+          _service.timetableStream(rollno).listen((timetable) {
+        _timetable = timetable;
         notifyListeners();
       });
     } catch (error) {
@@ -50,7 +64,12 @@ class EcampusProvider extends ChangeNotifier {
     _setStatus(EcampusStatus.syncing);
     try {
       await _service.syncUser(_currentRollno!);
-      _attendance = await _service.getAttendance(_currentRollno!);
+      final results = await Future.wait([
+        _service.getAttendance(_currentRollno!),
+        _service.getWeeklyTimetable(_currentRollno!),
+      ]);
+      _attendance = results[0] as EcampusAttendance?;
+      _timetable = results[1] as EcampusWeeklyTimetable?;
       _lastSyncedAt = _attendance?.syncedAt;
       _setStatus(EcampusStatus.loaded);
     } catch (error) {
@@ -82,9 +101,11 @@ class EcampusProvider extends ChangeNotifier {
 
   void reset() {
     _subscription?.cancel();
+    _timetableSubscription?.cancel();
     _subscription = null;
     _status = EcampusStatus.initial;
     _attendance = null;
+    _timetable = null;
     _errorMessage = null;
     _currentRollno = null;
     _lastSyncedAt = null;
@@ -95,6 +116,7 @@ class EcampusProvider extends ChangeNotifier {
   @override
   void dispose() {
     _subscription?.cancel();
+    _timetableSubscription?.cancel();
     super.dispose();
   }
 }

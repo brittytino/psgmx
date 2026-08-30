@@ -49,6 +49,11 @@ export default function FirstLoginPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           linkedin_url: formData.linkedin || null,
+          github_url: formData.github || null,
+          skills: formData.skills,
+          interests: formData.interests,
+          career_goal: formData.careerGoal,
+          arrears: formData.hasArrears === 'yes' ? formData.arrearSubjects : [],
         }),
       });
 
@@ -72,7 +77,7 @@ export default function FirstLoginPage() {
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold text-white tracking-tight">Welcome to PSGMX</h1>
           <p className="mt-2 text-sm text-slate-400">
-            For security, you must change your temporary password. Please complete your professional profile to activate your account.
+            Confirm your preparation profile. Your first real calibration happens in Daily Five using server-selected questions.
           </p>
         </div>
 

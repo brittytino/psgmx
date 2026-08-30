@@ -1,138 +1,297 @@
-'use client'
+'use client';
 
-import React from 'react'
-import { BookOpenCheck, CalendarRange, CirclePause, CirclePlay, Plus, Route, ShieldCheck } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
-import { getCurrentProfile } from '@/lib/current-profile'
-import type { Database } from '@/../../supabase/types/database.types'
+import React from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Building2, Calendar, Plus, Search, ShieldCheck, Tag, Loader2, FileText, CheckCircle, Clock } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
+import { getCurrentProfile } from '@/lib/current-profile';
 
-type Track = Database['public']['Tables']['preparation_tracks']['Row']
-
-const emptyForm = {
-  title: '',
-  summary: '',
-  stage: 'all' as Track['stage'],
-  difficulty: 'adaptive' as Track['difficulty'],
-  skillDomains: '',
-  estimatedWeeks: 4,
+interface Company {
+  id: string;
+  name: string;
+  visit_date: string;
+  roles_offered: string[];
+  package_band: string | null;
+  eligibility: string | null;
+  rounds: Array<{ name: string; description?: string }>;
+  batch_id: string;
+  created_at: string;
 }
 
-export default function PreparationTracksPage() {
-  const supabase = React.useMemo(() => createClient(), [])
-  const [tracks, setTracks] = React.useState<Track[]>([])
-  const [profile, setProfile] = React.useState<{ id: string; batch_id: string | null } | null>(null)
-  const [form, setForm] = React.useState(emptyForm)
-  const [loading, setLoading] = React.useState(true)
-  const [busy, setBusy] = React.useState(false)
-  const [error, setError] = React.useState('')
-  const [message, setMessage] = React.useState('')
+interface Batch {
+  id: string;
+  batch_code: string;
+  status: string;
+}
+
+export default function CompaniesPage() {
+  const supabase = React.useMemo(() => createClient(), []);
+  const [companies, setCompanies] = React.useState<Company[]>([]);
+  const [batches, setBatches] = React.useState<Batch[]>([]);
+  const [selectedBatchId, setSelectedBatchId] = React.useState<string>('all');
+  const [loading, setLoading] = React.useState(true);
+  const [query, setQuery] = React.useState('');
+
+  // Create modal state
+  const [showCreate, setShowCreate] = React.useState(false);
+  const [busy, setBusy] = React.useState(false);
+  const [message, setMessage] = React.useState('');
+  const [error, setError] = React.useState('');
+
+  const [form, setForm] = React.useState({
+    name: '',
+    visitDate: '',
+    roles: '',
+    packageBand: '',
+    eligibility: '',
+    batchId: '',
+    roundCount: 3,
+  });
 
   const load = React.useCallback(async () => {
-    setLoading(true)
-    setError('')
+    setLoading(true);
+    setError('');
     try {
-      const me = await getCurrentProfile(supabase)
-      if (!me) throw new Error('Your PSGMX profile could not be loaded.')
-      setProfile({ id: me.id, batch_id: me.batch_id })
-      let query = supabase.from('preparation_tracks').select('*').order('created_at', { ascending: false })
-      if (me.batch_id) query = query.or(`batch_id.is.null,batch_id.eq.${me.batch_id}`)
-      const { data, error: loadError } = await query
-      if (loadError) throw loadError
-      setTracks(data ?? [])
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Preparation tracks could not be loaded.')
+      const me = await getCurrentProfile(supabase);
+      if (!me) throw new Error('Profile not loaded');
+
+      const [{ data: compData }, { data: batchData }] = await Promise.all([
+        supabase.from('companies').select('*').order('visit_date', { ascending: false }),
+        supabase.from('batches').select('id, batch_code, status').order('batch_code', { ascending: false }),
+      ]);
+
+      setCompanies((compData || []) as Company[]);
+      setBatches((batchData || []) as Batch[]);
+      if (me.batch_id) setForm(prev => ({ ...prev, batchId: me.batch_id! }));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load companies.');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [supabase])
+  }, [supabase]);
 
-  React.useEffect(() => { void load() }, [load])
+  React.useEffect(() => { void load(); }, [load]);
 
-  async function createTrack(event: React.FormEvent) {
-    event.preventDefault()
-    if (!profile) return
-    setBusy(true)
-    setError('')
-    setMessage('')
-    const skillDomains = form.skillDomains.split(',').map((item) => item.trim()).filter(Boolean)
-    const { error: insertError } = await supabase.from('preparation_tracks').insert({
-      batch_id: profile.batch_id,
-      title: form.title.trim(),
-      summary: form.summary.trim(),
-      stage: form.stage,
-      difficulty: form.difficulty,
-      skill_domains: skillDomains,
-      estimated_weeks: form.estimatedWeeks,
-      created_by: profile.id,
-    })
-    if (insertError) setError(insertError.message)
-    else {
-      setMessage('Preparation track published for this batch.')
-      setForm(emptyForm)
-      await load()
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.name.trim() || !form.visitDate || !form.batchId) return;
+    setBusy(true);
+    setError('');
+    setMessage('');
+
+    try {
+      const me = await getCurrentProfile(supabase);
+      const rolesArr = form.roles.split(',').map(r => r.trim()).filter(Boolean);
+      const sampleRounds = Array.from({ length: form.roundCount }, (_, i) => ({
+        name: `Round ${i + 1}`,
+        description: i === 0 ? 'Online Aptitude & Technical MCQ' : i === 1 ? 'Technical Interview' : 'HR & Leadership Round',
+      }));
+
+      const { error: insErr } = await supabase.from('companies').insert({
+        name: form.name.trim(),
+        visit_date: form.visitDate,
+        roles_offered: rolesArr,
+        package_band: form.packageBand.trim() || null,
+        eligibility: form.eligibility.trim() || null,
+        rounds: sampleRounds,
+        batch_id: form.batchId,
+        created_by: me?.id || null,
+      });
+
+      if (insErr) throw insErr;
+
+      setMessage('Company record created successfully.');
+      setShowCreate(false);
+      setForm({ name: '', visitDate: '', roles: '', packageBand: '', eligibility: '', batchId: form.batchId, roundCount: 3 });
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create company record.');
+    } finally {
+      setBusy(false);
     }
-    setBusy(false)
-  }
+  };
 
-  async function toggleTrack(track: Track) {
-    setError('')
-    const { error: updateError } = await supabase
-      .from('preparation_tracks')
-      .update({ is_active: !track.is_active, updated_at: new Date().toISOString() })
-      .eq('id', track.id)
-    if (updateError) return setError(updateError.message)
-    setTracks((current) => current.map((item) => item.id === track.id
-      ? { ...item, is_active: !item.is_active, updated_at: new Date().toISOString() }
-      : item))
-  }
+  const filtered = companies.filter(c => {
+    const matchesBatch = selectedBatchId === 'all' || c.batch_id === selectedBatchId;
+    const term = query.toLowerCase().trim();
+    const matchesQuery = !term ||
+      c.name.toLowerCase().includes(term) ||
+      (c.roles_offered || []).some(r => r.toLowerCase().includes(term)) ||
+      (c.package_band || '').toLowerCase().includes(term);
+    return matchesBatch && matchesQuery;
+  });
 
-  return <div className="mx-auto max-w-6xl space-y-6">
-    <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-      <div>
-        <div className="mb-2 flex items-center gap-2 text-xs font-black uppercase tracking-[.16em] text-primary-purple">
-          <Route className="h-4 w-4" /> Preparation programme
-        </div>
-        <h1 className="text-3xl font-black tracking-tight">Preparation Tracks</h1>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-text-muted">Build reusable readiness journeys by stage and skill. PSGMX does not create or manage official placement drives.</p>
-      </div>
-      <div className="flex max-w-md gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs font-semibold leading-5 text-amber-900">
-        <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0" />
-        Official company, eligibility, application and shortlist information stays in NEO PAT.
-      </div>
-    </header>
+  const batchMap = new Map(batches.map(b => [b.id, b.batch_code]));
 
-    {error && <div role="alert" className="flex items-center justify-between rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700"><span>{error}</span><button onClick={() => void load()} className="rounded-lg px-3 py-1.5 hover:bg-red-100">Retry</button></div>}
-    {message && <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-bold text-emerald-800">{message}</div>}
-
-    <section className="grid gap-6 xl:grid-cols-[.9fr_1.5fr]">
-      <form onSubmit={createTrack} className="h-fit space-y-4 rounded-3xl border border-border-light bg-white p-6 shadow-sm">
+  return (
+    <div className="max-w-6xl mx-auto space-y-7 pb-10">
+      <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h2 className="text-lg font-black">Create a track</h2>
-          <p className="mt-1 text-xs text-text-muted">One clear outcome, a realistic duration and reusable skills.</p>
-        </div>
-        <label className="block text-xs font-bold text-text-muted">Track title<input required minLength={3} maxLength={120} value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} placeholder="Core CS interview foundation" className="mt-2 w-full rounded-xl border border-border-light px-4 py-3 text-sm text-text-main outline-none focus:border-primary-purple" /></label>
-        <label className="block text-xs font-bold text-text-muted">Preparation outcome<textarea required minLength={10} maxLength={1000} value={form.summary} onChange={(event) => setForm({ ...form, summary: event.target.value })} placeholder="What will students be able to demonstrate?" className="mt-2 min-h-28 w-full resize-y rounded-xl border border-border-light px-4 py-3 text-sm text-text-main outline-none focus:border-primary-purple" /></label>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="text-xs font-bold text-text-muted">Stage<select value={form.stage} onChange={(event) => setForm({ ...form, stage: event.target.value as Track['stage'] })} className="mt-2 w-full rounded-xl border border-border-light px-3 py-3 text-sm text-text-main"><option value="all">All stages</option><option value="foundation">Junior · Foundation</option><option value="proof">Senior · Proof</option></select></label>
-          <label className="text-xs font-bold text-text-muted">Difficulty<select value={form.difficulty} onChange={(event) => setForm({ ...form, difficulty: event.target.value as Track['difficulty'] })} className="mt-2 w-full rounded-xl border border-border-light px-3 py-3 text-sm text-text-main"><option value="adaptive">Adaptive</option><option value="foundation">Foundation</option><option value="intermediate">Intermediate</option><option value="advanced">Advanced</option></select></label>
-        </div>
-        <label className="block text-xs font-bold text-text-muted">Skill domains<input value={form.skillDomains} onChange={(event) => setForm({ ...form, skillDomains: event.target.value })} placeholder="DBMS, OS, communication" className="mt-2 w-full rounded-xl border border-border-light px-4 py-3 text-sm text-text-main outline-none focus:border-primary-purple" /></label>
-        <label className="block text-xs font-bold text-text-muted">Estimated weeks<input required type="number" min={1} max={24} value={form.estimatedWeeks} onChange={(event) => setForm({ ...form, estimatedWeeks: Number(event.target.value) })} className="mt-2 w-full rounded-xl border border-border-light px-4 py-3 text-sm text-text-main outline-none focus:border-primary-purple" /></label>
-        <button disabled={busy || !profile} className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary-purple px-5 py-3 text-sm font-black text-white disabled:opacity-50"><Plus className="h-4 w-4" />{busy ? 'Publishing…' : 'Publish preparation track'}</button>
-      </form>
-
-      <div className="space-y-4">
-        {loading && <div className="rounded-3xl border border-border-light bg-white p-8"><div className="h-4 w-40 animate-pulse rounded bg-page-bg"/><div className="mt-4 h-24 animate-pulse rounded-2xl bg-page-bg"/></div>}
-        {!loading && tracks.length === 0 && <div className="rounded-3xl border border-dashed border-border-light bg-white p-14 text-center"><BookOpenCheck className="mx-auto h-10 w-10 text-primary-purple"/><h2 className="mt-4 text-lg font-black">No preparation tracks yet</h2><p className="mt-2 text-sm text-text-muted">Create the first readiness journey for this batch.</p></div>}
-        {tracks.map((track) => <article key={track.id} className={`rounded-3xl border bg-white p-6 shadow-sm ${track.is_active ? 'border-border-light' : 'border-dashed border-border-light opacity-70'}`}>
-          <div className="flex items-start justify-between gap-4">
-            <div><div className="flex flex-wrap items-center gap-2"><span className="rounded-full bg-primary-purple/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-primary-purple">{track.stage}</span><span className="rounded-full bg-page-bg px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-text-muted">{track.difficulty}</span></div><h2 className="mt-3 text-xl font-black">{track.title}</h2></div>
-            <button onClick={() => void toggleTrack(track)} className="rounded-xl border border-border-light p-2.5 text-text-muted transition hover:text-primary-purple" title={track.is_active ? 'Pause track' : 'Activate track'}>{track.is_active ? <CirclePause className="h-5 w-5"/> : <CirclePlay className="h-5 w-5"/>}</button>
+          <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-primary-purple mb-1">
+            <Building2 className="w-4 h-4" /> Placement Records Archive
           </div>
-          <p className="mt-3 text-sm leading-6 text-text-muted">{track.summary}</p>
-          <div className="mt-5 flex flex-wrap items-center gap-3 text-xs font-bold text-text-muted"><span className="flex items-center gap-1.5"><CalendarRange className="h-4 w-4"/>{track.estimated_weeks} weeks</span>{track.skill_domains.map((skill) => <span key={skill} className="rounded-lg bg-page-bg px-2.5 py-1.5">{skill}</span>)}</div>
-        </article>)}
+          <h1 className="text-3xl font-black text-text-main">Company Drive Directory</h1>
+          <p className="text-sm text-text-muted mt-1">
+            Historical placement drive records from 23MX, 24MX, and current active batches.
+          </p>
+        </div>
+        <button
+          onClick={() => setShowCreate(!showCreate)}
+          className="flex items-center gap-2 px-5 py-3 bg-primary-purple text-white rounded-xl text-xs font-black self-start sm:self-auto">
+          <Plus className="w-4 h-4" /> {showCreate ? 'Cancel' : 'Record Company Visit'}
+        </button>
+      </header>
+
+      {/* Warning banner */}
+      <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-2xl text-xs font-semibold text-amber-900">
+        <ShieldCheck className="w-5 h-5 shrink-0 text-amber-700 mt-0.5" />
+        <span>
+          Official company registration, live shortlists, and eligibility criteria are managed on <strong>NEO PAT</strong>. Records here preserve historical drive rounds and preparation patterns.
+        </span>
       </div>
-    </section>
-  </div>
+
+      {error && <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-2xl text-sm font-bold">{error}</div>}
+      {message && <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl text-sm font-bold">{message}</div>}
+
+      {/* Create Modal Form */}
+      <AnimatePresence>
+        {showCreate && (
+          <motion.form
+            initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+            onSubmit={handleCreate}
+            className="bg-white border border-border-light rounded-3xl p-6 shadow-sm space-y-4 overflow-hidden">
+            <h2 className="text-base font-black text-text-main">Record Historical / Upcoming Company Visit</h2>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="text-xs font-bold text-text-muted">
+                Company Name *
+                <input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
+                  placeholder="e.g. Caterpillar, Zoho, Accenture" className="mt-1 w-full px-4 py-2.5 border border-border-light rounded-xl text-sm outline-none focus:border-primary-purple" />
+              </label>
+              <label className="text-xs font-bold text-text-muted">
+                Visit Date *
+                <input required type="date" value={form.visitDate} onChange={e => setForm({ ...form, visitDate: e.target.value })}
+                  className="mt-1 w-full px-4 py-2.5 border border-border-light rounded-xl text-sm outline-none focus:border-primary-purple" />
+              </label>
+              <label className="text-xs font-bold text-text-muted">
+                Batch *
+                <select required value={form.batchId} onChange={e => setForm({ ...form, batchId: e.target.value })}
+                  className="mt-1 w-full px-4 py-2.5 border border-border-light rounded-xl text-sm outline-none">
+                  <option value="">Select Batch</option>
+                  {batches.map(b => <option key={b.id} value={b.id}>{b.batch_code} ({b.status})</option>)}
+                </select>
+              </label>
+              <label className="text-xs font-bold text-text-muted">
+                Package Band
+                <input value={form.packageBand} onChange={e => setForm({ ...form, packageBand: e.target.value })}
+                  placeholder="e.g. 8–12 LPA" className="mt-1 w-full px-4 py-2.5 border border-border-light rounded-xl text-sm outline-none focus:border-primary-purple" />
+              </label>
+              <label className="text-xs font-bold text-text-muted sm:col-span-2">
+                Roles Offered (comma-separated)
+                <input value={form.roles} onChange={e => setForm({ ...form, roles: e.target.value })}
+                  placeholder="Software Engineer, Data Analyst, Cloud Consultant" className="mt-1 w-full px-4 py-2.5 border border-border-light rounded-xl text-sm outline-none focus:border-primary-purple" />
+              </label>
+              <label className="text-xs font-bold text-text-muted sm:col-span-2">
+                Eligibility Criteria
+                <input value={form.eligibility} onChange={e => setForm({ ...form, eligibility: e.target.value })}
+                  placeholder="CGPA 7.5+, No standing arrears" className="mt-1 w-full px-4 py-2.5 border border-border-light rounded-xl text-sm outline-none focus:border-primary-purple" />
+              </label>
+            </div>
+            <div className="flex justify-end gap-3 pt-2">
+              <button type="button" onClick={() => setShowCreate(false)} className="px-5 py-2.5 border border-border-light rounded-xl text-xs font-bold text-text-muted">Cancel</button>
+              <button type="submit" disabled={busy} className="px-6 py-2.5 bg-primary-purple text-white rounded-xl text-xs font-black disabled:opacity-50 flex items-center gap-2">
+                {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Record'}
+              </button>
+            </div>
+          </motion.form>
+        )}
+      </AnimatePresence>
+
+      {/* Controls: Search & Batch Filter */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-4 top-3.5 w-4 h-4 text-text-muted" />
+          <input value={query} onChange={e => setQuery(e.target.value)}
+            placeholder="Search by company, role, or package band…"
+            className="w-full pl-11 pr-4 py-3 bg-white border border-border-light rounded-2xl text-sm outline-none focus:border-primary-purple" />
+        </div>
+        <select value={selectedBatchId} onChange={e => setSelectedBatchId(e.target.value)}
+          className="px-4 py-3 bg-white border border-border-light rounded-2xl text-xs font-bold outline-none">
+          <option value="all">All Batches</option>
+          {batches.map(b => <option key={b.id} value={b.id}>{b.batch_code}</option>)}
+        </select>
+      </div>
+
+      {/* Grid of Companies */}
+      {loading ? (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {[1,2,3,4,5,6].map(i => <div key={i} className="h-44 bg-white border border-border-light rounded-3xl animate-pulse" />)}
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="bg-white border border-dashed border-border-light rounded-3xl p-14 text-center">
+          <Building2 className="w-10 h-10 text-primary-purple mx-auto mb-3" />
+          <h3 className="text-lg font-black text-text-main">No Company Records Found</h3>
+          <p className="text-sm text-text-muted mt-1">Try clearing filters or add a new record above.</p>
+        </div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {filtered.map(comp => {
+            const batchCode = batchMap.get(comp.batch_id) || 'Historical';
+            const roundsArr = (Array.isArray(comp.rounds) ? comp.rounds : []) as Array<{ name: string; description?: string }>;
+            return (
+              <div key={comp.id} className="bg-white border border-border-light rounded-3xl p-6 shadow-sm hover:shadow-md transition-shadow space-y-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-primary-purple px-2.5 py-1 bg-violet-50 rounded-full">
+                      {batchCode} Batch
+                    </span>
+                    <h2 className="text-lg font-black text-text-main mt-2">{comp.name}</h2>
+                  </div>
+                  {comp.package_band && (
+                    <span className="text-xs font-black text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full shrink-0">
+                      {comp.package_band}
+                    </span>
+                  )}
+                </div>
+
+                <div className="space-y-2 text-xs text-text-muted">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-3.5 h-3.5 text-primary-purple shrink-0" />
+                    <span>Visited {new Date(comp.visit_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                  </div>
+                  {comp.roles_offered?.length > 0 && (
+                    <div className="flex items-start gap-2">
+                      <Tag className="w-3.5 h-3.5 text-primary-purple shrink-0 mt-0.5" />
+                      <span className="font-bold text-text-main">{comp.roles_offered.join(', ')}</span>
+                    </div>
+                  )}
+                  {comp.eligibility && (
+                    <div className="flex items-start gap-2">
+                      <FileText className="w-3.5 h-3.5 text-primary-purple shrink-0 mt-0.5" />
+                      <span>{comp.eligibility}</span>
+                    </div>
+                  )}
+                </div>
+
+                {roundsArr.length > 0 && (
+                  <div className="pt-3 border-t border-border-light">
+                    <p className="text-[10px] font-black uppercase tracking-wider text-text-muted mb-2">Selection Rounds ({roundsArr.length})</p>
+                    <div className="space-y-1">
+                      {roundsArr.map((r, idx) => (
+                        <div key={idx} className="flex items-center gap-2 text-[11px] font-bold text-text-main">
+                          <span className="w-4 h-4 rounded-full bg-violet-100 text-primary-purple text-[9px] font-black flex items-center justify-center shrink-0">
+                            {idx + 1}
+                          </span>
+                          <span className="truncate">{r.name || `Round ${idx + 1}`}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 }

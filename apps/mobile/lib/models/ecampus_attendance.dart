@@ -105,3 +105,39 @@ class EcampusAttendance {
     );
   }
 }
+
+/// Weekly class timetable cached by the trusted eCampus sync service.
+class EcampusWeeklyTimetable {
+  final String regNo;
+  final DateTime weekStart;
+  final List<String> headers;
+  final List<List<String>> rows;
+  final DateTime syncedAt;
+
+  const EcampusWeeklyTimetable({
+    required this.regNo,
+    required this.weekStart,
+    required this.headers,
+    required this.rows,
+    required this.syncedAt,
+  });
+
+  factory EcampusWeeklyTimetable.fromSupabase(Map<String, dynamic> row) {
+    final data = row['data'] as Map<String, dynamic>? ?? const {};
+    return EcampusWeeklyTimetable(
+      regNo: row['reg_no'] as String? ?? '',
+      weekStart: DateTime.tryParse(row['week_start'] as String? ?? '') ??
+          DateTime.now(),
+      headers: (data['headers'] as List<dynamic>? ?? const [])
+          .map((value) => value.toString())
+          .toList(),
+      rows: (data['rows'] as List<dynamic>? ?? const [])
+          .map((row) => (row as List<dynamic>)
+              .map((value) => value.toString())
+              .toList())
+          .toList(),
+      syncedAt: DateTime.tryParse(row['synced_at'] as String? ?? '') ??
+          DateTime.now(),
+    );
+  }
+}

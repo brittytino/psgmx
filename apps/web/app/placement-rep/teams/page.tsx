@@ -2,12 +2,14 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Users, X, UserCheck } from 'lucide-react';
+import { Plus, Users, X, UserCheck, WandSparkles, GraduationCap } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { getCurrentProfile } from '@/lib/current-profile';
 
 interface StudentRow { id: string; name: string; reg_no: string; team_uuid: string | null }
 interface TeamRow { id: string; team_name: string; team_code: string; target_size: number; team_leader_id: string | null }
+interface FacultyRow { id: string; name: string; email: string }
+interface MentorAssignment { student_id: string; mentor_id: string }
 
 export default function TeamManagementPage() {
   const [batchId, setBatchId] = React.useState<string | null>(null);
@@ -18,21 +20,29 @@ export default function TeamManagementPage() {
   const [newTeamName, setNewTeamName] = React.useState('');
   const [newTeamSize, setNewTeamSize] = React.useState(5);
   const [saving, setSaving] = React.useState(false);
+  const [faculty, setFaculty] = React.useState<FacultyRow[]>([]);
+  const [mentorAssignments, setMentorAssignments] = React.useState<MentorAssignment[]>([]);
+  const [message, setMessage] = React.useState('');
+  const [error, setError] = React.useState('');
 
-  const supabase = createClient();
+  const supabase = React.useMemo(() => createClient(), []);
 
   const load = React.useCallback(async () => {
     const me = await getCurrentProfile(supabase);
     if (!me?.batch_id) { setLoading(false); return; }
     setBatchId(me.batch_id);
 
-    const [{ data: teamRows }, { data: studentRows }] = await Promise.all([
+    const [{ data: teamRows }, { data: studentRows }, { data: facultyRows }, { data: mentorRows }] = await Promise.all([
       supabase.from('teams').select('id, team_name, team_code, target_size, team_leader_id').eq('batch_id', me.batch_id).order('team_name'),
       supabase.from('users').select('id, name, reg_no, team_uuid').eq('batch_id', me.batch_id).eq('role_label', 'Student').order('reg_no'),
+      supabase.from('users').select('id,name,email').in('role_label', ['Faculty', 'HOD']).order('name'),
+      (supabase as any).from('mentor_assignments').select('student_id,mentor_id').eq('batch_id', me.batch_id).eq('active', true),
     ]);
 
     setTeams(teamRows || []);
     setStudents(studentRows || []);
+    setFaculty(facultyRows || []);
+    setMentorAssignments(mentorRows || []);
     setLoading(false);
   }, [supabase]);
 
@@ -62,6 +72,29 @@ export default function TeamManagementPage() {
     if (!error) setStudents((prev) => prev.map((s) => (s.id === studentId ? { ...s, team_uuid: teamId } : s)));
   };
 
+  const autoAssign = async () => {
+    setSaving(true); setError(''); setMessage('');
+    const { data, error: assignError } = await (supabase as any).rpc('auto_assign_unassigned_squads', { p_target_size: newTeamSize });
+    if (assignError) setError(assignError.message);
+    else setMessage(`${data?.assigned ?? 0} students assigned across balanced squads. Individual readiness values were not exposed.`);
+    await load(); setSaving(false);
+  };
+
+  const assignMentor = async (studentId: string, mentorId: string) => {
+    if (!mentorId) return;
+    setError(''); setMessage('');
+    const { error: mentorError } = await (supabase as any).rpc('assign_student_mentor', {
+      p_student_id: studentId,
+      p_mentor_id: mentorId,
+      p_focus_areas: [],
+    });
+    if (mentorError) setError(mentorError.message);
+    else {
+      setMessage('Faculty mentor assigned and audit logged.');
+      await load();
+    }
+  };
+
   const handleSetLeader = async (teamId: string, studentId: string) => {
     const { error } = await supabase.rpc('set_team_leader', { p_team_id: teamId, p_user_id: studentId });
     if (!error) setTeams((prev) => prev.map((t) => (t.id === teamId ? { ...t, team_leader_id: studentId } : t)));
@@ -73,15 +106,17 @@ export default function TeamManagementPage() {
 
   return (
     <div className="space-y-8 max-w-6xl">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-[24px] font-black text-text-main">Team Management</h1>
-        <button
+        <div className="flex flex-wrap gap-2"><button onClick={autoAssign} disabled={saving} className="flex items-center gap-2 rounded-xl border border-primary-purple px-4 py-2.5 text-[13px] font-bold text-primary-purple disabled:opacity-50"><WandSparkles className="h-4 w-4"/>Auto-build squads</button><button
           onClick={() => setShowCreate(true)}
           className="flex items-center gap-2 px-5 py-2.5 bg-primary-purple text-white rounded-xl text-[13px] font-bold hover:bg-deep-violet transition-colors"
         >
           <Plus className="w-4 h-4" /> New Team
-        </button>
+        </button></div>
       </div>
+      {error && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700">{error}</div>}
+      {message && <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-bold text-emerald-800">{message}</div>}
 
       {showCreate && (
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-2xl border border-border-light p-6 flex flex-col sm:flex-row gap-4 items-end">
@@ -91,7 +126,7 @@ export default function TeamManagementPage() {
           </div>
           <div>
             <label className="text-[12px] font-bold text-text-muted block mb-1.5">Target Size</label>
-            <input type="number" min={1} value={newTeamSize} onChange={(e) => setNewTeamSize(Number(e.target.value))} className="w-24 border border-border-light rounded-lg px-3 py-2 text-[14px] outline-none focus:border-primary-purple" />
+            <input type="number" min={3} max={12} value={newTeamSize} onChange={(e) => setNewTeamSize(Number(e.target.value))} className="w-24 border border-border-light rounded-lg px-3 py-2 text-[14px] outline-none focus:border-primary-purple" />
           </div>
           <button onClick={handleCreateTeam} disabled={saving} className="px-5 py-2 bg-primary-purple text-white rounded-lg text-[13px] font-bold disabled:opacity-50">
             {saving ? 'Creating…' : 'Create'}
@@ -154,6 +189,16 @@ export default function TeamManagementPage() {
               </select>
             </div>
           ))}
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-border-light bg-white p-6">
+        <div className="mb-4 flex items-start gap-3"><GraduationCap className="mt-0.5 h-5 w-5 text-primary-purple"/><div><h3 className="text-[15px] font-bold text-text-main">Faculty mentor assignment</h3><p className="mt-1 text-xs text-text-muted">PR assigns the relationship for this batch. Readiness details and private mentoring conversations remain visible only to the student and faculty.</p></div></div>
+        <div className="grid gap-2 lg:grid-cols-2">
+          {students.map((student) => {
+            const assignment = mentorAssignments.find((item) => item.student_id === student.id);
+            return <div key={student.id} className="flex items-center justify-between gap-3 rounded-xl bg-page-bg p-3"><div className="min-w-0"><p className="truncate text-sm font-bold text-text-main">{student.name}</p><p className="text-[11px] text-text-muted">{student.reg_no}</p></div><select value={assignment?.mentor_id || ''} onChange={(event) => void assignMentor(student.id, event.target.value)} className="max-w-[210px] rounded-lg border border-border-light bg-white px-2 py-2 text-xs"><option value="">Choose mentor…</option>{faculty.map((member) => <option key={member.id} value={member.id}>{member.name}</option>)}</select></div>;
+          })}
         </div>
       </div>
     </div>

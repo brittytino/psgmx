@@ -39,7 +39,7 @@ class _RootLayoutState extends State<RootLayout> {
       const ProfileScreen(),
     ];
 
-    // Dynamic Navigation Items based on ACTIVE Role (respects simulation)
+    // Stable companion navigation for the authenticated user.
     final navItems = <NavigationDestination>[
       NavigationDestination(
           icon: const Icon(LucideIcons.home),

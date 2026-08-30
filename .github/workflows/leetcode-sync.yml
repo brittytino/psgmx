@@ -16,13 +16,18 @@ jobs:
     name: Sync LeetCode stats for all connected users
     runs-on: ubuntu-latest
     steps:
-      - name: Call sync-leetcode Edge Function
+      - name: Call PSGMX LeetCode sync
+        env:
+          APP_URL: ${{ vars.APP_API_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
+          test -n "$APP_URL"
+          test -n "$CRON_SECRET"
           HTTP_STATUS=$(curl -s -o /tmp/leetcode_response.json -w "%{http_code}" \
             -X POST \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Authorization: Bearer $CRON_SECRET" \
             -H "Content-Type: application/json" \
-            "${{ secrets.SUPABASE_URL }}/functions/v1/sync-leetcode")
+            "$APP_URL/api/cron/sync-leetcode")
 
           echo "LeetCode sync HTTP status: $HTTP_STATUS"
           cat /tmp/leetcode_response.json

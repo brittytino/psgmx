@@ -1,6 +1,8 @@
 name: Freshness Daemon
 
-# Applies evidence age penalties to student readiness scores.
+# Reclassifies readiness evidence confidence as it ages. Scores are never
+# repeatedly reduced by a scheduled job; the readiness engine consumes the
+# confidence label when it computes the next versioned snapshot.
 # Runs every Sunday at 10:00 AM IST (04:30 UTC).
 # Replaces pg_cron (Supabase Pro feature) — free alternative via GitHub Actions.
 # See: docs/user-flow.md Chapter 5.3
@@ -12,16 +14,21 @@ on:
 
 jobs:
   freshness:
-    name: Apply evidence age penalties to readiness scores
+    name: Reclassify readiness evidence confidence
     runs-on: ubuntu-latest
     steps:
-      - name: Call freshness-daemon Edge Function
+      - name: Refresh evidence confidence
+        env:
+          APP_URL: ${{ vars.APP_API_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
+          test -n "$APP_URL"
+          test -n "$CRON_SECRET"
           HTTP_STATUS=$(curl -s -o /tmp/freshness_response.json -w "%{http_code}" \
             -X POST \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Authorization: Bearer $CRON_SECRET" \
             -H "Content-Type: application/json" \
-            "${{ secrets.SUPABASE_URL }}/functions/v1/freshness-daemon")
+            "$APP_URL/api/cron/freshness")
 
           echo "Freshness daemon HTTP status: $HTTP_STATUS"
           cat /tmp/freshness_response.json

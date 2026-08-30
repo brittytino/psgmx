@@ -28,6 +28,7 @@ interface SquadData {
 export default function StudentSquadsPage() {
   const [squad, setSquad] = useState<SquadData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     async function loadSquad() {
@@ -95,28 +96,8 @@ export default function StudentSquadsPage() {
           }
         }
 
-        // Fallback default squad if no team assigned yet
         if (!teamData || members.length === 0) {
-          setSquad({
-            name: teamData?.team_name || 'Squad Beta (Algorithms & Systems)',
-            team_code: teamData?.team_code || 'SQUAD-BETA',
-            leader: 'Kavya S (25MX114)',
-            objective: 'Complete 15 combined CodeBox verified quests and maintain 80%+ Daily Five adherence.',
-            completion_rate: 78,
-            members: [
-              { id: '1', name: 'Kavya S', reg_no: '25MX114', role: 'Team Leader', quests: 4, streak: 8 },
-              { id: '2', name: 'Vikram R', reg_no: '25MX128', role: 'Member', quests: 3, streak: 6 },
-              { id: '3', name: me.name || 'Britty Tino', reg_no: me.reg_no || '25MX102', role: 'Member', quests: 5, streak: 12 },
-              { id: '4', name: 'Sneha M', reg_no: '25MX142', role: 'Member', quests: 2, streak: 4 },
-              { id: '5', name: 'Dinesh K', reg_no: '25MX109', role: 'Member', quests: 3, streak: 5 },
-              { id: '6', name: 'Ananya P', reg_no: '25MX103', role: 'Member', quests: 4, streak: 7 },
-            ],
-            feed: [
-              { text: `${me.name || 'Britty Tino'} verified Two Sum with O(n) hash map approach`, time: '2 hours ago' },
-              { text: 'Kavya S completed the DBMS ACID property clinic sprint', time: '4 hours ago' },
-              { text: 'Squad reached 75% weekly milestone!', time: 'Yesterday' },
-            ]
-          });
+          setSquad(null);
         } else {
           const leaderMember = members.find(m => m.role === 'Team Leader') || members[0];
           const totalQuests = members.reduce((acc, m) => acc + m.quests, 0);
@@ -127,16 +108,13 @@ export default function StudentSquadsPage() {
             team_code: teamData.team_code,
             leader: `${leaderMember.name} (${leaderMember.reg_no})`,
             objective: `Complete ${members.length * 3} combined CodeBox verified quests and maintain active Daily Five streaks.`,
-            completion_rate: completionRate || 50,
+            completion_rate: completionRate,
             members,
-            feed: [
-              { text: `${leaderMember.name} completed Daily Five session`, time: 'Earlier today' },
-              { text: `Squad active with ${members.length} members engaged`, time: 'This week' },
-            ]
+            feed: []
           });
         }
       } catch (err) {
-        console.error('Failed to load squad:', err);
+        setError(err instanceof Error ? err.message : 'Squad could not be loaded.');
       } finally {
         setLoading(false);
       }
@@ -153,7 +131,7 @@ export default function StudentSquadsPage() {
     );
   }
 
-  if (!squad) return null;
+  if (!squad) return <div className="mx-auto max-w-3xl rounded-3xl border border-dashed border-border-light bg-white p-10 text-center"><Users className="mx-auto h-10 w-10 text-text-muted"/><h1 className="mt-4 text-xl font-black">Squad assignment pending</h1><p className="mt-2 text-sm text-text-muted">The PR panel can auto-build balanced squads for your batch. No temporary squad is shown.</p>{error && <p className="mt-3 text-sm font-bold text-red-600">{error}</p>}</div>;
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-12">
@@ -239,6 +217,7 @@ export default function StudentSquadsPage() {
                 <span className="text-[10px] text-text-muted block">{f.time}</span>
               </div>
             ))}
+            {squad.feed.length === 0 && <p className="rounded-xl border border-dashed border-border-light p-4 text-center text-xs text-text-muted">Verified squad activity will appear after member submissions.</p>}
           </div>
         </div>
 

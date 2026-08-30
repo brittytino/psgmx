@@ -34,10 +34,10 @@ const ROLE_GUARDS: Record<string, string[]> = {
   '/faculty':     ['faculty', 'hod'],   // hod kept so existing hod accounts can still access faculty portal
   '/placement-rep': ['placement_rep'],  // student with roles.isPlacementRep = true (Section 8)
   '/alumni':      ['alumni'],
-  '/student':     ['student', 'alumni', 'faculty', 'hod'],
+  '/student':     ['student'],
   '/knowledge':   ['student', 'alumni', 'faculty', 'hod'],
-  '/exam':        ['student', 'faculty', 'hod'],
-  '/onboarding':  ['student', 'alumni', 'faculty', 'hod'],
+  '/exam':        ['student'],
+  '/onboarding':  ['student'],
 }
 
 // Public routes that never require authentication
@@ -118,8 +118,9 @@ export async function proxy(request: NextRequest) {
     return supabaseResponse
   }
 
-  // Redirect unauthenticated users to login (unless in local development)
-  if (!user && process.env.NODE_ENV !== 'development') {
+  // Development uses the same authentication boundary as production. This
+  // prevents demo identities from hiding broken RLS or session flows.
+  if (!user) {
     const loginUrl = request.nextUrl.clone()
     loginUrl.pathname = '/login'
     loginUrl.searchParams.set('redirect', pathname)
@@ -153,7 +154,7 @@ export async function proxy(request: NextRequest) {
 
     const allowed = requiredRoles.includes(role) || (requiredRoles.includes('placement_rep') && role === 'student' && isPlacementRep)
 
-    if (!allowed && process.env.NODE_ENV !== 'development') {
+    if (!allowed) {
       // Redirect to appropriate portal based on actual role
       const redirectUrl = request.nextUrl.clone()
 

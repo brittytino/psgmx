@@ -1,186 +1,128 @@
-// PSGMX — sync-leetcode Edge Function
-// Refreshes LeetCode stats for all users who have connected their username.
-// Called by GitHub Actions every 6 hours.
-// Uses LeetCode public API (no auth required, rate-limit safe with caching).
-// See: docs/user-flow.md Chapter 4.5
-
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const CRON_SECRET = Deno.env.get('CRON_SECRET')
-const CACHE_HOURS = 6  // Don't re-fetch if last sync was less than 6 hours ago
+const CACHE_MS = 6 * 60 * 60 * 1000
 
-interface LeetCodeStats {
-  totalSolved: number
-  easySolved: number
-  mediumSolved: number
-  hardSolved: number
-  acceptanceRate: number
+interface Stats {
+  total_solved: number
+  easy_solved: number
+  medium_solved: number
+  hard_solved: number
   ranking: number
-  streak: number
+  profile_picture: string | null
 }
 
-async function fetchLeetCodeStats(username: string): Promise<LeetCodeStats | null> {
-  // LeetCode public GraphQL API
-  const query = `
-    query getUserProfile($username: String!) {
-      matchedUser(username: $username) {
-        submitStats {
-          acSubmissionNum {
-            difficulty
-            count
-          }
-        }
-        profile {
-          ranking
-        }
-        userCalendar {
-          streak
-        }
-      }
-      userContestRankingHistory(username: $username) {
-        attended
-      }
+async function fetchStats(username: string): Promise<Stats | null> {
+  const query = `query profile($username: String!) {
+    matchedUser(username: $username) {
+      submitStats { acSubmissionNum { difficulty count } }
+      profile { ranking userAvatar }
     }
-  `
-
+  }`
   try {
     const response = await fetch('https://leetcode.com/graphql', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'User-Agent': 'PSGMX-LeetCode-Sync/1.0',
-        'Referer': 'https://leetcode.com',
+        'User-Agent': 'PSGMX-Preparation-Sync/2.0',
+        Referer: 'https://leetcode.com',
       },
       body: JSON.stringify({ query, variables: { username } }),
-      signal: AbortSignal.timeout(10000),  // 10 second timeout
+      signal: AbortSignal.timeout(12_000),
     })
-
     if (!response.ok) return null
-    const data = await response.json()
-
-    const user = data?.data?.matchedUser
-    if (!user) return null
-
-    const stats = user.submitStats?.acSubmissionNum || []
-    const getCount = (diff: string) => stats.find((s: any) => s.difficulty === diff)?.count || 0
-
-    const totalSolved = getCount('All')
-    const easySolved = getCount('Easy')
-    const mediumSolved = getCount('Medium')
-    const hardSolved = getCount('Hard')
-
+    const matched = (await response.json())?.data?.matchedUser
+    if (!matched) return null
+    const values = matched.submitStats?.acSubmissionNum || []
+    const count = (difficulty: string) => Number(values.find((item: { difficulty: string }) => item.difficulty === difficulty)?.count || 0)
     return {
-      totalSolved,
-      easySolved,
-      mediumSolved,
-      hardSolved,
-      acceptanceRate: 0,  // Not available in this query
-      ranking: user.profile?.ranking || 0,
-      streak: user.userCalendar?.streak || 0,
+      total_solved: count('All'),
+      easy_solved: count('Easy'),
+      medium_solved: count('Medium'),
+      hard_solved: count('Hard'),
+      ranking: Number(matched.profile?.ranking || 0),
+      profile_picture: matched.profile?.userAvatar || null,
     }
-  } catch (err) {
-    console.error(`Failed to fetch LeetCode stats for ${username}:`, err)
+  } catch {
     return null
   }
 }
 
-Deno.serve(async (req) => {
-  // Authenticate the GitHub Actions caller
-  const authHeader = req.headers.get('Authorization')
-  if (!CRON_SECRET || authHeader !== `Bearer ${CRON_SECRET}`) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' },
-    })
+Deno.serve(async (request) => {
+  if (!CRON_SECRET || request.headers.get('Authorization') !== `Bearer ${CRON_SECRET}`) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    )
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+  )
+  const { data: users, error: userError } = await supabase
+    .from('users')
+    .select('leetcode_username')
+    .not('leetcode_username', 'is', null)
+  if (userError) return Response.json({ error: 'Could not load connected profiles.' }, { status: 500 })
 
-    const now = new Date()
-    const cacheThreshold = new Date(now.getTime() - CACHE_HOURS * 60 * 60 * 1000)
+  const usernames = [...new Set((users || []).map((item) => String(item.leetcode_username || '').trim()).filter(Boolean))]
+  if (!usernames.length) return Response.json({ ok: true, synced: 0, failed: 0 })
 
-    // Fetch all users with a connected LeetCode username
-    // who haven't been synced in the last CACHE_HOURS hours
-    const { data: users, error: fetchErr } = await supabase
-      .from('users')
-      .select('id, leetcode_username, leetcode_last_synced_at')
-      .not('leetcode_username', 'is', null)
-      .or(`leetcode_last_synced_at.is.null,leetcode_last_synced_at.lt.${cacheThreshold.toISOString()}`)
+  const { data: cached } = await supabase
+    .from('leetcode_stats')
+    .select('username,total_solved,weekly_score,last_updated')
+    .in('username', usernames)
+  const cache = new Map((cached || []).map((item) => [item.username.toLowerCase(), item]))
+  const due = usernames.filter((username) => {
+    const updated = cache.get(username.toLowerCase())?.last_updated
+    return !updated || Date.now() - new Date(updated).getTime() >= CACHE_MS
+  })
 
-    if (fetchErr) throw fetchErr
-    if (!users || users.length === 0) {
-      return new Response(
-        JSON.stringify({ ok: true, message: 'No users to sync', synced: 0 }),
-        { status: 200, headers: { 'Content-Type': 'application/json' } }
-      )
-    }
+  let synced = 0
+  let failed = 0
+  const snapshotDate = new Date().toISOString().slice(0, 10)
+  const baselineDate = new Date(Date.now() - 7 * 86400_000).toISOString().slice(0, 10)
 
-    let syncedCount = 0
-    let failedCount = 0
+  for (let offset = 0; offset < due.length; offset += 4) {
+    const batch = due.slice(offset, offset + 4)
+    await Promise.all(batch.map(async (username) => {
+      const stats = await fetchStats(username)
+      if (!stats) { failed += 1; return }
 
-    for (const user of users) {
-      if (!user.leetcode_username) continue
+      const { data: baseline } = await supabase
+        .from('leetcode_stat_snapshots')
+        .select('total_solved')
+        .eq('username', username)
+        .lte('snapshot_date', baselineDate)
+        .order('snapshot_date', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      const previous = cache.get(username.toLowerCase())
+      const weeklyScore = baseline
+        ? Math.max(0, stats.total_solved - Number(baseline.total_solved || 0))
+        : Number(previous?.weekly_score || 0)
+      const now = new Date().toISOString()
 
-      // Rate limit: 1 request per second to be respectful to LeetCode
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      const { error } = await supabase.from('leetcode_stats').upsert({
+        username,
+        ...stats,
+        weekly_score: weeklyScore,
+        last_updated: now,
+      }, { onConflict: 'username' })
+      if (error) { failed += 1; return }
 
-      const stats = await fetchLeetCodeStats(user.leetcode_username)
-
-      if (!stats) {
-        failedCount++
-        continue
-      }
-
-      // Upsert into leetcode_stats table
-      const { error: upsertErr } = await supabase
-        .from('leetcode_stats')
-        .upsert({
-          user_id: user.id,
-          problems_solved: stats.totalSolved,
-          easy_solved: stats.easySolved,
-          medium_solved: stats.mediumSolved,
-          hard_solved: stats.hardSolved,
-          ranking: stats.ranking,
-          streak: stats.streak,
-          synced_at: now.toISOString(),
-        }, { onConflict: 'user_id' })
-
-      if (upsertErr) {
-        console.error(`Failed to upsert stats for user ${user.id}:`, upsertErr)
-        failedCount++
-        continue
-      }
-
-      // Update last synced timestamp on users table
-      await supabase
-        .from('users')
-        .update({ leetcode_last_synced_at: now.toISOString() })
-        .eq('id', user.id)
-
-      syncedCount++
-    }
-
-    console.log(`LeetCode sync: ${syncedCount} synced, ${failedCount} failed`)
-
-    return new Response(
-      JSON.stringify({
-        ok: true,
-        synced: syncedCount,
-        failed: failedCount,
-        total: users.length,
-        timestamp: now.toISOString(),
-      }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
-    )
-  } catch (err) {
-    console.error('LeetCode sync error:', err)
-    return new Response(
-      JSON.stringify({ error: String(err) }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    )
+      await supabase.from('leetcode_stat_snapshots').upsert({
+        username,
+        snapshot_date: snapshotDate,
+        total_solved: stats.total_solved,
+        easy_solved: stats.easy_solved,
+        medium_solved: stats.medium_solved,
+        hard_solved: stats.hard_solved,
+        ranking: stats.ranking,
+        captured_at: now,
+      }, { onConflict: 'username,snapshot_date' })
+      synced += 1
+    }))
+    if (offset + 4 < due.length) await new Promise((resolve) => setTimeout(resolve, 500))
   }
+
+  return Response.json({ ok: true, connected: usernames.length, due: due.length, synced, failed })
 })

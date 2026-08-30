@@ -23,6 +23,7 @@ CREATE TABLE knowledge_brain_articles (
   search_vector    tsvector,
   reviewed_by      UUID REFERENCES users(id),
   reviewed_at      TIMESTAMPTZ,
+  review_due_at    TIMESTAMPTZ,
   created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at       TIMESTAMPTZ NOT NULL DEFAULT now()
 );

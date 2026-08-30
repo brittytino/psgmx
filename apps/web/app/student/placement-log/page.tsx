@@ -1,347 +1,366 @@
-'use client'
+'use client';
 
-import React from 'react'
-import { BookOpenCheck, ChevronDown, Lightbulb, Plus, Search, ShieldCheck, Sparkles, Building2, Tag } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
-import { getCurrentProfile } from '@/lib/current-profile'
-import type { Database } from '@/../../supabase/types/database.types'
+import React from 'react';
+import {
+  BookOpenCheck, ChevronDown, Lightbulb, Plus, Search, ShieldCheck,
+  Building2, Calendar, Tag, FileText, Sparkles, Filter
+} from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
+import { getCurrentProfile } from '@/lib/current-profile';
 
-type Pattern = Database['public']['Tables']['interview_patterns']['Row']
-type PatternType = Pattern['pattern_type']
+type PatternType = 'aptitude_screening' | 'coding_round' | 'technical_deep_dive' | 'fyp_discussion' | 'behavioural' | 'group_discussion' | 'general';
 
-const patternLabels: Record<PatternType, string> = {
+interface Pattern {
+  id: string;
+  author_id: string | null;
+  title: string;
+  pattern_type: PatternType;
+  historical_context: string | null;
+  preparation_helped: string;
+  mistakes: string | null;
+  example_themes: string[];
+  advice: string;
+  company_name: string | null;
+  batch_year: string | null;
+  approval_status: string;
+  created_at: string;
+  is_system_archived?: boolean;
+}
+
+interface Company {
+  id: string;
+  name: string;
+  visit_date: string;
+  roles_offered: string[];
+  package_band: string | null;
+  eligibility: string | null;
+  rounds: Array<{ name: string; description?: string }>;
+  batch_id: string;
+  batches?: { batch_code: string };
+}
+
+const labels: Record<PatternType, string> = {
   aptitude_screening: 'Aptitude screening',
   coding_round: 'Coding round',
   technical_deep_dive: 'Technical deep dive',
   fyp_discussion: 'FYP discussion',
   behavioural: 'Behavioural conversation',
   group_discussion: 'Group discussion',
-  general: 'General interview pattern',
-}
+  general: 'General pattern',
+};
 
-const DEFAULT_PATTERNS: any[] = [
-  {
-    id: 'pat-zoho-adv-01',
-    author_id: '00000000-0000-0000-0000-000000000000',
-    title: 'Zoho Corporation — Advanced Programming & Design Round',
-    pattern_type: 'coding_round',
-    historical_context: 'On-campus recruitment round for MCA 2024 & 2025 cohorts.',
-    preparation_helped: 'Practicing custom matrix rotations, string parsers, and implementing data structures from scratch without collections.',
-    mistakes: 'Relying too heavily on standard library methods instead of understanding manual pointer arithmetic.',
-    example_themes: ['Matrix Manipulation', 'Custom String Parser', 'OOP Design', 'CLI App'],
-    advice: 'Round 3 is an interactive CLI app (e.g. Railway Reservation or Splitwise). Keep your class structure modular with clean encapsulation.',
-    batch_year: '23MX',
-    approval_status: 'approved',
-    created_at: new Date().toISOString(),
-    reviewed_at: new Date().toISOString(),
-    reviewed_by: null,
-    visibility: 'all_batches',
-  },
-  {
-    id: 'pat-tcs-digital-02',
-    author_id: '00000000-0000-0000-0000-000000000000',
-    title: 'TCS Digital / Prime — Technical & System Architecture Round',
-    pattern_type: 'technical_deep_dive',
-    historical_context: 'TCS Digital upgrade interview process for top aptitude scorers.',
-    preparation_helped: 'Thorough revision of DBMS B-Tree indexing, OS process scheduling, and dynamic programming.',
-    mistakes: 'Giving vague answers on time complexity instead of exact asymptotic bounds with derivation.',
-    example_themes: ['Dynamic Programming', 'Graph BFS/DFS', 'DBMS Indexing', 'REST APIs'],
-    advice: 'Expect questions on your final year project architecture and how your database handles concurrent transactions.',
-    batch_year: '23MX',
-    approval_status: 'approved',
-    created_at: new Date().toISOString(),
-    reviewed_at: new Date().toISOString(),
-    reviewed_by: null,
-    visibility: 'all_batches',
-  },
-  {
-    id: 'pat-thoughtworks-03',
-    author_id: '00000000-0000-0000-0000-000000000000',
-    title: 'Thoughtworks — Pair Programming & TDD Evaluation',
-    pattern_type: 'technical_deep_dive',
-    historical_context: 'Technical round conducted with senior engineers.',
-    preparation_helped: 'Writing unit tests before writing function logic (TDD) and refactoring code for readability.',
-    mistakes: 'Trying to code in silence without explaining trade-offs to the pair interviewer.',
-    example_themes: ['Unit Testing', 'Clean Code', 'SOLID Principles', 'Pair Programming'],
-    advice: 'Communicate continuously. The interviewers evaluate how well you receive feedback and refactor cleanly.',
-    batch_year: '24MX',
-    approval_status: 'approved',
-    created_at: new Date().toISOString(),
-    reviewed_at: new Date().toISOString(),
-    reviewed_by: null,
-    visibility: 'all_batches',
-  },
-  {
-    id: 'pat-cisco-04',
-    author_id: '00000000-0000-0000-0000-000000000000',
-    title: 'Cisco — Core OS & Network Systems Engineering',
-    pattern_type: 'technical_deep_dive',
-    historical_context: 'Systems software engineering interview process.',
-    preparation_helped: 'Practicing socket programming in C/Python and studying OSI model packet flow.',
-    mistakes: 'Confusing TCP flow control with congestion control mechanisms.',
-    example_themes: ['TCP/IP Stack', 'Socket Programming', 'Process Synchronization', 'Semaphores'],
-    advice: 'Revise memory layouts (stack vs heap), deadlocks, mutexes vs semaphores, and subnetting calculations.',
-    batch_year: '24MX',
-    approval_status: 'approved',
-    created_at: new Date().toISOString(),
-    reviewed_at: new Date().toISOString(),
-    reviewed_by: null,
-    visibility: 'all_batches',
-  }
-]
+const emptyForm = { title: '', patternType: 'technical_deep_dive' as PatternType, historicalContext: '', preparationHelped: '', mistakes: '', themes: '', advice: '' };
 
-const emptyForm = {
-  title: '',
-  patternType: 'technical_deep_dive' as PatternType,
-  historicalContext: '',
-  preparationHelped: '',
-  mistakes: '',
-  themes: '',
-  advice: '',
-}
+export default function StudentPlacementLogPage() {
+  const supabase = React.useMemo(() => createClient(), []);
+  const [activeTab, setActiveTab] = React.useState<'drives' | 'patterns'>('drives');
 
-export default function InterviewPatternLibraryPage() {
-  const supabase = React.useMemo(() => createClient(), [])
-  const [patterns, setPatterns] = React.useState<Pattern[]>([])
-  const [me, setMe] = React.useState<{ id: string; reg_no: string | null } | null>(null)
-  const [isSenior, setIsSenior] = React.useState(false)
-  const [query, setQuery] = React.useState('')
-  const [showContribute, setShowContribute] = React.useState(false)
-  const [form, setForm] = React.useState(emptyForm)
-  const [loading, setLoading] = React.useState(true)
-  const [busy, setBusy] = React.useState(false)
-  const [error, setError] = React.useState('')
-  const [message, setMessage] = React.useState('')
+  // State for Interview Patterns
+  const [patterns, setPatterns] = React.useState<Pattern[]>([]);
+  const [me, setMe] = React.useState<{ id: string; reg_no: string | null } | null>(null);
+  const [canContribute, setCanContribute] = React.useState(false);
+  const [showForm, setShowForm] = React.useState(false);
+  const [form, setForm] = React.useState(emptyForm);
+
+  // State for Companies Drives
+  const [companies, setCompanies] = React.useState<Company[]>([]);
+
+  // Shared state
+  const [query, setQuery] = React.useState('');
+  const [loading, setLoading] = React.useState(true);
+  const [busy, setBusy] = React.useState(false);
+  const [error, setError] = React.useState('');
+  const [message, setMessage] = React.useState('');
 
   const load = React.useCallback(async () => {
-    setLoading(true)
-    setError('')
+    setLoading(true);
+    setError('');
     try {
-      const profile = await getCurrentProfile(supabase)
-      if (profile) {
-        setMe({ id: profile.id, reg_no: profile.reg_no })
+      const profile = await getCurrentProfile(supabase);
+      if (!profile) throw new Error('Your profile could not be loaded.');
+      setMe({ id: profile.id, reg_no: profile.reg_no });
+
+      if (profile.batch_id) {
+        const { data: batch } = await supabase.from('batches').select('status').eq('id', profile.batch_id).maybeSingle();
+        setCanContribute(batch?.status === 'active_senior');
       }
 
-      let fetchedPatterns: Pattern[] = []
-      try {
-        const { data, error: queryErr } = await supabase
-          .from('interview_patterns')
-          .select('*')
-          .eq('approval_status', 'approved')
-          .order('created_at', { ascending: false })
-        if (!queryErr && data && data.length > 0) {
-          fetchedPatterns = data as Pattern[]
-        }
-      } catch (dbErr) {
-        console.warn('Patterns DB query fallback:', dbErr)
-      }
+      const [{ data: patData, error: patErr }, { data: compData, error: compErr }] = await Promise.all([
+        (supabase as any).from('interview_patterns').select('*').order('created_at', { ascending: false }),
+        supabase.from('companies').select('*, batches(batch_code)').order('visit_date', { ascending: false }),
+      ]);
 
-      setPatterns(fetchedPatterns.length > 0 ? fetchedPatterns : DEFAULT_PATTERNS)
-      setIsSenior(true)
+      if (patErr) throw patErr;
+      if (compErr) throw compErr;
+
+      setPatterns(patData || []);
+      setCompanies((compData || []) as unknown as Company[]);
     } catch (cause) {
-      console.warn('Patterns loading fallback:', cause)
-      setPatterns(DEFAULT_PATTERNS)
+      setError(cause instanceof Error ? cause.message : 'Data could not be loaded.');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [supabase])
+  }, [supabase]);
 
-  React.useEffect(() => { void load() }, [load])
+  React.useEffect(() => { void load(); }, [load]);
 
   async function submitPattern(event: React.FormEvent) {
-    event.preventDefault()
-    if (!me) return
-    setBusy(true)
-    setError('')
-    setMessage('')
-    const themes = form.themes.split(',').map((item) => item.trim()).filter(Boolean)
-    try {
-      const { error: insertError } = await supabase.from('interview_patterns').insert({
-        author_id: me.id,
-        title: form.title.trim(),
-        pattern_type: form.patternType,
-        historical_context: form.historicalContext.trim() || null,
-        preparation_helped: form.preparationHelped.trim(),
-        mistakes: form.mistakes.trim() || null,
-        example_themes: themes,
-        advice: form.advice.trim(),
-        batch_year: me.reg_no?.match(/^\d{2}MX/)?.[0] ?? '25MX',
-        approval_status: 'pending',
-      })
-      if (insertError) {
-        console.warn('Pattern insert warning:', insertError)
-      }
-    } catch {}
-
-    setMessage('Your pattern was submitted for faculty review. It will appear in the library once verified.')
-    setForm(emptyForm)
-    setShowContribute(false)
-    setBusy(false)
+    event.preventDefault();
+    if (!me || !canContribute) return;
+    setBusy(true); setError(''); setMessage('');
+    const { error: insertError } = await (supabase as any).from('interview_patterns').insert({
+      author_id: me.id,
+      title: form.title.trim(),
+      pattern_type: form.patternType,
+      historical_context: form.historicalContext.trim() || null,
+      preparation_helped: form.preparationHelped.trim(),
+      mistakes: form.mistakes.trim() || null,
+      example_themes: form.themes.split(',').map((item) => item.trim()).filter(Boolean),
+      advice: form.advice.trim(),
+      batch_year: me.reg_no?.match(/^\d{2}MX/)?.[0] || null,
+      approval_status: 'pending',
+    });
+    if (insertError) setError(insertError.message);
+    else {
+      setMessage('Pattern submitted for faculty review. It remains private until approved.');
+      setForm(emptyForm); setShowForm(false); await load();
+    }
+    setBusy(false);
   }
 
-  const normalizedQuery = query.trim().toLowerCase()
-  const filtered = patterns.filter((pattern) => {
-    if (!normalizedQuery) return true
-    return (
-      pattern.title.toLowerCase().includes(normalizedQuery) ||
-      (pattern.historical_context ?? '').toLowerCase().includes(normalizedQuery) ||
-      pattern.preparation_helped.toLowerCase().includes(normalizedQuery) ||
-      pattern.advice.toLowerCase().includes(normalizedQuery) ||
-      (pattern.example_themes ?? []).some((theme) => theme.toLowerCase().includes(normalizedQuery))
-    )
-  })
+  const term = query.trim().toLowerCase();
+  const filteredPatterns = patterns.filter(item =>
+    !term || [item.title, item.company_name, item.historical_context, item.preparation_helped, item.advice, ...(item.example_themes || [])].some(val => val?.toLowerCase().includes(term))
+  );
+
+  const filteredCompanies = companies.filter(c =>
+    !term || c.name.toLowerCase().includes(term) || (c.roles_offered || []).some(r => r.toLowerCase().includes(term)) || (c.package_band || '').toLowerCase().includes(term)
+  );
 
   return (
     <div className="mx-auto max-w-5xl space-y-7 pb-10">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-[11px] font-black uppercase tracking-wider text-primary-purple flex items-center gap-1.5">
-            <BookOpenCheck className="h-4 w-4"/> Learn from Earlier MX Batches
+          <p className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-primary-purple">
+            <BookOpenCheck className="h-4 w-4" /> Alumni &amp; Senior Experience Archive
           </p>
-          <h1 className="mt-1 text-2xl font-black text-text-main">
-            Interview Pattern Library
-          </h1>
+          <h1 className="mt-1 text-2xl font-black text-text-main">Placement Log &amp; Company Archive</h1>
           <p className="mt-1 text-sm text-text-muted">
-            Reusable, faculty-reviewed preparation insights and company round breakdowns.
+            Historical company drives from 23MX/24MX and faculty-reviewed interview preparation patterns.
           </p>
         </div>
+        {canContribute && activeTab === 'patterns' && (
+          <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-2 rounded-xl bg-primary-purple px-5 py-3 text-xs font-black text-white shrink-0">
+            <Plus className="h-4 w-4" />{showForm ? 'Cancel' : 'Contribute Pattern'}
+          </button>
+        )}
+      </header>
+
+      {/* Tabs */}
+      <div className="flex gap-2 border-b border-border-light pb-3">
         <button
-          onClick={() => setShowContribute(!showContribute)}
-          className="flex items-center gap-2 rounded-xl bg-primary-purple px-5 py-3 text-xs font-black text-white shadow-sm hover:bg-violet-700 transition-colors"
-        >
-          <Plus className="h-4 w-4"/>
-          {showContribute ? 'Cancel' : 'Contribute Pattern'}
+          onClick={() => setActiveTab('drives')}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-colors ${
+            activeTab === 'drives' ? 'bg-primary-purple text-white' : 'bg-white border border-border-light text-text-muted hover:text-text-main'
+          }`}>
+          <Building2 className="w-4 h-4" /> Company Drives (23MX / 24MX) ({companies.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('patterns')}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-colors ${
+            activeTab === 'patterns' ? 'bg-primary-purple text-white' : 'bg-white border border-border-light text-text-muted hover:text-text-main'
+          }`}>
+          <Sparkles className="w-4 h-4" /> Interview Patterns ({patterns.length})
         </button>
       </div>
 
-      <div className="rounded-2xl border border-amber-200/80 bg-amber-50/70 p-4 text-xs leading-relaxed text-amber-900 flex items-center gap-2.5 shadow-sm">
-        <ShieldCheck className="h-4 w-4 shrink-0 text-amber-700"/>
-        <span>For eligibility, application shortlists, and official company drive dates, use NEO PAT. PSGMX maintains preparation patterns and technical interview wisdom.</span>
+      <div className="flex gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs font-semibold leading-5 text-amber-900">
+        <ShieldCheck className="h-5 w-5 shrink-0 text-amber-700 mt-0.5" />
+        Official application portals, live eligibility, test schedules, and shortlists are hosted on <strong>NEO PAT</strong>. PSGMX archives preparation knowledge and round experiences.
       </div>
 
-      {showContribute && (
-        <form onSubmit={submitPattern} className="rounded-3xl border border-border-light bg-white p-6 shadow-sm space-y-4">
-          <h2 className="font-black text-text-main text-base">Contribute an Interview Experience Pattern</h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="text-xs font-bold text-text-muted">Company / Role Pattern Title</label>
-              <input 
-                required
-                value={form.title}
-                onChange={(e) => setForm({...form, title: e.target.value})}
-                placeholder="e.g. Zoho Corporation — Advanced Programming Round"
-                className="mt-1.5 w-full rounded-xl border border-border-light bg-page-bg px-4 py-2.5 text-sm outline-none focus:border-primary-purple"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-bold text-text-muted">Round Type</label>
-              <select
-                value={form.patternType}
-                onChange={(e) => setForm({...form, patternType: e.target.value as PatternType})}
-                className="mt-1.5 w-full rounded-xl border border-border-light bg-page-bg px-4 py-2.5 text-sm outline-none focus:border-primary-purple"
-              >
-                {Object.entries(patternLabels).map(([k, v]) => (
-                  <option key={k} value={k}>{v}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <div>
-            <label className="text-xs font-bold text-text-muted">Key Preparation Strategy That Helped</label>
-            <textarea
-              required
-              rows={2}
-              value={form.preparationHelped}
-              onChange={(e) => setForm({...form, preparationHelped: e.target.value})}
-              placeholder="What topics or practice routine gave you the advantage?"
-              className="mt-1.5 w-full rounded-xl border border-border-light bg-page-bg px-4 py-2.5 text-sm outline-none focus:border-primary-purple"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-bold text-text-muted">Direct Advice for Juniors</label>
-            <textarea
-              required
-              rows={2}
-              value={form.advice}
-              onChange={(e) => setForm({...form, advice: e.target.value})}
-              placeholder="Actionable advice for juniors facing this round..."
-              className="mt-1.5 w-full rounded-xl border border-border-light bg-page-bg px-4 py-2.5 text-sm outline-none focus:border-primary-purple"
-            />
-          </div>
-          <div className="flex justify-end">
-            <button
-              disabled={busy}
-              type="submit"
-              className="rounded-xl bg-primary-purple px-6 py-2.5 text-xs font-black text-white hover:bg-violet-700 transition-colors disabled:opacity-50"
-            >
-              {busy ? 'Submitting…' : 'Submit for Review'}
-            </button>
-          </div>
-        </form>
-      )}
+      {error && <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700">{error}</div>}
+      {message && <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-bold text-emerald-800">{message}</div>}
 
-      {message && (
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-xs font-bold text-emerald-900">
-          {message}
-        </div>
-      )}
-
-      {/* Search Filter */}
+      {/* Search Bar */}
       <div className="relative">
-        <Search className="absolute left-4 top-3.5 h-4 w-4 text-text-muted"/>
+        <Search className="absolute left-4 top-3.5 h-4 w-4 text-text-muted" />
         <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search by company name, DSA topics, round type, or key advice..."
-          className="w-full rounded-2xl border border-border-light bg-white py-3 pl-11 pr-4 text-sm font-medium outline-none focus:border-primary-purple shadow-sm"
+          value={query} onChange={(e) => setQuery(e.target.value)}
+          placeholder={activeTab === 'drives' ? "Search by company, role, or package..." : "Search company, skill, round, or theme..."}
+          className="w-full rounded-2xl border border-border-light bg-white py-3 pl-11 pr-4 text-sm outline-none focus:border-primary-purple"
         />
       </div>
 
-      {/* Patterns Grid */}
-      <div className="space-y-4">
-        {filtered.map((pattern) => (
-          <article key={pattern.id} className="rounded-3xl border border-border-light bg-white p-6 shadow-sm space-y-4 hover:border-primary-purple/40 transition-colors">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <span className="inline-block rounded-full bg-violet-50 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-primary-purple mb-2">
-                  {patternLabels[pattern.pattern_type]} · {pattern.batch_year ?? 'MCA'}
-                </span>
-                <h2 className="text-lg font-black text-text-main">{pattern.title}</h2>
-              </div>
+      {loading && <div className="h-48 animate-pulse rounded-3xl bg-white" />}
+
+      {/* TAB 1: Company Placement Drives */}
+      {!loading && activeTab === 'drives' && (
+        <div className="space-y-4">
+          {filteredCompanies.length === 0 ? (
+            <div className="rounded-3xl border border-dashed border-border-light bg-white p-14 text-center">
+              <Building2 className="mx-auto h-10 w-10 text-primary-purple" />
+              <h2 className="mt-4 text-lg font-black">No company records found</h2>
+              <p className="mt-2 text-sm text-text-muted">No historical company drive matches your search.</p>
             </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2">
+              {filteredCompanies.map(c => {
+                const batchCode = c.batches?.batch_code || 'Historical';
+                const roundsArr = (Array.isArray(c.rounds) ? c.rounds : []) as Array<{ name: string; description?: string }>;
+                return (
+                  <div key={c.id} className="rounded-3xl border border-border-light bg-white p-6 shadow-sm space-y-4 hover:border-primary-purple/30 transition-colors">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <span className="text-[10px] font-black uppercase tracking-wider text-primary-purple px-2.5 py-1 bg-violet-50 rounded-full">
+                          {batchCode} Batch
+                        </span>
+                        <h3 className="mt-2 text-lg font-black text-text-main">{c.name}</h3>
+                      </div>
+                      {c.package_band && (
+                        <span className="text-xs font-black text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full shrink-0">
+                          {c.package_band}
+                        </span>
+                      )}
+                    </div>
 
-            {pattern.historical_context && (
-              <p className="text-xs text-text-muted italic">{pattern.historical_context}</p>
-            )}
+                    <div className="space-y-2 text-xs text-text-muted">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-3.5 h-3.5 text-primary-purple shrink-0" />
+                        <span>Visited {new Date(c.visit_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                      </div>
+                      {c.roles_offered?.length > 0 && (
+                        <div className="flex items-start gap-2">
+                          <Tag className="w-3.5 h-3.5 text-primary-purple shrink-0 mt-0.5" />
+                          <span className="font-bold text-text-main">{c.roles_offered.join(', ')}</span>
+                        </div>
+                      )}
+                      {c.eligibility && (
+                        <div className="flex items-start gap-2">
+                          <FileText className="w-3.5 h-3.5 text-primary-purple shrink-0 mt-0.5" />
+                          <span>{c.eligibility}</span>
+                        </div>
+                      )}
+                    </div>
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl bg-emerald-50/60 p-4 border border-emerald-100">
-                <p className="text-[10px] font-black uppercase tracking-wider text-emerald-800 flex items-center gap-1.5">
-                  <Sparkles className="h-3.5 w-3.5 text-emerald-600"/> What Preparation Helped Most
-                </p>
-                <p className="mt-1 text-xs leading-relaxed text-emerald-950 font-medium">{pattern.preparation_helped}</p>
-              </div>
-
-              <div className="rounded-2xl bg-page-bg p-4 border border-border-light">
-                <p className="text-[10px] font-black uppercase tracking-wider text-text-muted flex items-center gap-1.5">
-                  <Lightbulb className="h-3.5 w-3.5 text-amber-500"/> Direct Advice for Juniors
-                </p>
-                <p className="mt-1 text-xs leading-relaxed text-text-main font-medium">{pattern.advice}</p>
-              </div>
+                    {roundsArr.length > 0 && (
+                      <div className="pt-3 border-t border-border-light">
+                        <p className="text-[10px] font-black uppercase tracking-wider text-text-muted mb-2">Drive Format &amp; Rounds ({roundsArr.length})</p>
+                        <div className="space-y-1.5">
+                          {roundsArr.map((r, idx) => (
+                            <div key={idx} className="text-[11px] bg-page-bg p-2 rounded-xl">
+                              <span className="font-bold text-text-main">{r.name || `Round ${idx + 1}`}</span>
+                              {r.description && <p className="text-text-muted text-[10px] mt-0.5">{r.description}</p>}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
+          )}
+        </div>
+      )}
 
-            {pattern.example_themes && pattern.example_themes.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 pt-1">
-                {pattern.example_themes.map((theme, i) => (
-                  <span key={i} className="rounded-lg bg-gray-100 px-2.5 py-1 text-[11px] font-semibold text-text-muted">
-                    #{theme}
-                  </span>
-                ))}
+      {/* TAB 2: Interview Patterns */}
+      {!loading && activeTab === 'patterns' && (
+        <div className="space-y-4">
+          {showForm && (
+            <form onSubmit={submitPattern} className="space-y-4 rounded-3xl border border-border-light bg-white p-6 shadow-sm">
+              <h2 className="font-black">Contribute reusable preparation evidence</h2>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Pattern title">
+                  <input required minLength={5} maxLength={160} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="field" />
+                </Field>
+                <Field label="Round type">
+                  <select value={form.patternType} onChange={(e) => setForm({ ...form, patternType: e.target.value as PatternType })} className="field">
+                    {Object.entries(labels).map(([key, value]) => <option key={key} value={key}>{value}</option>)}
+                  </select>
+                </Field>
               </div>
-            )}
-          </article>
-        ))}
-      </div>
+              <Field label="What preparation helped?">
+                <textarea required minLength={20} value={form.preparationHelped} onChange={(e) => setForm({ ...form, preparationHelped: e.target.value })} className="field min-h-24" />
+              </Field>
+              <Field label="Advice for the next batch">
+                <textarea required minLength={20} value={form.advice} onChange={(e) => setForm({ ...form, advice: e.target.value })} className="field min-h-24" />
+              </Field>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Historical context (optional)">
+                  <textarea value={form.historicalContext} onChange={(e) => setForm({ ...form, historicalContext: e.target.value })} className="field min-h-20" />
+                </Field>
+                <Field label="Mistakes and lessons (optional)">
+                  <textarea value={form.mistakes} onChange={(e) => setForm({ ...form, mistakes: e.target.value })} className="field min-h-20" />
+                </Field>
+              </div>
+              <Field label="Themes, comma separated">
+                <input value={form.themes} onChange={(e) => setForm({ ...form, themes: e.target.value })} className="field" />
+              </Field>
+              <div className="flex justify-end">
+                <button disabled={busy} className="rounded-xl bg-primary-purple px-5 py-3 text-sm font-black text-white disabled:opacity-50">
+                  {busy ? 'Submitting…' : 'Submit for review'}
+                </button>
+              </div>
+              <style jsx>{`.field{margin-top:.5rem;width:100%;border:1px solid #e5e7eb;border-radius:.75rem;padding:.75rem 1rem;font-size:.875rem;outline:none}.field:focus{border-color:#6d28d9}`}</style>
+            </form>
+          )}
+
+          {filteredPatterns.length === 0 ? (
+            <div className="rounded-3xl border border-dashed border-border-light bg-white p-14 text-center">
+              <BookOpenCheck className="mx-auto h-10 w-10 text-primary-purple" />
+              <h2 className="mt-4 text-lg font-black">No approved patterns yet</h2>
+              <p className="mt-2 text-sm text-text-muted">The library grows through reviewed senior and alumni evidence.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filteredPatterns.map((item) => (
+                <details key={item.id} className="group rounded-2xl border border-border-light bg-white p-5 shadow-sm">
+                  <summary className="flex cursor-pointer list-none items-start justify-between gap-4">
+                    <div>
+                      <div className="flex flex-wrap gap-2">
+                        <span className="rounded-full bg-primary-purple/10 px-2.5 py-1 text-[10px] font-black text-primary-purple">{labels[item.pattern_type]}</span>
+                        {item.batch_year && <span className="rounded-full bg-page-bg px-2.5 py-1 text-[10px] font-black text-text-muted">{item.batch_year}</span>}
+                        {item.is_system_archived && <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-black text-amber-700">Archived record</span>}
+                      </div>
+                      <h2 className="mt-3 text-base font-black text-text-main">{item.title}</h2>
+                      {item.company_name && <p className="mt-1 text-xs font-bold text-text-muted">{item.company_name}</p>}
+                    </div>
+                    <ChevronDown className="mt-2 h-5 w-5 shrink-0 text-text-muted transition group-open:rotate-180" />
+                  </summary>
+                  <div className="mt-5 grid gap-4 border-t border-border-light pt-5 sm:grid-cols-2">
+                    <Evidence title="Preparation that helped" text={item.preparation_helped} />
+                    <Evidence title="Advice" text={item.advice} />
+                    {item.mistakes && <Evidence title="Mistakes and lessons" text={item.mistakes} />}
+                    {item.historical_context && <Evidence title="Historical context" text={item.historical_context} />}
+                  </div>
+                  {item.example_themes?.length > 0 && (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {item.example_themes.map((theme) => (
+                        <span key={theme} className="rounded-full bg-page-bg px-3 py-1 text-[10px] font-bold text-text-muted">{theme}</span>
+                      ))}
+                    </div>
+                  )}
+                </details>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
-  )
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return <label className="block text-xs font-bold text-text-muted">{label}{children}</label>;
+}
+function Evidence({ title, text }: { title: string; text: string }) {
+  return (
+    <div className="rounded-2xl bg-page-bg p-4">
+      <p className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-primary-purple">
+        <Lightbulb className="h-3.5 w-3.5" />{title}
+      </p>
+      <p className="mt-2 text-sm leading-6 text-text-muted">{text}</p>
+    </div>
+  );
 }

@@ -1,7 +1,7 @@
 import { Resend } from 'resend';
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
-export const resend = new Resend(RESEND_API_KEY);
+const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
 
 export const PRIMARY_FROM = 'PSGMX <notifications@psgmx.tech>';
 export const FALLBACK_FROM = 'PSGMX <onboarding@resend.dev>';
@@ -10,6 +10,7 @@ export const FALLBACK_FROM = 'PSGMX <onboarding@resend.dev>';
  * Sends a clean, premium 6-digit OTP verification email
  */
 export async function sendOtpEmail(toEmail: string, otpCode: string): Promise<{ success: boolean; data?: any; error?: any }> {
+  if (!resend) return { success: false, error: new Error('RESEND_API_KEY is not configured') };
   const subject = `${otpCode} is your PSGMX login code`;
 
   const htmlContent = `
@@ -170,8 +171,10 @@ export async function sendWelcomeEmail(toEmail: string, studentName: string, reg
  * Fast sender using verified domain notifications@psgmx.tech
  */
 async function sendEmailWithFallback(toEmail: string, subject: string, htmlContent: string) {
+  if (!resend) return { success: false, error: new Error('RESEND_API_KEY is not configured') };
+  const emailClient = resend;
   try {
-    const result = await resend.emails.send({
+    const result = await emailClient.emails.send({
       from: PRIMARY_FROM,
       to: toEmail,
       subject,
@@ -180,7 +183,7 @@ async function sendEmailWithFallback(toEmail: string, subject: string, htmlConte
 
     if (result.error) {
       console.warn('[Resend] Primary domain send warning, attempting fallback:', result.error);
-      const fallbackResult = await resend.emails.send({
+      const fallbackResult = await emailClient.emails.send({
         from: FALLBACK_FROM,
         to: toEmail,
         subject,
@@ -197,7 +200,7 @@ async function sendEmailWithFallback(toEmail: string, subject: string, htmlConte
   } catch (err: any) {
     console.error('[Resend] Send exception:', err);
     try {
-      const fallbackResult = await resend.emails.send({
+      const fallbackResult = await emailClient.emails.send({
         from: FALLBACK_FROM,
         to: toEmail,
         subject,

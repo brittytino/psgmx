@@ -26,33 +26,6 @@ type Result = {
   reflected_at: string | null 
 }
 
-const DEFAULT_MOCK_EXAMS: Exam[] = [
-  {
-    id: 'tcs-digital-mock-01',
-    title: 'TCS Digital / Prime Mock Assessment',
-    description: 'Comprehensive assessment covering advanced quantitative aptitude, logical reasoning, and DSA problem solving.',
-    duration_minutes: 60,
-    total_marks: 100,
-    exam_date: null,
-  },
-  {
-    id: 'zoho-advanced-coding-01',
-    title: 'Zoho Technical & Advanced Coding Mock',
-    description: 'Output prediction in C/Java, custom matrix algorithms, and CLI system logic.',
-    duration_minutes: 90,
-    total_marks: 100,
-    exam_date: null,
-  },
-  {
-    id: 'core-cs-fundamentals-01',
-    title: 'Core CS (OS, DBMS, OOP & SQL) Speed Assessment',
-    description: 'Fast-paced assessment on ACID properties, indexing, process scheduling, and OOP design patterns.',
-    duration_minutes: 45,
-    total_marks: 50,
-    exam_date: null,
-  },
-]
-
 export default function ExamsPage() {
   const supabase = React.useMemo(() => createClient(), [])
   const [exams, setExams] = React.useState<Exam[]>([])
@@ -67,47 +40,28 @@ export default function ExamsPage() {
     setError('')
     try {
       const me = await getCurrentProfile(supabase)
-      let examList: Exam[] = []
-      let resultMap = new Map<string, Result>()
-
-      // 1. Try querying mock_exams from Supabase
-      try {
-        let query = supabase.from('mock_exams').select('id,title,description,duration_minutes,total_marks,exam_date')
-        if (me?.batch_id) {
-          query = query.or(`batch_id.eq.${me.batch_id},batch_id.is.null`)
-        }
-        const { data: examRows } = await query.order('exam_date', { ascending: false })
-        if (examRows && examRows.length > 0) {
-          examList = examRows as Exam[]
-        }
-      } catch (e) {
-        console.warn('Mock exams DB query note:', e)
-      }
-
-      // Fallback default MCA placement mock exams
-      if (examList.length === 0) {
-        examList = DEFAULT_MOCK_EXAMS
-      }
-
-      // 2. Query student's past exam results
-      if (me?.id) {
-        try {
-          const { data: resultRows } = await supabase
-            .from('mock_exam_results')
-            .select('exam_id,score,raw_marks,out_of,status,submitted_at,reflection,reflected_at')
-            .eq('student_id', me.id)
-
-          if (resultRows && resultRows.length > 0) {
-            resultMap = new Map(resultRows.map((row) => [row.exam_id, row as Result]))
-          }
-        } catch {}
-      }
+      if (!me?.id || me.role !== 'student') throw new Error('Sign in as a student to view assessments.')
+      const [{ data: examRows, error: examError }, { data: resultRows, error: resultError }] = await Promise.all([
+        supabase
+          .from('mock_exams')
+          .select('id,title,description,duration_minutes,total_marks,exam_date')
+          .order('exam_date', { ascending: false, nullsFirst: false }),
+        supabase
+          .from('mock_exam_results')
+          .select('exam_id,score,raw_marks,out_of,status,submitted_at,reflection,reflected_at')
+          .eq('student_id', me.id),
+      ])
+      if (examError) throw examError
+      if (resultError) throw resultError
+      const examList = (examRows ?? []) as Exam[]
+      const resultMap = new Map((resultRows ?? []).map((row) => [row.exam_id, row as Result]))
 
       setExams(examList)
       setResults(resultMap)
     } catch (cause) {
-      console.warn('Exams loading fallback:', cause)
-      setExams(DEFAULT_MOCK_EXAMS)
+      setError(cause instanceof Error ? cause.message : 'Assessments could not be loaded.')
+      setExams([])
+      setResults(new Map())
     } finally {
       setLoading(false)
     }
@@ -122,27 +76,24 @@ export default function ExamsPage() {
     }
     setSavingReflection(examId)
     setError('')
-    const reflectedAt = new Date().toISOString()
     try {
-      await supabase
-        .from('mock_exam_results')
-        .update({ reflection, reflected_at: reflectedAt })
-        .eq('exam_id', examId)
-    } catch {}
+      const response = await fetch('/api/student/exam/reflection', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ exam_id: examId, reflection }),
+      })
+      const body = await response.json()
+      if (!response.ok) throw new Error(body.error || 'Reflection could not be saved.')
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Reflection could not be saved.')
+      setSavingReflection('')
+      return
+    }
 
     setResults((current) => {
       const next = new Map(current)
-      const result = next.get(examId) || {
-        exam_id: examId,
-        score: 85,
-        raw_marks: 85,
-        out_of: 100,
-        status: 'submitted',
-        submitted_at: new Date().toISOString(),
-        reflection,
-        reflected_at: reflectedAt,
-      }
-      next.set(examId, { ...result, reflection, reflected_at: reflectedAt })
+      const result = next.get(examId)
+      if (result) next.set(examId, { ...result, reflection, reflected_at: new Date().toISOString() })
       return next
     })
     setSavingReflection('')
@@ -169,7 +120,7 @@ export default function ExamsPage() {
             Mock Assessments & Proctored Practice
           </h1>
           <p className="mt-1 text-sm text-text-muted">
-            Timed assessments calibrated to current placement partner test patterns.
+            Faculty-reviewed, timed practice that turns every result into a clear next step.
           </p>
         </div>
         <div className="flex items-center gap-2 rounded-xl border border-border-light bg-white px-4 py-3 text-xs font-bold text-text-main shadow-sm">
@@ -195,6 +146,14 @@ export default function ExamsPage() {
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm font-bold text-amber-900">
           {error}
           <button onClick={load} className="ml-2 text-primary-purple underline">Retry</button>
+        </div>
+      )}
+
+      {!error && exams.length === 0 && (
+        <div className="rounded-3xl border border-dashed border-border-light bg-white p-10 text-center">
+          <ClipboardList className="mx-auto h-10 w-10 text-text-muted" />
+          <h2 className="mt-4 font-black text-text-main">No assessment is open yet</h2>
+          <p className="mt-2 text-sm text-text-muted">Your next faculty-reviewed weekly assessment will appear here when it is published.</p>
         </div>
       )}
 
@@ -254,7 +213,7 @@ export default function ExamsPage() {
                     </div>
                     <div className="flex items-center gap-2 text-lg font-black text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-xl">
                       <CheckCircle2 className="h-5 w-5"/>
-                      {result.score !== null ? `${Math.round(Number(result.score))}%` : '85%'}
+                      {result.score !== null ? `${Math.round(Number(result.score))}%` : 'Pending'}
                     </div>
                   </div>
                   {result.reflected_at ? (

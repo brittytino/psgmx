@@ -26,7 +26,8 @@ GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 CREATE EXTENSION IF NOT EXISTS vector;
-CREATE EXTENSION IF NOT EXISTS pg_cron;
+-- Scheduling is handled by GitHub Actions so this remains compatible with
+-- Supabase Free projects where pg_cron is unavailable.
 
 DO $$
 BEGIN

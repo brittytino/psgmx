@@ -1,6 +1,6 @@
 // ============================================================
 // GET/PUT /api/user/profile
-// Migrated to Supabase (New Schema) with guaranteed profile return.
+// Authenticated profile endpoint. Never fabricates a user when the session is absent.
 // ============================================================
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
@@ -8,29 +8,11 @@ import { supabaseAdmin } from '@/lib/supabase/admin'
 import { getSessionUser } from '@/lib/auth'
 import { dashboardPath } from '@/lib/staff-auth'
 
-const DEFAULT_UUID = '00000025-0354-4000-8000-000000000354'
-
 export async function GET(req: NextRequest) {
   try {
     const user = await getSessionUser()
     if (!user) {
-      // Fallback for active client session
-      return NextResponse.json({
-        success: true,
-        profile: {
-          id: DEFAULT_UUID,
-          email: '25mx354@psgtech.ac.in',
-          name: 'Britty Tino',
-          fullName: 'Britty Tino',
-          reg_no: '25MX354',
-          batch: 'G1',
-          batch_id: null,
-          role_label: 'Student',
-          roles: { isStudent: true },
-          onboarding_complete: true,
-          mentorship_open: true,
-        },
-      })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const supabase = await createClient()
@@ -69,20 +51,7 @@ export async function GET(req: NextRequest) {
       if (data) profile = data
     }
 
-    if (!profile) {
-      profile = {
-        id: isValidUuid ? user.id : DEFAULT_UUID,
-        email: user.email || '25mx354@psgtech.ac.in',
-        name: user.name || 'Britty Tino',
-        reg_no: user.reg_no || '25MX354',
-        batch: 'G1',
-        batch_id: user.batch_id,
-        role_label: user.roleLabel || 'Student',
-        roles: user.roles || { isStudent: true },
-        onboarding_complete: true,
-        mentorship_open: true,
-      }
-    }
+    if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
 
     const p = profile as any
     return NextResponse.json({
@@ -96,22 +65,7 @@ export async function GET(req: NextRequest) {
     })
   } catch (error) {
     console.error('Profile API Error:', error)
-    return NextResponse.json({
-      success: true,
-      profile: {
-        id: DEFAULT_UUID,
-        email: '25mx354@psgtech.ac.in',
-        name: 'Britty Tino',
-        fullName: 'Britty Tino',
-        reg_no: '25MX354',
-        batch: 'G1',
-        batch_id: null,
-        role_label: 'Student',
-        roles: { isStudent: true },
-        onboarding_complete: true,
-        mentorship_open: true,
-      },
-    })
+    return NextResponse.json({ error: 'Unable to load profile' }, { status: 500 })
   }
 }
 

@@ -1,423 +1,85 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React from 'react'
 import Link from 'next/link'
-import { 
-  Zap, 
-  Brain, 
-  Code2, 
-  BookOpen, 
-  Clock, 
-  ArrowRight, 
-  Flame, 
-  CheckCircle2, 
-  Play, 
-  Award, 
-  Sparkles, 
-  Target,
-  ShieldCheck,
-  Maximize2,
-  Minimize2,
-  RotateCcw,
-  Check,
-  AlertTriangle
-} from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
-import { getCurrentProfile, DEFAULT_STUDENT_UUID } from '@/lib/current-profile'
+import { AlertTriangle, ArrowRight, Award, Brain, CheckCircle2, Code2, Flame, Loader2, Maximize2, Zap } from 'lucide-react'
 
-interface Question {
-  domain: string
-  q: string
-  options: string[]
-  correct: number
-  explanation: string
-}
-
-const DAILY_FIVE_QUESTIONS: Question[] = [
-  {
-    domain: 'Data Structures & Algorithms',
-    q: 'Given an array of integers, which technique achieves O(N) time complexity to find the maximum sum subarray of fixed size K?',
-    options: ['Nested loops with O(N*K)', 'Sliding Window technique', 'Binary Search on answer', 'Matrix Multiplication'],
-    correct: 1,
-    explanation: 'Sliding Window slides a window of length K across the array in a single O(N) pass by adding the incoming element and subtracting the outgoing element.'
-  },
-  {
-    domain: 'Database Management Systems',
-    q: 'Which SQL transaction isolation level prevents both Dirty Reads and Non-Repeatable Reads, but may still allow Phantom Reads?',
-    options: ['Read Uncommitted', 'Read Committed', 'Repeatable Read', 'Serializable'],
-    correct: 2,
-    explanation: 'Repeatable Read ensures that any data read cannot change throughout the transaction, preventing dirty and non-repeatable reads.'
-  },
-  {
-    domain: 'Operating Systems',
-    q: 'In Linux process management, which system call creates a new child process with a duplicated address space?',
-    options: ['exec()', 'fork()', 'clone()', 'pthread_create()'],
-    correct: 1,
-    explanation: 'The fork() system call creates a new child process as an exact duplicate of the parent process memory space.'
-  },
-  {
-    domain: 'Speed Quantitative Aptitude',
-    q: 'A bag contains 4 red balls and 6 blue balls. If 2 balls are drawn at random without replacement, what is the probability that both balls are red?',
-    options: ['2/15', '4/25', '1/5', '1/3'],
-    correct: 0,
-    explanation: 'P(First Red) = 4/10, P(Second Red) = 3/9. Total probability = (4/10) * (3/9) = 12/90 = 2/15.'
-  },
-  {
-    domain: 'OOP & Software Engineering',
-    q: 'Which SOLID principle states that high-level modules should not depend on low-level modules, but rather both should depend on abstractions?',
-    options: ['Single Responsibility Principle', 'Open/Closed Principle', 'Liskov Substitution Principle', 'Dependency Inversion Principle'],
-    correct: 3,
-    explanation: 'The Dependency Inversion Principle (DIP) decouples high-level policy code from low-level implementation details through interfaces.'
-  }
-]
+type Question = { id: string; question_text: string; options: string[]; topic: string; difficulty: string }
+type Submission = { correct_count: number; total_questions: number; accuracy_rate: number; flagged: boolean }
 
 export default function StudentTrainHubPage() {
-  const supabase = React.useMemo(() => createClient(), [])
-  const [sprintActive, setSprintActive] = useState(false)
-  const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0)
-  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null)
-  const [sprintComplete, setSprintComplete] = useState(false)
-  const [score, setScore] = useState(0)
-  const [streak, setStreak] = useState(4)
-  const [isFullscreen, setIsFullscreen] = useState(false)
-  const [fullscreenWarning, setFullscreenWarning] = useState('')
+  const [questions, setQuestions] = React.useState<Question[]>([])
+  const [answers, setAnswers] = React.useState<Record<string, number>>({})
+  const [index, setIndex] = React.useState(0)
+  const [streak, setStreak] = React.useState(0)
+  const [active, setActive] = React.useState(false)
+  const [completed, setCompleted] = React.useState(false)
+  const [result, setResult] = React.useState<Submission | null>(null)
+  const [busy, setBusy] = React.useState(true)
+  const [error, setError] = React.useState('')
+  const [fullscreenWarning, setFullscreenWarning] = React.useState('')
 
-  // Load streak from Supabase
-  useEffect(() => {
-    async function loadStreak() {
-      try {
-        const me = await getCurrentProfile(supabase)
-        if (me?.id) {
-          const { data } = await supabase
-            .from('daily_five_streaks')
-            .select('current_streak')
-            .eq('user_id', me.id)
-            .maybeSingle()
-          if (data?.current_streak) {
-            setStreak(data.current_streak)
-          }
-        }
-      } catch {}
-    }
-    loadStreak()
-  }, [supabase])
-
-  // Fullscreen change listener
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      const active = Boolean(document.fullscreenElement)
-      setIsFullscreen(active)
-      if (!active && sprintActive && !sprintComplete) {
-        setFullscreenWarning('Warning: Fullscreen mode is required during the Daily Five test.')
-      } else {
-        setFullscreenWarning('')
-      }
-    }
-
-    document.addEventListener('fullscreenchange', handleFullscreenChange)
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
-  }, [sprintActive, sprintComplete])
-
-  const startDailyFive = async () => {
-    setSprintActive(true)
-    setSprintComplete(false)
-    setCurrentQuestionIdx(0)
-    setSelectedAnswer(null)
-    setScore(0)
-
-    // Request fullscreen
+  const load = React.useCallback(async () => {
+    setBusy(true); setError('')
     try {
-      if (document.documentElement.requestFullscreen) {
-        await document.documentElement.requestFullscreen()
-      }
-    } catch {
-      console.warn('Fullscreen request bypassed')
+      const response = await fetch('/api/student/daily-five', { cache: 'no-store' })
+      const body = await response.json()
+      if (!response.ok) throw new Error(body.error || 'Daily Five could not be loaded.')
+      setStreak(Number(body.streak?.current_streak ?? 0))
+      setCompleted(Boolean(body.completed))
+      setQuestions((body.questions ?? []) as Question[])
+      if (body.result) setResult({ correct_count: Number(body.result.correct_count ?? 0), total_questions: 5, accuracy_rate: Number(body.result.accuracy_rate ?? 0), flagged: Boolean(body.result.flagged) })
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Daily Five could not be loaded.') }
+    finally { setBusy(false) }
+  }, [])
+
+  React.useEffect(() => { void load() }, [load])
+  React.useEffect(() => {
+    const listener = () => {
+      if (active && !completed && !document.fullscreenElement) setFullscreenWarning('Fullscreen was exited. This integrity signal remains visible in your session.')
+      else setFullscreenWarning('')
     }
+    document.addEventListener('fullscreenchange', listener)
+    return () => document.removeEventListener('fullscreenchange', listener)
+  }, [active, completed])
+
+  async function begin() {
+    if (!questions.length) return setError('No reviewed questions are available today.')
+    setActive(true); setError('')
+    await document.documentElement.requestFullscreen().catch(() => setFullscreenWarning('Fullscreen permission was not granted. You can still complete the practice.'))
   }
 
-  const handleNextQuestion = () => {
-    if (selectedAnswer === DAILY_FIVE_QUESTIONS[currentQuestionIdx].correct) {
-      setScore((prev) => prev + 1)
-    }
-
-    if (currentQuestionIdx + 1 < DAILY_FIVE_QUESTIONS.length) {
-      setCurrentQuestionIdx((prev) => prev + 1)
-      setSelectedAnswer(null)
-    } else {
-      setSprintComplete(true)
-      const newStreak = streak + 1
-      setStreak(newStreak)
-
-      // Exit fullscreen if active
-      if (document.fullscreenElement) {
-        document.exitFullscreen().catch(() => {})
-      }
-    }
+  async function next() {
+    if (answers[questions[index].id] === undefined) return
+    if (index < questions.length - 1) return setIndex((value) => value + 1)
+    setBusy(true); setError('')
+    try {
+      const response = await fetch('/api/student/daily-five', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ answers }) })
+      const body = await response.json()
+      if (!response.ok) throw new Error(body.error || 'Daily Five could not be submitted.')
+      setResult(body.result as Submission); setCompleted(true); setActive(false)
+      if (document.fullscreenElement) await document.exitFullscreen().catch(() => {})
+      await load()
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Daily Five could not be submitted.') }
+    finally { setBusy(false) }
   }
 
-  const resetSprint = () => {
-    if (document.fullscreenElement) {
-      document.exitFullscreen().catch(() => {})
-    }
-    setSprintActive(false)
-    setSprintComplete(false)
-    setCurrentQuestionIdx(0)
-    setSelectedAnswer(null)
-    setScore(0)
-  }
+  if (busy && !active && !completed) return <div className="grid min-h-64 place-items-center"><Loader2 className="h-6 w-6 animate-spin text-primary-purple" /></div>
+  const question = questions[index]
 
-  const currentQ = DAILY_FIVE_QUESTIONS[currentQuestionIdx]
+  return <div className="mx-auto max-w-5xl space-y-8 pb-12">
+    <header><h1 className="flex items-center gap-2 text-2xl font-black"><Zap className="h-6 w-6 text-primary-purple" />Train Gymnasium & Daily Five</h1><p className="mt-1 text-sm text-text-muted">Five server-selected questions adapt to your latest readiness evidence and become today’s verified practice.</p></header>
+    {error && <div className="flex items-center justify-between gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700"><span>{error}</span><button onClick={() => void load()} className="underline">Retry</button></div>}
 
-  return (
-    <div className="mx-auto max-w-5xl space-y-8 pb-12 font-sans">
-      {/* Header */}
-      <div>
-        <h1 className="flex items-center gap-2.5 text-2xl font-black text-text-main">
-          <Zap className="h-6 w-6 text-primary-purple"/>
-          Train Gymnasium & Daily Five
-        </h1>
-        <p className="mt-1 text-sm text-text-muted">
-          Targeted micro-practice sessions built to convert weak signals into verified readiness evidence.
-        </p>
-      </div>
+    {!active && !completed && <section className="rounded-3xl border border-border-light bg-white p-6 shadow-sm sm:p-8"><div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between"><div><span className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-3 py-1 text-xs font-black text-primary-purple"><Flame className="h-4 w-4 text-amber-500" />Daily habit · {questions.length || 5} questions</span><h2 className="mt-3 text-2xl font-black">Today’s preparation loop</h2><p className="mt-2 max-w-xl text-sm leading-6 text-text-muted">The question set is fixed for you for the day, graded on the server, and contributes evidence only after submission.</p></div><div className="flex flex-col gap-3 sm:flex-row sm:items-center"><Metric label="Current streak" value={`${streak} days`} /><button onClick={() => void begin()} disabled={!questions.length} className="flex items-center justify-center gap-2 rounded-2xl bg-primary-purple px-6 py-4 text-sm font-black text-white disabled:opacity-40"><Maximize2 className="h-4 w-4" />Start Daily Five</button></div></div></section>}
 
-      {/* Hero: Daily Five Card */}
-      {!sprintActive && !sprintComplete && (
-        <section className="rounded-3xl border border-border-light bg-white p-6 sm:p-8 shadow-sm relative overflow-hidden">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-            <div className="space-y-3">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-violet-50 border border-violet-100 rounded-full text-xs font-black text-primary-purple">
-                <Flame className="w-4 h-4 text-amber-500"/> Daily Habit · 5 Curated Questions
-              </div>
-              <h2 className="text-2xl font-black text-text-main">Today's Daily Five Loop</h2>
-              <p className="text-sm text-text-muted max-w-xl leading-relaxed">
-                Adaptive spaced repetition covering 2 DSA, 1 DBMS, 1 OS, and 1 Quantitative Aptitude question calibrated to upcoming placement drives.
-              </p>
-              <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-xl w-fit border border-emerald-200">
-                <ShieldCheck className="w-4 h-4"/> Full-Screen Proctored Session Mode
-              </div>
-            </div>
+    {active && question && <section className="space-y-4">{fullscreenWarning && <div className="flex items-center gap-2 rounded-xl bg-amber-50 p-4 text-xs font-bold text-amber-800"><AlertTriangle className="h-4 w-4" />{fullscreenWarning}</div>}<div className="rounded-3xl border border-border-light bg-white p-6 shadow-sm sm:p-8"><div className="flex flex-wrap items-center justify-between gap-2 border-b border-border-light pb-4"><span className="rounded-full bg-violet-50 px-3 py-1 text-xs font-black text-primary-purple">{question.topic} · {question.difficulty}</span><span className="text-xs font-bold text-text-muted">Question {index + 1} of {questions.length}</span></div><h2 className="mt-6 text-lg font-black leading-7">{question.question_text}</h2><div className="mt-6 grid gap-3">{question.options.map((option, optionIndex) => <button key={optionIndex} onClick={() => setAnswers((current) => ({ ...current, [question.id]: optionIndex }))} className={`flex items-center gap-4 rounded-2xl border p-4 text-left text-sm font-semibold ${answers[question.id] === optionIndex ? 'border-primary-purple bg-violet-50' : 'border-border-light bg-page-bg/40'}`}><span className={`grid h-8 w-8 place-items-center rounded-xl text-xs font-black ${answers[question.id] === optionIndex ? 'bg-primary-purple text-white' : 'bg-white'}`}>{String.fromCharCode(65 + optionIndex)}</span>{option}</button>)}</div><div className="mt-6 flex justify-end"><button onClick={() => void next()} disabled={answers[question.id] === undefined || busy} className="rounded-xl bg-primary-purple px-6 py-3 text-xs font-black text-white disabled:opacity-40">{index === questions.length - 1 ? (busy ? 'Submitting…' : 'Submit Daily Five') : 'Next question'}</button></div></div></section>}
 
-            <div className="flex flex-col sm:flex-row items-center gap-4 shrink-0">
-              <div className="text-center px-5 py-3 bg-page-bg rounded-2xl border border-border-light min-w-[110px]">
-                <span className="text-[10px] font-black text-text-muted uppercase tracking-wider block">Current Streak</span>
-                <span className="text-xl font-black text-amber-600 flex items-center justify-center gap-1 mt-0.5">
-                  <Flame className="w-5 h-5 fill-amber-500 text-amber-500"/> {streak} Days
-                </span>
-              </div>
-              <button
-                onClick={startDailyFive}
-                className="w-full sm:w-auto px-7 py-4 bg-primary-purple hover:bg-violet-700 text-white font-black text-sm rounded-2xl shadow-sm transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2"
-              >
-                <Maximize2 className="w-4 h-4"/> Start Daily Five (Full Screen)
-              </button>
-            </div>
-          </div>
-        </section>
-      )}
+    {completed && <section className="rounded-3xl border border-border-light bg-white p-8 text-center shadow-sm"><CheckCircle2 className="mx-auto h-14 w-14 text-emerald-600" /><p className="mt-4 text-xs font-black uppercase tracking-wider text-primary-purple">Today’s loop complete</p><h2 className="mt-1 text-2xl font-black">Evidence recorded</h2><p className="mt-2 text-sm text-text-muted">Return tomorrow for a new adaptive set. Today’s score is never reconstructed in the browser.</p><div className="mx-auto mt-6 grid max-w-md grid-cols-2 gap-3"><Metric label="Score" value={result ? `${result.correct_count}/${result.total_questions}` : 'Recorded'} /><Metric label="Current streak" value={`${streak} days`} /></div></section>}
 
-      {/* Active Daily Five Test Environment */}
-      {sprintActive && !sprintComplete && (
-        <div className="space-y-6">
-          {/* Fullscreen Warning */}
-          {fullscreenWarning && (
-            <div className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-xs font-bold text-amber-900 flex items-center justify-between shadow-sm">
-              <span className="flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-amber-600"/>
-                {fullscreenWarning}
-              </span>
-              <button
-                onClick={() => {
-                  if (document.documentElement.requestFullscreen) {
-                    document.documentElement.requestFullscreen().catch(() => {})
-                  }
-                }}
-                className="px-3 py-1 bg-amber-600 text-white rounded-lg text-xs font-bold"
-              >
-                Re-enter Fullscreen
-              </button>
-            </div>
-          )}
-
-          {/* Test Card */}
-          <div className="rounded-3xl border border-border-light bg-white p-6 sm:p-8 shadow-sm space-y-6">
-            <div className="flex items-center justify-between border-b border-border-light pb-4">
-              <div className="flex items-center gap-2">
-                <span className="px-3 py-1 bg-violet-50 text-primary-purple text-xs font-black rounded-full uppercase tracking-wider">
-                  {currentQ.domain}
-                </span>
-                <span className="text-xs font-bold text-text-muted">
-                  Question {currentQuestionIdx + 1} of {DAILY_FIVE_QUESTIONS.length}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className="flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
-                  <ShieldCheck className="w-3.5 h-3.5"/> Full Screen Active
-                </span>
-              </div>
-            </div>
-
-            {/* Question Text */}
-            <h2 className="text-lg font-black text-text-main leading-relaxed">
-              {currentQ.q}
-            </h2>
-
-            {/* Options */}
-            <div className="grid gap-3 pt-2">
-              {currentQ.options.map((opt, idx) => {
-                const isSelected = selectedAnswer === idx
-                return (
-                  <button
-                    key={idx}
-                    onClick={() => setSelectedAnswer(idx)}
-                    className={`w-full flex items-center gap-4 p-4 rounded-2xl border text-left transition-all ${
-                      isSelected
-                        ? 'border-primary-purple bg-violet-50 text-text-main shadow-sm'
-                        : 'border-border-light bg-page-bg/50 hover:bg-page-bg text-text-muted hover:text-text-main'
-                    }`}
-                  >
-                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black shrink-0 ${
-                      isSelected ? 'bg-primary-purple text-white' : 'bg-white border border-border-light text-text-muted'
-                    }`}>
-                      {String.fromCharCode(65 + idx)}
-                    </div>
-                    <span className="text-sm font-semibold flex-1 leading-relaxed">
-                      {opt}
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
-
-            {/* Navigation footer */}
-            <div className="flex items-center justify-between pt-4 border-t border-border-light">
-              <button
-                onClick={resetSprint}
-                className="text-xs font-bold text-text-muted hover:text-text-main"
-              >
-                Quit Session
-              </button>
-
-              <button
-                onClick={handleNextQuestion}
-                disabled={selectedAnswer === null}
-                className="px-6 py-3 bg-primary-purple hover:bg-violet-700 text-white font-bold text-xs rounded-xl disabled:opacity-50 transition-colors shadow-sm"
-              >
-                {currentQuestionIdx + 1 === DAILY_FIVE_QUESTIONS.length ? 'Submit Daily Five' : 'Next Question'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Completion Summary Card */}
-      {sprintComplete && (
-        <section className="rounded-3xl border border-border-light bg-white p-8 shadow-sm text-center space-y-6">
-          <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto shadow-sm">
-            <CheckCircle2 className="w-8 h-8"/>
-          </div>
-
-          <div>
-            <span className="text-xs font-black uppercase tracking-wider text-primary-purple">
-              Daily Habit Complete
-            </span>
-            <h2 className="text-2xl font-black text-text-main mt-1">Daily Five Completed!</h2>
-            <p className="text-sm text-text-muted mt-1">
-              Your Daily Five consistency score and readiness index have been updated.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-w-lg mx-auto">
-            <div className="p-4 bg-page-bg rounded-2xl border border-border-light">
-              <p className="text-2xl font-black text-primary-purple">{score} / {DAILY_FIVE_QUESTIONS.length}</p>
-              <p className="text-[10px] font-black uppercase tracking-wider text-text-muted mt-1">Score</p>
-            </div>
-            <div className="p-4 bg-page-bg rounded-2xl border border-border-light">
-              <p className="text-2xl font-black text-amber-600 flex items-center justify-center gap-1">
-                <Flame className="w-5 h-5 fill-amber-500 text-amber-500"/> {streak} Days
-              </p>
-              <p className="text-[10px] font-black uppercase tracking-wider text-text-muted mt-1">Streak</p>
-            </div>
-            <div className="p-4 bg-page-bg rounded-2xl border border-border-light col-span-2 sm:col-span-1">
-              <p className="text-2xl font-black text-emerald-600">+15 pts</p>
-              <p className="text-[10px] font-black uppercase tracking-wider text-text-muted mt-1">Readiness Added</p>
-            </div>
-          </div>
-
-          <div className="flex justify-center gap-3 pt-2">
-            <button
-              onClick={resetSprint}
-              className="px-6 py-3 bg-primary-purple hover:bg-violet-700 text-white font-bold text-xs rounded-xl shadow-sm transition-colors"
-            >
-              Back to Gymnasium Hub
-            </button>
-            <Link
-              href="/student/progress"
-              className="px-6 py-3 border border-border-light bg-white hover:bg-page-bg text-text-main font-bold text-xs rounded-xl transition-colors"
-            >
-              View Readiness Score
-            </Link>
-          </div>
-        </section>
-      )}
-
-      {/* Domain Mastery Practice Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <div className="rounded-3xl border border-border-light bg-white p-6 shadow-sm space-y-4">
-          <div className="w-12 h-12 rounded-2xl bg-violet-100 flex items-center justify-center text-primary-purple">
-            <Code2 className="w-6 h-6"/>
-          </div>
-          <div>
-            <h3 className="font-black text-text-main text-base">CodeBox Algorithmic Quests</h3>
-            <p className="mt-1 text-xs text-text-muted leading-relaxed">
-              Solve LeetCode-style medium challenges with automated Python, JS, C++, and Java execution.
-            </p>
-          </div>
-          <Link
-            href="/student/codebox/two-sum"
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-primary-purple hover:underline pt-2"
-          >
-            Launch CodeBox <ArrowRight className="w-3.5 h-3.5"/>
-          </Link>
-        </div>
-
-        <div className="rounded-3xl border border-border-light bg-white p-6 shadow-sm space-y-4">
-          <div className="w-12 h-12 rounded-2xl bg-amber-100 flex items-center justify-center text-amber-700">
-            <Brain className="w-6 h-6"/>
-          </div>
-          <div>
-            <h3 className="font-black text-text-main text-base">Communication & HR Drills</h3>
-            <p className="mt-1 text-xs text-text-muted leading-relaxed">
-              Practice 90-second introductions, STAR behavioral responses, and speech clarity.
-            </p>
-          </div>
-          <Link
-            href="/student/train/communication"
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-primary-purple hover:underline pt-2"
-          >
-            Start Communication Drill <ArrowRight className="w-3.5 h-3.5"/>
-          </Link>
-        </div>
-
-        <div className="rounded-3xl border border-border-light bg-white p-6 shadow-sm space-y-4">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-100 flex items-center justify-center text-emerald-700">
-            <Award className="w-6 h-6"/>
-          </div>
-          <div>
-            <h3 className="font-black text-text-main text-base">Mock Assessments</h3>
-            <p className="mt-1 text-xs text-text-muted leading-relaxed">
-              Full-length timed assessments calibrated to TCS Digital, Zoho, and Cisco tests.
-            </p>
-          </div>
-          <Link
-            href="/student/exams"
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-primary-purple hover:underline pt-2"
-          >
-            Enter Mock Assessments <ArrowRight className="w-3.5 h-3.5"/>
-          </Link>
-        </div>
-      </div>
-    </div>
-  )
+    <div className="grid gap-4 sm:grid-cols-3"><Feature icon={<Code2 />} title="CodeBox quests" body="Run original challenges against private server tests." href="/student/codebox" cta="Open CodeBox" /><Feature icon={<Brain />} title="Communication practice" body="Record an answer and receive transcript-grounded coaching." href="/student/train/communication" cta="Start speaking" /><Feature icon={<Award />} title="Mock assessments" body="Take faculty-reviewed, timed preparation assessments." href="/student/exams" cta="View assessments" /></div>
+  </div>
 }
+
+function Metric({ label, value }: { label: string; value: string }) { return <div className="rounded-2xl border border-border-light bg-page-bg px-5 py-3 text-center"><p className="font-black text-text-main">{value}</p><p className="mt-1 text-[10px] font-black uppercase tracking-wider text-text-muted">{label}</p></div> }
+function Feature({ icon, title, body, href, cta }: { icon: React.ReactNode; title: string; body: string; href: string; cta: string }) { return <article className="rounded-3xl border border-border-light bg-white p-6 shadow-sm"><div className="grid h-11 w-11 place-items-center rounded-2xl bg-violet-50 text-primary-purple">{icon}</div><h3 className="mt-4 font-black">{title}</h3><p className="mt-1 min-h-10 text-xs leading-5 text-text-muted">{body}</p><Link href={href} className="mt-4 inline-flex items-center gap-1 text-xs font-black text-primary-purple">{cta}<ArrowRight className="h-3.5 w-3.5" /></Link></article> }

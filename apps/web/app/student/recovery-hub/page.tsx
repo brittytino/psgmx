@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ShieldCheck, Target, Calendar, CheckCircle2, Plus, MessageSquare, ArrowRight, Loader2, HeartHandshake } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { getCurrentProfile } from '@/lib/current-profile';
@@ -30,36 +30,24 @@ export default function StudentRecoveryHubPage() {
   const [submitting, setSubmitting] = useState(false);
   const [feedbackMsg, setFeedbackMsg] = useState('');
 
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
-  useEffect(() => {
-    loadCases();
-  }, []);
-
-  async function loadCases() {
+  const loadCases = useCallback(async () => {
     try {
       setLoading(true);
       const me = await getCurrentProfile(supabase);
-      if (!me) {
-        setLoading(false);
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from('support_cases')
-        .select('*')
-        .eq('student_id', me.id)
-        .order('created_at', { ascending: false });
-
-      if (!error && data) {
-        setCases(data as SupportCase[]);
-      }
+      if (!me) return;
+      const { data, error } = await supabase.from('support_cases').select('*').eq('student_id', me.id).order('created_at', { ascending: false });
+      if (error) throw error;
+      setCases((data ?? []) as SupportCase[]);
     } catch (err) {
-      console.error('Failed to load support cases:', err);
-    } finally {
-      setLoading(false);
-    }
-  }
+      setFeedbackMsg(err instanceof Error ? err.message : 'Support cases could not be loaded.');
+    } finally { setLoading(false); }
+  }, [supabase]);
+
+  useEffect(() => {
+    void loadCases();
+  }, [loadCases]);
 
   async function handleCreateRequest(e: React.FormEvent) {
     e.preventDefault();

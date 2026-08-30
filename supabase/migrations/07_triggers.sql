@@ -91,32 +91,11 @@ CREATE TRIGGER set_updated_at_defaulter_flags
     BEFORE UPDATE ON defaulter_flags
     FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
--- ── pg_cron: batch rotation + readiness score + otp log cleanup ─────────────
-SELECT cron.schedule('rotate-batch-status', '0 1 * * *', 'SELECT rotate_batch_status()');
-
-SELECT cron.schedule(
-    'compute-readiness-scores', '0 2 * * *',
-    $$
-    DO $do$
-    DECLARE v_user RECORD;
-    BEGIN
-        FOR v_user IN
-            SELECT u.id FROM users u JOIN batches b ON b.id = u.batch_id
-            WHERE b.status IN ('active_senior', 'active_junior')
-        LOOP
-            PERFORM compute_readiness_score(v_user.id);
-        END LOOP;
-    END;
-    $do$;
-    $$
-);
-
-SELECT cron.schedule('clean-otp-rate-log', '0 * * * *', $$DELETE FROM otp_rate_log WHERE sent_at < NOW() - INTERVAL '24 hours'$$);
-
-SELECT cron.schedule('send-birthday-notifications', '30 1 * * *', $$SELECT send_birthday_notifications();$$);
+-- Recurring jobs are invoked by authenticated GitHub Actions workflows.
+-- Do not add pg_cron schedules here: the production target is Supabase Free.
 
 DO $$
 BEGIN
-    RAISE NOTICE '✅ 07_triggers.sql complete — triggers wired, cron jobs scheduled.';
+    RAISE NOTICE '✅ 07_triggers.sql complete — triggers wired; scheduling is external.';
     RAISE NOTICE 'NEXT: run 08_rls_policies.sql';
 END $$;

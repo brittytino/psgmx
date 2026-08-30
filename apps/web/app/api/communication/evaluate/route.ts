@@ -1,124 +1,128 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getUserFromRequest } from '@/lib/auth'
-import { createClient } from '@/lib/supabase/server'
+import { getUserFromRequest, isStudent } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import { executeOpenRouterPrompt } from '@/lib/ai/openrouter-free-chain'
+
+const db = supabaseAdmin as any
+const MAX_AUDIO_BYTES = 12 * 1024 * 1024
+const ALLOWED_AUDIO = new Set(['audio/webm', 'audio/ogg', 'audio/mpeg', 'audio/mp4', 'audio/wav', 'audio/x-wav'])
+
+function parseScores(text: string) {
+  const start = text.indexOf('{'); const end = text.lastIndexOf('}')
+  if (start < 0 || end <= start) throw new Error('Invalid AI response')
+  const value = JSON.parse(text.slice(start, end + 1)) as Record<string, unknown>
+  const score = (key: string) => Math.max(0, Math.min(10, Math.round(Number(value[key]))))
+  const fillerCount = Math.max(0, Math.round(Number(value.filler_word_count || 0)))
+  const scores = {
+    clarity_score: score('clarity_score'),
+    structure_score: score('structure_score'),
+    relevance_score: score('relevance_score'),
+    filler_word_count: fillerCount,
+    brief_feedback: String(value.brief_feedback || '').slice(0, 700),
+    suggested_improvement: String(value.suggested_improvement || '').slice(0, 700),
+  }
+  if (Object.values(scores).some((item) => typeof item === 'number' && !Number.isFinite(item))) {
+    throw new Error('Invalid AI scores')
+  }
+  return scores
+}
+
+export async function GET(req: NextRequest) {
+  const user = await getUserFromRequest(req)
+  if (!user || !isStudent(user)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const [{ data: prompts }, { data: attempts }] = await Promise.all([
+    db.from('communication_prompt_bank').select('id, prompt_text, category, difficulty, evaluation_focus').eq('is_active', true).order('difficulty').limit(30),
+    db.from('communication_attempts').select('id, prompt_text, duration_seconds, transcript, ai_scores_json, created_at').eq('student_id', user.id).eq('is_active', true).order('created_at', { ascending: false }).limit(10),
+  ])
+  return NextResponse.json({ prompts: prompts || [], attempts: attempts || [] })
+}
 
 export async function POST(req: NextRequest) {
+  const user = await getUserFromRequest(req)
+  if (!user || !isStudent(user)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const formData = await req.formData()
+  const audio = formData.get('audio')
+  const promptId = String(formData.get('prompt_id') || '')
+  const duration = Math.round(Number(formData.get('duration_seconds')))
+  if (!(audio instanceof File) || !/^[0-9a-f-]{36}$/i.test(promptId)) {
+    return NextResponse.json({ error: 'Select a prompt and record an answer.' }, { status: 400 })
+  }
+  if (!Number.isFinite(duration) || duration < 1 || duration > 120) {
+    return NextResponse.json({ error: 'Record between 1 second and 2 minutes.' }, { status: 400 })
+  }
+  if (audio.size < 100 || audio.size > MAX_AUDIO_BYTES || !ALLOWED_AUDIO.has(audio.type)) {
+    return NextResponse.json({ error: 'Unsupported or oversized audio recording.' }, { status: 415 })
+  }
+
+  const { data: prompt } = await db.from('communication_prompt_bank')
+    .select('prompt_text, evaluation_focus').eq('id', promptId).eq('is_active', true).maybeSingle()
+  if (!prompt) return NextResponse.json({ error: 'This practice prompt is unavailable.' }, { status: 404 })
+
+  const sttKey = process.env.HUGGINGFACE_API_KEY?.trim()
+  if (!sttKey) {
+    return NextResponse.json({ error: 'Speech transcription is not configured yet. No clip was stored.' }, { status: 503 })
+  }
+
+  const attemptId = crypto.randomUUID()
+  const extension = audio.type.includes('ogg') ? 'ogg' : audio.type.includes('mpeg') ? 'mp3' : audio.type.includes('wav') ? 'wav' : audio.type.includes('mp4') ? 'm4a' : 'webm'
+  const storagePath = `communication/${user.id}/${attemptId}.${extension}`
+  const upload = await supabaseAdmin.storage.from('student-media').upload(storagePath, audio, {
+    contentType: audio.type,
+    upsert: false,
+  })
+  if (upload.error) return NextResponse.json({ error: 'The private audio archive is unavailable.' }, { status: 503 })
+
   try {
-    const user = await getUserFromRequest(req)
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const sttResponse = await fetch(
+      process.env.STT_API_URL || 'https://router.huggingface.co/hf-inference/models/openai/whisper-large-v3-turbo',
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${sttKey}`, 'Content-Type': audio.type },
+        body: await audio.arrayBuffer(),
+        signal: AbortSignal.timeout(45_000),
+      },
+    )
+    if (!sttResponse.ok) throw new Error('Speech transcription provider unavailable')
+    const stt = await sttResponse.json()
+    const transcript = String(stt?.text || '').trim()
+    if (transcript.length < 5) throw new Error('No clear speech was detected')
 
-    const formData = await req.formData()
-    const audioFile = formData.get('audio') as File
-    const prompt = formData.get('prompt') as string
-
-    if (!audioFile || !prompt) {
-      return NextResponse.json({ error: 'Missing audio or prompt' }, { status: 400 })
-    }
-
-    const supabase = await createClient()
-
-    // 1. Upload audio to Supabase Storage
-    const fileExt = audioFile.name.split('.').pop() || 'webm'
-    const attemptId = crypto.randomUUID()
-    const storagePath = `communication/${user.id}/${attemptId}.${fileExt}`
-
-    const { error: uploadErr } = await supabaseAdmin.storage
-      .from('student-media') // using admin to ensure bucket creation/access in MVP
-      .upload(storagePath, audioFile, {
-        contentType: audioFile.type || 'audio/webm',
-        upsert: true
-      })
-
-    if (uploadErr) {
-      console.error('Audio upload error:', uploadErr)
-      // We will continue even if upload fails for MVP evaluation
-    }
-
-    // 2. Transcribe Audio (STT)
-    // In production, this calls Hugging Face Whisper or Groq.
-    // For this implementation, we will mock the STT if no API keys are configured, 
-    // to ensure the UI flow works and OpenRouter can evaluate the text.
-    let transcript = "I faced a challenge when our database queries were too slow. I resolved it by adding indexes to the frequently queried columns and implementing a caching layer using Redis. This reduced the load time significantly. However, um, I think we could have planned the schema better from the start."
-
-    // 3. AI Evaluation via OpenRouter
-    let aiScoresJson = {
-      clarity_score: 8,
-      structure_score: 7,
-      filler_word_count: 2,
-      relevance_score: 9,
-      brief_feedback: "Good structured response. You identified the problem and explained the solution clearly.",
-      suggested_improvement: "Try to avoid filler words like 'um'. Detail the exact performance improvement metric if possible."
-    }
-    let aiModelUsed = 'google/gemini-2.0-flash-exp:free' // per PRD fallback chain
-
-    try {
-      const openRouterKey = process.env.OPENROUTER_API_KEY
-      if (openRouterKey) {
-        const evalPrompt = `This is a transcript of an audio recording. 
-        Prompt asked: "${prompt}"
-        Transcript: "${transcript}"
-        
-        Evaluate the spoken response based on: clarity of speech, answer structure (beginning, middle, end), use of filler words (um, uh, like), and relevance to the prompt. 
-        Return exactly valid JSON with no markdown formatting:
-        { "clarity_score": 0-10, "structure_score": 0-10, "filler_word_count": 0, "relevance_score": 0-10, "brief_feedback": "feedback", "suggested_improvement": "suggestion" }`
-
-        const aiResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${openRouterKey}`,
-            'Content-Type': 'application/json',
-            'HTTP-Referer': 'https://psgmx.tech',
-            'X-Title': 'PSGMX'
-          },
-          body: JSON.stringify({
-            model: aiModelUsed,
-            messages: [{ role: 'user', content: evalPrompt }]
-          })
-        })
-
-        if (aiResponse.ok) {
-          const aiData = await aiResponse.json()
-          let content = aiData.choices?.[0]?.message?.content || ''
-          content = content.replace(/```json/g, '').replace(/```/g, '').trim()
-          try {
-            aiScoresJson = JSON.parse(content)
-          } catch (e) {
-            console.error('Failed to parse OpenRouter JSON:', content)
-          }
-        }
-      }
-    } catch (aiErr) {
-      console.error('AI evaluation failed:', aiErr)
-    }
-
-    // 4. Save to Database
-    const { error: dbErr } = await (supabase as any)
-      .from('communication_attempts')
-      .insert({
-        id: attemptId,
-        student_id: user.id,
-        prompt_text: prompt,
-        audio_storage_path: storagePath,
-        transcript,
-        ai_scores_json: aiScoresJson,
-        ai_model_used: aiModelUsed,
-        ai_evaluated_at: new Date().toISOString(),
-      })
-
-    if (dbErr) {
-      console.error('Failed to save communication attempt to DB:', dbErr)
-    }
-
-    return NextResponse.json({
-      attempt_id: attemptId,
+    const ai = await executeOpenRouterPrompt(
+      `Prompt: ${prompt.prompt_text}\nEvaluation focus: ${(prompt.evaluation_focus || []).join(', ')}\nTranscript: ${transcript}\nReturn JSON only: clarity_score, structure_score, relevance_score (0-10 integers), filler_word_count, brief_feedback, suggested_improvement. Score only evidence present in this transcript.`,
+      'communication_evaluation',
+      'You evaluate spoken interview-practice transcripts. Be specific, respectful, and concise. Return JSON only.',
+    )
+    const scores = parseScores(ai.text)
+    const { error: insertError } = await db.from('communication_attempts').insert({
+      id: attemptId,
+      student_id: user.id,
+      prompt_text: prompt.prompt_text,
+      audio_storage_path: storagePath,
+      duration_seconds: duration,
       transcript,
-      scores: aiScoresJson
+      ai_scores_json: scores,
+      ai_model_used: ai.modelUsed,
+      ai_evaluated_at: new Date().toISOString(),
     })
+    if (insertError) throw insertError
+
+    const { data: overflow } = await db.from('communication_attempts')
+      .select('id, audio_storage_path').eq('student_id', user.id).eq('is_active', true)
+      .order('created_at', { ascending: false }).range(10, 50)
+    if (overflow?.length) {
+      await db.from('communication_attempts').update({ is_active: false }).in('id', overflow.map((item: any) => item.id))
+      const paths = overflow.map((item: any) => item.audio_storage_path).filter(Boolean)
+      if (paths.length) await supabaseAdmin.storage.from('student-media').remove(paths)
+    }
+
+    return NextResponse.json({ attempt_id: attemptId, transcript, scores, model_used: ai.modelUsed })
   } catch (error) {
-    console.error('Communication evaluate error:', error)
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+    await supabaseAdmin.storage.from('student-media').remove([storagePath])
+    return NextResponse.json({
+      error: error instanceof Error && error.message === 'No clear speech was detected'
+        ? 'No clear speech was detected. Retake the recording closer to the microphone.'
+        : 'Transcription or evaluation is temporarily unavailable. No clip was stored.',
+    }, { status: 503 })
   }
 }

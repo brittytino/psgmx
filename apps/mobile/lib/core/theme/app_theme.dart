@@ -114,6 +114,13 @@ class SemanticColors extends ThemeExtension<SemanticColors> {
 }
 
 class AppTheme {
+  // Brand & Legacy Aliases
+  static const Color primaryPurple = Color(0xFF6D28D9);
+  static const Color textMain = Color(0xFF221F1A);
+  static const Color textMuted = Color(0xFF9E9A92);
+  static const Color scaffoldBg = Color(0xFFFBF6EE);
+  static const Color borderLight = Color(0xFFEFE9E0);
+
   // --- Daybreak Light Theme Colors ---
   static const Color _lightBg = Color(0xFFFBF6EE); // Paper Cream
   static const Color _lightSurface = Color(0xFFFFFFFF); 

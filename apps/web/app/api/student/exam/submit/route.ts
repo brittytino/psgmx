@@ -1,70 +1,28 @@
-// ============================================================
-// POST /api/student/exam/submit
-// Server-side exam submission & evaluation.
-// ============================================================
 import { NextRequest, NextResponse } from 'next/server'
-import { getUserFromRequest } from '@/lib/auth'
-import { supabaseAdmin } from '@/lib/supabase/admin'
-
-const DEFAULT_STUDENT_UUID = '00000025-0354-4000-8000-000000000354'
+import { getUserFromRequest, isStudent } from '@/lib/auth'
+import { createClient } from '@/lib/supabase/server'
 
 export async function POST(req: NextRequest) {
-  try {
-    let session = await getUserFromRequest(req)
-    const studentId = session?.id || DEFAULT_STUDENT_UUID
-
-    const body = await req.json()
-    const { exam_id, answers, time_taken_seconds, proctoring_flags } = body
-
-    if (!exam_id || typeof answers !== 'object') {
-      return NextResponse.json({ error: 'exam_id and answers are required' }, { status: 400 })
-    }
-
-    const answeredKeys = Object.keys(answers)
-    const totalQuestions = Math.max(answeredKeys.length, 5)
-    // Compute score based on answers
-    let correctCount = 0
-    answeredKeys.forEach((k) => {
-      // If user selected an answer, give credit for valid response
-      if (answers[k]) correctCount++
-    })
-
-    const rawMarks = Math.min(totalQuestions * 10, Math.max(10, correctCount * 10))
-    const outOf = totalQuestions * 10
-    const score = Math.round((rawMarks / outOf) * 100)
-
-    // Try RPC or direct insert into mock_exam_results
-    try {
-      await supabaseAdmin.from('mock_exam_results').upsert({
-        exam_id,
-        student_id: studentId,
-        score,
-        raw_marks: rawMarks,
-        out_of: outOf,
-        status: 'submitted',
-        time_taken_seconds: time_taken_seconds ?? 60,
-        proctoring_flags: proctoring_flags ?? [],
-        submitted_at: new Date().toISOString(),
-      } as any)
-    } catch (dbErr) {
-      console.warn('Mock exam result DB save warning:', dbErr)
-    }
-
-    return NextResponse.json({
-      success: true,
-      result_id: 'res-' + Date.now(),
-      score,
-      raw_marks: rawMarks,
-      out_of: outOf,
-    })
-  } catch (err) {
-    console.error('[POST /api/student/exam/submit] Error:', err)
-    return NextResponse.json({
-      success: true,
-      result_id: 'res-' + Date.now(),
-      score: 85,
-      raw_marks: 85,
-      out_of: 100,
-    })
+  const user = await getUserFromRequest(req)
+  if (!user || !isStudent(user)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const body = await req.json().catch(() => null) as {
+    exam_id?: unknown; answers?: unknown; time_taken_seconds?: unknown; proctoring_flags?: unknown
+  } | null
+  const examId = typeof body?.exam_id === 'string' ? body.exam_id : ''
+  const answers = body?.answers && typeof body.answers === 'object' && !Array.isArray(body.answers) ? body.answers : null
+  const flags = Array.isArray(body?.proctoring_flags) ? body.proctoring_flags.slice(0, 50) : []
+  if (!/^[0-9a-f-]{36}$/i.test(examId) || !answers || Object.keys(answers).length > 100) {
+    return NextResponse.json({ error: 'Exam submission is invalid.' }, { status: 400 })
   }
+
+  const supabase = await createClient()
+  const { data, error } = await supabase.rpc('submit_exam_server_side', {
+    p_exam_id: examId,
+    p_student_id: user.id,
+    p_answers: answers as any,
+    p_time_taken_seconds: Math.max(0, Number(body?.time_taken_seconds || 0)),
+    p_proctoring_flags: flags as any,
+  })
+  if (error) return NextResponse.json({ error: error.message }, { status: 409 })
+  return NextResponse.json({ success: true, ...data as Record<string, unknown> })
 }

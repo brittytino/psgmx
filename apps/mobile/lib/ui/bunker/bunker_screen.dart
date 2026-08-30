@@ -50,7 +50,7 @@ class _BunkerScreenState extends State<BunkerScreen> {
                             style: GoogleFonts.sora(
                                 fontSize: 26, fontWeight: FontWeight.w800)),
                         const SizedBox(height: 4),
-                        Text('The only eCampus data shown in PSGMX.',
+                        Text('Academic attendance and weekly timetable.',
                             style: GoogleFonts.inter(
                                 fontSize: 13, color: const Color(0xFF64748B)))
                       ])),
@@ -76,6 +76,10 @@ class _BunkerScreenState extends State<BunkerScreen> {
               else ...[
                 SliverToBoxAdapter(
                     child: _SummaryCard(attendance: provider.attendance!)),
+                if (provider.timetable != null)
+                  SliverToBoxAdapter(
+                      child: _WeeklyTimetableCard(
+                          timetable: provider.timetable!)),
                 SliverPadding(
                   padding: const EdgeInsets.fromLTRB(20, 18, 20, 120),
                   sliver: SliverList.separated(
@@ -89,6 +93,67 @@ class _BunkerScreenState extends State<BunkerScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _WeeklyTimetableCard extends StatelessWidget {
+  const _WeeklyTimetableCard({required this.timetable});
+  final EcampusWeeklyTimetable timetable;
+
+  @override
+  Widget build(BuildContext context) {
+    if (timetable.headers.isEmpty || timetable.rows.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFE8EAF0)),
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            const Icon(LucideIcons.calendarDays,
+                size: 18, color: AppTheme.accentCoral),
+            const SizedBox(width: 8),
+            Text('Weekly timetable',
+                style: GoogleFonts.sora(
+                    fontSize: 15, fontWeight: FontWeight.w800)),
+          ]),
+          const SizedBox(height: 14),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: DataTable(
+              headingRowHeight: 40,
+              dataRowMinHeight: 42,
+              dataRowMaxHeight: 64,
+              horizontalMargin: 10,
+              columnSpacing: 18,
+              columns: timetable.headers
+                  .map((header) => DataColumn(
+                      label: Text(header,
+                          style: GoogleFonts.inter(
+                              fontSize: 11, fontWeight: FontWeight.w800))))
+                  .toList(),
+              rows: timetable.rows
+                  .map((row) => DataRow(
+                      cells: List.generate(
+                          timetable.headers.length,
+                          (index) => DataCell(SizedBox(
+                              width: index == 0 ? 64 : 92,
+                              child: Text(index < row.length ? row[index] : '',
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.inter(fontSize: 11)))))))
+                  .toList(),
+            ),
+          ),
+        ]),
       ),
     );
   }

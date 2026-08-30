@@ -65,7 +65,7 @@ CREATE INDEX IF NOT EXISTS idx_quests_authored_by ON public.quests(authored_by);
 -- Auto-update updated_at
 CREATE OR REPLACE TRIGGER quests_updated_at
   BEFORE UPDATE ON public.quests
-  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+  FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
 -- ── code_submissions ──────────────────────────────────────────
 DO $$ BEGIN

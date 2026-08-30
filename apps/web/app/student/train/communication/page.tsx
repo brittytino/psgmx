@@ -4,6 +4,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Mic, Square, Play, UploadCloud, CheckCircle2, ChevronLeft, Loader2, BrainCircuit } from 'lucide-react';
 import Link from 'next/link';
 
+type PracticePrompt = { id: string; prompt_text: string; category: string; difficulty: string; evaluation_focus: string[] };
+type PriorAttempt = { id: string; prompt_text: string; duration_seconds: number; ai_scores_json: any; created_at: string };
+
 export default function CommunicationPracticePage() {
   const [isRecording, setIsRecording] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
@@ -12,20 +15,38 @@ export default function CommunicationPracticePage() {
   
   const [isUploading, setIsUploading] = useState(false);
   const [result, setResult] = useState<any>(null);
+  const [prompts, setPrompts] = useState<PracticePrompt[]>([]);
+  const [selectedPromptId, setSelectedPromptId] = useState('');
+  const [attempts, setAttempts] = useState<PriorAttempt[]>([]);
+  const [loadError, setLoadError] = useState('');
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const maxTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const MAX_TIME = 120; // 2 minutes
 
-  const prompt = "Tell me about a time you faced a technical challenge in a team project and how you resolved it.";
+  const selectedPrompt = prompts.find((item) => item.id === selectedPromptId);
 
   useEffect(() => {
-    if (time >= MAX_TIME && isRecording) {
-      stopRecording();
+    fetch('/api/communication/evaluate').then(async (response) => {
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Practice prompts could not be loaded.');
+      setPrompts(data.prompts || []);
+      setAttempts(data.attempts || []);
+      if (data.prompts?.[0]) setSelectedPromptId(data.prompts[0].id);
+    }).catch((error) => setLoadError(error instanceof Error ? error.message : 'Practice prompts could not be loaded.'));
+  }, []);
+
+  const stopRecording = React.useCallback(() => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      if (timerRef.current) clearInterval(timerRef.current);
+      if (maxTimeoutRef.current) clearTimeout(maxTimeoutRef.current);
     }
-  }, [time, isRecording]);
+  }, [isRecording]);
 
   const startRecording = async () => {
     try {
@@ -52,17 +73,14 @@ export default function CommunicationPracticePage() {
       timerRef.current = setInterval(() => {
         setTime(prev => prev + 1);
       }, 1000);
+      maxTimeoutRef.current = setTimeout(() => {
+        if (mediaRecorderRef.current?.state === 'recording') mediaRecorderRef.current.stop();
+        setIsRecording(false);
+        if (timerRef.current) clearInterval(timerRef.current);
+      }, MAX_TIME * 1000);
     } catch (err) {
       console.error('Error accessing microphone', err);
       alert('Could not access microphone. Please check permissions.');
-    }
-  };
-
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-      if (timerRef.current) clearInterval(timerRef.current);
     }
   };
 
@@ -74,14 +92,15 @@ export default function CommunicationPracticePage() {
   };
 
   const submitAudio = async () => {
-    if (!audioBlob) return;
+    if (!audioBlob || !selectedPrompt) return;
     setIsUploading(true);
     
     try {
       // 1. Convert blob to File or send as form data
       const formData = new FormData();
       formData.append('audio', audioBlob, 'recording.webm');
-      formData.append('prompt', prompt);
+      formData.append('prompt_id', selectedPrompt.id);
+      formData.append('duration_seconds', String(time));
 
       // 2. Call our API route which handles STT and AI evaluation
       const res = await fetch('/api/communication/evaluate', {
@@ -94,7 +113,7 @@ export default function CommunicationPracticePage() {
       if (res.ok) {
         setResult(data);
       } else {
-        alert('Failed to evaluate audio: ' + data.error);
+        alert(data.error || 'Failed to evaluate audio.');
       }
     } catch (err) {
       console.error(err);
@@ -127,7 +146,15 @@ export default function CommunicationPracticePage() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8 relative overflow-hidden">
           <div className="absolute top-0 left-0 w-1 h-full bg-brand-500"></div>
           <h2 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2">Practice Prompt</h2>
-          <p className="text-lg font-medium text-gray-900 leading-relaxed">{prompt}</p>
+          {loadError ? <p className="text-sm font-semibold text-red-600">{loadError}</p> : (
+            <>
+              <select value={selectedPromptId} onChange={(event) => { setSelectedPromptId(event.target.value); resetRecording(); }} className="mb-4 w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm font-bold text-gray-700">
+                {prompts.map((item) => <option key={item.id} value={item.id}>{item.category.replace('_', ' ')} · {item.difficulty}</option>)}
+              </select>
+              <p className="text-lg font-medium text-gray-900 leading-relaxed">{selectedPrompt?.prompt_text || 'Loading a verified prompt…'}</p>
+              {selectedPrompt?.evaluation_focus?.length ? <p className="mt-3 text-xs font-semibold text-gray-500">Focus: {selectedPrompt.evaluation_focus.join(' · ')}</p> : null}
+            </>
+          )}
         </div>
 
         {/* Recording Interface */}
@@ -149,6 +176,7 @@ export default function CommunicationPracticePage() {
               ) : (
                 <button 
                   onClick={startRecording}
+                  disabled={!selectedPrompt}
                   className="w-20 h-20 bg-brand-500 hover:bg-brand-600 text-white rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-105 active:scale-95"
                 >
                   <Mic className="w-8 h-8" />
@@ -234,6 +262,7 @@ export default function CommunicationPracticePage() {
 
         </div>
       </main>
+      {attempts.length > 0 && <section className="mx-auto w-full max-w-2xl px-6 pb-12"><h2 className="mb-3 text-sm font-black uppercase tracking-wider text-gray-500">Recent practice</h2><div className="space-y-3">{attempts.map((attempt) => <article key={attempt.id} className="rounded-xl border border-gray-200 bg-white p-4"><div className="flex items-start justify-between gap-4"><p className="text-sm font-bold text-gray-800">{attempt.prompt_text}</p><span className="shrink-0 text-xs text-gray-500">{new Date(attempt.created_at).toLocaleDateString('en-IN')}</span></div><p className="mt-2 text-xs text-gray-600">Clarity {attempt.ai_scores_json?.clarity_score ?? '—'}/10 · Structure {attempt.ai_scores_json?.structure_score ?? '—'}/10 · {attempt.duration_seconds}s</p></article>)}</div></section>}
     </div>
   );
 }

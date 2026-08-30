@@ -16,15 +16,18 @@ const suggestedQuestions = [
 const topicFilters = ['All', 'DSA', 'Aptitude', 'Company-Specific', 'FYP', 'General'];
 
 type Message = { role: 'user' | 'ai'; content: string; sources?: string[] };
+type KnowledgeStats = { articles: number; interview_patterns: number; alumni_contributors: number };
+
+const WELCOME: Message = {
+  role: 'ai',
+  content: "Hi, I'm AI Senior. I use your current preparation evidence and approved Knowledge Brain material. Ask me what to practise next, or ask about a historical interview pattern. Official drive information stays in NEO PAT.",
+  sources: [],
+};
 
 export default function AISeniorPage() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: 'ai',
-      content: "Hi! I'm the AI Senior — I know everything that happened in this department's placement history. Ask me anything about preparation, specific companies, or how to boost your readiness score. My answers are grounded in real experiences from your seniors.",
-      sources: [],
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([WELCOME]);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [stats, setStats] = useState<KnowledgeStats>({ articles: 0, interview_patterns: 0, alumni_contributors: 0 });
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [activeTopic, setActiveTopic] = useState('All');
@@ -34,6 +37,24 @@ export default function AISeniorPage() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  useEffect(() => {
+    const stored = window.sessionStorage.getItem('psgmx_ai_conversation');
+    const url = stored ? `/api/ai-senior?conversation_id=${encodeURIComponent(stored)}` : '/api/ai-senior';
+    fetch(url).then(async (response) => {
+      if (!response.ok) throw new Error('History unavailable');
+      const data = await response.json();
+      setStats(data.knowledge_stats || { articles: 0, interview_patterns: 0, alumni_contributors: 0 });
+      if (data.conversation_id) {
+        setConversationId(data.conversation_id);
+        const history = (data.messages || []).map((message: { role: string; content: string }) => ({
+          role: message.role === 'assistant' ? 'ai' as const : 'user' as const,
+          content: message.content,
+        }));
+        if (history.length) setMessages([WELCOME, ...history]);
+      }
+    }).catch(() => {});
+  }, []);
+
   const sendMessage = async (text?: string) => {
     const query = text || input.trim();
     if (!query) return;
@@ -41,18 +62,25 @@ export default function AISeniorPage() {
     setMessages(prev => [...prev, { role: 'user', content: query }]);
     setIsLoading(true);
     try {
-      const res = await fetch('/api/ai-senior', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query }) });
+      const res = await fetch('/api/ai-senior', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query, conversation_id: conversationId }) });
       const data = await res.json();
-      setMessages(prev => [...prev, { role: 'ai', content: data.success ? data.answer : 'Sorry, I encountered an error connecting to the Knowledge Brain. Please try again.', sources: data.sources || [] }]);
-    } catch {
-      setMessages(prev => [...prev, { role: 'ai', content: 'Connection failed. Please check your internet and try again.' }]);
+      if (!res.ok) throw new Error(data.error || 'The AI Senior could not answer right now.');
+      if (data.conversation_id) {
+        setConversationId(data.conversation_id);
+        window.sessionStorage.setItem('psgmx_ai_conversation', data.conversation_id);
+      }
+      setMessages(prev => [...prev, { role: 'ai', content: data.answer, sources: data.sources || [] }]);
+    } catch (error) {
+      setMessages(prev => [...prev, { role: 'ai', content: error instanceof Error ? error.message : 'Connection failed. Please try again.' }]);
     } finally {
       setIsLoading(false);
     }
   };
 
   const clearChat = () => {
-    setMessages([{ role: 'ai', content: "Hi! I'm the AI Senior — ready to help. What would you like to know?", sources: [] }]);
+    window.sessionStorage.removeItem('psgmx_ai_conversation');
+    setConversationId(null);
+    setMessages([WELCOME]);
   };
 
   return (
@@ -71,7 +99,7 @@ export default function AISeniorPage() {
         </button>
       </div>
 
-      <div className="flex gap-6 flex-1 min-h-0">
+      <div className="flex flex-1 min-h-0 flex-col gap-6 xl:flex-row">
 
         {/* Chat Panel (2/3) */}
         <div className="flex-1 flex flex-col bg-white rounded-[20px] border border-border-light shadow-[0_2px_12px_rgba(0,0,0,0.02)] min-h-0">
@@ -108,8 +136,8 @@ export default function AISeniorPage() {
                         ))}
                       </div>
                     )}
-                    {msg.role === 'ai' && (
-                      <p className="text-[10px] text-text-muted mt-1 ml-1">Sourced from Knowledge Brain</p>
+                    {msg.role === 'ai' && msg.sources && msg.sources.length > 0 && (
+                      <p className="text-[10px] text-text-muted mt-1 ml-1">Grounded in approved Knowledge Brain sources</p>
                     )}
                   </div>
                 </motion.div>
@@ -156,7 +184,7 @@ export default function AISeniorPage() {
         </div>
 
         {/* Sidebar (1/3) */}
-        <div className="w-80 shrink-0 space-y-5 overflow-y-auto custom-scrollbar">
+        <div className="w-full shrink-0 space-y-5 overflow-y-auto custom-scrollbar xl:w-80">
 
           {/* Suggested Questions */}
           <div className="bg-white rounded-[20px] border border-border-light shadow-[0_2px_12px_rgba(0,0,0,0.02)] p-5">
@@ -204,9 +232,9 @@ export default function AISeniorPage() {
             </h3>
             <div className="space-y-3">
               {[
-                { label: 'Articles Indexed', value: '147', icon: BookOpen },
-                { label: 'Placement Experiences', value: '83', icon: Building2 },
-                { label: 'Alumni Contributors', value: '31', icon: Award },
+                { label: 'Approved Articles', value: stats.articles, icon: BookOpen },
+                { label: 'Interview Patterns', value: stats.interview_patterns, icon: Building2 },
+                { label: 'Alumni Contributors', value: stats.alumni_contributors, icon: Award },
               ].map((stat, i) => (
                 <div key={i} className="flex items-center justify-between p-3 bg-page-bg rounded-xl">
                   <div className="flex items-center gap-2">

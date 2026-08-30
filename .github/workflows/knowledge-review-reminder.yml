@@ -1,7 +1,6 @@
-name: Knowledge Review Reminder & Weekly Digest
+name: Knowledge Review Scheduling
 
 # Flags Knowledge Brain content older than 18 months for re-review.
-# Sends weekly digest emails to active students via Resend.
 # Runs every Monday at 09:00 AM IST (03:30 UTC).
 # Replaces pg_cron (Supabase Pro feature) — free alternative via GitHub Actions.
 # See: docs/user-flow.md Chapter 7.3, 11.3, 13.3
@@ -13,16 +12,21 @@ on:
 
 jobs:
   knowledge-review:
-    name: Flag stale knowledge and trigger weekly digests
+    name: Flag stale approved knowledge for review
     runs-on: ubuntu-latest
     steps:
-      - name: Call knowledge-review-reminder Edge Function
+      - name: Flag stale approved knowledge for review
+        env:
+          APP_URL: ${{ vars.APP_API_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
+          test -n "$APP_URL"
+          test -n "$CRON_SECRET"
           HTTP_STATUS=$(curl -s -o /tmp/review_response.json -w "%{http_code}" \
             -X POST \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Authorization: Bearer $CRON_SECRET" \
             -H "Content-Type: application/json" \
-            "${{ secrets.SUPABASE_URL }}/functions/v1/knowledge-review-reminder")
+            "$APP_URL/api/cron/knowledge-review")
 
           echo "Knowledge review reminder HTTP status: $HTTP_STATUS"
           cat /tmp/review_response.json
@@ -32,4 +36,4 @@ jobs:
             exit 1
           fi
 
-          echo "Knowledge review reminder and weekly digest completed successfully."
+          echo "Knowledge review scheduling completed successfully."

@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
+import '../../providers/daily_five_provider.dart';
 
 class TrainHubScreen extends StatelessWidget {
   const TrainHubScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final dailyFive = context.watch<DailyFiveProvider>();
+    final streak = dailyFive.streak?.currentStreak ?? 0;
+    final completedToday = dailyFive.completedToday;
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBg,
       appBar: AppBar(
@@ -34,7 +39,7 @@ class TrainHubScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.primaryPurple.withOpacity(0.3),
+                    color: AppTheme.primaryPurple.withValues(alpha: 0.3),
                     blurRadius: 16,
                     offset: const Offset(0, 6),
                   ),
@@ -47,18 +52,21 @@ class TrainHubScreen extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Row(
+                        child: Row(
                           children: [
                             Text('🔥', style: TextStyle(fontSize: 12)),
                             SizedBox(width: 4),
                             Text(
-                              '8 DAY STREAK',
-                              style: TextStyle(
+                              streak > 0
+                                  ? '$streak DAY STREAK'
+                                  : 'START YOUR STREAK',
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 11,
@@ -91,7 +99,8 @@ class TrainHubScreen extends StatelessWidget {
                   const SizedBox(height: 6),
                   const Text(
                     '5 targeted questions across DSA, DBMS, OS & Aptitude calibrated to your recent learning gaps.',
-                    style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+                    style: TextStyle(
+                        color: Colors.white70, fontSize: 13, height: 1.4),
                   ),
                   const SizedBox(height: 20),
                   SizedBox(
@@ -107,9 +116,10 @@ class TrainHubScreen extends StatelessWidget {
                         ),
                         elevation: 0,
                       ),
-                      child: const Text(
-                        'Start Daily Five (+25 XP)',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      child: Text(
+                        completedToday ? 'Completed Today' : 'Start Daily Five',
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 14),
                       ),
                     ),
                   ),
@@ -134,7 +144,8 @@ class TrainHubScreen extends StatelessWidget {
               icon: Icons.psychology_outlined,
               color: Colors.blue,
               title: 'Adaptive Skill Sprint',
-              subtitle: '5, 10, or 20 min focus drills that adapt question difficulty to live performance.',
+              subtitle:
+                  '5, 10, or 20 min focus drills that adapt question difficulty to live performance.',
               actionLabel: 'Launch Sprint',
               onTap: () => context.push('/daily-five'),
             ),
@@ -147,7 +158,8 @@ class TrainHubScreen extends StatelessWidget {
               icon: Icons.mic_none_outlined,
               color: Colors.orange,
               title: 'Communication Practice',
-              subtitle: '2-minute audio recording evaluated by AI for clarity, answer structure & filler words.',
+              subtitle:
+                  '2-minute audio recording evaluated by AI for clarity, answer structure & filler words.',
               actionLabel: 'Record Audio (2m)',
               onTap: () => context.push('/train/communication'),
             ),
@@ -160,7 +172,8 @@ class TrainHubScreen extends StatelessWidget {
               icon: Icons.pattern_outlined,
               color: Colors.teal,
               title: 'Interview Pattern Library',
-              subtitle: 'Real company interview rounds and problem breakdowns shared by alumni.',
+              subtitle:
+                  'Real company interview rounds and problem breakdowns shared by alumni.',
               actionLabel: 'Explore Patterns',
               onTap: () => context.push('/interview-patterns'),
             ),
@@ -187,7 +200,7 @@ class TrainHubScreen extends StatelessWidget {
         border: Border.all(color: AppTheme.borderLight),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -199,7 +212,7 @@ class TrainHubScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Icon(icon, color: color, size: 24),

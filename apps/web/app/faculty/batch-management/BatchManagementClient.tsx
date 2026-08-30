@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { 
   Users, Award, Calendar, CheckCircle2, AlertCircle, ArrowRight, 
-  RotateCcw, ShieldCheck, FileCheck, CheckSquare, Sparkles, LogIn 
+  RotateCcw, ShieldCheck, FileCheck, CheckSquare, Sparkles
 } from 'lucide-react';
 import { InitialsAvatar } from '@/components/basic/InitialsAvatar';
 
@@ -18,11 +18,11 @@ export default function BatchManagementClient({ initialStudents, batches }: { in
 
   // Handover Ceremony State per PRD Chapter 6.2
   const [handoverStep, setHandoverStep] = useState(1);
-  const [outgoingBatch, setOutgoingBatch] = useState(batches.find(b => b.status === 'active_senior')?.code || '25MX');
-  const [incomingBatch, setIncomingBatch] = useState(batches.find(b => b.status === 'active_junior')?.code || '27MX');
-  const [outgoingPr, setOutgoingPr] = useState('Keerthana R (25MX102)');
-  const [incomingPr, setIncomingPr] = useState('Arjun V (27MX105)');
-  const [handoverDate, setHandoverDate] = useState('2026-05-30');
+  const [outgoingBatch, setOutgoingBatch] = useState(batches.find(b => b.status === 'active_senior')?.code || '');
+  const [incomingBatch, setIncomingBatch] = useState(batches.find(b => b.status === 'active_junior')?.code || '');
+  const [outgoingPr, setOutgoingPr] = useState('');
+  const [incomingPr, setIncomingPr] = useState('');
+  const [handoverDate, setHandoverDate] = useState('');
 
   // 7-Point Handover Checklist
   const [checklist, setChecklist] = useState([
@@ -53,38 +53,19 @@ export default function BatchManagementClient({ initialStudents, batches }: { in
           graduating_batch: outgoingBatch,
           incoming_batch: incomingBatch,
           new_pr: incomingPr,
+          checklist,
         })
       });
 
+      const body = await res.json().catch(() => ({}));
       if (res.ok) {
         setSuccess(`Batch ${outgoingBatch} successfully graduated! All admin roles transferred to incoming PR ${incomingPr}.`);
         setHandoverStep(3);
       } else {
-        // Mock success for demonstration if cron route responds with status
-        setSuccess(`Batch Handover Transition completed! ${outgoingBatch} is now archived in the Alumni Network.`);
-        setHandoverStep(3);
+        throw new Error(body.error || body.message || 'Batch transition was not accepted.');
       }
     } catch (e) {
-      setSuccess(`Batch Handover Ceremony executed successfully!`);
-      setHandoverStep(3);
-    }
-  };
-
-  const handleImpersonate = async (targetUserId: string) => {
-    try {
-      const res = await fetch('/api/super-admin/impersonate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ targetUserId }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        window.location.assign(data.redirect || '/student');
-      } else {
-        setError(data.error || 'Impersonation failed');
-      }
-    } catch {
-      setError('Impersonation failed due to an unexpected error.');
+      setError(e instanceof Error ? e.message : 'Batch transition failed.');
     }
   };
 
@@ -345,12 +326,7 @@ export default function BatchManagementClient({ initialStudents, batches }: { in
                     </td>
                     <td className="p-4 text-[12px] font-bold text-text-muted">{s.batchCode}</td>
                     <td className="p-4 text-right">
-                      <button
-                        onClick={() => handleImpersonate(s.id)}
-                        className="inline-flex items-center gap-2 px-3 py-1.5 bg-page-bg text-primary-purple hover:bg-primary-purple/10 rounded-lg text-[12px] font-bold transition-colors"
-                      >
-                        <LogIn className="w-3.5 h-3.5" /> Log in as
-                      </button>
+                      <span className="rounded-full bg-page-bg px-3 py-1 text-[11px] font-bold text-text-muted">Verified profile</span>
                     </td>
                   </tr>
                 ))}

@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/auth'
 import { dashboardPath } from '@/lib/staff-auth'
-import { createClient } from '@/lib/supabase/server'
+import { supabaseAdmin } from '@/lib/supabase/admin'
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,16 +16,37 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const supabase = await createClient()
-
-    // Update user profile with onboarding data.
-    // Note: linkedin_url/avatar_url are not columns on the live `users`
-    // table — previously this endpoint always failed outright (unknown
-    // columns error the whole PostgREST update), so onboarding_complete
-    // never got set either. Only writing what actually exists.
-    const { error } = await supabase
+    const body = await req.json().catch(() => null) as {
+      linkedin_url?: unknown; github_url?: unknown; skills?: unknown;
+      interests?: unknown; career_goal?: unknown; arrears?: unknown;
+    } | null
+    const optionalUrl = (value: unknown) => {
+      if (value === null || value === undefined || value === '') return null
+      if (typeof value !== 'string' || value.length > 500) throw new Error('Profile URL is invalid')
+      const url = new URL(value)
+      if (url.protocol !== 'https:') throw new Error('Profile URLs must use HTTPS')
+      return url.toString()
+    }
+    const toTags = (value: unknown) => typeof value === 'string'
+      ? value.split(',').map((item) => item.trim()).filter(Boolean).slice(0, 30)
+      : []
+    const skills = toTags(body?.skills)
+    const interests = toTags(body?.interests)
+    const careerGoal = typeof body?.career_goal === 'string'
+      ? body.career_goal.trim().slice(0, 500) || null
+      : null
+    const arrears = Array.isArray(body?.arrears) ? body.arrears.filter((value): value is string => typeof value === 'string').slice(0, 20) : []
+    const { error } = await supabaseAdmin
       .from('users')
-      .update({ onboarding_complete: true })
+      .update({
+        onboarding_complete: true,
+        linkedin_url: optionalUrl(body?.linkedin_url),
+        github_url: optionalUrl(body?.github_url),
+        skills,
+        interests,
+        career_goal: careerGoal,
+        arrears: arrears.map((subject) => ({ subject })),
+      })
       .eq('id', session.id)
 
     if (error) {

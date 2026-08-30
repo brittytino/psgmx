@@ -1,0 +1,69 @@
+name: Weekly AI Mock Test Generation
+
+# Generates one AI mock test per week using OpenRouter free models.
+# Rotates domains: aptitude → coding → dbms → os → networks → core_cs → general
+# Runs Monday and Thursday at 9:30 AM IST (4:00 AM UTC).
+# Idempotent: the API checks if this week's test already exists before calling AI.
+
+on:
+  schedule:
+    - cron: '0 4 * * 1'    # Monday 9:30 AM IST
+    - cron: '0 4 * * 4'    # Thursday 9:30 AM IST
+  workflow_dispatch:
+    inputs:
+      force_regenerate:
+        description: 'Force regenerate even if test exists this week'
+        required: false
+        default: 'false'
+
+jobs:
+  generate-mock-test:
+    name: Generate AI Weekly Mock Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Validate secrets
+        run: |
+          test -n "${{ secrets.APP_URL }}" || (echo "ERROR: APP_URL secret not set" && exit 1)
+          test -n "${{ secrets.CRON_SECRET }}" || (echo "ERROR: CRON_SECRET secret not set" && exit 1)
+
+      - name: Generate weekly mock test via AI
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          echo "Calling AI mock test generator..."
+          HTTP_STATUS=$(curl --silent --show-error \
+            --output /tmp/mock_test_response.json \
+            --write-out "%{http_code}" \
+            --request POST \
+            --header "x-cron-secret: $CRON_SECRET" \
+            --header "Content-Type: application/json" \
+            --max-time 90 \
+            "$APP_URL/api/cron/mock-test-auto")
+
+          echo "=== Response ==="
+          cat /tmp/mock_test_response.json
+          echo ""
+          echo "HTTP Status: $HTTP_STATUS"
+
+          # 200 = success, 409 = already exists (also acceptable)
+          if [ "$HTTP_STATUS" != "200" ]; then
+            SKIPPED=$(cat /tmp/mock_test_response.json | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('skipped','false'))" 2>/dev/null || echo "false")
+            if [ "$SKIPPED" = "True" ] || [ "$SKIPPED" = "true" ]; then
+              echo "Weekly test already generated. Skipping."
+              exit 0
+            fi
+            echo "ERROR: Mock test generation returned $HTTP_STATUS"
+            exit 1
+          fi
+
+          DOMAIN=$(cat /tmp/mock_test_response.json | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('domain','unknown'))" 2>/dev/null || echo "unknown")
+          QUESTIONS=$(cat /tmp/mock_test_response.json | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('questionsGenerated',0))" 2>/dev/null || echo "0")
+          MODEL=$(cat /tmp/mock_test_response.json | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('modelUsed','unknown'))" 2>/dev/null || echo "unknown")
+
+          echo ""
+          echo "✅ Weekly mock test generated:"
+          echo "   Domain: $DOMAIN"
+          echo "   Questions: $QUESTIONS"
+          echo "   Model used: $MODEL"

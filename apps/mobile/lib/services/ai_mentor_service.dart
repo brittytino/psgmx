@@ -16,22 +16,6 @@ import '../models/daily_five.dart';
 /// over automatically. If all models fail, a pre-written tip is returned so
 /// the AI layer is never visibly the reason something breaks.
 class AiMentorService {
-  /// Pre-written fallback tips for wrong Daily Five answers, by topic.
-  static const Map<String, String> _fallbackTips = {
-    'default': '💡 Tip: Review the concept once more and try to explain it in '
-        'your own words — active recall is the most effective study technique.',
-    'aptitude': '💡 Tip: For quantitative problems, always note the units and '
-        'check if a simplified formula applies.',
-    'dsa': '💡 Tip: Trace through the algorithm with a small example input '
-        'to see where your mental model differs from the correct answer.',
-    'os': '💡 Tip: Operating systems concepts often have analogies in everyday '
-        'life — try mapping the concept to something familiar.',
-    'dbms': '💡 Tip: Draw the schema or query plan on paper; visualization '
-        'makes it much easier to spot the correct relationship.',
-    'networking': '💡 Tip: Remember the OSI layers from bottom to top: '
-        'Physical → Data Link → Network → Transport → Session → Presentation → Application.',
-  };
-
   AiMentorService();
 
   // ── Core: OpenRouter call with fallback chain ──────────────────────────────
@@ -107,7 +91,7 @@ class AiMentorService {
     );
 
     return aiResponse ??
-        (_fallbackTips[topic.toLowerCase()] ?? _fallbackTips['default']!);
+        'AI explanation is temporarily unavailable. Your answer and the verified correct option remain available; please retry shortly.';
   }
 
   // ── Feature 2: Weekly weak-topic note ────────────────────────────────────
@@ -145,8 +129,7 @@ class AiMentorService {
     );
 
     return aiResponse ??
-        '📚 Focus on "$weakTopic" this week — even 20 minutes of targeted practice '
-            'can shift your accuracy significantly. Keep your $currentStreak-day streak going!';
+        'AI coaching is temporarily unavailable. Your measured weakest topic is "$weakTopic" at $weakPct%; retry for a personalized action.';
   }
 
   // ── Feature 3: Mock interview / resume feedback chat ─────────────────────
