@@ -1,28 +1,16 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    FLUTTER_BASE_HREF environment variable during build.
-  -->
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="PSGMX - Placement Excellence Program for PSG Technology - MCA">
+  <meta name="description" content="PSGMX - Placement Excellence Companion for PSG College of Technology MCA">
 
   <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="PSGMX">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
@@ -31,16 +19,65 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-  <title>PSGMX - Placement Excellence</title>
+  <title>PSGMX - Placement Readiness Companion</title>
   <link rel="manifest" href="manifest.json">
 
-  <!-- This script adds the flutter initialization JS code -->
+  <!-- Flutter Initialization JS -->
   <script src="flutter.js" defer></script>
+  <style>
+    body {
+      background-color: #0F172A;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: #F8FAFC;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    .loading-container {
+      text-align: center;
+    }
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid rgba(255, 90, 31, 0.2);
+      border-top-color: #FF5A1F;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 16px auto;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
 </head>
 <body>
+  <div id="loading" class="loading-container">
+    <div class="spinner"></div>
+    <div style="font-size: 18px; font-weight: 700; letter-spacing: -0.02em;">PSG<span style="color: #FF5A1F;">MX</span></div>
+    <div style="font-size: 13px; color: #94A3B8; margin-top: 4px;">Loading Placement Companion...</div>
+  </div>
+
   <script>
     window.addEventListener('load', function(ev) {
-      _flutter.loader.load();
+      if (typeof _flutter === 'undefined' || !_flutter.loader) {
+        console.error('Flutter loader script failed to load.');
+        return;
+      }
+      
+      _flutter.loader.loadEntrypoint({
+        onEntrypointLoaded: function(engineInitializer) {
+          engineInitializer.initializeEngine({
+            useColorEmoji: true
+          }).then(function(appRunner) {
+            var loaderElem = document.getElementById('loading');
+            if (loaderElem) loaderElem.remove();
+            appRunner.runApp();
+          });
+        }
+      });
     });
   </script>
 </body>
