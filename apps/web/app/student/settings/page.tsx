@@ -65,6 +65,7 @@ export default function StudentSettingsPage() {
           linkedin_url: profile.linkedin_url,
           github_url: profile.github_url,
           skills: profile.skills,
+          leetcode_username: profile.leetcode_username,
           mentorship_open: profile.mentorship_open,
           task_reminders_enabled: profile.task_reminders_enabled,
           attendance_alerts_enabled: profile.attendance_alerts_enabled,

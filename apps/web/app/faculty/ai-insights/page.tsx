@@ -1,331 +1,226 @@
 'use client';
 
 import React from 'react';
-import { motion } from 'framer-motion';
-import { BrainCircuit, Calendar, ChevronDown, Users, Clock, Star, TrendingUp, ExternalLink, PenTool, Sparkles, MessageSquare, MoreVertical } from 'lucide-react';
-import Link from 'next/link';
-import { InitialsAvatar } from '@/components/basic/InitialsAvatar';
+import { BrainCircuit, MessageSquare, Users, TrendingUp, Loader2, BookOpen, Clock } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
+import { getCurrentProfile } from '@/lib/current-profile';
 
-import { AnimatePresence } from 'framer-motion';
+interface AIStats {
+  totalConversations: number;
+  uniqueStudents: number;
+  knowledgeArticles: number;
+  pendingReviews: number;
+}
+
+interface RecentArticle {
+  id: string;
+  title: string;
+  author_name: string;
+  approval_status: string;
+  view_count: number;
+  created_at: string;
+}
+
+interface TopQuestion {
+  id: string;
+  query_text: string;
+  asked_count: number;
+  topic_tag: string | null;
+}
 
 export default function FacultyAIInsightsDashboard() {
-  const [timeframe, setTimeframe] = React.useState('This Week');
-  const [dateRange, setDateRange] = React.useState({ start: '2025-05-09', end: '2025-05-16' });
-  const [showDatePicker, setShowDatePicker] = React.useState(false);
+  const supabase = React.useMemo(() => createClient(), []);
+  const [loading, setLoading] = React.useState(true);
+  const [stats, setStats] = React.useState<AIStats | null>(null);
+  const [recentArticles, setRecentArticles] = React.useState<RecentArticle[]>([]);
+  const [topQuestions, setTopQuestions] = React.useState<TopQuestion[]>([]);
+  const [batchCode, setBatchCode] = React.useState('');
+  const [error, setError] = React.useState('');
 
-  // Simulated dynamic data based on timeframe
-  const stats = timeframe === 'This Week' ? [
-    { title: 'Total AI Queries', value: '256', trend: '↑ 18% vs last week', color: "var(--primary-purple)", bg: 'bg-page-bg', icon: MessageSquare },
-    { title: 'Unique Students', value: '128', trend: '↑ 15% vs last week', color: "var(--primary-purple)", bg: 'bg-page-bg', icon: Users },
-    { title: 'Avg. Response Time', value: '2.3s', trend: '↓ 8% faster', color: "var(--deep-violet)", bg: 'bg-page-bg', icon: Clock },
-    { title: 'Satisfaction Score', value: '4.7 / 5', trend: '↑ 6% vs last week', color: "var(--illus-gold)", bg: 'bg-white', icon: Star },
-  ] : [
-    { title: 'Total AI Queries', value: '1,024', trend: '↑ 24% vs last month', color: "var(--primary-purple)", bg: 'bg-page-bg', icon: MessageSquare },
-    { title: 'Unique Students', value: '412', trend: '↑ 10% vs last month', color: "var(--primary-purple)", bg: 'bg-page-bg', icon: Users },
-    { title: 'Avg. Response Time', value: '2.1s', trend: '↓ 12% faster', color: "var(--deep-violet)", bg: 'bg-page-bg', icon: Clock },
-    { title: 'Satisfaction Score', value: '4.8 / 5', trend: '↑ 2% vs last month', color: "var(--illus-gold)", bg: 'bg-white', icon: Star },
+  const load = React.useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const me = await getCurrentProfile(supabase);
+      if (!me) throw new Error('Faculty profile could not be loaded.');
+
+      const [
+        { data: batchRow },
+        { count: conversationCount },
+        { data: articleRows, count: articleCount },
+        { count: pendingCount },
+        { data: questionRows },
+      ] = await Promise.all([
+        me.batch_id ? supabase.from('batches').select('batch_code').eq('id', me.batch_id).single() : Promise.resolve({ data: null }),
+        (supabase as any).from('ai_conversations').select('*', { count: 'exact', head: true }).gte('created_at', new Date(Date.now() - 30 * 86400000).toISOString()),
+        supabase.from('knowledge_brain_articles').select('id, title, approval_status, view_count, created_at, users!inner(name)', { count: 'exact' }).order('created_at', { ascending: false }).limit(5),
+        supabase.from('knowledge_brain_articles').select('*', { count: 'exact', head: true }).eq('approval_status', 'pending'),
+        (supabase as any).from('ai_senior_common_queries').select('id, query_text, asked_count, topic_tag').order('asked_count', { ascending: false }).limit(5),
+      ]);
+
+      setBatchCode((batchRow as any)?.batch_code ?? '');
+
+      // Count unique students from conversations
+      const { count: uniqueStudentCount } = await (supabase as any)
+        .from('ai_conversations')
+        .select('student_id', { count: 'exact', head: true })
+        .gte('created_at', new Date(Date.now() - 30 * 86400000).toISOString());
+
+      setStats({
+        totalConversations: conversationCount ?? 0,
+        uniqueStudents: uniqueStudentCount ?? 0,
+        knowledgeArticles: articleCount ?? 0,
+        pendingReviews: pendingCount ?? 0,
+      });
+
+      setRecentArticles(
+        (articleRows ?? []).map((row) => ({
+          id: row.id,
+          title: row.title,
+          author_name: (row as any).users?.name ?? 'Unknown',
+          approval_status: row.approval_status,
+          view_count: row.view_count ?? 0,
+          created_at: row.created_at,
+        }))
+      );
+
+      setTopQuestions((questionRows ?? []) as TopQuestion[]);
+    } catch {
+      // If ai_conversations or ai_senior_common_queries tables don't exist yet,
+      // fall back to knowledge brain stats only
+      try {
+        const me = await getCurrentProfile(supabase);
+        const [
+          { data: batchRow },
+          { data: articleRows, count: articleCount },
+          { count: pendingCount },
+        ] = await Promise.all([
+          me?.batch_id ? supabase.from('batches').select('batch_code').eq('id', me.batch_id).single() : Promise.resolve({ data: null }),
+          supabase.from('knowledge_brain_articles').select('id, title, approval_status, view_count, created_at, users!inner(name)', { count: 'exact' }).order('created_at', { ascending: false }).limit(5),
+          supabase.from('knowledge_brain_articles').select('*', { count: 'exact', head: true }).eq('approval_status', 'pending'),
+        ]);
+
+        setBatchCode((batchRow as any)?.batch_code ?? '');
+        setStats({ totalConversations: 0, uniqueStudents: 0, knowledgeArticles: articleCount ?? 0, pendingReviews: pendingCount ?? 0 });
+        setRecentArticles(
+          (articleRows ?? []).map((row) => ({
+            id: row.id, title: row.title, author_name: (row as any).users?.name ?? 'Unknown',
+            approval_status: row.approval_status, view_count: row.view_count ?? 0, created_at: row.created_at,
+          }))
+        );
+      } catch (fallbackCause) {
+        setError(fallbackCause instanceof Error ? fallbackCause.message : 'AI insights could not be loaded.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [supabase]);
+
+  React.useEffect(() => { void load(); }, [load]);
+
+  if (loading) {
+    return <div className="flex min-h-64 items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary-purple" /></div>;
+  }
+
+  if (error) {
+    return <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm font-bold text-red-700">{error} <button onClick={() => void load()} className="underline ml-2">Retry</button></div>;
+  }
+
+  const statCards = [
+    { title: 'AI Conversations (30d)', value: stats?.totalConversations ?? 0, icon: MessageSquare, note: 'Last 30 days' },
+    { title: 'Unique Students (30d)', value: stats?.uniqueStudents ?? 0, icon: Users, note: 'Engaged with AI Senior' },
+    { title: 'Knowledge Articles', value: stats?.knowledgeArticles ?? 0, icon: BookOpen, note: 'Total in Knowledge Brain' },
+    { title: 'Pending Faculty Review', value: stats?.pendingReviews ?? 0, icon: Clock, note: 'Alumni contributions waiting' },
   ];
 
   return (
     <div className="max-w-[1400px] mx-auto space-y-8 pb-8">
-      
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-primary-purple flex items-center justify-center shadow-lg shadow-md shadow-primary-purple/10 shrink-0">
-            <BrainCircuit className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <motion.h1 
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-[26px] font-bold text-text-main tracking-tight mb-0.5"
-            >
-              AI Senior Insights
-            </motion.h1>
-            <motion.p 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.1 }}
-              className="text-[14px] text-text-muted"
-            >
-              Track AI interactions, student queries, and mentorship impact.
-            </motion.p>
-          </div>
+      <div className="flex items-start gap-4">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary-purple shadow-sm">
+          <BrainCircuit className="h-6 w-6 text-white" />
         </div>
-        <div className="relative">
-          <div onClick={() => setShowDatePicker(!showDatePicker)} className="flex items-center gap-2 px-4 py-3 bg-white border border-border-light rounded-xl text-[13px] font-bold text-text-main cursor-pointer hover:bg-page-bg shadow-sm shrink-0 transition-colors">
-            <Calendar className="w-4 h-4 text-text-muted" />
-            {new Date(dateRange.start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – {new Date(dateRange.end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} <ChevronDown className={`w-4 h-4 ml-1 transition-transform ${showDatePicker ? 'rotate-180 text-primary-purple' : 'text-text-muted'}`} />
-          </div>
-          
-          <AnimatePresence>
-            {showDatePicker && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setShowDatePicker(false)}></div>
-                <motion.div initial={{ opacity: 0, y: 10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.95 }} className="absolute right-0 top-14 bg-white border border-border-light shadow-xl rounded-2xl p-4 z-50 w-[280px]">
-                  <h4 className="text-[14px] font-bold text-text-main mb-3">Custom Date Range</h4>
-                  <div className="space-y-3">
-                    <div>
-                      <label className="text-[11px] font-bold text-text-muted uppercase block mb-1">Start Date</label>
-                      <input type="date" value={dateRange.start} onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))} className="w-full border border-border-light rounded-lg px-3 py-2 text-[13px] font-semibold text-text-main outline-none focus:border-primary-purple" />
-                    </div>
-                    <div>
-                      <label className="text-[11px] font-bold text-text-muted uppercase block mb-1">End Date</label>
-                      <input type="date" value={dateRange.end} onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))} className="w-full border border-border-light rounded-lg px-3 py-2 text-[13px] font-semibold text-text-main outline-none focus:border-primary-purple" />
-                    </div>
-                    <button onClick={() => setShowDatePicker(false)} className="w-full py-2 bg-primary-purple text-white text-[13px] font-bold rounded-lg mt-2">Apply</button>
-                  </div>
-                </motion.div>
-              </>
-            )}
-          </AnimatePresence>
+        <div>
+          <h1 className="text-[26px] font-bold text-text-main tracking-tight">AI Senior Insights</h1>
+          <p className="text-[14px] text-text-muted">
+            Live usage statistics from the AI Senior and Knowledge Brain{batchCode ? ` — ${batchCode}` : ''}.
+          </p>
         </div>
       </div>
 
-      {/* 4 Stat Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, i) => (
-          <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 * i }} className="bg-white rounded-[20px] p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-border-light relative overflow-hidden flex flex-col justify-between h-[140px]">
-            <div className="flex justify-between items-start">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-full ${stat.bg} flex items-center justify-center`}>
-                  <stat.icon className="w-5 h-5" style={{ color: stat.color }} />
-                </div>
-                <p className="text-[12px] font-bold text-text-muted">{stat.title}</p>
-              </div>
-            </div>
-            <div className="flex items-end justify-between mt-auto">
-              <div>
-                <h3 className="text-[32px] font-black text-text-main leading-none mb-2">{stat.value}</h3>
-                <p className={`text-[11px] font-bold ${stat.trend.includes('↓') ? 'text-electric-blue' : 'text-electric-blue'}`}>{stat.trend}</p>
-              </div>
-              <div className="w-24 h-8">
-                <svg viewBox="0 0 100 30" className="w-full h-full fill-none" style={{ stroke: stat.color }} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                  <path d={i === 0 ? "M0,25 C20,25 30,15 50,5 C70,15 80,5 100,0" : i === 1 ? "M0,20 C20,25 40,5 60,15 C80,25 90,10 100,5" : i === 2 ? "M0,5 C10,5 30,20 50,10 C70,0 80,25 100,10" : "M0,20 C20,10 40,25 60,15 C80,5 90,20 100,5"} />
-                </svg>
-              </div>
-            </div>
-          </motion.div>
+      {/* Stat Cards */}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {statCards.map((card, i) => (
+          <div key={i} className="rounded-2xl border border-border-light bg-white p-5 shadow-sm">
+            <card.icon className="h-5 w-5 text-primary-purple" />
+            <p className="mt-3 text-3xl font-black text-text-main">{card.value}</p>
+            <p className="mt-1 text-xs font-bold text-text-muted">{card.title}</p>
+            <p className="text-[10px] text-text-muted">{card.note}</p>
+          </div>
         ))}
       </div>
 
-      {/* Row 2: Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Area Chart: AI Queries Over Time */}
-        <div className="lg:col-span-2 bg-white rounded-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-border-light p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-[16px] font-bold text-text-main">AI Queries Over Time</h3>
-            <select value={timeframe} onChange={(e) => setTimeframe(e.target.value)} className="border border-border-light rounded-xl px-3 py-1.5 text-[11px] font-bold text-text-muted cursor-pointer hover:bg-page-bg outline-none focus:border-primary-purple bg-white">
-              <option>This Week</option>
-              <option>This Month</option>
-            </select>
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Recent Knowledge Articles */}
+        <div className="rounded-2xl border border-border-light bg-white shadow-sm">
+          <div className="border-b border-border-light px-6 py-4">
+            <h2 className="flex items-center gap-2 font-black text-text-main">
+              <BookOpen className="h-4 w-4 text-primary-purple" /> Recent Knowledge Contributions
+            </h2>
+            <p className="mt-1 text-xs text-text-muted">Latest alumni submissions to the Knowledge Brain.</p>
           </div>
-          <div className="relative h-[250px] mt-4">
-            {/* Y Axis */}
-            <div className="absolute left-0 top-0 bottom-8 w-8 flex flex-col justify-between text-[11px] font-semibold text-text-muted">
-              <span>100</span><span>80</span><span>60</span><span>40</span><span>20</span><span>0</span>
-            </div>
-            {/* Chart Area */}
-            <div className="absolute left-10 right-0 top-2 bottom-8">
-              {/* Horizontal Lines */}
-              <div className="absolute inset-0 flex flex-col justify-between">
-                {[...Array(6)].map((_, i) => (
-                  <div key={i} className="w-full border-t border-[#F8F9FC] h-0"></div>
-                ))}
-              </div>
-              {/* SVG Area Chart */}
-              <svg viewBox="0 0 1000 200" preserveAspectRatio="none" className="absolute inset-0 w-full h-full overflow-visible">
-                <defs>
-                  <linearGradient id="gradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="#6C3DFF" stopOpacity="0.2" />
-                    <stop offset="100%" stopColor="#6C3DFF" stopOpacity="0" />
-                  </linearGradient>
-                </defs>
-                <path d="M0,170 C100,160 150,140 250,145 C350,150 400,90 500,40 C600,-10 650,50 750,70 C850,90 900,80 1000,100 L1000,200 L0,200 Z" fill="url(#gradient)" />
-                <path d="M0,170 C100,160 150,140 250,145 C350,150 400,90 500,40 C600,-10 650,50 750,70 C850,90 900,80 1000,100" fill="none" stroke="#6C3DFF" strokeWidth="4" />
-                
-                {/* Data Points */}
-                <circle cx="0" cy="170" r="4" fill="white" stroke="#6C3DFF" strokeWidth="2" />
-                <circle cx="250" cy="145" r="4" fill="white" stroke="#6C3DFF" strokeWidth="2" />
-                <circle cx="500" cy="40" r="6" fill="#6C3DFF" stroke="white" strokeWidth="3" /> {/* Highlight point */}
-                <circle cx="750" cy="70" r="4" fill="white" stroke="#6C3DFF" strokeWidth="2" />
-                <circle cx="1000" cy="100" r="4" fill="white" stroke="#6C3DFF" strokeWidth="2" />
-              </svg>
-              
-              {/* Tooltip Simulation */}
-              <div className="absolute left-[50%] top-[40px] -translate-x-1/2 -translate-y-full mb-3 bg-white border border-border-light shadow-md rounded-xl px-3 py-2 text-center pointer-events-none z-10">
-                <p className="text-[10px] font-bold text-text-muted mb-0.5">May 13, 2025</p>
-                <p className="text-[12px] font-black text-primary-purple">78 Queries</p>
-                {/* Arrow */}
-                <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-b border-r border-border-light rotate-45"></div>
-              </div>
-            </div>
-            
-            {/* X Axis */}
-            <div className="absolute left-10 right-0 bottom-0 flex justify-between text-[11px] font-semibold text-text-muted">
-              <span>May 9</span><span>May 10</span><span>May 11</span><span>May 12</span><span>May 13</span><span>May 14</span><span>May 15</span><span>May 16</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Donut Chart: Top Query Topics */}
-        <div className="bg-white rounded-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-border-light p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-[16px] font-bold text-text-main">Top Query Topics</h3>
-            <select value={timeframe} onChange={(e) => setTimeframe(e.target.value)} className="border border-border-light rounded-xl px-3 py-1.5 text-[11px] font-bold text-text-muted cursor-pointer hover:bg-page-bg outline-none focus:border-primary-purple bg-white">
-              <option>This Week</option>
-              <option>This Month</option>
-            </select>
-          </div>
-          
-          <div className="flex flex-col items-center gap-6 mt-4">
-            {/* SVG Donut */}
-            <div className="relative w-[180px] h-[180px]">
-              <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
-                <circle cx="18" cy="18" r="14" fill="none" className="stroke-[#F1F5F9]" strokeWidth="8"></circle>
-                <circle cx="18" cy="18" r="14" fill="none" className="stroke-primary-purple" strokeWidth="8" strokeDasharray="42 100" strokeDashoffset="0"></circle>
-                <circle cx="18" cy="18" r="14" fill="none" className="stroke-electric-blue" strokeWidth="8" strokeDasharray="24 100" strokeDashoffset="-42"></circle>
-                <circle cx="18" cy="18" r="14" fill="none" className="stroke-[#06B6D4]" strokeWidth="8" strokeDasharray="16 100" strokeDashoffset="-66"></circle>
-                <circle cx="18" cy="18" r="14" fill="none" className="stroke-illus-gold" strokeWidth="8" strokeDasharray="10 100" strokeDashoffset="-82"></circle>
-                <circle cx="18" cy="18" r="14" fill="none" className="stroke-[#CBD5E1]" strokeWidth="8" strokeDasharray="8 100" strokeDashoffset="-92"></circle>
-              </svg>
-            </div>
-            
-            <div className="w-full space-y-2.5">
-              {[
-                { label: 'Programming Help', pct: '42%', color: 'bg-primary-purple' },
-                { label: 'Debugging', pct: '24%', color: 'bg-electric-blue' },
-                { label: 'Concept Explanation', pct: '16%', color: 'bg-primary-purple' },
-                { label: 'Project Guidance', pct: '10%', color: 'bg-illus-gold' },
-                { label: 'Others', pct: '8%', color: 'bg-[#CBD5E1]' },
-              ].map((item, i) => (
-                <div key={i} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2.5 h-2.5 rounded-full ${item.color}`}></div>
-                    <span className="text-[12px] font-bold text-text-main">{item.label}</span>
-                  </div>
-                  <span className="text-[12px] font-bold text-text-muted">{item.pct}</span>
+          <div className="divide-y divide-border-light">
+            {recentArticles.length === 0 && (
+              <p className="px-6 py-8 text-center text-sm text-text-muted">No articles submitted yet.</p>
+            )}
+            {recentArticles.map((article) => (
+              <div key={article.id} className="flex items-start justify-between gap-3 px-6 py-4">
+                <div>
+                  <p className="text-sm font-bold text-text-main">{article.title}</p>
+                  <p className="mt-0.5 text-xs text-text-muted">by {article.author_name} · {new Date(article.created_at).toLocaleDateString('en-IN', { dateStyle: 'medium' })}</p>
                 </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      {/* Row 3: 3 Columns */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Top Questions This Week */}
-        <div className="bg-white rounded-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-border-light p-6 flex flex-col">
-          <h3 className="text-[16px] font-bold text-text-main mb-6">Top Questions This Week</h3>
-          <div className="flex-1 space-y-4">
-            {[
-              { num: 1, title: 'How to optimize code in Python?', students: '23 students asked' },
-              { num: 2, title: 'DBMS normalization types', students: '18 students asked' },
-              { num: 3, title: 'OS deadlock detection', students: '15 students asked' },
-              { num: 4, title: 'React useEffect infinite loop', students: '12 students asked' },
-              { num: 5, title: 'Git merge vs rebase', students: '10 students asked' },
-            ].map((q, i) => (
-              <div key={i} className="flex items-center justify-between group cursor-pointer hover:bg-page-bg p-2 -mx-2 rounded-xl transition-colors">
-                <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-md bg-white/40 backdrop-blur-md border border-white/20 text-primary-purple text-[11px] font-black flex items-center justify-center shrink-0">
-                    {q.num}
-                  </div>
-                  <div>
-                    <p className="text-[13px] font-bold text-text-main leading-snug group-hover:text-primary-purple transition-colors">{q.title}</p>
-                    <p className="text-[11px] font-semibold text-text-muted">{q.students}</p>
-                  </div>
-                </div>
-                <ExternalLink className="w-4 h-4 text-[#CBD5E1] opacity-0 group-hover:opacity-100 transition-opacity" />
-              </div>
-            ))}
-          </div>
-          <button className="mt-4 w-full py-3 bg-page-bg text-primary-purple rounded-[12px] text-[13px] font-bold flex items-center justify-center gap-2 hover:bg-page-bg transition-colors">
-            View All Queries →
-          </button>
-        </div>
-
-        {/* Query Intent Distribution */}
-        <div className="bg-white rounded-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-border-light p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-[16px] font-bold text-text-main">Query Intent Distribution</h3>
-            <MoreVertical className="w-4 h-4 text-text-muted cursor-pointer" />
-          </div>
-          <div className="space-y-6">
-            {[
-              { label: 'Get Help', pct: 48, color: 'bg-gradient-to-r from-primary-purple to-[#A78BFA]' },
-              { label: 'Learn Concept', pct: 24, color: 'bg-gradient-to-r from-[#3B82F6] to-[#93C5FD]' },
-              { label: 'Debug Issue', pct: 16, color: 'bg-gradient-to-r from-[#06B6D4] to-[#67E8F9]' },
-              { label: 'Project Guidance', pct: 8, color: 'bg-gradient-to-r from-[#F59E0B] to-[#FCD34D]' },
-              { label: 'Others', pct: 4, color: 'bg-gradient-to-r from-[#CBD5E1] to-[#E2E8F0]' },
-            ].map((intent, i) => (
-              <div key={i}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[13px] font-bold text-text-main">{intent.label}</span>
-                  <span className="text-[12px] font-bold text-text-muted">{intent.pct}%</span>
-                </div>
-                <div className="w-full h-2 bg-page-bg rounded-full overflow-hidden">
-                  <div className={`h-full rounded-full ${intent.color}`} style={{ width: `${intent.pct}%` }}></div>
-                </div>
+                <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black uppercase ${
+                  article.approval_status === 'approved' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                  article.approval_status === 'rejected' ? 'bg-red-50 text-red-700 border border-red-200' :
+                  'bg-amber-50 text-amber-700 border border-amber-200'
+                }`}>
+                  {article.approval_status}
+                </span>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Recent AI Interactions */}
-        <div className="bg-white rounded-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-border-light p-6 flex flex-col">
-          <h3 className="text-[16px] font-bold text-text-main mb-6">Recent AI Interactions</h3>
-          <div className="flex-1 space-y-6">
-            {[
-              { student: '25MX301', tag: 'Programming Help', tagColor: 'bg-page-bg text-primary-purple', q: 'How to reverse a linked list in Java?', time: '2m ago' },
-              { student: '25MX205', tag: 'Debugging', tagColor: 'bg-white text-electric-blue', q: 'Why is my loop not executing?', time: '15m ago' },
-              { student: '25MX114', tag: 'Concept Explanation', tagColor: 'bg-page-bg text-electric-blue', q: 'Explain quick sort with example', time: '32m ago' },
-              { student: '25MX402', tag: 'Project Guidance', tagColor: 'bg-white text-illus-gold', q: 'Help with FYP idea validation', time: '1h ago' },
-            ].map((interaction, i) => (
-              <div key={i} className="flex items-start justify-between">
-                <div className="flex items-start gap-3">
-                  <div className="relative">
-                    <InitialsAvatar name={interaction.student} size={32} />
-                    <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-primary-purple rounded-full border-2 border-white flex items-center justify-center"><BrainCircuit className="w-[8px] h-[8px] text-white" /></div>
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <p className="text-[12px] font-bold text-text-main">{interaction.student}</p>
-                      <span className={`px-2 py-0.5 rounded-[6px] text-[9px] font-bold ${interaction.tagColor}`}>{interaction.tag}</span>
-                    </div>
-                    <p className="text-[12px] text-text-muted">{interaction.q}</p>
-                  </div>
+        {/* Top AI Questions */}
+        <div className="rounded-2xl border border-border-light bg-white shadow-sm">
+          <div className="border-b border-border-light px-6 py-4">
+            <h2 className="flex items-center gap-2 font-black text-text-main">
+              <TrendingUp className="h-4 w-4 text-primary-purple" /> Top Student AI Queries
+            </h2>
+            <p className="mt-1 text-xs text-text-muted">
+              {topQuestions.length > 0 ? 'Most frequently asked questions to AI Senior.' : 'Query analytics will appear once the ai_senior_common_queries view is populated.'}
+            </p>
+          </div>
+          <div className="divide-y divide-border-light">
+            {topQuestions.length === 0 && (
+              <p className="px-6 py-8 text-center text-sm text-text-muted">No query analytics yet. Students need to use the AI Senior first.</p>
+            )}
+            {topQuestions.map((q, i) => (
+              <div key={q.id} className="flex items-start gap-4 px-6 py-4">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-violet-50 text-xs font-black text-primary-purple">{i + 1}</span>
+                <div>
+                  <p className="text-sm font-bold text-text-main">{q.query_text}</p>
+                  <p className="mt-0.5 text-xs text-text-muted">{q.asked_count} queries{q.topic_tag ? ` · ${q.topic_tag}` : ''}</p>
                 </div>
-                <span className="text-[10px] font-semibold text-text-muted whitespace-nowrap">{interaction.time}</span>
               </div>
             ))}
           </div>
-          <button className="mt-4 w-full py-3 bg-white/40 backdrop-blur-md border border-white/20 text-primary-purple rounded-[12px] text-[13px] font-bold flex items-center justify-center gap-2 hover:bg-page-bg transition-colors">
-            View All Interactions →
-          </button>
         </div>
-
       </div>
 
-      {/* Bottom Banner */}
-      <div className="w-full bg-white/40 backdrop-blur-md border border-white/20 rounded-[20px] p-6 border border-primary-purple/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-[14px] bg-white flex items-center justify-center shadow-sm">
-            <Sparkles className="w-6 h-6 text-primary-purple" />
-          </div>
-          <div>
-            <h4 className="text-[15px] font-bold text-primary-purple mb-1">Insight of the Week</h4>
-            <p className="text-[13px] text-text-muted font-medium">Students are asking more programming and debugging questions this week. Consider creating a guide on "Python Optimization".</p>
-          </div>
-        </div>
-        <button className="px-5 py-2.5 bg-[#C4B5FD] text-white hover:bg-[#A78BFA] transition-colors rounded-[12px] text-[13px] font-bold shadow-sm flex items-center gap-2 whitespace-nowrap">
-          <PenTool className="w-4 h-4" /> Create Guide
-        </button>
+      {/* Guidance note */}
+      <div className="rounded-2xl border border-amber-200 bg-amber-50 px-6 py-4 text-sm font-semibold text-amber-900">
+        <strong>Note:</strong> AI conversation tracking requires the <code>ai_conversations</code> and <code>ai_senior_common_queries</code> database views. Knowledge Brain statistics are always live. Satisfaction scores are not tracked to protect student privacy.
       </div>
-
     </div>
   );
 }

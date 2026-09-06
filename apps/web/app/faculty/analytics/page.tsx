@@ -1,356 +1,225 @@
 'use client';
 
 import React from 'react';
-import { motion } from 'framer-motion';
-import { BarChart2, Calendar, ChevronDown, Download, Users, FolderOpen, CheckCircle2, Star, TrendingUp, Trophy } from 'lucide-react';
-import Link from 'next/link';
+import { BarChart2, Users, FolderOpen, CheckCircle2, TrendingUp, Loader2, Download, ShieldCheck } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
+import { getCurrentProfile } from '@/lib/current-profile';
 
-import { AnimatePresence } from 'framer-motion';
+interface Stats {
+  activeStudents: number;
+  activeProjects: number;
+  completedProjects: number;
+  avgProgress: number;
+  avgReadiness: number;
+  avgAttendance: number;
+  leetcodeTotal: number;
+  dailyFiveActive: number;
+}
+
+interface StudentRow {
+  id: string;
+  name: string;
+  reg_no: string;
+  readiness: number;
+  attendance: number;
+  dailyFive: number;
+}
+
+function escapeCsv(v: unknown) {
+  return `"${String(v ?? '').replaceAll('"', '""')}"`
+}
 
 export default function FacultyAnalyticsDashboard() {
-  const [timeframe, setTimeframe] = React.useState('This Semester');
-  const [dateRange, setDateRange] = React.useState({ start: '2025-05-12', end: '2025-06-12' });
-  const [showDatePicker, setShowDatePicker] = React.useState(false);
-  const [toastMessage, setToastMessage] = React.useState('');
+  const supabase = React.useMemo(() => createClient(), []);
+  const [loading, setLoading] = React.useState(true);
+  const [stats, setStats] = React.useState<Stats | null>(null);
+  const [students, setStudents] = React.useState<StudentRow[]>([]);
+  const [batchCode, setBatchCode] = React.useState('');
+  const [error, setError] = React.useState('');
 
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(''), 3000);
-  };
+  const load = React.useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const me = await getCurrentProfile(supabase);
+      if (!me?.batch_id) throw new Error('Faculty profile or batch could not be found.');
 
-  const stats = timeframe === 'This Semester' ? [
-    { title: 'Active Students', value: '142', trend: '↑ 12% from last 30 days', color: "var(--primary-purple)", bg: 'bg-page-bg', icon: GraduationCapIcon },
-    { title: 'Active Projects', value: '28', trend: '↑ 15% from last 30 days', color: "var(--primary-purple)", bg: 'bg-white', icon: FolderOpen },
-    { title: 'Projects Completed', value: '23', trend: '↑ 18% from last 30 days', color: "var(--electric-blue)", bg: 'bg-white', icon: CheckCircle2 },
-    { title: 'Avg. Progress', value: '68%', trend: '↑ 9% from last 30 days', color: "var(--illus-gold)", bg: 'bg-white', icon: Star },
-  ] : [
-    { title: 'Active Students', value: '135', trend: '↑ 5% from previous', color: "var(--primary-purple)", bg: 'bg-page-bg', icon: GraduationCapIcon },
-    { title: 'Active Projects', value: '35', trend: '↑ 8% from previous', color: "var(--primary-purple)", bg: 'bg-white', icon: FolderOpen },
-    { title: 'Projects Completed', value: '32', trend: '↑ 10% from previous', color: "var(--electric-blue)", bg: 'bg-white', icon: CheckCircle2 },
-    { title: 'Avg. Progress', value: '85%', trend: '↑ 15% from previous', color: "var(--illus-gold)", bg: 'bg-white', icon: Star },
+      const batchId = me.batch_id;
+
+      const [
+        { data: batchRow },
+        { data: userRows },
+        { data: fypRows },
+        { data: scoreRows },
+        { data: attendanceRows },
+        { data: leetRows },
+        { data: dailyRows },
+      ] = await Promise.all([
+        supabase.from('batches').select('batch_code').eq('id', batchId).single(),
+        supabase.from('users').select('id, name, reg_no').eq('batch_id', batchId).eq('role_label', 'Student').order('reg_no'),
+        (supabase as any).from('fyp_registrations').select('id, status').eq('batch_id', batchId),
+        supabase.from('current_readiness_scores').select('user_id, score'),
+        supabase.from('placement_attendance_summary').select('user_id, attendance_pct').eq('batch_id', batchId),
+        (supabase as any).from('leetcode_stats').select('user_id, total_solved'),
+        supabase.from('daily_five_attempts').select('user_id').gte('attempt_date', new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10)),
+      ]);
+
+      setBatchCode((batchRow as any)?.batch_code ?? '');
+
+      const scoreMap = new Map((scoreRows ?? []).map((r) => [r.user_id, Number(r.score ?? 0)]));
+      const attendanceMap = new Map((attendanceRows ?? []).map((r) => [r.user_id, Number(r.attendance_pct ?? 0)]));
+      const leetMap = new Map((leetRows ?? []).map((r: any) => [r.user_id, Number(r.total_solved ?? 0)]));
+      const dailySet = new Set((dailyRows ?? []).map((r) => r.user_id));
+
+      const activeStudents = userRows ?? [];
+      const allScores = activeStudents.map((u) => scoreMap.get(u.id) ?? 0);
+      const allAttendance = activeStudents.map((u) => attendanceMap.get(u.id) ?? 0);
+      const avgReadiness = allScores.length ? Math.round(allScores.reduce((a, b) => a + b, 0) / allScores.length) : 0;
+      const avgAttendance = allAttendance.length ? Math.round(allAttendance.reduce((a, b) => a + b, 0) / allAttendance.length) : 0;
+      const leetcodeTotal = (leetRows ?? []).reduce((acc: number, r: any) => acc + Number(r.total_solved ?? 0), 0);
+      const activeProjects = (fypRows ?? []).filter((f: any) => ['active', 'registered'].includes(f.status ?? '')).length;
+      const completedProjects = (fypRows ?? []).filter((f: any) => f.status === 'completed').length;
+      const avgProgress = (fypRows ?? []).length > 0 ? Math.round(((completedProjects / (fypRows ?? []).length) * 100)) : 0;
+      const dailyFiveActive = activeStudents.filter((u) => dailySet.has(u.id)).length;
+
+      setStats({ activeStudents: activeStudents.length, activeProjects, completedProjects, avgProgress, avgReadiness, avgAttendance, leetcodeTotal, dailyFiveActive });
+
+      setStudents(activeStudents.map((u) => ({
+        id: u.id, name: u.name || '—', reg_no: u.reg_no || '—',
+        readiness: scoreMap.get(u.id) ?? 0,
+        attendance: attendanceMap.get(u.id) ?? 0,
+        dailyFive: dailySet.has(u.id) ? 1 : 0,
+      })));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Analytics could not be loaded.');
+    } finally {
+      setLoading(false);
+    }
+  }, [supabase]);
+
+  React.useEffect(() => { void load(); }, [load]);
+
+  function exportCsv() {
+    const csv = [
+      ['reg_no', 'name', 'readiness_score', 'attendance_pct', 'daily_five_this_week'],
+      ...students.map((s) => [s.reg_no, s.name, s.readiness.toFixed(0), s.attendance.toFixed(0), s.dailyFive]),
+    ].map((r) => r.map(escapeCsv).join(',')).join('\n');
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+    const a = document.createElement('a'); a.href = url;
+    a.download = `psgmx-analytics-${batchCode}-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+  }
+
+  if (loading) {
+    return (
+      <div className="flex min-h-64 items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-primary-purple" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm font-bold text-red-700">
+        {error} <button onClick={() => void load()} className="ml-2 underline">Retry</button>
+      </div>
+    );
+  }
+
+  if (!stats) return null;
+
+  const statCards = [
+    { title: 'Active Students', value: stats.activeStudents, sub: batchCode, icon: Users, color: 'text-primary-purple' },
+    { title: 'FYP Projects Active', value: stats.activeProjects, sub: `${stats.completedProjects} completed`, icon: FolderOpen, color: 'text-electric-blue' },
+    { title: 'Avg Readiness Score', value: `${stats.avgReadiness}%`, sub: 'Current batch average', icon: TrendingUp, color: 'text-illus-gold' },
+    { title: 'Avg Attendance', value: `${stats.avgAttendance}%`, sub: 'Preparation sessions', icon: CheckCircle2, color: 'text-success' },
+    { title: 'LeetCode Solved', value: stats.leetcodeTotal, sub: 'Across batch (total)', icon: BarChart2, color: 'text-primary-purple' },
+    { title: 'Daily Five Active', value: stats.dailyFiveActive, sub: 'Students active this week', icon: ShieldCheck, color: 'text-success' },
   ];
 
   return (
-    <div className="max-w-[1400px] mx-auto space-y-8 pb-8 relative">
-      <AnimatePresence>
-        {toastMessage && (
-          <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 50 }} className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-rich-black text-white px-6 py-3 rounded-xl shadow-xl flex items-center gap-3">
-            <div className="w-2 h-2 rounded-full bg-electric-blue"></div>
-            <span className="text-[13px] font-bold">{toastMessage}</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-      
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="max-w-[1400px] mx-auto space-y-8 pb-8">
+      <div className="flex items-end justify-between">
         <div>
-          <motion.h1 
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-[26px] font-bold text-text-main tracking-tight mb-0.5"
-          >
-            Analytics
-          </motion.h1>
-          <motion.p 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.1 }}
-            className="text-[14px] text-text-muted"
-          >
-            Comprehensive insights into student progress, projects, and mentorship impact.
-          </motion.p>
+          <h1 className="text-[26px] font-bold text-text-main tracking-tight mb-0.5">Analytics</h1>
+          <p className="text-[14px] text-text-muted">
+            Live data from your batch{batchCode ? ` — ${batchCode}` : ''}. All figures are real-time from the database.
+          </p>
         </div>
-        <div className="flex items-center gap-3 shrink-0 relative">
-          <div onClick={() => setShowDatePicker(!showDatePicker)} className="flex items-center gap-2 px-4 py-2.5 bg-white border border-border-light rounded-xl text-[13px] font-bold text-text-main cursor-pointer hover:bg-page-bg shadow-sm transition-colors">
-            <Calendar className="w-4 h-4 text-text-muted" />
-            {new Date(dateRange.start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – {new Date(dateRange.end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} <ChevronDown className={`w-4 h-4 ml-1 transition-transform ${showDatePicker ? 'rotate-180 text-primary-purple' : 'text-text-muted'}`} />
-          </div>
-
-          <AnimatePresence>
-            {showDatePicker && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setShowDatePicker(false)}></div>
-                <motion.div initial={{ opacity: 0, y: 10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.95 }} className="absolute right-0 top-14 bg-white border border-border-light shadow-xl rounded-2xl p-4 z-50 w-[280px]">
-                  <h4 className="text-[14px] font-bold text-text-main mb-3">Custom Date Range</h4>
-                  <div className="space-y-3">
-                    <div>
-                      <label className="text-[11px] font-bold text-text-muted uppercase block mb-1">Start Date</label>
-                      <input type="date" value={dateRange.start} onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))} className="w-full border border-border-light rounded-lg px-3 py-2 text-[13px] font-semibold text-text-main outline-none focus:border-primary-purple" />
-                    </div>
-                    <div>
-                      <label className="text-[11px] font-bold text-text-muted uppercase block mb-1">End Date</label>
-                      <input type="date" value={dateRange.end} onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))} className="w-full border border-border-light rounded-lg px-3 py-2 text-[13px] font-semibold text-text-main outline-none focus:border-primary-purple" />
-                    </div>
-                    <button onClick={() => setShowDatePicker(false)} className="w-full py-2 bg-primary-purple text-white text-[13px] font-bold rounded-lg mt-2">Apply</button>
-                  </div>
-                </motion.div>
-              </>
-            )}
-          </AnimatePresence>
-          <button onClick={() => showToast('Exporting Analytics Report...')} className="flex items-center gap-2 px-4 py-2.5 bg-white border border-border-light text-text-main rounded-xl text-[13px] font-bold shadow-sm hover:bg-page-bg transition-colors">
-            <Download className="w-4 h-4" /> Export Report
-          </button>
-        </div>
+        <button
+          onClick={exportCsv}
+          className="flex items-center gap-2 rounded-xl bg-primary-purple px-5 py-3 text-sm font-bold text-white hover:bg-deep-violet transition-colors"
+        >
+          <Download className="h-4 w-4" /> Export CSV
+        </button>
       </div>
 
-      {/* 4 Stat Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, i) => (
-          <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 * i }} className="bg-white rounded-[20px] p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-border-light relative overflow-hidden flex flex-col justify-between h-[140px]">
-            <div className="flex justify-between items-start">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-full ${stat.bg} flex items-center justify-center`}>
-                  <stat.icon className="w-5 h-5" style={{ color: stat.color }} />
-                </div>
-                <p className="text-[12px] font-bold text-text-muted">{stat.title}</p>
-              </div>
-            </div>
-            <div className="flex items-end justify-between mt-auto">
-              <div>
-                <h3 className="text-[32px] font-black text-text-main leading-none mb-2">{stat.value}</h3>
-                <p className={`text-[11px] font-bold ${stat.trend.includes('↓') ? 'text-electric-blue' : 'text-electric-blue'}`}>{stat.trend}</p>
-              </div>
-              <div className="w-24 h-8">
-                <svg viewBox="0 0 100 30" className="w-full h-full fill-none" style={{ stroke: stat.color }} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                  <path d={i === 0 ? "M0,25 C20,25 30,15 50,20 C70,25 80,5 100,0" : i === 1 ? "M0,20 C20,25 40,5 60,15 C80,25 90,10 100,5" : i === 2 ? "M0,5 C10,5 30,20 50,10 C70,0 80,25 100,10" : "M0,20 C20,10 40,25 60,15 C80,5 90,20 100,0"} />
-                </svg>
-              </div>
-            </div>
-          </motion.div>
+      {/* Stat Grid */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+        {statCards.map((card, i) => (
+          <div key={i} className="rounded-2xl border border-border-light bg-white p-5 shadow-sm">
+            <card.icon className={`h-5 w-5 ${card.color}`} />
+            <p className="mt-3 text-2xl font-black text-text-main">{card.value}</p>
+            <p className="mt-1 text-xs font-bold text-text-muted">{card.title}</p>
+            <p className="text-[10px] text-text-muted">{card.sub}</p>
+          </div>
         ))}
       </div>
 
-      {/* Row 2: Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Project Progress Overview */}
-        <div className="lg:col-span-2 bg-white rounded-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-border-light p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-[16px] font-bold text-text-main">Project Progress Overview</h3>
-            <select value={timeframe} onChange={(e) => setTimeframe(e.target.value)} className="border border-border-light rounded-xl px-3 py-1.5 text-[11px] font-bold text-text-muted cursor-pointer hover:bg-page-bg outline-none focus:border-primary-purple bg-white">
-              <option>This Semester</option>
-              <option>Last Semester</option>
-            </select>
-          </div>
-          <div className="relative h-[250px] mt-4">
-            {/* Y Axis */}
-            <div className="absolute left-0 top-0 bottom-8 w-10 flex flex-col justify-between text-[11px] font-semibold text-text-muted">
-              <span>100%</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span>
-            </div>
-            {/* Chart Area */}
-            <div className="absolute left-12 right-0 top-2 bottom-8">
-              <div className="absolute inset-0 flex flex-col justify-between">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="w-full border-t border-[#F8F9FC] h-0"></div>
-                ))}
-              </div>
-              <svg viewBox="0 0 1000 200" preserveAspectRatio="none" className="absolute inset-0 w-full h-full overflow-visible">
-                <defs>
-                  <linearGradient id="analyticsGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="#8B5CF6" stopOpacity="0.3" />
-                    <stop offset="100%" stopColor="#8B5CF6" stopOpacity="0" />
-                  </linearGradient>
-                </defs>
-                <path d="M0,180 C200,160 400,130 600,110 C800,80 900,40 1000,50 L1000,200 L0,200 Z" fill="url(#analyticsGrad)" />
-                <path d="M0,180 C200,160 400,130 600,110 C800,80 900,40 1000,50" fill="none" stroke="#8B5CF6" strokeWidth="4" />
-                
-                <circle cx="200" cy="160" r="4" fill="white" stroke="#8B5CF6" strokeWidth="2" />
-                <circle cx="400" cy="130" r="4" fill="white" stroke="#8B5CF6" strokeWidth="2" />
-                <circle cx="600" cy="110" r="4" fill="white" stroke="#8B5CF6" strokeWidth="2" />
-                <circle cx="800" cy="80" r="4" fill="white" stroke="#8B5CF6" strokeWidth="2" />
-                <circle cx="900" cy="40" r="6" fill="#8B5CF6" stroke="white" strokeWidth="3" />
-                <circle cx="1000" cy="50" r="4" fill="white" stroke="#8B5CF6" strokeWidth="2" />
-              </svg>
-              
-              <div className="absolute left-[90%] top-[40px] -translate-x-1/2 -translate-y-full mb-3 bg-white border border-border-light shadow-md rounded-xl px-3 py-2 text-center pointer-events-none z-10 w-[110px]">
-                <p className="text-[10px] font-bold text-text-muted mb-0.5">Jun 12, 2025</p>
-                <p className="text-[12px] font-black text-text-main">68% <span className="text-[10px] font-semibold text-text-muted">Avg. Progress</span></p>
-                <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-b border-r border-border-light rotate-45"></div>
-              </div>
-            </div>
-            {/* X Axis */}
-            <div className="absolute left-12 right-0 bottom-0 flex justify-between text-[11px] font-semibold text-text-muted">
-              <span>May 12</span><span>May 19</span><span>May 26</span><span>Jun 2</span><span>Jun 9</span><span>Jun 12</span>
-            </div>
-          </div>
+      {/* Student Table */}
+      <div className="rounded-2xl border border-border-light bg-white shadow-sm">
+        <div className="border-b border-border-light px-6 py-4">
+          <h2 className="font-black text-text-main">Student breakdown — {batchCode}</h2>
+          <p className="mt-1 text-xs text-text-muted">Readiness score and attendance for each rostered student.</p>
         </div>
-
-        {/* Projects by Domain */}
-        <div className="bg-white rounded-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-border-light p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-[16px] font-bold text-text-main">Projects by Domain</h3>
-            <Link href="#" className="text-[12px] font-bold text-primary-purple">View All</Link>
-          </div>
-          
-          <div className="flex flex-col items-center gap-6 mt-4">
-            <div className="relative w-[180px] h-[180px]">
-              <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
-                <circle cx="18" cy="18" r="14" fill="none" className="stroke-[#8B5CF6]" strokeWidth="8" strokeDasharray="30 100" strokeDashoffset="0"></circle>
-                <circle cx="18" cy="18" r="14" fill="none" className="stroke-electric-blue" strokeWidth="8" strokeDasharray="21 100" strokeDashoffset="-30"></circle>
-                <circle cx="18" cy="18" r="14" fill="none" className="stroke-[#64748B]" strokeWidth="8" strokeDasharray="18 100" strokeDashoffset="-51"></circle>
-                <circle cx="18" cy="18" r="14" fill="none" className="stroke-illus-gold" strokeWidth="8" strokeDasharray="14 100" strokeDashoffset="-69"></circle>
-                <circle cx="18" cy="18" r="14" fill="none" className="stroke-deep-violet" strokeWidth="8" strokeDasharray="11 100" strokeDashoffset="-83"></circle>
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-[28px] font-black text-text-main leading-none">28</span>
-                <span className="text-[11px] font-bold text-text-muted">Projects</span>
-              </div>
-            </div>
-            
-            <div className="w-full space-y-2.5">
-              {[
-                { label: 'Artificial Intelligence', val: '8 (29%)', color: 'bg-[#8B5CF6]' },
-                { label: 'Web Development', val: '6 (21%)', color: 'bg-electric-blue' },
-                { label: 'Data Science', val: '5 (18%)', color: 'bg-[#64748B]' },
-                { label: 'Machine Learning', val: '4 (14%)', color: 'bg-illus-gold' },
-                { label: 'IoT & Embedded', val: '3 (11%)', color: 'bg-deep-violet' },
-              ].map((item, i) => (
-                <div key={i} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2.5 h-2.5 rounded-full ${item.color}`}></div>
-                    <span className="text-[12px] font-bold text-text-main">{item.label}</span>
-                  </div>
-                  <span className="text-[12px] font-bold text-text-muted">{item.val}</span>
-                </div>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[600px] text-sm text-left">
+            <thead className="bg-page-bg text-xs font-black uppercase tracking-wider text-text-muted">
+              <tr>
+                <th className="px-6 py-3">Student</th>
+                <th className="px-4 py-3">Readiness</th>
+                <th className="px-4 py-3">Attendance</th>
+                <th className="px-4 py-3">Daily 5 (week)</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border-light">
+              {students.map((s) => (
+                <tr key={s.id} className="hover:bg-page-bg/50 transition-colors">
+                  <td className="px-6 py-3">
+                    <p className="font-bold text-text-main">{s.name}</p>
+                    <p className="text-xs text-text-muted font-mono">{s.reg_no}</p>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <div className="h-1.5 w-20 overflow-hidden rounded-full bg-page-bg">
+                        <div className="h-full rounded-full bg-primary-purple" style={{ width: `${s.readiness}%` }} />
+                      </div>
+                      <span className="text-xs font-bold">{s.readiness.toFixed(0)}%</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-xs font-bold text-text-main">{s.attendance.toFixed(0)}%</td>
+                  <td className="px-4 py-3">
+                    {s.dailyFive ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-black text-emerald-700 border border-emerald-200">
+                        ✓ Active
+                      </span>
+                    ) : (
+                      <span className="text-xs text-text-muted">—</span>
+                    )}
+                  </td>
+                </tr>
               ))}
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      {/* Row 3: 3 Columns */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Student Engagement */}
-        <div className="bg-white rounded-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-border-light p-6 flex flex-col">
-          <h3 className="text-[16px] font-bold text-text-main mb-6">Student Engagement</h3>
-          <div className="flex-1 flex flex-col justify-center">
-            <div className="flex gap-2">
-              <div className="flex flex-col justify-between text-[10px] font-bold text-text-muted h-[140px] pr-2">
-                <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
-              </div>
-              <div className="flex-1 grid grid-cols-7 gap-1 h-[140px]">
-                {[...Array(49)].map((_, i) => {
-                  const r = Math.sin(i * 10) * 0.5 + 0.5; // Deterministic pseudo-random
-                  const bg = r > 0.8 ? 'bg-primary-purple' : r > 0.6 ? 'bg-[#8B5CF6]' : r > 0.4 ? 'bg-[#A78BFA]' : r > 0.2 ? 'bg-[#C4B5FD]' : 'bg-[#EDE9FE]';
-                  return <div key={i} className={`rounded-sm ${bg} hover:ring-1 hover:ring-[#1E293B] cursor-pointer transition-all`}></div>;
-                })}
-              </div>
-            </div>
-            <div className="flex justify-between items-center text-[10px] font-bold text-text-muted pl-8 mt-2">
-              <span>12 May</span><span>19 May</span><span>26 May</span><span>2 Jun</span><span>9 Jun</span><span>12 Jun</span>
-            </div>
-            <div className="flex items-center justify-between mt-4 pl-8">
-              <span className="text-[10px] font-bold text-text-muted">Low</span>
-              <div className="flex gap-1">
-                <div className="w-6 h-2 bg-[#EDE9FE] rounded-sm"></div>
-                <div className="w-6 h-2 bg-[#C4B5FD] rounded-sm"></div>
-                <div className="w-6 h-2 bg-[#A78BFA] rounded-sm"></div>
-                <div className="w-6 h-2 bg-[#8B5CF6] rounded-sm"></div>
-                <div className="w-6 h-2 bg-primary-purple rounded-sm"></div>
-              </div>
-              <span className="text-[10px] font-bold text-text-muted">High</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Mentorship Impact */}
-        <div className="bg-white rounded-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-border-light p-6">
-          <h3 className="text-[16px] font-bold text-text-main mb-2">Mentorship Impact</h3>
-          <div className="flex flex-col items-center">
-            {/* Arc Chart */}
-            <div className="relative w-40 h-24 overflow-hidden mt-6">
-              <svg viewBox="0 0 100 50" className="w-full h-full transform scale-150 origin-bottom">
-                <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" className="stroke-[#F1F5F9]" strokeWidth="12" strokeLinecap="round" />
-                <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" className="stroke-primary-purple" strokeWidth="12" strokeLinecap="round" strokeDasharray="125" strokeDashoffset="25" />
-              </svg>
-              <div className="absolute bottom-0 left-0 right-0 flex flex-col items-center justify-end pb-2">
-                <h4 className="text-[28px] font-black text-text-main leading-none">4.7 <span className="text-[16px] text-text-muted">/ 5</span></h4>
-                <p className="text-[10px] font-bold text-text-muted mt-1">Avg. Satisfaction</p>
-                <p className="text-[9px] font-bold text-electric-blue mt-0.5">↑ 8% from last 30 days</p>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-3 gap-2 w-full mt-10">
-              <div className="text-center">
-                <div className="w-8 h-8 mx-auto rounded-lg bg-page-bg text-primary-purple flex items-center justify-center mb-1"><Calendar className="w-4 h-4" /></div>
-                <p className="text-[14px] font-black text-text-main">24</p>
-                <p className="text-[9px] font-bold text-text-muted">Sessions</p>
-                <p className="text-[9px] font-bold text-electric-blue mt-0.5">↑ 25%</p>
-              </div>
-              <div className="text-center">
-                <div className="w-8 h-8 mx-auto rounded-lg bg-white text-electric-blue flex items-center justify-center mb-1"><TrendingUp className="w-4 h-4" /></div>
-                <p className="text-[14px] font-black text-text-main">16</p>
-                <p className="text-[9px] font-bold text-text-muted">Mentees Improved</p>
-                <p className="text-[9px] font-bold text-electric-blue mt-0.5">↑ 20%</p>
-              </div>
-              <div className="text-center">
-                <div className="w-8 h-8 mx-auto rounded-lg bg-white text-illus-gold flex items-center justify-center mb-1"><Star className="w-4 h-4" /></div>
-                <p className="text-[14px] font-black text-text-main">4.7 / 5</p>
-                <p className="text-[9px] font-bold text-text-muted">Satisfaction</p>
-                <p className="text-[9px] font-bold text-electric-blue mt-0.5">↑ 8%</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Project Status */}
-        <div className="bg-white rounded-[20px] shadow-[0_2px_12px_rgba(0,0,0,0.02)] border border-border-light p-6 flex flex-col">
-          <h3 className="text-[16px] font-bold text-text-main mb-6">Project Status</h3>
-          <div className="flex-1 space-y-4">
-            {[
-              { label: 'Active', val: '28 (44%)', pct: 44, color: 'bg-primary-purple' },
-              { label: 'In Review', val: '12 (19%)', pct: 19, color: 'bg-electric-blue' },
-              { label: 'Completed', val: '23 (36%)', pct: 36, color: 'bg-electric-blue' },
-              { label: 'On Hold', val: '1 (2%)', pct: 2, color: 'bg-illus-gold' },
-              { label: 'Archived', val: '0 (0%)', pct: 0, color: 'bg-deep-violet' },
-            ].map((status, i) => (
-              <div key={i} className="flex items-center gap-4">
-                <div className="w-24 shrink-0 flex items-center gap-2">
-                  <div className={`w-2.5 h-2.5 rounded-full ${status.color}`}></div>
-                  <span className="text-[12px] font-bold text-text-main">{status.label}</span>
-                </div>
-                <div className="flex-1 h-2 bg-page-bg rounded-full overflow-hidden">
-                  <div className={`h-full rounded-full ${status.color}`} style={{ width: `${status.pct}%` }}></div>
-                </div>
-                <span className="text-[11px] font-bold text-text-muted w-12 text-right">{status.val}</span>
-              </div>
-            ))}
-          </div>
-          <div className="mt-auto pt-4 border-t border-border-light flex justify-between items-center">
-            <span className="text-[12px] font-bold text-text-muted">Total Projects: 64</span>
-            <Link href="#" className="text-[12px] font-bold text-primary-purple">View All</Link>
-          </div>
-        </div>
-
-      </div>
-
-      {/* Bottom Banner */}
-      <div className="w-full bg-page-bg rounded-[20px] p-6 border border-primary-purple/20 flex items-center justify-between overflow-hidden relative">
-        <div className="flex items-center gap-4 relative z-10">
-          <div className="w-12 h-12 rounded-[14px] bg-primary-purple flex items-center justify-center shadow-lg shadow-md shadow-primary-purple/10 text-white">
-            <Trophy className="w-6 h-6" />
-          </div>
-          <div>
-            <h4 className="text-[16px] font-bold text-text-main mb-0.5">Great Progress!</h4>
-            <p className="text-[13px] text-text-muted font-medium">Projects completion rate increased by 18% this month. Keep up the excellent work!</p>
-          </div>
-        </div>
-        {/* Fake decorative graph background */}
-        <div className="absolute right-0 bottom-0 opacity-50 pointer-events-none w-[300px] h-[100px]">
-           <svg viewBox="0 0 100 30" className="w-full h-full fill-none" stroke="#A78BFA" strokeWidth="1">
-             <path d="M0,30 L20,20 L40,25 L60,10 L80,15 L100,0 L100,30 Z" fill="#E5D4FF" />
-             <path d="M0,30 L20,20 L40,25 L60,10 L80,15 L100,0" />
-           </svg>
+              {students.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="px-6 py-10 text-center text-sm text-text-muted">
+                    No students found for this batch.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
-
     </div>
   );
-}
-
-// Icon Fallback Component for missing graduation cap inside stats loop
-function GraduationCapIcon(props: any) {
-  return <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21.42 10.922a2 2 0 0 1-.019 3.07l-9.28 8.1a2 2 0 0 1-2.634.024l-9.26-8.05a2.043 2.043 0 0 1 .023-3.092l9.27-8.01a2 2 0 0 1 2.628-.018z"/><path d="M14 11.6V17"/><path d="M10 11.6V17"/></svg>
 }

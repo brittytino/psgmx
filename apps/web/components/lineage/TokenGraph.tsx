@@ -11,23 +11,30 @@ interface TokenNode {
   name: string;
 }
 
-export function TokenGraph({ currentToken, lineageSuffix }: { currentToken: string; lineageSuffix: string }) {
-  // Mock data generator for the graph
-  const generateLineage = () => {
-    const nodes: TokenNode[] = [];
-    const currentYear = parseInt(currentToken.substring(0, 2));
-    for (let i = currentYear - 3; i <= currentYear + 1; i++) {
-      if (i > 26) continue;
-      nodes.push({
-        token: `${i}MX${lineageSuffix}`,
-        role: i < 24 ? 'alumni' : 'student',
-        name: i === currentYear ? 'You' : `Generation ${i}`,
-      });
+export function TokenGraph({
+  currentToken,
+  lineageSuffix,
+  customNodes,
+}: {
+  currentToken: string;
+  lineageSuffix: string;
+  customNodes?: TokenNode[];
+}) {
+  const nodes = React.useMemo(() => {
+    if (customNodes && customNodes.length > 0) return customNodes;
+    const items: TokenNode[] = [];
+    const yearNum = parseInt(currentToken.substring(0, 2), 10);
+    if (!isNaN(yearNum)) {
+      for (let i = Math.max(21, yearNum - 3); i <= Math.min(26, yearNum + 1); i++) {
+        items.push({
+          token: `${i}MX${lineageSuffix}`,
+          role: i < 25 ? 'alumni' : 'student',
+          name: i === yearNum ? 'You' : `Batch ${i}MX Lineage`,
+        });
+      }
     }
-    return nodes;
-  };
-
-  const nodes = generateLineage();
+    return items;
+  }, [currentToken, lineageSuffix, customNodes]);
 
   return (
     <div className="psgmx-glass p-8 w-full relative overflow-hidden">

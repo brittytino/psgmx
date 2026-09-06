@@ -81,6 +81,8 @@ export async function PUT(req: NextRequest) {
     const {
       name, fullName, linkedin, linkedin_url, github, github_url, skills,
       avatar_url, current_company, current_role_title, mentorship_open,
+      task_reminders_enabled, attendance_alerts_enabled, announcements_enabled,
+      leetcode_notifications_enabled, leetcode_username,
     } = body
 
     const updateData: Record<string, unknown> = {}
@@ -95,6 +97,11 @@ export async function PUT(req: NextRequest) {
     if (current_company !== undefined) updateData.current_company = current_company
     if (current_role_title !== undefined) updateData.current_role_title = current_role_title
     if (mentorship_open !== undefined) updateData.mentorship_open = mentorship_open
+    if (leetcode_username !== undefined) updateData.leetcode_username = leetcode_username.trim() || null
+    if (task_reminders_enabled !== undefined) updateData.task_reminders_enabled = Boolean(task_reminders_enabled)
+    if (attendance_alerts_enabled !== undefined) updateData.attendance_alerts_enabled = Boolean(attendance_alerts_enabled)
+    if (announcements_enabled !== undefined) updateData.announcements_enabled = Boolean(announcements_enabled)
+    if (leetcode_notifications_enabled !== undefined) updateData.leetcode_notifications_enabled = Boolean(leetcode_notifications_enabled)
     if (body.completeOnboarding === true || fullName !== undefined || linkedin !== undefined) {
       updateData.onboarding_complete = true
     }

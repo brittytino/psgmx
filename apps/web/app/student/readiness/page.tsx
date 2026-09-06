@@ -18,14 +18,7 @@ const dimensionLabels: Record<string, string> = {
   portfolio_project: 'Portfolio & project proof',
 }
 
-const defaultDimensions: Dimension[] = [
-  { dimension: 'aptitude_reasoning', score: 75, confidence: 'high', evidence_count: 5, evidence_fresh_at: new Date().toISOString() },
-  { dimension: 'coding_problem_solving', score: 70, confidence: 'high', evidence_count: 4, evidence_fresh_at: new Date().toISOString() },
-  { dimension: 'core_computer_science', score: 68, confidence: 'medium', evidence_count: 3, evidence_fresh_at: new Date().toISOString() },
-  { dimension: 'communication_interview', score: 80, confidence: 'high', evidence_count: 6, evidence_fresh_at: new Date().toISOString() },
-  { dimension: 'assessment_performance', score: 72, confidence: 'high', evidence_count: 4, evidence_fresh_at: new Date().toISOString() },
-  { dimension: 'portfolio_project', score: 78, confidence: 'high', evidence_count: 5, evidence_fresh_at: new Date().toISOString() },
-]
+// No hardcoded dimension defaults — empty state is shown when no DB data exists
 
 const components = [
   { key: 'placement_attendance_pct', label: 'Preparation participation', weight: 30, icon: CalendarCheck2, action: 'Join the next preparation session' },
@@ -76,24 +69,9 @@ export default function ReadinessPage() {
         } catch {}
       }
 
-      // Default baseline snapshot if new student
-      if (!snap) {
-        snap = {
-          score: 74,
-          computed_at: new Date().toISOString(),
-          components_json: {
-            placement_attendance_pct: 85,
-            daily_five_adherence_pct: 80,
-            task_completion_rate_pct: 70,
-            daily_five_accuracy_pct: 75,
-            leetcode_momentum_percentile: 65,
-          }
-        }
-      }
-
-      setSnapshot(snap)
-      setHistory(hist.length > 0 ? hist : [snap])
-      setDimensions(dims.length > 0 ? dims : defaultDimensions)
+      setSnapshot(snap ?? null)
+      setHistory(hist.length > 0 ? hist : (snap ? [snap] : []))
+      setDimensions(dims)
       if (me?.batch) setBatchCode(me.batch)
 
     } catch (err) {
@@ -109,9 +87,34 @@ export default function ReadinessPage() {
     return <div className="flex min-h-64 items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary-purple"/></div>
   }
 
-  const score = Math.round(Number(snapshot?.score || 74))
+  if (!snapshot) {
+    return (
+      <div className="mx-auto max-w-6xl pb-10">
+        <div>
+          <h1 className="flex items-center gap-2 text-2xl font-black text-text-main">
+            <Award className="h-6 w-6 text-primary-purple"/>
+            Readiness &amp; Progress Index
+          </h1>
+          <p className="mt-1 text-sm text-text-muted">A transparent 6-dimension score built from real preparation evidence.</p>
+        </div>
+        <div className="mt-8 rounded-3xl border border-dashed border-border-light bg-white p-12 text-center">
+          <Award className="mx-auto h-12 w-12 text-text-muted" />
+          <h2 className="mt-5 font-black text-text-main text-xl">No readiness evidence yet</h2>
+          <p className="mt-3 max-w-md mx-auto text-sm leading-6 text-text-muted">
+            Your score is computed from attendance, Daily Five responses, exam attempts, and LeetCode activity.
+            Complete your first preparation session to see your score here.
+          </p>
+          <Link href="/student/train" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-primary-purple px-6 py-3 text-sm font-bold text-white">
+            <ArrowRight className="h-4 w-4" /> Start your first training session
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  const score = Math.round(Number(snapshot.score))
   const currentBand = band(score)
-  const values = components.map((item) => ({ ...item, value: numeric(snapshot?.components_json?.[item.key]) }))
+  const values = components.map((item) => ({ ...item, value: numeric(snapshot.components_json?.[item.key]) }))
   const focus = [...values].sort((a, b) => a.value - b.value)[0]
   const previous = history.length > 1 ? Number(history.at(-2)?.score ?? score) : score
   const change = Math.round(score - previous)

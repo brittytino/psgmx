@@ -55,12 +55,24 @@ export class AIUnavailableError extends Error {
   }
 }
 
+import { executeGeminiPrompt } from './gemini'
+
 export async function executeOpenRouterPrompt(
   prompt: string,
   taskType: AITaskType = 'general',
   systemPrompt?: string,
   maxTokensOverride?: number,
 ): Promise<AICallResponse> {
+  const geminiResult = await executeGeminiPrompt(prompt, systemPrompt)
+  if (geminiResult) {
+    return {
+      text: geminiResult.text,
+      modelUsed: geminiResult.modelUsed,
+      isFallback: false,
+      attempts: 1,
+    }
+  }
+
   const apiKey = process.env.OPENROUTER_API_KEY?.trim()
   if (!apiKey) throw new AIUnavailableError(0)
 
