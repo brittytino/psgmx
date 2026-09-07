@@ -17,6 +17,13 @@ type Person = {
   current_role_title: string | null
 }
 
+function intFromReg(reg: string): number {
+  if (!reg) return 0
+  const match = reg.match(/^(\d{2})MX/i)
+  if (match) return 2000 + parseInt(match[1], 10)
+  return 0
+}
+
 export default function AlumniLineagePage() {
   const supabase = useMemo(() => createClient(), [])
   const { showToast } = useUI()
@@ -35,13 +42,16 @@ export default function AlumniLineagePage() {
       setMe(profile)
       setMentorshipOpen(Boolean(profile.mentorship_open))
 
+      const meReg = (profile.reg_no || '').trim().toUpperCase()
+      const suf = meReg ? meReg.slice(-3) : ''
+
       const [{ data: seniorMap }, { data: juniorMaps }] = await Promise.all([
         supabase.from('lineage_map').select('senior_user_id').eq('student_id', profile.id).maybeSingle(),
         supabase.from('lineage_map').select('student_id').eq('senior_user_id', profile.id),
       ])
 
       const juniorIds = (juniorMaps ?? []).map((row) => row.student_id)
-      const [{ data: seniorRow }, { data: juniorRows }] = await Promise.all([
+      let [{ data: seniorRow }, { data: juniorRows }] = await Promise.all([
         seniorMap?.senior_user_id
           ? supabase
               .from('users')
@@ -56,6 +66,43 @@ export default function AlumniLineagePage() {
               .in('id', juniorIds)
           : Promise.resolve({ data: [] }),
       ])
+
+      // Fallback: Query users table by register number suffix if lineage_map is unlinked
+      if ((!juniorRows || juniorRows.length === 0) && suf) {
+        const { data: fallbackJuniors } = await supabase
+          .from('users')
+          .select('id,name,reg_no,email,linkedin_url,current_company,current_role_title')
+          .ilike('reg_no', `%MX${suf}`)
+          .neq('id', profile.id)
+          .order('reg_no', { ascending: false })
+
+        if (fallbackJuniors && fallbackJuniors.length > 0) {
+          // Filter to rows with larger batch start years or junior reg numbers
+          const meBatchNum = intFromReg(meReg)
+          const matchedJuniors = fallbackJuniors.filter((j) => intFromReg(j.reg_no) > meBatchNum)
+          if (matchedJuniors.length > 0) {
+            juniorRows = matchedJuniors
+          }
+        }
+      }
+
+      if (!seniorRow && suf) {
+        const meBatchNum = intFromReg(meReg)
+        const { data: fallbackSenior } = await supabase
+          .from('users')
+          .select('id,name,reg_no,email,linkedin_url,current_company,current_role_title')
+          .ilike('reg_no', `%MX${suf}`)
+          .neq('id', profile.id)
+          .order('reg_no', { ascending: false })
+          .limit(10)
+
+        if (fallbackSenior && fallbackSenior.length > 0) {
+          const matchedSenior = fallbackSenior.find((s) => intFromReg(s.reg_no) < meBatchNum)
+          if (matchedSenior) {
+            seniorRow = matchedSenior
+          }
+        }
+      }
 
       setSenior(seniorRow)
       setJuniors(juniorRows ?? [])

@@ -40,26 +40,37 @@ export default function ExamsPage() {
     setError('')
     try {
       const me = await getCurrentProfile(supabase)
-      if (!me?.id || me.role !== 'student') throw new Error('Sign in as a student to view assessments.')
-      const [{ data: examRows, error: examError }, { data: resultRows, error: resultError }] = await Promise.all([
+      const isStudent = !me || me.role_label?.toLowerCase() === 'student' || me.roleLabel?.toLowerCase() === 'student' || me.roles?.isStudent === true
+
+      if (me && !isStudent) {
+        throw new Error('Sign in as a student to view assessments.')
+      }
+
+      const studentId = me?.id ?? null
+      const [{ data: examRows, error: examError }, resultRes] = await Promise.all([
         supabase
           .from('mock_exams')
           .select('id,title,description,duration_minutes,total_marks,exam_date')
           .order('exam_date', { ascending: false, nullsFirst: false }),
-        supabase
-          .from('mock_exam_results')
-          .select('exam_id,score,raw_marks,out_of,status,submitted_at,reflection,reflected_at')
-          .eq('student_id', me.id),
+        studentId
+          ? supabase
+              .from('mock_exam_results')
+              .select('exam_id,score,raw_marks,out_of,status,submitted_at,reflection,reflected_at')
+              .eq('student_id', studentId)
+          : Promise.resolve({ data: [], error: null }),
       ])
+
       if (examError) throw examError
-      if (resultError) throw resultError
+      if (resultRes.error) throw resultRes.error
+
       const examList = (examRows ?? []) as Exam[]
-      const resultMap = new Map((resultRows ?? []).map((row) => [row.exam_id, row as Result]))
+      const resultMap = new Map((resultRes.data ?? []).map((row) => [row.exam_id, row as Result]))
 
       setExams(examList)
       setResults(resultMap)
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Assessments could not be loaded.')
+    } catch (cause: any) {
+      const msg = typeof cause === 'string' ? cause : (cause?.message || 'Assessments could not be loaded.')
+      setError(msg)
       setExams([])
       setResults(new Map())
     } finally {
