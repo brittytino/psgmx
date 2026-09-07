@@ -25,12 +25,10 @@ import 'providers/navigation_provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/ecampus_provider.dart';
 import 'providers/daily_five_provider.dart';
-import 'providers/placement_log_provider.dart';
 import 'providers/batch_provider.dart';
 import 'services/auth_service.dart';
 import 'services/supabase_service.dart';
 import 'services/supabase_db_service.dart';
-import 'services/quote_service.dart';
 import 'services/notification_service.dart';
 import 'services/birthday_notification_service.dart';
 import 'services/leetcode_auto_refresh_service.dart';
@@ -104,14 +102,12 @@ class PsgMxApp extends StatelessWidget {
     final supabaseService = SupabaseService();
     final supabaseDbService = SupabaseDbService();
     final authService = AuthService(supabaseService);
-    final quoteService = QuoteService();
 
     return MultiProvider(
       providers: [
         Provider<SupabaseService>.value(value: supabaseService),
         Provider<SupabaseDbService>.value(value: supabaseDbService),
         Provider<AuthService>.value(value: authService),
-        Provider<QuoteService>.value(value: quoteService),
         ChangeNotifierProvider<NotificationService>.value(
             value: NotificationService()),
         ChangeNotifierProvider<UpdateService>.value(value: UpdateService()),
@@ -137,9 +133,6 @@ class PsgMxApp extends StatelessWidget {
         // ── v4 Providers ──────────────────────────────────────────────────
         ChangeNotifierProvider(
           create: (_) => DailyFiveProvider(),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => PlacementLogProvider(),
         ),
         ChangeNotifierProvider(
           create: (_) => BatchProvider(),

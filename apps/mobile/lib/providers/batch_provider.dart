@@ -5,10 +5,8 @@ import '../models/team.dart';
 import '../models/app_user.dart';
 import '../services/batch_service.dart';
 
-/// State management for batch and team data.
-///
-/// Consumed by [TeamManagementScreen] and any widget that needs to display
-/// the current batch status (e.g., the admin dashboard).
+/// State management for batch and team data, consumed by any widget that
+/// needs to display the current batch status.
 class BatchProvider with ChangeNotifier {
   final BatchService _service;
 

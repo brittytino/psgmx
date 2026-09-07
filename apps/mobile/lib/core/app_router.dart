@@ -15,13 +15,10 @@ import '../ui/interview_patterns/interview_patterns_screen.dart';
 import '../ui/bunker/bunker_screen.dart';
 import '../ui/ai_mentor/ai_mentor_screen.dart';
 import '../ui/notifications/notifications_screen.dart';
-import '../ui/rankings/pulse_rankings_screen.dart';
-import '../ui/rankings/leetcode_arena_screen.dart';
 import '../ui/profile/credits_screen.dart';
 import '../ui/profile/graduation_screen.dart';
 import '../ui/profile/help_support_screen.dart';
 import '../ui/settings/settings_screen.dart';
-import '../ui/exam/proctored_exam_screen.dart';
 import '../ui/splash/splash_screen.dart';
 import '../ui/train/train_hub_screen.dart';
 import '../ui/train/communication_practice_screen.dart';
@@ -162,24 +159,12 @@ class AppRouter {
           builder: (context, state) => const CommandCenterScreen(),
         ),
         GoRoute(
-          path: '/pulse-rankings',
-          builder: (context, state) => const PulseRankingsScreen(),
-        ),
-        GoRoute(
-          path: '/leetcode-arena',
-          builder: (context, state) => const LeetcodeArenaScreen(),
-        ),
-        GoRoute(
           path: '/credits',
           builder: (context, state) => const CreditsScreen(),
         ),
         GoRoute(
           path: '/help-support',
           builder: (context, state) => const HelpSupportScreen(),
-        ),
-        GoRoute(
-          path: '/proctored-exam',
-          builder: (context, state) => const ProctoredExamScreen(),
         ),
         GoRoute(
           path: '/graduation',
