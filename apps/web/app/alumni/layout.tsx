@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import {
   Home,
   PenLine,
@@ -12,7 +12,6 @@ import {
   Briefcase,
   Megaphone,
   Settings,
-  Search,
   Bell,
   Menu,
   X,
@@ -25,6 +24,7 @@ import { createClient } from '@/lib/supabase/client';
 import { getCurrentProfile } from '@/lib/current-profile';
 import { InitialsAvatar } from '@/components/basic/InitialsAvatar';
 import { AlumniNotificationDrawer } from '@/components/alumni/AlumniNotificationDrawer';
+import { AlumniHeaderSearch } from '@/components/alumni/AlumniHeaderSearch';
 
 const sidebarLinks = [
   { name: 'Dashboard', href: '/alumni', icon: Home },
@@ -61,12 +61,10 @@ const getSidebarCardContent = (pathname: string) => {
 
 export default function AlumniLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [profileOpen, setProfileOpen] = React.useState(false);
   const [notificationsOpen, setNotificationsOpen] = React.useState(false);
   const [unreadCount, setUnreadCount] = React.useState(0);
-  const [searchQuery, setSearchQuery] = React.useState('');
   const [me, setMe] = React.useState<{ name: string; email: string; batchCode: string } | null>(null);
   const cardContent = getSidebarCardContent(pathname);
 
@@ -93,12 +91,6 @@ export default function AlumniLayout({ children }: { children: React.ReactNode }
   const handleLogout = async () => {
     try { await fetch('/api/auth/logout', { method: 'POST' }); } catch {}
     window.location.href = '/login';
-  };
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) return;
-    router.push(`/alumni/knowledge-brain?q=${encodeURIComponent(searchQuery.trim())}`);
   };
 
   return (
@@ -195,16 +187,7 @@ export default function AlumniLayout({ children }: { children: React.ReactNode }
             <button onClick={() => setMobileMenuOpen(true)} aria-label="Open menu" className="w-10 h-10 flex lg:hidden items-center justify-center rounded-full bg-white border border-border-light shadow-sm text-text-muted">
               <Menu className="w-5 h-5" />
             </button>
-            <form onSubmit={handleSearchSubmit} className="hidden md:flex items-center bg-white border border-border-light rounded-full h-11 px-4 w-[360px] shadow-sm focus-within:border-primary-purple focus-within:ring-1 focus-within:ring-primary-purple transition-all">
-              <Search className="w-4 h-4 text-text-muted mr-3" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search knowledge brain, opportunities..."
-                className="bg-transparent border-none outline-none text-[14px] text-text-main placeholder-text-muted w-full"
-              />
-            </form>
+            <AlumniHeaderSearch />
           </div>
           <div className="flex items-center gap-6">
             {/* Notification Bell */}
