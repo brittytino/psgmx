@@ -46,9 +46,15 @@ const PUBLIC_ROUTES = [
   '/login',
   '/join-alumni',
   '/download',        // Android download landing page
+  '/privacy',
+  '/terms',
   '/api/auth',        // covers /api/auth/login, /api/auth/verify, /api/auth/logout, etc.
   '/api/health',
   '/api/download',    // APK redirect API
+  '/api/cron',        // GitHub Actions / Vercel Cron — authenticated via CRON_SECRET bearer token
+                       // inside each route handler (isAuthorizedCron), not via a Supabase session.
+                       // Without this, the proxy redirects every unauthenticated cron call to
+                       // /login before the route's own auth check ever runs.
 ]
 
 function isPublicRoute(pathname: string): boolean {

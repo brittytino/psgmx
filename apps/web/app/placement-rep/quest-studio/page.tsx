@@ -207,7 +207,7 @@ export default function QuestStudio() {
 
         {/* Footer Actions */}
         <div className="pt-6 border-t border-gray-100 flex justify-end gap-3">
-          <button className="px-5 py-2.5 text-sm font-bold text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+          <button onClick={() => router.push('/placement-rep')} className="px-5 py-2.5 text-sm font-bold text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
             Cancel
           </button>
           <button 

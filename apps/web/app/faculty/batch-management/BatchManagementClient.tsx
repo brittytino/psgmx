@@ -24,14 +24,17 @@ export default function BatchManagementClient({ initialStudents, batches }: { in
   const [incomingPr, setIncomingPr] = useState('');
   const [handoverDate, setHandoverDate] = useState('');
 
-  // 7-Point Handover Checklist
+  // 7-Point Handover Checklist — each item is a manual attestation the HOD
+  // signs off on after confirming it out-of-band. None are pre-checked: this
+  // gates an irreversible batch-graduation transition, so it must never
+  // claim an item is verified before a human has actually looked at it.
   const [checklist, setChecklist] = useState([
-    { id: 1, text: 'All open session participation records finalized and closed', done: true },
-    { id: 2, text: 'All pending CodeBox quest completions verified and graded', done: true },
-    { id: 3, text: 'Question bank authorship and access transferred to incoming PR', done: true },
+    { id: 1, text: 'All open session participation records finalized and closed', done: false },
+    { id: 2, text: 'All pending CodeBox quest completions verified and graded', done: false },
+    { id: 3, text: 'Question bank authorship and access transferred to incoming PR', done: false },
     { id: 4, text: 'Senior squad structures archived for historical lineage', done: false },
-    { id: 5, text: 'Active batch announcements archived or expired', done: true },
-    { id: 6, text: 'Unresolved support tickets escalated to Faculty mentor queue', done: true },
+    { id: 5, text: 'Active batch announcements archived or expired', done: false },
+    { id: 6, text: 'Unresolved support tickets escalated to Faculty mentor queue', done: false },
     { id: 7, text: 'Final Batch Readiness & Placement Health Report generated', done: false },
   ]);
 
@@ -231,7 +234,8 @@ export default function BatchManagementClient({ initialStudents, batches }: { in
                         <input
                           type="checkbox"
                           checked={item.done}
-                          onChange={() => {}}
+                          onChange={() => toggleChecklist(item.id)}
+                          onClick={(e) => e.stopPropagation()}
                           className="accent-primary-purple w-4 h-4"
                         />
                         <span>{item.text}</span>

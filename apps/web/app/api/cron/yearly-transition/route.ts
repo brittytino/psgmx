@@ -5,8 +5,8 @@ import { createClient } from '@/lib/supabase/server'
 type HandoverRpc = (name: string, args: Record<string, string>) => Promise<{ data: unknown; error: { message: string } | null }>
 
 export async function POST(req: NextRequest) {
-  const pr = await requireAppRole(req, 'placement_rep')
-  if (!pr) return NextResponse.json({ error: 'Placement Representative access required.' }, { status: 403 })
+  const hod = await requireAppRole(req, 'hod')
+  if (!hod) return NextResponse.json({ error: 'HOD access required.' }, { status: 403 })
   const body = await req.json().catch(() => null) as {
     graduating_batch?: unknown; incoming_batch?: unknown; new_pr?: unknown;
     checklist?: Array<{ done?: unknown }>

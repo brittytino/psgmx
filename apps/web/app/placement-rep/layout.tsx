@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Users, CalendarClock, LogOut, Menu, X, UserRoundCog, ClipboardCheck, ListTodo, Megaphone, LibraryBig, BarChart3, Activity, GraduationCap } from 'lucide-react';
+import { LayoutDashboard, Users, CalendarClock, LogOut, Menu, X, UserRoundCog, ClipboardCheck, ListTodo, Megaphone, LibraryBig, BarChart3, Activity, GraduationCap, Rocket } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
 
@@ -18,6 +18,7 @@ const sidebarLinks = [
   { name: 'Participation', href: '/placement-rep/participation', icon: ClipboardCheck },
   { name: 'Communication', href: '/placement-rep/communication', icon: Megaphone },
   { name: 'Preparation Health', href: '/placement-rep/reports', icon: BarChart3 },
+  { name: 'Rollout', href: '/placement-rep/rollout', icon: Rocket },
 ];
 
 function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {

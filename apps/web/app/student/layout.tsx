@@ -34,7 +34,7 @@ import { NotificationDrawer } from '@/components/student/NotificationDrawer';
 const sidebarLinks = [
   { name: 'Today', href: '/student', icon: Home },
   { name: 'Train Gymnasium', href: '/student/train', icon: Zap },
-  { name: 'CodeBox Tasks', href: '/student/codebox/two-sum', icon: Code2 },
+  { name: 'CodeBox Tasks', href: '/student/codebox', icon: Code2 },
   { name: 'Readiness & Progress', href: '/student/progress', icon: Award },
   { name: 'AI Senior', href: '/student/ai-senior', icon: BrainCircuit },
   { name: 'Mock Assessments', href: '/student/exams', icon: ClipboardList },

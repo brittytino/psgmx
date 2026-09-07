@@ -15,7 +15,6 @@ export function SubmitArticleModal({ isOpen, onClose, onSuccess }: SubmitArticle
   const [content, setContent] = useState('');
   const [tags, setTags] = useState('');
   const [category, setCategory] = useState('survival_guide');
-  const [isAnonymous, setIsAnonymous] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -34,8 +33,7 @@ export function SubmitArticleModal({ isOpen, onClose, onSuccess }: SubmitArticle
           title,
           content,
           tags: tags.split(',').map(t => t.trim()).filter(Boolean),
-          category,
-          isAnonymous
+          category
         })
       });
 
@@ -46,7 +44,6 @@ export function SubmitArticleModal({ isOpen, onClose, onSuccess }: SubmitArticle
       setContent('');
       setTags('');
       setCategory('survival_guide');
-      setIsAnonymous(false);
       onSuccess();
     } catch (err: any) {
       setError(err.message);
@@ -123,14 +120,6 @@ export function SubmitArticleModal({ isOpen, onClose, onSuccess }: SubmitArticle
                 className="w-full h-40 bg-black/40 border border-border rounded-xl px-4 py-3 text-white placeholder-text-muted focus:outline-none focus:border-primary-purple transition-colors resize-none"
                 placeholder="Write your experience, guide, or tutorial here..."
               />
-            </div>
-
-            <div className="flex items-center gap-3 py-2">
-              <input 
-                type="checkbox" id="anon" checked={isAnonymous} onChange={e => setIsAnonymous(e.target.checked)}
-                className="w-4 h-4 rounded border-border bg-black/40 text-primary-purple focus:ring-primary-purple focus:ring-offset-bg-dark"
-              />
-              <label htmlFor="anon" className="text-sm text-text-secondary">Submit Anonymously (Token will be hidden)</label>
             </div>
 
             <div className="pt-4 border-t border-white/10 flex justify-end gap-3">

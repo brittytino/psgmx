@@ -47,10 +47,11 @@ export default function CodeBoxPage({ params }: { params: Promise<{ questId: str
       try {
         const { createClient } = await import('@/lib/supabase/client');
         const supabase = createClient();
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(questId);
         const { data: questData } = await (supabase as any)
           .from('quests')
           .select('*')
-          .eq('id', questId)
+          .eq(isUuid ? 'id' : 'slug', questId)
           .maybeSingle();
 
         if (questData) {
@@ -103,7 +104,7 @@ export default function CodeBoxPage({ params }: { params: Promise<{ questId: str
       const res = await fetch('/api/codebox/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ questId, code, language })
+        body: JSON.stringify({ questId: quest.id, code, language })
       });
       
       const data = await res.json();

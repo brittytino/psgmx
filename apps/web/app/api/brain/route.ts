@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { title, content, tags, company_name, is_anonymous } = body
+    const { title, content, tags, category, company_name } = body
 
     if (!title || !content) {
       return NextResponse.json({ error: 'title and content are required' }, { status: 400 })
@@ -69,13 +69,17 @@ export async function POST(req: NextRequest) {
 
     const supabase = await createClient()
 
+    // knowledge_brain_articles has no dedicated `category` column — fold the
+    // submitter's chosen category into `tags` (already used for filtering).
+    const allTags = [...new Set([category, ...(Array.isArray(tags) ? tags : [])].filter(Boolean))]
+
     const { data: article, error } = await supabase
       .from('knowledge_brain_articles')
       .insert({
         title,
         content,
-        author_id: is_anonymous ? null : session.id,
-        tags: tags ?? [],
+        author_id: session.id,
+        tags: allTags,
         company_name: company_name ?? null,
         approval_status: 'pending',
         source: 'web',

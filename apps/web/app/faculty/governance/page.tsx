@@ -10,6 +10,7 @@ export default async function FacultyGovernancePage() {
     { count: graduatingStudents },
     { count: pendingArticles },
     { count: totalStudents },
+    healthCheck,
   ] = await Promise.all([
     supabase.from('users').select('id, batches!inner(status)', { count: 'exact', head: true })
       .eq('batches.status', 'active_senior')
@@ -17,7 +18,10 @@ export default async function FacultyGovernancePage() {
     supabase.from('knowledge_brain_articles').select('id', { count: 'exact', head: true })
       .eq('approval_status', 'pending'),
     supabase.from('users').select('id', { count: 'exact', head: true }).eq('role_label', 'Student'),
+    supabase.from('app_config').select('rollout_stage').limit(1).maybeSingle(),
   ]);
+
+  const systemHealthy = !healthCheck.error && !!healthCheck.data?.rollout_stage;
 
   return (
     <div className="max-w-[1400px] mx-auto space-y-8 pb-8">
@@ -46,8 +50,8 @@ export default async function FacultyGovernancePage() {
         <div className="bg-white rounded-[20px] border border-border-light p-6">
           <p className="text-[12px] font-bold text-text-muted uppercase tracking-wider">System Health</p>
           <div className="flex items-center gap-4 mt-4">
-            <p className="text-[32px] font-black text-text-main">Good</p>
-            <ShieldCheck className="w-7 h-7 text-electric-blue" />
+            <p className="text-[32px] font-black text-text-main">{systemHealthy ? 'Good' : 'Degraded'}</p>
+            <ShieldCheck className={`w-7 h-7 ${systemHealthy ? 'text-electric-blue' : 'text-red-500'}`} />
           </div>
         </div>
 

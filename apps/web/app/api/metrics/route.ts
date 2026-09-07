@@ -34,9 +34,10 @@ export async function GET(req: NextRequest) {
       .select('*', { count: 'exact', head: true })
       .eq('approval_status', 'pending')
 
-    // Average readiness score
+    // Average readiness score — current_readiness_scores collapses the
+    // append-only readiness_scores history down to one row per user.
     const { data: scoreStats } = await supabaseAdmin
-      .from('readiness_scores')
+      .from('current_readiness_scores')
       .select('score')
 
     const avgScore = scoreStats && scoreStats.length > 0

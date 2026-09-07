@@ -82,15 +82,15 @@ export async function PUT(req: NextRequest) {
         .single()
 
       if ((article as any)?.author_id) {
-        await supabase.from('notifications')// @ts-ignore
+        const { error: notifyError } = await supabase.from('notifications')// @ts-ignore
       .insert({
-          user_id: (article as any).author_id,
-          type: 'article_approved',
           title: 'Your article was approved!',
-          body: `"${(article as any).title}" has been approved and is now visible in the Knowledge Brain.`,
-          reference_id: articleId,
-          reference_type: 'knowledge_brain_article',
+          message: `"${(article as any).title}" has been approved and is now visible in the Knowledge Brain.`,
+          notification_type: 'announcement',
+          target_audience: 'user',
+          created_by: (article as any).author_id,
         } as any)
+        if (notifyError) console.error('Failed to notify article author:', notifyError)
       }
     }
 

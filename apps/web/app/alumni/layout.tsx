@@ -21,6 +21,10 @@ import {
   GraduationCap,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { createClient } from '@/lib/supabase/client';
+import { InitialsAvatar } from '@/components/basic/InitialsAvatar';
+
+type NotificationItem = { id: string; title: string; message: string; generatedAt: string };
 
 const sidebarLinks = [
   { name: 'Dashboard', href: '/alumni', icon: Home },
@@ -60,7 +64,34 @@ export default function AlumniLayout({ children }: { children: React.ReactNode }
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [profileOpen, setProfileOpen] = React.useState(false);
   const [notificationsOpen, setNotificationsOpen] = React.useState(false);
+  const [me, setMe] = React.useState<{ name: string; email: string; batchCode: string } | null>(null);
+  const [notifications, setNotifications] = React.useState<NotificationItem[]>([]);
   const cardContent = getSidebarCardContent(pathname);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    const supabase = createClient();
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const [{ data: profileRows }, { data: notifs }] = await Promise.all([
+        supabase.rpc('get_my_profile'),
+        supabase.from('notifications').select('id, title, message, generated_at').eq('is_active', true).order('generated_at', { ascending: false }).limit(5),
+      ]);
+      if (cancelled) return;
+      const profile = Array.isArray(profileRows) ? profileRows[0] : profileRows;
+      if (profile) {
+        let batchCode = '';
+        if (profile.batch_id) {
+          const { data: batch } = await supabase.from('batches').select('batch_code').eq('id', profile.batch_id).maybeSingle();
+          batchCode = (batch as { batch_code?: string } | null)?.batch_code || '';
+        }
+        if (!cancelled) setMe({ name: profile.name, email: profile.email, batchCode });
+      }
+      setNotifications((notifs || []).map((n) => ({ id: n.id, title: n.title, message: n.message, generatedAt: n.generated_at })));
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const handleLogout = async () => {
     try { await fetch('/api/auth/logout', { method: 'POST' }); } catch {}
@@ -170,7 +201,9 @@ export default function AlumniLayout({ children }: { children: React.ReactNode }
             <div className="relative">
               <button onClick={() => setNotificationsOpen(!notificationsOpen)} className={`relative w-10 h-10 flex items-center justify-center rounded-full bg-white border border-border-light shadow-sm transition-colors ${notificationsOpen ? 'text-primary-purple border-primary-purple' : 'text-text-muted'}`}>
                 <Bell className="w-5 h-5" />
-                <span className="absolute top-0 right-0 w-4 h-4 bg-deep-violet text-white text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-white">2</span>
+                {notifications.length > 0 && (
+                  <span className="absolute top-0 right-0 w-4 h-4 bg-deep-violet text-white text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-white">{notifications.length}</span>
+                )}
               </button>
               <AnimatePresence>
                 {notificationsOpen && (
@@ -178,15 +211,16 @@ export default function AlumniLayout({ children }: { children: React.ReactNode }
                     <div className="fixed inset-0 z-40" onClick={() => setNotificationsOpen(false)} />
                     <motion.div initial={{ opacity: 0, y: 10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.95 }} className="absolute right-0 top-12 w-72 bg-white rounded-2xl shadow-xl border border-border-light z-50 overflow-hidden">
                       <div className="p-4 border-b border-border-light"><h3 className="text-[14px] font-bold text-text-main">Notifications</h3></div>
-                      <div className="p-2">
-                        <div className="p-3 hover:bg-page-bg rounded-xl cursor-pointer flex gap-3">
-                          <div className="w-8 h-8 rounded-full bg-page-bg flex items-center justify-center shrink-0"><BookOpen className="w-4 h-4 text-primary-purple" /></div>
-                          <div><p className="text-[13px] font-semibold text-text-main">Your article was approved</p><p className="text-[11px] text-text-muted mt-0.5">2 hours ago</p></div>
-                        </div>
-                        <div className="p-3 hover:bg-page-bg rounded-xl cursor-pointer flex gap-3">
-                          <div className="w-8 h-8 rounded-full bg-page-bg flex items-center justify-center shrink-0"><Users className="w-4 h-4 text-primary-purple" /></div>
-                          <div><p className="text-[13px] font-semibold text-text-main">Your junior viewed your profile</p><p className="text-[11px] text-text-muted mt-0.5">1 day ago</p></div>
-                        </div>
+                      <div className="p-2 max-h-[300px] overflow-y-auto">
+                        {notifications.length === 0 && (
+                          <p className="p-4 text-[13px] text-text-muted text-center">No notifications yet.</p>
+                        )}
+                        {notifications.map((n) => (
+                          <div key={n.id} className="p-3 hover:bg-page-bg rounded-xl transition-colors flex gap-3">
+                            <div className="w-8 h-8 rounded-full bg-page-bg flex items-center justify-center shrink-0"><BookOpen className="w-4 h-4 text-primary-purple" /></div>
+                            <div><p className="text-[13px] font-semibold text-text-main">{n.title}</p><p className="text-[11px] text-text-muted mt-0.5">{new Date(n.generatedAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}</p></div>
+                          </div>
+                        ))}
                       </div>
                     </motion.div>
                   </>
@@ -195,7 +229,7 @@ export default function AlumniLayout({ children }: { children: React.ReactNode }
             </div>
             <div className="relative">
               <div onClick={() => setProfileOpen(!profileOpen)} className={`flex items-center gap-3 cursor-pointer bg-white border rounded-full pl-2 pr-4 py-1.5 shadow-sm transition-colors ${profileOpen ? 'border-primary-purple' : 'border-border-light'}`}>
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-purple to-deep-violet flex items-center justify-center text-white font-bold text-xs">R</div>
+                <InitialsAvatar name={me?.name || '?'} size={32} />
                 <ChevronDown className={`w-4 h-4 transition-transform ${profileOpen ? 'rotate-180 text-primary-purple' : 'text-text-muted'}`} />
               </div>
               <AnimatePresence>
@@ -203,7 +237,7 @@ export default function AlumniLayout({ children }: { children: React.ReactNode }
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setProfileOpen(false)} />
                     <motion.div initial={{ opacity: 0, y: 10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.95 }} className="absolute right-0 top-12 w-56 bg-white rounded-2xl shadow-xl border border-border-light z-50 overflow-hidden">
-                      <div className="p-4 border-b border-border-light"><p className="text-[14px] font-bold text-text-main">Riya Menon</p><p className="text-[12px] text-text-muted">Alumni · 23MX</p></div>
+                      <div className="p-4 border-b border-border-light"><p className="text-[14px] font-bold text-text-main">{me?.name || 'Loading…'}</p><p className="text-[12px] text-text-muted">Alumni{me?.batchCode ? ` · ${me.batchCode}` : ''}</p></div>
                       <div className="p-2">
                         <Link href="/alumni/settings" onClick={() => setProfileOpen(false)} className="flex items-center gap-2 w-full p-2 text-[13px] font-semibold text-text-muted hover:bg-page-bg hover:text-text-main rounded-xl transition-colors"><Settings className="w-4 h-4" /> Settings</Link>
                         <div className="h-px bg-page-bg my-1" />

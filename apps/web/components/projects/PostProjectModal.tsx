@@ -18,16 +18,20 @@ export function PostProjectModal({ isOpen, onClose, onSuccess }: { isOpen: boole
     setError('');
 
     try {
+      const stack = techStack.split(',').map(t => t.trim()).filter(Boolean);
+      const extras = [
+        stack.length ? `Tech stack: ${stack.join(', ')}` : '',
+        reportLink ? `Report: ${reportLink}` : '',
+      ].filter(Boolean).join('\n');
+
       const res = await fetch('/api/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title,
-          description,
-          techStack: techStack.split(',').map(t => t.trim()).filter(Boolean),
-          guideName,
-          githubLink,
-          reportLink
+          description: extras ? `${description}\n\n${extras}` : description,
+          guide_name: guideName,
+          repository_url: githubLink || null,
         })
       });
       

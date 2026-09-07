@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
         batch_id: session.batch_id,
         title,
         description: description ?? '',
-        guide_name: guide_name ?? 'Dr. Arunkumar',
+        guide_name: guide_name ?? null,
         team_members_count: team_members_count ?? 1,
         repository_url: repository_url ?? null,
         status: 'in_progress',

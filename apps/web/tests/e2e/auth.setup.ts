@@ -11,7 +11,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceRole, {
 
 async function ensureTestUser(email: string, regNo: string, roleLabel: string, name: string, isPlacementRep = false) {
   // 1. Create in auth
-  let { data: authData, error: authError } = await supabase.auth.admin.createUser({
+  const { data: authData, error: authError } = await supabase.auth.admin.createUser({
     email,
     password: 'password123',
     email_confirm: true,

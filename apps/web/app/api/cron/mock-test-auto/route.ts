@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { executeOpenRouterPrompt } from '@/lib/ai/openrouter-free-chain'
+import { isAuthorizedCron } from '@/lib/cron-auth'
 
 const db = supabaseAdmin as any
 
@@ -13,8 +14,7 @@ const db = supabaseAdmin as any
  * Authentication: CRON_SECRET header
  */
 export async function POST(req: NextRequest) {
-  const secret = req.headers.get('x-cron-secret') || req.headers.get('authorization')?.replace('Bearer ', '')
-  if (!secret || secret !== process.env.CRON_SECRET) {
+  if (!isAuthorizedCron(req)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -238,8 +238,7 @@ Return ONLY valid JSON in this exact format:
 
 // GET for manual trigger by PR/Faculty from the dashboard
 export async function GET(req: NextRequest) {
-  const secret = req.headers.get('x-cron-secret')
-  if (!secret || secret !== process.env.CRON_SECRET) {
+  if (!isAuthorizedCron(req)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

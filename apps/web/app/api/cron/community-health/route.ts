@@ -2,12 +2,14 @@
 // GET /api/cron/community-health
 // Community health & engagement analytics based on Supabase metrics.
 // ============================================================
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/admin'
+import { isAuthorizedCron } from '@/lib/cron-auth'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  if (!isAuthorizedCron(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   try {
     const [scoresRes, streaksRes, logsRes] = await Promise.all([
       // readiness_scores has no `band` column — it's derived from `score`.

@@ -65,6 +65,7 @@ See docs/user-flow.md Chapter 4.3 for the full CodeBox story.
 See docs/user-flow.md Chapter 11.2 for the Piston API integration architecture.
 
 Piston API endpoint: https://emkc.org/api/v2/piston/execute
+PISTON_API_URL must include the `/execute` path — the code uses the env var verbatim as the full endpoint.
 Never call Piston from the client — always go through the API route or Edge Function.
 
 ---
@@ -106,7 +107,7 @@ See .env.example for all required variables. Required:
 - OPENROUTER_API_KEY (server-side only)
 - RESEND_API_KEY (server-side only)
 - CRON_SECRET (for authenticating GitHub Actions webhook calls)
-- PISTON_API_URL (= https://emkc.org/api/v2/piston)
+- PISTON_API_URL (= https://emkc.org/api/v2/piston/execute)
 
 ---
 
