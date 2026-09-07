@@ -43,7 +43,13 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Public smoke tests
-        run: npm run test:e2e
+        # Scoped to the public-smoke project only: it needs no authenticated
+        # session. The role-based specs (student/pr/faculty-hod/api-security)
+        # depend on a Playwright "setup" project whose auth.setup.ts assumes a
+        # password login form that doesn't exist in this OTP-only app — that
+        # needs a real fix (driving the actual OTP flow) before it belongs in
+        # a blocking CI gate.
+        run: npx playwright test --project=public-smoke
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
