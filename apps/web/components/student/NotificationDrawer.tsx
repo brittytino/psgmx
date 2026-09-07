@@ -110,6 +110,32 @@ export function NotificationDrawer({ isOpen, onClose, onUnreadCountChange }: Not
 
   useEffect(() => { void loadNotifications() }, [loadNotifications])
 
+  // Realtime subscription for live student notifications
+  useEffect(() => {
+    if (!userId) return
+    const channel = supabase
+      .channel('student-notifications-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'notifications' },
+        () => {
+          void loadNotifications()
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'notification_reads', filter: `user_id=eq.${userId}` },
+        () => {
+          void loadNotifications()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      void supabase.removeChannel(channel)
+    }
+  }, [supabase, userId, loadNotifications])
+
   // Close on Escape key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

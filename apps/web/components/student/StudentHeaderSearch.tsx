@@ -8,13 +8,15 @@ import {
   Search,
   X,
   BookOpen,
-  Briefcase,
+  Code2,
+  ClipboardList,
+  Building2,
   Megaphone,
   Users,
   ArrowRight,
   Loader2,
-  Sparkles,
-  Command,
+  Zap,
+  BrainCircuit,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
@@ -22,11 +24,11 @@ interface SearchResultItem {
   id: string
   title: string
   subtitle: string
-  type: 'article' | 'community' | 'announcement' | 'person'
+  type: 'article' | 'quest' | 'exam' | 'pattern' | 'announcement' | 'person'
   link: string
 }
 
-export function AlumniHeaderSearch() {
+export function StudentHeaderSearch() {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
   const [query, setQuery] = useState('')
@@ -48,64 +50,79 @@ export function AlumniHeaderSearch() {
 
       setLoading(true)
       try {
+        const db = supabase as any
         const [
           { data: articles },
-          { data: communityPosts },
+          { data: quests },
+          { data: exams },
+          { data: patterns },
           { data: announcements },
-          { data: users },
         ] = await Promise.all([
-          supabase
+          db
             .from('knowledge_brain_articles')
             .select('id, title, summary, company_name')
             .eq('approval_status', 'approved')
             .or(`title.ilike.%${q}%,summary.ilike.%${q}%,content.ilike.%${q}%`)
-            .limit(4),
-          supabase
-            .from('collaboration_posts')
-            .select('id, title, post_type')
+            .limit(3),
+          db
+            .from('quests')
+            .select('id, title, difficulty, track_key')
             .eq('is_active', true)
+            .or(`title.ilike.%${q}%,prompt.ilike.%${q}%`)
+            .limit(3),
+          db
+            .from('mock_exams')
+            .select('id, title, duration_minutes')
             .or(`title.ilike.%${q}%,description.ilike.%${q}%`)
             .limit(3),
-          supabase
+          db
+            .from('interview_patterns')
+            .select('id, title, company_name, pattern_type')
+            .eq('approval_status', 'approved')
+            .or(`title.ilike.%${q}%,company_name.ilike.%${q}%,advice.ilike.%${q}%`)
+            .limit(2),
+          db
             .from('announcements')
             .select('id, title, is_priority')
             .or(`title.ilike.%${q}%,message.ilike.%${q}%`)
-            .limit(3),
-          supabase
-            .from('users')
-            .select('id, name, reg_no, current_role_title, current_company')
-            .or(`name.ilike.%${q}%,reg_no.ilike.%${q}%,current_company.ilike.%${q}%`)
-            .limit(3),
+            .limit(2),
         ])
 
         const searchResults: SearchResultItem[] = [
-          ...(articles || []).map((a) => ({
+          ...((articles || []) as any[]).map((a) => ({
             id: `article-${a.id}`,
             title: a.title,
             subtitle: a.company_name ? `${a.company_name} · Knowledge Brain` : 'Knowledge Brain Article',
             type: 'article' as const,
-            link: `/alumni/knowledge-brain?id=${a.id}&q=${encodeURIComponent(q)}`,
+            link: `/student/knowledge-brain?id=${a.id}&q=${encodeURIComponent(q)}`,
           })),
-          ...(communityPosts || []).map((cp) => ({
-            id: `cp-${cp.id}`,
-            title: cp.title,
-            subtitle: `${cp.post_type.replace('_', ' ')} · Community Board`,
-            type: 'community' as const,
-            link: '/alumni/community-board',
+          ...((quests || []) as any[]).map((quest) => ({
+            id: `quest-${quest.id}`,
+            title: quest.title,
+            subtitle: `${quest.difficulty?.toUpperCase()} · CodeBox Task`,
+            type: 'quest' as const,
+            link: `/student/codebox/${quest.id}`,
           })),
-          ...(announcements || []).map((ann) => ({
+          ...((exams || []) as any[]).map((exam) => ({
+            id: `exam-${exam.id}`,
+            title: exam.title,
+            subtitle: `${exam.duration_minutes} min · Mock Assessment`,
+            type: 'exam' as const,
+            link: `/student/exams`,
+          })),
+          ...((patterns || []) as any[]).map((p) => ({
+            id: `pattern-${p.id}`,
+            title: p.title,
+            subtitle: `${p.company_name || 'Alumni Experience'} · Interview Pattern`,
+            type: 'pattern' as const,
+            link: `/student/interview-patterns`,
+          })),
+          ...((announcements || []) as any[]).map((ann) => ({
             id: `ann-${ann.id}`,
             title: ann.title,
-            subtitle: ann.is_priority ? 'Priority Notice' : 'Department Announcement',
+            subtitle: ann.is_priority ? 'Priority Notice' : 'Department Notice',
             type: 'announcement' as const,
-            link: '/alumni/announcements',
-          })),
-          ...(users || []).map((u) => ({
-            id: `user-${u.id}`,
-            title: u.name,
-            subtitle: [u.reg_no, u.current_role_title || u.current_company].filter(Boolean).join(' · ') || 'Member',
-            type: 'person' as const,
-            link: '/alumni/lineage',
+            link: `/student/announcements`,
           })),
         ]
 
@@ -165,7 +182,7 @@ export function AlumniHeaderSearch() {
         router.push(results[selectedIndex].link)
       } else if (query.trim()) {
         setIsOpen(false)
-        router.push(`/alumni/knowledge-brain?q=${encodeURIComponent(query.trim())}`)
+        router.push(`/student/knowledge-brain?q=${encodeURIComponent(query.trim())}`)
       }
     }
   }
@@ -177,7 +194,7 @@ export function AlumniHeaderSearch() {
       router.push(results[selectedIndex].link)
     } else if (query.trim()) {
       setIsOpen(false)
-      router.push(`/alumni/knowledge-brain?q=${encodeURIComponent(query.trim())}`)
+      router.push(`/student/knowledge-brain?q=${encodeURIComponent(query.trim())}`)
     }
   }
 
@@ -185,12 +202,16 @@ export function AlumniHeaderSearch() {
     switch (type) {
       case 'article':
         return <BookOpen className="w-3.5 h-3.5 text-primary-purple" />
-      case 'community':
-        return <Briefcase className="w-3.5 h-3.5 text-illus-gold" />
+      case 'quest':
+        return <Code2 className="w-3.5 h-3.5 text-emerald-600" />
+      case 'exam':
+        return <ClipboardList className="w-3.5 h-3.5 text-electric-blue" />
+      case 'pattern':
+        return <Building2 className="w-3.5 h-3.5 text-illus-gold" />
       case 'announcement':
         return <Megaphone className="w-3.5 h-3.5 text-amber-600" />
-      case 'person':
-        return <Users className="w-3.5 h-3.5 text-emerald-600" />
+      default:
+        return <Zap className="w-3.5 h-3.5 text-primary-purple" />
     }
   }
 
@@ -214,7 +235,7 @@ export function AlumniHeaderSearch() {
             setIsOpen(true)
           }}
           onKeyDown={handleKeyDown}
-          placeholder="Search articles, community, lineage..."
+          placeholder="Search Knowledge Brain, quests, exams..."
           className="bg-transparent border-none outline-none text-[13px] text-text-main placeholder-text-muted w-full font-medium"
         />
 
@@ -244,14 +265,14 @@ export function AlumniHeaderSearch() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 6, scale: 0.98 }}
             transition={{ duration: 0.15 }}
-            className="absolute top-13 left-0 w-[420px] max-w-[90vw] bg-white rounded-2xl shadow-2xl border border-border-light z-50 overflow-hidden"
+            className="absolute top-13 left-0 w-[420px] max-w-[90vw] bg-white rounded-2xl shadow-2xl border border-border-light z-50 overflow-hidden font-sans"
           >
             {/* If Query has text */}
             {query.trim() ? (
               <div>
                 <div className="p-3 border-b border-border-light bg-page-bg/40 flex items-center justify-between">
                   <span className="text-[11px] font-bold text-text-muted uppercase tracking-wider">
-                    {loading ? 'Searching Department Brain…' : `${results.length} Matches Found`}
+                    {loading ? 'Searching Department OS…' : `${results.length} Matches Found`}
                   </span>
                   <span className="text-[10px] text-text-muted font-semibold flex items-center gap-1">
                     Use <kbd className="px-1 py-0.5 rounded bg-white border text-[9px]">↑</kbd><kbd className="px-1 py-0.5 rounded bg-white border text-[9px]">↓</kbd> or <kbd className="px-1.5 py-0.5 rounded bg-white border text-[9px]">↵ Enter</kbd>
@@ -262,12 +283,12 @@ export function AlumniHeaderSearch() {
                   {results.length === 0 && !loading && (
                     <div className="p-6 text-center">
                       <p className="text-xs font-bold text-text-main">No direct matches for &ldquo;{query}&rdquo;</p>
-                      <p className="text-[11px] text-text-muted mt-1">Try searching another keyword or topic.</p>
+                      <p className="text-[11px] text-text-muted mt-1">Try searching another keyword, concept, or topic.</p>
                       <button
                         type="button"
                         onClick={() => {
                           setIsOpen(false)
-                          router.push(`/alumni/knowledge-brain?q=${encodeURIComponent(query.trim())}`)
+                          router.push(`/student/knowledge-brain?q=${encodeURIComponent(query.trim())}`)
                         }}
                         className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-primary-purple hover:underline"
                       >
@@ -316,7 +337,7 @@ export function AlumniHeaderSearch() {
                     type="button"
                     onClick={() => {
                       setIsOpen(false)
-                      router.push(`/alumni/knowledge-brain?q=${encodeURIComponent(query.trim())}`)
+                      router.push(`/student/knowledge-brain?q=${encodeURIComponent(query.trim())}`)
                     }}
                     className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-primary-purple/10 text-primary-purple text-xs font-bold hover:bg-primary-purple hover:text-white transition-colors"
                   >
@@ -333,10 +354,11 @@ export function AlumniHeaderSearch() {
                 </p>
                 <div className="space-y-1 mt-1">
                   {[
-                    { label: 'Explore Knowledge Brain Guides', href: '/alumni/knowledge-brain', icon: BookOpen },
-                    { label: 'Browse Community Opportunities', href: '/alumni/community-board', icon: Briefcase },
-                    { label: 'Department Announcements', href: '/alumni/announcements', icon: Megaphone },
-                    { label: 'Connected Lineage Juniors', href: '/alumni/lineage', icon: Users },
+                    { label: 'Search Knowledge Brain Guides', href: '/student/knowledge-brain', icon: BookOpen },
+                    { label: 'CodeBox Coding Tasks', href: '/student/codebox', icon: Code2 },
+                    { label: 'Mock Assessments & Tests', href: '/student/exams', icon: ClipboardList },
+                    { label: 'Ask AI Senior RAG Mentor', href: '/student/ai-senior', icon: BrainCircuit },
+                    { label: 'Daily Five & Train Gymnasium', href: '/student/train', icon: Zap },
                   ].map((nav) => (
                     <Link
                       key={nav.label}

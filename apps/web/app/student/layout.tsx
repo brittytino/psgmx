@@ -14,7 +14,6 @@ import {
   Building2,
   Megaphone,
   Settings,
-  Search,
   Bell,
   Menu,
   X,
@@ -30,6 +29,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
 import { getCurrentProfile } from '@/lib/current-profile';
 import { NotificationDrawer } from '@/components/student/NotificationDrawer';
+import { StudentHeaderSearch } from '@/components/student/StudentHeaderSearch';
 
 const sidebarLinks = [
   { name: 'Today', href: '/student', icon: Home },
@@ -58,7 +58,7 @@ const getSidebarCardContent = (pathname: string) => {
   if (pathname.includes('/exams')) {
     return { title: 'Simulate the real thing. Exams build instincts.', desc: 'Proctored mock exams that predict placement performance.', icon: ClipboardList };
   }
-  if (pathname.includes('/readiness')) {
+  if (pathname.includes('/readiness') || pathname.includes('/progress')) {
     return { title: 'Your score is a mirror. Improve the inputs.', desc: 'Four dimensions. One honest number.', icon: Award };
   }
   if (pathname.includes('/lineage')) {
@@ -67,7 +67,7 @@ const getSidebarCardContent = (pathname: string) => {
   if (pathname.includes('/fyp')) {
     return { title: 'Document your progress. Every step counts.', desc: 'Your project journey, logged and tracked.', icon: Folder };
   }
-  if (pathname.includes('/placement-log')) {
+  if (pathname.includes('/placement-log') || pathname.includes('/interview-patterns')) {
     return { title: 'Practise patterns, not company rumours.', desc: 'Reviewed historical insight for reusable preparation.', icon: Building2 };
   }
   if (pathname.includes('/announcements')) {
@@ -97,8 +97,8 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
       setIsPlacementRep(me.roles?.isPlacementRep === true);
       let batchCode = 'MCA';
       if (me.batch_id) {
-        const { data: batch } = await supabase.from('batches').select('batch_code').eq('id', me.batch_id).single();
-        batchCode = batch?.batch_code ?? batchCode;
+        const { data: batch } = await supabase.from('batches').select('batch_code').eq('id', me.batch_id).maybeSingle();
+        batchCode = (batch as any)?.batch_code ?? batchCode;
       }
       setIdentity({ name: me.name ?? 'Student', regNo: me.reg_no ?? '', batchCode });
     } catch { /* Route protection handles an unavailable session. */ }
@@ -117,13 +117,13 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
 
         {/* Logo */}
         <div className="h-[88px] flex items-center px-8 shrink-0">
-          <div className="flex items-center gap-3">
+          <Link href="/student" className="flex items-center gap-3">
             <img src="/logo.webp" alt="PSGMX Logo" className="w-10 h-10 object-contain drop-shadow-sm" />
             <div>
               <h2 className="text-[17px] font-black tracking-tight text-text-main leading-tight">Student Portal</h2>
               <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider">MCA Department</p>
             </div>
-          </div>
+          </Link>
         </div>
 
         {/* Navigation */}
@@ -237,10 +237,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
             <button onClick={() => setMobileMenuOpen(true)} className="w-10 h-10 flex lg:hidden items-center justify-center rounded-full bg-white border border-border-light shadow-sm text-text-muted">
               <Menu className="w-5 h-5" />
             </button>
-            <Link href="/student/knowledge-brain" className="hidden md:flex items-center bg-white border border-border-light rounded-full h-11 px-4 w-[360px] shadow-sm hover:border-primary-purple transition-all">
-              <Search className="w-4 h-4 text-text-muted mr-3" />
-              <span className="text-sm text-text-muted">Search the Knowledge Brain</span>
-            </Link>
+            <StudentHeaderSearch />
           </div>
 
           <div className="flex items-center gap-6">
@@ -260,11 +257,11 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
               </button>
             </div>
 
-              <NotificationDrawer
-                isOpen={notificationsOpen}
-                onClose={() => setNotificationsOpen(false)}
-                onUnreadCountChange={setUnreadNotifications}
-              />
+            <NotificationDrawer
+              isOpen={notificationsOpen}
+              onClose={() => setNotificationsOpen(false)}
+              onUnreadCountChange={setUnreadNotifications}
+            />
 
             {/* Profile */}
             <div className="relative">
