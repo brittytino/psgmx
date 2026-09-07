@@ -16,12 +16,17 @@ import {
   HandHeart,
   Building2,
   Sparkles,
+  Plus,
+  Compass,
 } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { InitialsAvatar } from '@/components/basic/InitialsAvatar';
 import { getCurrentProfile } from '@/lib/current-profile';
+import { parseBatchFromRegisterNumber } from '@/lib/auth-input';
+import type { Database } from '@/../../supabase/types/database.types';
 
+type CollaborationPost = Database['public']['Tables']['collaboration_posts']['Row'];
 interface ArticleRow { id: string; title: string; approval_status: string; view_count: number; created_at: string }
 interface ActivityItem { id: string; text: string; time: string; kind: 'pattern' | 'article' | 'announcement' }
 interface JuniorInfo { id: string; name: string; regNo: string; batchCode: string }
@@ -37,9 +42,11 @@ export default function AlumniDashboard() {
   const [company, setCompany] = React.useState<string | null>(null);
   const [role, setRole] = React.useState<string | null>(null);
   const [articles, setArticles] = React.useState<ArticleRow[]>([]);
+  const [communityPosts, setCommunityPosts] = React.useState<CollaborationPost[]>([]);
   const [mentorshipActive, setMentorshipActive] = React.useState(false);
   const [junior, setJunior] = React.useState<JuniorInfo | null>(null);
   const [lineageCount, setLineageCount] = React.useState(0);
+  const [postsCount, setPostsCount] = React.useState(0);
   const [activityFeed, setActivityFeed] = React.useState<ActivityItem[]>([]);
 
   const load = React.useCallback(async () => {
@@ -49,11 +56,14 @@ export default function AlumniDashboard() {
     const me = await getCurrentProfile(supabase);
     if (!me) { setLoading(false); return; }
 
-    setName(me.name);
+    setName(me.name || 'Alumnus');
     setRegNo(me.reg_no || '');
-    setMentorshipActive(me.mentorship_open);
+    setMentorshipActive(Boolean(me.mentorship_open));
     setCompany(me.current_company ?? null);
     setRole(me.current_role_title ?? null);
+
+    // Dynamic batch parsing from reg_no fallback if batch_id is not set
+    const parsed = me.reg_no ? parseBatchFromRegisterNumber(me.reg_no) : null;
 
     const [
       { data: batch },
@@ -61,26 +71,63 @@ export default function AlumniDashboard() {
       { data: lineageRows },
       { data: announcements },
       { data: patterns },
+      { data: recentCommunityPosts },
+      { count: myPostsCount },
     ] = await Promise.all([
-      me.batch_id ? supabase.from('batches').select('batch_code, start_year, end_year').eq('id', me.batch_id).single() : Promise.resolve({ data: null }),
-      supabase.from('knowledge_brain_articles').select('id, title, approval_status, view_count, created_at').eq('author_id', me.id).order('created_at', { ascending: false }),
-      supabase.from('lineage_map').select('id, student_id, users!lineage_map_student_id_fkey(name, reg_no, batch_id)').eq('senior_user_id', me.id),
-      supabase.from('announcements').select('id, title, created_at').order('created_at', { ascending: false }).limit(3),
-      supabase.from('interview_patterns').select('id, title, created_at').eq('approval_status', 'approved').order('created_at', { ascending: false }).limit(2),
+      me.batch_id
+        ? supabase.from('batches').select('batch_code, start_year, end_year').eq('id', me.batch_id).maybeSingle()
+        : Promise.resolve({ data: null }),
+      supabase
+        .from('knowledge_brain_articles')
+        .select('id, title, approval_status, view_count, created_at')
+        .eq('author_id', me.id)
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('lineage_map')
+        .select('id, student_id, users!lineage_map_student_id_fkey(name, reg_no, batch_id)')
+        .eq('senior_user_id', me.id),
+      supabase
+        .from('announcements')
+        .select('id, title, created_at')
+        .order('created_at', { ascending: false })
+        .limit(3),
+      supabase
+        .from('interview_patterns')
+        .select('id, title, created_at')
+        .eq('approval_status', 'approved')
+        .order('created_at', { ascending: false })
+        .limit(3),
+      supabase
+        .from('collaboration_posts')
+        .select('*')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(3),
+      supabase
+        .from('collaboration_posts')
+        .select('id', { count: 'exact', head: true })
+        .eq('posted_by', me.id),
     ]);
 
-    setBatchCode((batch as any)?.batch_code || '');
-    setStartYear((batch as any)?.start_year ?? null);
-    setEndYear((batch as any)?.end_year ?? null);
-    setArticles(articleRows || []);
-    setLineageCount((lineageRows || []).length);
+    const typedBatch = batch as { batch_code?: string; start_year?: number; end_year?: number } | null;
+    const code = typedBatch?.batch_code || parsed?.code || (me.reg_no ? me.reg_no.slice(0, 4) : 'MCA');
+    const sYear = typedBatch?.start_year ?? parsed?.startYear ?? null;
+    const eYear = typedBatch?.end_year ?? parsed?.endYear ?? null;
 
-    const firstJunior = (lineageRows || [])[0] as any;
-    setJunior(firstJunior?.users ? { id: firstJunior.student_id, name: firstJunior.users.name, regNo: firstJunior.users.reg_no || '', batchCode: '' } : null);
+    setBatchCode(code);
+    setStartYear(sYear);
+    setEndYear(eYear);
+    setArticles(articleRows || []);
+    setCommunityPosts(recentCommunityPosts || []);
+    setLineageCount((lineageRows || []).length);
+    setPostsCount(myPostsCount ?? 0);
+
+    const firstJunior = (lineageRows || [])[0] as { student_id?: string; users?: { name?: string; reg_no?: string } | null } | undefined;
+    setJunior(firstJunior?.users?.name ? { id: firstJunior.student_id || '', name: firstJunior.users.name, regNo: firstJunior.users.reg_no || '', batchCode: '' } : null);
 
     const feed: ActivityItem[] = [
-      ...(patterns || []).map((pattern) => ({ id: `p-${pattern.id}`, text: `Interview pattern published: ${pattern.title}`, time: pattern.created_at, kind: 'pattern' as const })),
-      ...(announcements || []).map((a: any) => ({ id: `a-${a.id}`, text: a.title, time: a.created_at, kind: 'announcement' as const })),
+      ...(patterns || []).map((pattern) => ({ id: `p-${pattern.id}`, text: `Interview pattern: ${pattern.title}`, time: pattern.created_at, kind: 'pattern' as const })),
+      ...(announcements || []).map((a) => ({ id: `a-${a.id}`, text: a.title, time: a.created_at, kind: 'announcement' as const })),
     ].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()).slice(0, 5);
     setActivityFeed(feed);
 
@@ -200,11 +247,22 @@ export default function AlumniDashboard() {
             </div>
             <div className="p-6 space-y-3">
               {articles.length === 0 && (
-                <div className="py-8 text-center">
-                  <p className="text-[13px] text-text-muted">You haven't written any articles yet.</p>
-                  <Link href="/alumni/contribute" className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-primary-purple hover:underline">
-                    Share an interview experience or technical roadmap <ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
+                <div className="py-8 text-center bg-page-bg/50 rounded-2xl border border-dashed border-border-light p-6">
+                  <p className="text-[14px] font-bold text-text-main">Share your industry experience with students</p>
+                  <p className="text-[12px] text-text-muted mt-1 max-w-md mx-auto">
+                    Help juniors prepare for tech interviews, final year projects, and career roadmaps.
+                  </p>
+                  <div className="mt-4 flex flex-wrap justify-center gap-2">
+                    <Link href="/alumni/contribute" className="px-3 py-1.5 rounded-lg bg-primary-purple/10 text-primary-purple text-xs font-bold hover:bg-primary-purple/20 transition">
+                      + Interview Experience
+                    </Link>
+                    <Link href="/alumni/contribute" className="px-3 py-1.5 rounded-lg bg-electric-blue/10 text-electric-blue text-xs font-bold hover:bg-electric-blue/20 transition">
+                      + Tech Roadmap
+                    </Link>
+                    <Link href="/alumni/knowledge-brain" className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-bold hover:bg-slate-200 transition">
+                      Browse Knowledge Brain
+                    </Link>
+                  </div>
                 </div>
               )}
               {articles.slice(0, 5).map((a) => (
@@ -229,6 +287,44 @@ export default function AlumniDashboard() {
                 </Link>
               )}
             </div>
+          </div>
+
+          {/* Community Board Highlights */}
+          <div className="bg-white rounded-[20px] border border-border-light shadow-[0_2px_12px_rgba(0,0,0,0.02)] p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Briefcase className="w-5 h-5 text-primary-purple" />
+                <h3 className="text-[16px] font-bold text-text-main">Community Opportunities</h3>
+              </div>
+              <Link href="/alumni/community-board" className="text-[12px] font-bold text-primary-purple hover:underline">
+                View All Posts
+              </Link>
+            </div>
+            {communityPosts.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-border-light p-6 text-center">
+                <p className="text-sm font-semibold text-text-muted">No active community posts right now.</p>
+                <Link href="/alumni/community-board" className="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-primary-purple hover:underline">
+                  <Plus className="h-3.5 w-3.5" /> Start a project, mentorship circle or share career info
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {communityPosts.map((post) => (
+                  <div key={post.id} className="p-4 rounded-2xl border border-border-light bg-page-bg/40 flex items-start justify-between gap-4">
+                    <div>
+                      <span className="inline-block rounded-md bg-violet-100 px-2 py-0.5 text-[10px] font-black uppercase text-primary-purple">
+                        {post.post_type.replaceAll('_', ' ')}
+                      </span>
+                      <h4 className="mt-1.5 text-sm font-bold text-text-main">{post.title}</h4>
+                      <p className="mt-1 text-xs text-text-muted line-clamp-2">{post.description}</p>
+                    </div>
+                    <span className="text-[10px] font-semibold text-text-muted shrink-0">
+                      {new Date(post.created_at).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Department Activity Feed */}
@@ -268,7 +364,7 @@ export default function AlumniDashboard() {
             </div>
             <div className="flex items-center justify-between p-4 bg-page-bg rounded-xl mb-4">
               <span className="text-[13px] font-bold text-text-main">Available for Mentorship</span>
-              <button onClick={toggleMentorship} className="transition-transform active:scale-95 cursor-pointer">
+              <button onClick={toggleMentorship} aria-label="Toggle mentorship availability" className="transition-transform active:scale-95 cursor-pointer">
                 {mentorshipActive
                   ? <ToggleRight className="w-9 h-9 text-emerald-600" />
                   : <ToggleLeft className="w-9 h-9 text-border-light" />}
