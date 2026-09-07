@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { normalizeEmail, normalizeRegisterNumber } from '@/lib/auth-input'
+import { normalizeEmail, normalizeRegisterNumber, parseBatchFromRegisterNumber } from '@/lib/auth-input'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 
 const ALUMNI_ROLES = {
@@ -39,17 +39,15 @@ async function findAuthUserId(email: string): Promise<string | null> {
 }
 
 async function ensureGraduatedBatch(regNo: string) {
-  const batchCode = regNo.slice(0, 4)
-  const startYear = 2000 + Number(batchCode.slice(0, 2))
-  const endYear = startYear + 2
-  const currentYear = new Date().getFullYear()
-
-  if (startYear < 2000 || endYear > currentYear) throw new Error('ACTIVE_BATCH')
+  const batchInfo = parseBatchFromRegisterNumber(regNo)
+  if (!batchInfo || batchInfo.startYear < 1980) {
+    throw new Error('INVALID_BATCH')
+  }
 
   const { data: existing, error } = await supabaseAdmin
     .from('batches')
     .select('id, batch_code, start_year, end_year, status')
-    .eq('batch_code', batchCode)
+    .eq('batch_code', batchInfo.code)
     .maybeSingle()
   if (error) throw error
   if (existing) {
@@ -57,9 +55,18 @@ async function ensureGraduatedBatch(regNo: string) {
     return existing
   }
 
+  if (!batchInfo.isGraduated) {
+    throw new Error('ACTIVE_BATCH')
+  }
+
   const { data, error: insertError } = await supabaseAdmin
     .from('batches')
-    .insert({ batch_code: batchCode, start_year: startYear, end_year: endYear, status: 'graduated' })
+    .insert({
+      batch_code: batchInfo.code,
+      start_year: batchInfo.startYear,
+      end_year: batchInfo.endYear,
+      status: 'graduated',
+    })
     .select('id, batch_code, start_year, end_year, status')
     .single()
   if (insertError) throw insertError
@@ -91,6 +98,12 @@ export async function POST(request: NextRequest) {
       if (error instanceof Error && error.message === 'ACTIVE_BATCH') {
         return NextResponse.json(
           { error: 'This register number belongs to a current batch. Please use Student OTP login.' },
+          { status: 400 },
+        )
+      }
+      if (error instanceof Error && error.message === 'INVALID_BATCH') {
+        return NextResponse.json(
+          { error: 'Enter a valid MCA register number.' },
           { status: 400 },
         )
       }

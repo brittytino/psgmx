@@ -1,6 +1,26 @@
 export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 export const MCA_REGISTER_NUMBER_PATTERN = /^(\d{2}MX)(\d{3})$/i
 
+export interface BatchSummary {
+  code: string
+  startYear: number
+  endYear: number
+  isGraduated: boolean
+}
+
+export function parseBatchFromRegisterNumber(value: unknown): BatchSummary | null {
+  const regNo = normalizeRegisterNumber(value)
+  if (!regNo) return null
+  const code = regNo.slice(0, 4)
+  const yy = Number(code.slice(0, 2))
+  const startYear = yy >= 50 ? 1900 + yy : 2000 + yy
+  const duration = startYear < 2020 ? 3 : 2
+  const endYear = startYear + duration
+  const currentYear = new Date().getFullYear()
+  const isGraduated = endYear <= currentYear
+  return { code, startYear, endYear, isGraduated }
+}
+
 export function normalizeEmail(value: unknown): string | null {
   if (typeof value !== 'string') return null
   const email = value.trim().toLowerCase()

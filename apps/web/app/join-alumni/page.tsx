@@ -3,6 +3,8 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { FormEvent, useMemo, useState } from 'react'
+import { useUI } from '@/components/providers/ui-provider'
+import { parseBatchFromRegisterNumber } from '@/lib/auth-input'
 import {
   ArrowLeft,
   ArrowRight,
@@ -18,22 +20,15 @@ import {
 
 type Step = 'profile' | 'otp' | 'success'
 
-function batchSummary(regNo: string) {
-  const match = regNo.trim().toUpperCase().match(/^(\d{2}MX)\d{3}$/)
-  if (!match) return null
-  const start = 2000 + Number(match[1].slice(0, 2))
-  return { code: match[1], start, end: start + 2 }
-}
-
 export default function JoinAlumniPage() {
   const router = useRouter()
+  const { showToast } = useUI()
   const [step, setStep] = useState<Step>('profile')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [message, setMessage] = useState('')
   const [otp, setOtp] = useState('')
   const [form, setForm] = useState({ name: '', regNo: '', email: '', linkedin: '' })
-  const batch = useMemo(() => batchSummary(form.regNo), [form.regNo])
+  const batch = useMemo(() => parseBatchFromRegisterNumber(form.regNo), [form.regNo])
 
   async function sendCode() {
     const response = await fetch('/api/auth/request-otp', {
@@ -43,7 +38,7 @@ export default function JoinAlumniPage() {
     })
     const result = await response.json()
     if (!response.ok) throw new Error(result.error || 'The sign-in code could not be sent.')
-    setMessage(result.message || 'A six-digit code has been sent.')
+    showToast(result.message || `A six-digit code has been sent to ${form.email}.`, 'success')
   }
 
   async function submitProfile(event: FormEvent) {
@@ -146,7 +141,6 @@ export default function JoinAlumniPage() {
                 </p>
 
                 {error && <div className="mt-5 rounded-xl border border-red-100 bg-red-50 p-3 text-sm font-semibold text-red-700" role="alert">{error}</div>}
-                {message && step === 'otp' && <div className="mt-5 rounded-xl border border-green-100 bg-green-50 p-3 text-sm font-semibold text-green-700">{message}</div>}
 
                 {step === 'profile' ? (
                   <form onSubmit={submitProfile} className="mt-7 space-y-4">
@@ -158,7 +152,7 @@ export default function JoinAlumniPage() {
                     </Field>
                     <div className={`rounded-xl border px-4 py-3 text-sm ${batch ? 'border-[#FFD9C2] bg-[#FFF8F3]' : 'border-[#EAECF0] bg-[#F9FAFB]'}`}>
                       <div className="text-xs font-bold uppercase tracking-wider text-[#98A2B3]">Detected batch</div>
-                      <div className="mt-1 font-black text-[#344054]">{batch ? `${batch.code} · ${batch.start}–${batch.end}` : 'Enter a valid register number'}</div>
+                      <div className="mt-1 font-black text-[#344054]">{batch ? `${batch.code} · ${batch.startYear}–${batch.endYear}` : 'Enter a valid register number'}</div>
                     </div>
                     <Field icon={<Mail />} label="Email for OTP">
                       <input required type="email" autoComplete="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value.toLowerCase() })} placeholder="you@example.com" className="auth-input" />
