@@ -14,16 +14,14 @@ import {
   Calendar,
   FileText,
   HandHeart,
-  Building2,
-  Sparkles,
   Plus,
-  Compass,
 } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { InitialsAvatar } from '@/components/basic/InitialsAvatar';
 import { getCurrentProfile } from '@/lib/current-profile';
 import { parseBatchFromRegisterNumber } from '@/lib/auth-input';
+import { useUI } from '@/components/providers/ui-provider';
 import type { Database } from '@/../../supabase/types/database.types';
 
 type CollaborationPost = Database['public']['Tables']['collaboration_posts']['Row'];
@@ -32,7 +30,8 @@ interface ActivityItem { id: string; text: string; time: string; kind: 'pattern'
 interface JuniorInfo { id: string; name: string; regNo: string; batchCode: string }
 
 export default function AlumniDashboard() {
-  const supabase = createClient();
+  const supabase = React.useMemo(() => createClient(), []);
+  const { showToast } = useUI();
   const [loading, setLoading] = React.useState(true);
   const [name, setName] = React.useState('');
   const [regNo, setRegNo] = React.useState('');
@@ -50,88 +49,121 @@ export default function AlumniDashboard() {
   const [activityFeed, setActivityFeed] = React.useState<ActivityItem[]>([]);
 
   const load = React.useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setLoading(false); return; }
+    try {
+      const me = await getCurrentProfile(supabase);
+      if (!me) { setLoading(false); return; }
 
-    const me = await getCurrentProfile(supabase);
-    if (!me) { setLoading(false); return; }
+      setName(me.name || 'Alumnus');
+      setRegNo(me.reg_no || '');
+      setMentorshipActive(Boolean(me.mentorship_open));
+      setCompany(me.current_company ?? null);
+      setRole(me.current_role_title ?? null);
 
-    setName(me.name || 'Alumnus');
-    setRegNo(me.reg_no || '');
-    setMentorshipActive(Boolean(me.mentorship_open));
-    setCompany(me.current_company ?? null);
-    setRole(me.current_role_title ?? null);
+      // Dynamic batch parsing from reg_no fallback if batch_id is not set
+      const parsed = me.reg_no ? parseBatchFromRegisterNumber(me.reg_no) : null;
 
-    // Dynamic batch parsing from reg_no fallback if batch_id is not set
-    const parsed = me.reg_no ? parseBatchFromRegisterNumber(me.reg_no) : null;
+      const [
+        { data: batch },
+        { data: articleRows },
+        { data: lineageRows },
+        { data: announcements },
+        { data: patterns },
+        { data: recentCommunityPosts },
+        { count: myPostsCount },
+      ] = await Promise.all([
+        me.batch_id
+          ? supabase.from('batches').select('batch_code, start_year, end_year').eq('id', me.batch_id).maybeSingle()
+          : Promise.resolve({ data: null }),
+        supabase
+          .from('knowledge_brain_articles')
+          .select('id, title, approval_status, view_count, created_at')
+          .eq('author_id', me.id)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('lineage_map')
+          .select('student_id')
+          .eq('senior_user_id', me.id),
+        supabase
+          .from('announcements')
+          .select('id, title, created_at')
+          .order('created_at', { ascending: false })
+          .limit(3),
+        supabase
+          .from('interview_patterns')
+          .select('id, title, created_at')
+          .eq('approval_status', 'approved')
+          .order('created_at', { ascending: false })
+          .limit(3),
+        supabase
+          .from('collaboration_posts')
+          .select('*')
+          .eq('is_active', true)
+          .order('created_at', { ascending: false })
+          .limit(3),
+        supabase
+          .from('collaboration_posts')
+          .select('id', { count: 'exact', head: true })
+          .eq('posted_by', me.id),
+      ]);
 
-    const [
-      { data: batch },
-      { data: articleRows },
-      { data: lineageRows },
-      { data: announcements },
-      { data: patterns },
-      { data: recentCommunityPosts },
-      { count: myPostsCount },
-    ] = await Promise.all([
-      me.batch_id
-        ? supabase.from('batches').select('batch_code, start_year, end_year').eq('id', me.batch_id).maybeSingle()
-        : Promise.resolve({ data: null }),
-      supabase
-        .from('knowledge_brain_articles')
-        .select('id, title, approval_status, view_count, created_at')
-        .eq('author_id', me.id)
-        .order('created_at', { ascending: false }),
-      supabase
-        .from('lineage_map')
-        .select('id, student_id, users!lineage_map_student_id_fkey(name, reg_no, batch_id)')
-        .eq('senior_user_id', me.id),
-      supabase
-        .from('announcements')
-        .select('id, title, created_at')
-        .order('created_at', { ascending: false })
-        .limit(3),
-      supabase
-        .from('interview_patterns')
-        .select('id, title, created_at')
-        .eq('approval_status', 'approved')
-        .order('created_at', { ascending: false })
-        .limit(3),
-      supabase
-        .from('collaboration_posts')
-        .select('*')
-        .eq('is_active', true)
-        .order('created_at', { ascending: false })
-        .limit(3),
-      supabase
-        .from('collaboration_posts')
-        .select('id', { count: 'exact', head: true })
-        .eq('posted_by', me.id),
-    ]);
+      const typedBatch = batch as { batch_code?: string; start_year?: number; end_year?: number } | null;
+      const code = typedBatch?.batch_code || parsed?.code || (me.reg_no ? me.reg_no.slice(0, 4) : 'MCA');
+      const sYear = typedBatch?.start_year ?? parsed?.startYear ?? null;
+      const eYear = typedBatch?.end_year ?? parsed?.endYear ?? null;
 
-    const typedBatch = batch as { batch_code?: string; start_year?: number; end_year?: number } | null;
-    const code = typedBatch?.batch_code || parsed?.code || (me.reg_no ? me.reg_no.slice(0, 4) : 'MCA');
-    const sYear = typedBatch?.start_year ?? parsed?.startYear ?? null;
-    const eYear = typedBatch?.end_year ?? parsed?.endYear ?? null;
+      setBatchCode(code);
+      setStartYear(sYear);
+      setEndYear(eYear);
+      setArticles(articleRows || []);
+      setCommunityPosts(recentCommunityPosts || []);
+      setPostsCount(myPostsCount ?? 0);
 
-    setBatchCode(code);
-    setStartYear(sYear);
-    setEndYear(eYear);
-    setArticles(articleRows || []);
-    setCommunityPosts(recentCommunityPosts || []);
-    setLineageCount((lineageRows || []).length);
-    setPostsCount(myPostsCount ?? 0);
+      const juniorIds = (lineageRows ?? []).map((row) => row.student_id);
+      setLineageCount(juniorIds.length);
 
-    const firstJunior = (lineageRows || [])[0] as { student_id?: string; users?: { name?: string; reg_no?: string } | null } | undefined;
-    setJunior(firstJunior?.users?.name ? { id: firstJunior.student_id || '', name: firstJunior.users.name, regNo: firstJunior.users.reg_no || '', batchCode: '' } : null);
+      if (juniorIds.length > 0) {
+        const { data: juniorUsers } = await supabase
+          .from('users')
+          .select('id, name, reg_no')
+          .in('id', juniorIds)
+          .limit(1);
 
-    const feed: ActivityItem[] = [
-      ...(patterns || []).map((pattern) => ({ id: `p-${pattern.id}`, text: `Interview pattern: ${pattern.title}`, time: pattern.created_at, kind: 'pattern' as const })),
-      ...(announcements || []).map((a) => ({ id: `a-${a.id}`, text: a.title, time: a.created_at, kind: 'announcement' as const })),
-    ].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()).slice(0, 5);
-    setActivityFeed(feed);
+        const first = juniorUsers?.[0];
+        if (first) {
+          setJunior({
+            id: first.id,
+            name: first.name,
+            regNo: first.reg_no || '',
+            batchCode: first.reg_no ? first.reg_no.slice(0, 4) : '',
+          });
+        } else {
+          setJunior(null);
+        }
+      } else {
+        setJunior(null);
+      }
 
-    setLoading(false);
+      const feed: ActivityItem[] = [
+        ...(patterns || []).map((pattern) => ({
+          id: `p-${pattern.id}`,
+          text: `Interview Pattern: ${pattern.title}`,
+          time: pattern.created_at,
+          kind: 'pattern' as const,
+        })),
+        ...(announcements || []).map((a) => ({
+          id: `a-${a.id}`,
+          text: `Announcement: ${a.title}`,
+          time: a.created_at,
+          kind: 'announcement' as const,
+        })),
+      ].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()).slice(0, 5);
+
+      setActivityFeed(feed);
+    } catch {
+      // Graceful error state handling
+    } finally {
+      setLoading(false);
+    }
   }, [supabase]);
 
   React.useEffect(() => { load(); }, [load]);
@@ -141,7 +173,13 @@ export default function AlumniDashboard() {
     if (!me) return;
     const next = !mentorshipActive;
     setMentorshipActive(next);
-    await supabase.from('users').update({ mentorship_open: next }).eq('id', me.id);
+    try {
+      const { error } = await supabase.from('users').update({ mentorship_open: next }).eq('id', me.id);
+      if (error) throw error;
+      showToast(next ? 'Mentorship availability enabled' : 'Mentorship availability paused', 'success');
+    } catch {
+      showToast('Failed to update mentorship status', 'error');
+    }
   };
 
   if (loading) {
@@ -194,7 +232,7 @@ export default function AlumniDashboard() {
           {
             title: 'Knowledge Articles',
             value: approvedCount.toString(),
-            sub: totalViews > 0 ? `${totalViews} total views` : 'Guides for students',
+            sub: totalViews > 0 ? `${totalViews} total reader views` : 'Guides for students',
             icon: PenLine,
             color: 'bg-electric-blue',
           },

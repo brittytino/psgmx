@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   Home,
   PenLine,
@@ -22,9 +22,9 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
+import { getCurrentProfile } from '@/lib/current-profile';
 import { InitialsAvatar } from '@/components/basic/InitialsAvatar';
-
-type NotificationItem = { id: string; title: string; message: string; generatedAt: string };
+import { AlumniNotificationDrawer } from '@/components/alumni/AlumniNotificationDrawer';
 
 const sidebarLinks = [
   { name: 'Dashboard', href: '/alumni', icon: Home },
@@ -45,50 +45,47 @@ const getSidebarCardContent = (pathname: string) => {
     return { title: 'You helped build this. Keep exploring.', desc: 'The department\'s collective intelligence.', icon: BookOpen };
   }
   if (pathname.includes('/journey')) {
-    return { title: 'Your batch journey, archived forever.', desc: 'Two years of work, permanently recorded.', icon: Award };
+    return { title: 'Your batch journey, archived forever.', desc: 'Master of Computer Applications department heritage.', icon: Award };
   }
   if (pathname.includes('/lineage')) {
-    return { title: 'Your junior has the same suffix. Be the senior you needed.', desc: '', icon: Users };
+    return { title: 'Your junior has the same suffix. Be the senior you needed.', desc: 'Continuous department lineage connections.', icon: Users };
   }
   if (pathname.includes('/community-board') || pathname.includes('/marketplace')) {
-    return { title: 'Collaborate without replacing NEO PAT.', desc: 'Projects, mentoring and clearly unofficial community information.', icon: Briefcase };
+    return { title: 'Collaborate without replacing NEO PAT.', desc: 'Projects, mentoring and unofficial community information.', icon: Briefcase };
   }
   if (pathname.includes('/settings')) {
-    return { title: 'Your alumni profile is your department legacy.', desc: 'Keep it current for your junior.', icon: Settings };
+    return { title: 'Your alumni profile is your department legacy.', desc: 'Keep it current for your juniors.', icon: Settings };
   }
   return { title: 'Your experience is someone\'s roadmap. Share it.', desc: 'Alumni who contribute shape all future batches.', icon: GraduationCap };
 };
 
 export default function AlumniLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [profileOpen, setProfileOpen] = React.useState(false);
   const [notificationsOpen, setNotificationsOpen] = React.useState(false);
+  const [unreadCount, setUnreadCount] = React.useState(0);
+  const [searchQuery, setSearchQuery] = React.useState('');
   const [me, setMe] = React.useState<{ name: string; email: string; batchCode: string } | null>(null);
-  const [notifications, setNotifications] = React.useState<NotificationItem[]>([]);
   const cardContent = getSidebarCardContent(pathname);
 
   React.useEffect(() => {
     let cancelled = false;
     const supabase = createClient();
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const [{ data: profileRows }, { data: notifs }] = await Promise.all([
-        supabase.rpc('get_my_profile'),
-        supabase.from('notifications').select('id, title, message, generated_at').eq('is_active', true).order('generated_at', { ascending: false }).limit(5),
-      ]);
-      if (cancelled) return;
-      const profile = Array.isArray(profileRows) ? profileRows[0] : profileRows;
-      if (profile) {
-        let batchCode = '';
-        if (profile.batch_id) {
-          const { data: batch } = await supabase.from('batches').select('batch_code').eq('id', profile.batch_id).maybeSingle();
-          batchCode = (batch as { batch_code?: string } | null)?.batch_code || '';
-        }
-        if (!cancelled) setMe({ name: profile.name, email: profile.email, batchCode });
+      const profile = await getCurrentProfile(supabase);
+      if (cancelled || !profile) return;
+
+      let batchCode = '';
+      if (profile.batch_id) {
+        const { data: batch } = await supabase.from('batches').select('batch_code').eq('id', profile.batch_id).maybeSingle();
+        batchCode = (batch as { batch_code?: string } | null)?.batch_code || '';
+      } else if (profile.reg_no) {
+        batchCode = profile.reg_no.slice(0, 4);
       }
-      setNotifications((notifs || []).map((n) => ({ id: n.id, title: n.title, message: n.message, generatedAt: n.generated_at })));
+
+      if (!cancelled) setMe({ name: profile.name, email: profile.email, batchCode });
     })();
     return () => { cancelled = true; };
   }, []);
@@ -96,6 +93,12 @@ export default function AlumniLayout({ children }: { children: React.ReactNode }
   const handleLogout = async () => {
     try { await fetch('/api/auth/logout', { method: 'POST' }); } catch {}
     window.location.href = '/login';
+  };
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    router.push(`/alumni/knowledge-brain?q=${encodeURIComponent(searchQuery.trim())}`);
   };
 
   return (
@@ -106,13 +109,13 @@ export default function AlumniLayout({ children }: { children: React.ReactNode }
 
         {/* Logo */}
         <div className="h-[88px] flex items-center px-8 shrink-0">
-          <div className="flex items-center gap-3">
+          <Link href="/alumni" className="flex items-center gap-3">
             <img src="/logo.webp" alt="PSGMX Logo" className="w-10 h-10 object-contain drop-shadow-sm" />
             <div>
               <h2 className="text-[17px] font-black tracking-tight text-text-main leading-tight">Alumni Portal</h2>
               <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider">MCA Network</p>
             </div>
-          </div>
+          </Link>
         </div>
 
         {/* Navigation */}
@@ -164,7 +167,7 @@ export default function AlumniLayout({ children }: { children: React.ReactNode }
                   <img src="/logo.webp" alt="PSGMX Logo" className="w-8 h-8 object-contain" />
                   <h2 className="text-[15px] font-black text-text-main">Alumni Portal</h2>
                 </div>
-                <button onClick={() => setMobileMenuOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-page-bg text-text-muted"><X className="w-4 h-4" /></button>
+                <button onClick={() => setMobileMenuOpen(false)} aria-label="Close menu" className="w-8 h-8 flex items-center justify-center rounded-full bg-page-bg text-text-muted"><X className="w-4 h-4" /></button>
               </div>
               <nav className="flex-1 overflow-y-auto px-4 py-4 space-y-1.5">
                 {sidebarLinks.map((link) => {
@@ -189,46 +192,40 @@ export default function AlumniLayout({ children }: { children: React.ReactNode }
         {/* Top Header */}
         <header className="h-[88px] bg-page-bg flex items-center justify-between px-8 shrink-0 relative z-30">
           <div className="flex items-center gap-4">
-            <button onClick={() => setMobileMenuOpen(true)} className="w-10 h-10 flex lg:hidden items-center justify-center rounded-full bg-white border border-border-light shadow-sm text-text-muted">
+            <button onClick={() => setMobileMenuOpen(true)} aria-label="Open menu" className="w-10 h-10 flex lg:hidden items-center justify-center rounded-full bg-white border border-border-light shadow-sm text-text-muted">
               <Menu className="w-5 h-5" />
             </button>
-            <div className="hidden md:flex items-center bg-white border border-border-light rounded-full h-11 px-4 w-[360px] shadow-sm focus-within:border-primary-purple focus-within:ring-1 focus-within:ring-primary-purple transition-all">
+            <form onSubmit={handleSearchSubmit} className="hidden md:flex items-center bg-white border border-border-light rounded-full h-11 px-4 w-[360px] shadow-sm focus-within:border-primary-purple focus-within:ring-1 focus-within:ring-primary-purple transition-all">
               <Search className="w-4 h-4 text-text-muted mr-3" />
-              <input type="text" placeholder="Search knowledge brain, opportunities..." className="bg-transparent border-none outline-none text-[14px] text-text-main placeholder-text-muted w-full" />
-            </div>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search knowledge brain, opportunities..."
+                className="bg-transparent border-none outline-none text-[14px] text-text-main placeholder-text-muted w-full"
+              />
+            </form>
           </div>
           <div className="flex items-center gap-6">
+            {/* Notification Bell */}
             <div className="relative">
-              <button onClick={() => setNotificationsOpen(!notificationsOpen)} className={`relative w-10 h-10 flex items-center justify-center rounded-full bg-white border border-border-light shadow-sm transition-colors ${notificationsOpen ? 'text-primary-purple border-primary-purple' : 'text-text-muted'}`}>
+              <button
+                onClick={() => setNotificationsOpen(true)}
+                aria-label="Open Notifications"
+                className={`relative w-10 h-10 flex items-center justify-center rounded-full bg-white border border-border-light shadow-sm transition-colors ${notificationsOpen ? 'text-primary-purple border-primary-purple' : 'text-text-muted hover:text-text-main'}`}
+              >
                 <Bell className="w-5 h-5" />
-                {notifications.length > 0 && (
-                  <span className="absolute top-0 right-0 w-4 h-4 bg-deep-violet text-white text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-white">{notifications.length}</span>
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-primary-purple px-1 text-[10px] font-black text-white shadow-sm">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
                 )}
               </button>
-              <AnimatePresence>
-                {notificationsOpen && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setNotificationsOpen(false)} />
-                    <motion.div initial={{ opacity: 0, y: 10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.95 }} className="absolute right-0 top-12 w-72 bg-white rounded-2xl shadow-xl border border-border-light z-50 overflow-hidden">
-                      <div className="p-4 border-b border-border-light"><h3 className="text-[14px] font-bold text-text-main">Notifications</h3></div>
-                      <div className="p-2 max-h-[300px] overflow-y-auto">
-                        {notifications.length === 0 && (
-                          <p className="p-4 text-[13px] text-text-muted text-center">No notifications yet.</p>
-                        )}
-                        {notifications.map((n) => (
-                          <div key={n.id} className="p-3 hover:bg-page-bg rounded-xl transition-colors flex gap-3">
-                            <div className="w-8 h-8 rounded-full bg-page-bg flex items-center justify-center shrink-0"><BookOpen className="w-4 h-4 text-primary-purple" /></div>
-                            <div><p className="text-[13px] font-semibold text-text-main">{n.title}</p><p className="text-[11px] text-text-muted mt-0.5">{new Date(n.generatedAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}</p></div>
-                          </div>
-                        ))}
-                      </div>
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
             </div>
+
+            {/* Profile Dropdown */}
             <div className="relative">
-              <div onClick={() => setProfileOpen(!profileOpen)} className={`flex items-center gap-3 cursor-pointer bg-white border rounded-full pl-2 pr-4 py-1.5 shadow-sm transition-colors ${profileOpen ? 'border-primary-purple' : 'border-border-light'}`}>
+              <div onClick={() => setProfileOpen(!profileOpen)} className={`flex items-center gap-3 cursor-pointer bg-white border rounded-full pl-2 pr-4 py-1.5 shadow-sm transition-colors ${profileOpen ? 'border-primary-purple' : 'border-border-light hover:border-primary-purple/40'}`}>
                 <InitialsAvatar name={me?.name || '?'} size={32} />
                 <ChevronDown className={`w-4 h-4 transition-transform ${profileOpen ? 'rotate-180 text-primary-purple' : 'text-text-muted'}`} />
               </div>
@@ -237,11 +234,15 @@ export default function AlumniLayout({ children }: { children: React.ReactNode }
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setProfileOpen(false)} />
                     <motion.div initial={{ opacity: 0, y: 10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.95 }} className="absolute right-0 top-12 w-56 bg-white rounded-2xl shadow-xl border border-border-light z-50 overflow-hidden">
-                      <div className="p-4 border-b border-border-light"><p className="text-[14px] font-bold text-text-main">{me?.name || 'Loading…'}</p><p className="text-[12px] text-text-muted">Alumni{me?.batchCode ? ` · ${me.batchCode}` : ''}</p></div>
+                      <div className="p-4 border-b border-border-light">
+                        <p className="text-[14px] font-bold text-text-main truncate">{me?.name || 'Loading…'}</p>
+                        <p className="text-[12px] text-text-muted">Alumni{me?.batchCode ? ` · ${me.batchCode}` : ''}</p>
+                      </div>
                       <div className="p-2">
-                        <Link href="/alumni/settings" onClick={() => setProfileOpen(false)} className="flex items-center gap-2 w-full p-2 text-[13px] font-semibold text-text-muted hover:bg-page-bg hover:text-text-main rounded-xl transition-colors"><Settings className="w-4 h-4" /> Settings</Link>
+                        <Link href="/alumni/settings" onClick={() => setProfileOpen(false)} className="flex items-center gap-2 w-full p-2 text-[13px] font-semibold text-text-muted hover:bg-page-bg hover:text-text-main rounded-xl transition-colors"><Settings className="w-4 h-4" /> Account Settings</Link>
+                        <Link href="/alumni/journey" onClick={() => setProfileOpen(false)} className="flex items-center gap-2 w-full p-2 text-[13px] font-semibold text-text-muted hover:bg-page-bg hover:text-text-main rounded-xl transition-colors"><Award className="w-4 h-4" /> My Journey</Link>
                         <div className="h-px bg-page-bg my-1" />
-                        <button onClick={handleLogout} className="flex items-center gap-2 w-full p-2 text-[13px] font-semibold text-deep-violet hover:bg-page-bg rounded-xl transition-colors"><LogOut className="w-4 h-4" /> Sign out</button>
+                        <button onClick={handleLogout} className="flex items-center gap-2 w-full p-2 text-[13px] font-semibold text-rose-600 hover:bg-rose-50 rounded-xl transition-colors"><LogOut className="w-4 h-4" /> Sign out</button>
                       </div>
                     </motion.div>
                   </>
@@ -250,6 +251,13 @@ export default function AlumniLayout({ children }: { children: React.ReactNode }
             </div>
           </div>
         </header>
+
+        {/* Dynamic Notification Drawer */}
+        <AlumniNotificationDrawer
+          isOpen={notificationsOpen}
+          onClose={() => setNotificationsOpen(false)}
+          onUnreadCountChange={setUnreadCount}
+        />
 
         {/* Page Content */}
         <div className="flex-1 overflow-y-auto p-8 custom-scrollbar relative">
