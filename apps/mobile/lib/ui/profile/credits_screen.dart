@@ -103,13 +103,16 @@ class CreditsScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 16),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 16.0),
-                  child: Text(
-                    'built by Tino <3',
-                    style: GoogleFonts.caveat(
-                      fontSize: 16,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                Flexible(
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 16.0),
+                    child: Text(
+                      'built by Tino <3',
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.caveat(
+                        fontSize: 16,
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                      ),
                     ),
                   ),
                 ),

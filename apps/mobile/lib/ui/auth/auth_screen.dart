@@ -172,6 +172,17 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    // Pinput lays its 6 boxes out in a plain Row with an 8px gap between each
+    // (no Expanded/Flexible inside the package itself), so a hardcoded 48px
+    // box width overflows on real narrow phones: 6*48 + 5*8 = 328px, which
+    // is wider than the ~312-327px left after this screen's 24px horizontal
+    // padding on anything from a 360dp Android up to a 375pt iPhone SE.
+    // Derive the box width from the actual available space instead.
+    final horizontalPadding = 24.0 * 2;
+    const pinGap = 8.0;
+    final availablePinWidth =
+        MediaQuery.of(context).size.width - horizontalPadding - (pinGap * 5);
+    final pinBoxWidth = (availablePinWidth / 6).clamp(36.0, 48.0);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -361,7 +372,7 @@ class _AuthScreenState extends State<AuthScreen> {
                             enabled: !_isLockedOut,
                             autofocus: true,
                             defaultPinTheme: PinTheme(
-                              width: 48,
+                              width: pinBoxWidth,
                               height: 56,
                               textStyle: GoogleFonts.inter(
                                 fontSize: 16,
@@ -375,7 +386,7 @@ class _AuthScreenState extends State<AuthScreen> {
                               ),
                             ),
                             focusedPinTheme: PinTheme(
-                              width: 48,
+                              width: pinBoxWidth,
                               height: 56,
                               textStyle: GoogleFonts.inter(
                                 fontSize: 16,

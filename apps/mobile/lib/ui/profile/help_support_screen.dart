@@ -278,7 +278,7 @@ class HelpSupportScreen extends StatelessWidget {
       {
         'icon': Icons.fitness_center_rounded,
         'title': 'Train',
-        'desc': 'Daily Five practice questions and AI-evaluated Communication Practice recordings, both feeding your readiness score.',
+        'desc': 'Daily Five practice questions, timed Adaptive Sprints that escalate by mastery, and AI-evaluated Communication Practice recordings — all feeding your readiness score.',
       },
       {
         'icon': Icons.analytics_rounded,
@@ -288,7 +288,7 @@ class HelpSupportScreen extends StatelessWidget {
       {
         'icon': Icons.groups_rounded,
         'title': 'Community',
-        'desc': 'Department announcements, Knowledge Brain articles, alumni Interview Patterns, your MX lineage senior, and Ask AI Senior.',
+        'desc': 'Department announcements, Knowledge Brain articles, alumni Interview Patterns, the Community Board (projects, events, mentorship posts), your batch Squad, your MX lineage senior, and Ask AI Senior.',
       },
       {
         'icon': Icons.school_rounded,

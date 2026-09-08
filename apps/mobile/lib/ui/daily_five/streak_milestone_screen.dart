@@ -41,12 +41,21 @@ class _StreakMilestoneScreenState extends State<StreakMilestoneScreen> with Sing
     return Scaffold(
       backgroundColor: theme.colorScheme.primary,
       body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.xl),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
+        // LayoutBuilder + a min-height ConstrainedBox lets the content stay
+        // vertically centered on a normal portrait screen while still
+        // scrolling instead of overflowing (RenderFlex error) on a short
+        // viewport — e.g. landscape, which this app does not lock out
+        // (see ios/Runner/Info.plist's UISupportedInterfaceOrientations).
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.xl),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
                 ScaleTransition(
                   scale: _scaleAnim,
                   child: Container(
@@ -107,7 +116,9 @@ class _StreakMilestoneScreenState extends State<StreakMilestoneScreen> with Sing
                     child: const Text('CONTINUE', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                   ),
                 )
-              ],
+                  ],
+                ),
+              ),
             ),
           ),
         ),

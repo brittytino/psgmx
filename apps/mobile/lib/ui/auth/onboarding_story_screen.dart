@@ -172,17 +172,30 @@ class _OnboardingStoryScreenState extends State<OnboardingStoryScreen> {
                             child: const Icon(LucideIcons.users, color: AppTheme.illusTerracotta, size: 12),
                           ),
                           const SizedBox(width: 12),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('From first years to final placements,', style: GoogleFonts.inter(fontSize: 11, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.8))),
-                              Row(
-                                children: [
-                                  Text('we\'re in this together. ', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface)),
-                                  const Icon(LucideIcons.heart, color: AppTheme.accentCoral, size: 12),
-                                ],
-                              ),
-                            ],
+                          // This whole row sits inside an outer Row with
+                          // mainAxisSize.min (so the pill hugs its content
+                          // instead of stretching edge-to-edge). A plain
+                          // Column here would be handed an unbounded width by
+                          // that outer Row, so neither line of text would
+                          // ever wrap — on a narrow phone that's a guaranteed
+                          // RenderFlex overflow. Flexible bounds the width
+                          // (without forcing the pill to full width the way
+                          // Expanded would), letting both lines wrap safely.
+                          Flexible(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('From first years to final placements,', style: GoogleFonts.inter(fontSize: 11, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.8))),
+                                Row(
+                                  children: [
+                                    Flexible(
+                                      child: Text('we\'re in this together. ', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface)),
+                                    ),
+                                    const Icon(LucideIcons.heart, color: AppTheme.accentCoral, size: 12),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),

@@ -313,13 +313,16 @@ class _AiMentorScreenState extends State<AiMentorScreen> {
                       children: [
                         Row(
                           children: [
-                            Text(
-                              'AI Mentor',
-                              style: GoogleFonts.sora(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                                color: theme.colorScheme.onSurface,
-                                letterSpacing: -0.3,
+                            Flexible(
+                              child: Text(
+                                'AI Mentor',
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.sora(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                  color: theme.colorScheme.onSurface,
+                                  letterSpacing: -0.3,
+                                ),
                               ),
                             ),
                             const SizedBox(width: 6),
@@ -528,15 +531,19 @@ class _AiMentorScreenState extends State<AiMentorScreen> {
                               ?.color
                               ?.withValues(alpha: 0.5)),
                       const SizedBox(width: 4),
-                      Text(
-                        'Spark is your trusted placement companion.',
-                        style: GoogleFonts.inter(
-                            fontSize: 9.5,
-                            color: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.color
-                                ?.withValues(alpha: 0.6)),
+                      Flexible(
+                        child: Text(
+                          'Spark is your trusted placement companion.',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.inter(
+                              fontSize: 9.5,
+                              color: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.color
+                                  ?.withValues(alpha: 0.6)),
+                        ),
                       ),
                     ],
                   ),

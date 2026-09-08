@@ -358,6 +358,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   children: [
                     Text(
                       n.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.inter(
                         fontSize: 9,
                         fontWeight: FontWeight.bold,
@@ -367,6 +369,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     const SizedBox(height: 2),
                     Text(
                       n.body,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.inter(
                         fontSize: 9,
                         color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7),

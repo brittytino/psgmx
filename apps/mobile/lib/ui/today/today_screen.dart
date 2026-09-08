@@ -21,8 +21,7 @@ class TodayScreen extends StatefulWidget {
 
 class _TodayScreenState extends State<TodayScreen> {
   double? readiness;
-  int assignedTasks = 0;
-  bool taskCompleted = false;
+  bool communicationDoneToday = false;
   bool loading = true;
   String? loadError;
 
@@ -56,21 +55,24 @@ class _TodayScreenState extends State<TodayScreen> {
           .select('score')
           .eq('user_id', user.uid)
           .maybeSingle();
-      final taskResult =
-          await supabase.from('daily_tasks').select('id').eq('date', today);
-      final completionResult = await supabase
-          .from('task_completions')
-          .select('completed')
-          .eq('user_id', user.uid)
-          .eq('task_date', today)
-          .maybeSingle();
+      // Communication Practice is the second half of "the five-minute loop"
+      // (Daily Five ~3 min + this ~2 min). Checked via the real
+      // communication_attempts table (supabase/migrations/22) rather than
+      // the unrelated daily_tasks/task_completions tables, which powered a
+      // different admin-assigned task feature whose only student-facing
+      // screen (ui/tasks/tasks_screen.dart) was removed as dead code.
+      final commResult = await supabase
+          .from('communication_attempts')
+          .select('id')
+          .eq('student_id', user.uid)
+          .gte('created_at', today)
+          .limit(1);
       if (!mounted) return;
       setState(() {
         readiness = scoreResult == null
             ? null
             : double.tryParse(scoreResult['score'].toString());
-        assignedTasks = taskResult.length;
-        taskCompleted = completionResult?['completed'] == true;
+        communicationDoneToday = (commResult as List).isNotEmpty;
         loading = false;
       });
     } catch (_) {
@@ -249,7 +251,7 @@ class _TodayScreenState extends State<TodayScreen> {
                                   ? '…'
                                   : '${[
                                       dailyFive.completedToday,
-                                      taskCompleted
+                                      communicationDoneToday
                                     ].where((v) => v).length}/2',
                               style: GoogleFonts.inter(
                                   fontSize: 12,
@@ -293,8 +295,10 @@ class _TodayScreenState extends State<TodayScreen> {
                           _LoopTile(
                               icon: LucideIcons.mic,
                               title: 'Interview Audio Practice',
-                              subtitle: '2-min response practice evaluated on clarity & structure',
-                              done: false,
+                              subtitle: communicationDoneToday
+                                  ? 'Done for today · keep the streak going tomorrow'
+                                  : '2-min response practice evaluated on clarity & structure',
+                              done: communicationDoneToday,
                               onTap: () => context.push('/train/communication')),
                           const SizedBox(height: 10),
                           _LoopTile(

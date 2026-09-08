@@ -13,6 +13,7 @@ import '../../core/theme/app_dimens.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/announcement_provider.dart';
 import '../../providers/attendance_provider.dart';
+import '../../providers/user_provider.dart';
 import '../widgets/premium_card.dart';
 
 class CommandCenterScreen extends StatefulWidget {
@@ -349,9 +350,9 @@ class _QuestPauseSheetState extends State<_QuestPauseSheet> {
                             decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), border: Border.all(color: AppTheme.cardBorder)),
                             child: Row(children: [
                               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                Text(quest['title']?.toString() ?? '', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700)),
+                                Text(quest['title']?.toString() ?? '', maxLines: 2, overflow: TextOverflow.ellipsis, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700)),
                                 const SizedBox(height: 2),
-                                Text('${quest['type']} · $status', style: GoogleFonts.inter(fontSize: 10, color: AppTheme.mutedText)),
+                                Text('${quest['type']} · $status', maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.inter(fontSize: 10, color: AppTheme.mutedText)),
                               ])),
                               if (!isArchived)
                                 _updating.contains(id)
@@ -505,7 +506,7 @@ class _AttendanceCorrectionSheetState extends State<_AttendanceCorrectionSheet> 
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: AppTheme.cardBorder)),
                 child: Row(children: [
-                  Expanded(child: Text(student.name.isNotEmpty ? student.name : student.email, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600))),
+                  Expanded(child: Text(student.name.isNotEmpty ? student.name : student.email, maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600))),
                   DropdownButton<String>(
                     value: current,
                     underline: const SizedBox.shrink(),
@@ -635,10 +636,18 @@ class _SquadObjectiveSheetState extends State<_SquadObjectiveSheet> {
 
   Future<void> _loadTeams() async {
     try {
-      final rows = await Supabase.instance.client
+      // Scope to the PR's own batch — set_squad_objective (migration 41)
+      // rejects any team outside the caller's batch, so listing every
+      // batch's squads here would let a PR pick one that is guaranteed to
+      // fail on save.
+      final batchId = context.read<UserProvider>().currentUser?.batchId;
+      var query = Supabase.instance.client
           .from('teams')
-          .select('id, team_name, team_code, objective')
-          .order('team_name');
+          .select('id, team_name, team_code, objective');
+      if (batchId != null) {
+        query = query.eq('batch_id', batchId);
+      }
+      final rows = await query.order('team_name');
       if (!mounted) return;
       setState(() {
         _teams = List<Map<String, dynamic>>.from(rows);

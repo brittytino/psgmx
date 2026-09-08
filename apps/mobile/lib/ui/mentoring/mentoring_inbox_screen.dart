@@ -142,6 +142,8 @@ class _RequestCard extends StatelessWidget {
           Row(children: [
             Expanded(
               child: Text('${student['name'] ?? 'A student'} · ${request['topic']}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w800)),
             ),
             if (status != 'pending')

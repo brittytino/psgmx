@@ -322,12 +322,16 @@ class _DailyFiveScreenState extends State<DailyFiveScreen> with WidgetsBindingOb
                         children: [
                           const Icon(LucideIcons.lightbulb, size: 12, color: AppTheme.accentCoral),
                           const SizedBox(width: 6),
-                          Text(
-                            question.topic.toUpperCase(),
-                            style: GoogleFonts.inter(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w600,
-                              color: AppTheme.accentCoral,
+                          Flexible(
+                            child: Text(
+                              question.topic.toUpperCase(),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.inter(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.accentCoral,
+                              ),
                             ),
                           ),
                         ],
