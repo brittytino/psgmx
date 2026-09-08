@@ -60,7 +60,15 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Public smoke tests
-        run: npm run test:e2e
+        # Scoped to the public-smoke project only, same as web-deploy.yml:
+        # it needs no authenticated session. The unscoped `npm run test:e2e`
+        # also pulls in the role-based specs' Playwright "setup" project,
+        # whose auth.setup.ts tries to provision 5 test users through an
+        # endpoint that requires additional secrets this job doesn't have —
+        # that needs a real fix (driving the actual OTP flow, or passing the
+        # service-role key this job doesn't currently receive) before it
+        # belongs in a blocking release gate.
+        run: npx playwright test --project=public-smoke
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
