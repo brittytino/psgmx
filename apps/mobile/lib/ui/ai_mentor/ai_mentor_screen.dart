@@ -132,6 +132,10 @@ class _AiMentorScreenState extends State<AiMentorScreen> {
     });
   }
 
+  /// Bare greetings/thanks get a canned instant reply instead of a live AI
+  /// call — there's nothing to ground against, and it saves an OpenRouter
+  /// call on the free tier. Every substantive question still goes through
+  /// the live, Knowledge-Brain-grounded AI service below.
   bool _isSimpleGreeting(String message) {
     final clean =
         message.trim().toLowerCase().replaceAll(RegExp(r'[^a-z0-9 ]'), '');

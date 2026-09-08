@@ -5,12 +5,13 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/theme/app_dimens.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/announcement_provider.dart';
 import '../../providers/daily_five_provider.dart';
-import '../../providers/ecampus_provider.dart';
 import '../../providers/navigation_provider.dart';
 import '../../providers/user_provider.dart';
+import '../widgets/premium_card.dart';
 
 class TodayScreen extends StatefulWidget {
   const TodayScreen({super.key});
@@ -47,8 +48,6 @@ class _TodayScreenState extends State<TodayScreen> {
       await Future.wait([
         context.read<DailyFiveProvider>().loadState(user.uid),
         context.read<AnnouncementProvider>().fetchAnnouncements(),
-        if (user.regNo.isNotEmpty)
-          context.read<EcampusProvider>().init(user.regNo),
       ]);
       final supabase = Supabase.instance.client;
       final today = DateTime.now().toIso8601String().split('T').first;
@@ -88,7 +87,6 @@ class _TodayScreenState extends State<TodayScreen> {
   Widget build(BuildContext context) {
     final user = context.watch<UserProvider>().currentUser!;
     final dailyFive = context.watch<DailyFiveProvider>();
-    final ecampus = context.watch<EcampusProvider>();
     final announcements = context.watch<AnnouncementProvider>().announcements;
     final hour = DateTime.now().hour;
     final greeting = hour < 12
@@ -117,7 +115,7 @@ class _TodayScreenState extends State<TodayScreen> {
                                 Text(greeting,
                                     style: GoogleFonts.inter(
                                         fontSize: 13,
-                                        color: const Color(0xFF64748B))),
+                                        color: AppTheme.mutedText)),
                                 Text(user.name.split(' ').first,
                                     style: GoogleFonts.sora(
                                         fontSize: 28,
@@ -131,7 +129,7 @@ class _TodayScreenState extends State<TodayScreen> {
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(99),
                                   border: Border.all(
-                                      color: const Color(0xFFE8EAF0))),
+                                      color: AppTheme.cardBorder)),
                               child: Text(batchCode,
                                   style: GoogleFonts.sora(
                                       fontSize: 12,
@@ -191,7 +189,7 @@ class _TodayScreenState extends State<TodayScreen> {
                                         'Enter it once in You to activate live progress.',
                                         style: GoogleFonts.inter(
                                             fontSize: 11,
-                                            color: const Color(0xFF64748B))),
+                                            color: AppTheme.mutedText)),
                                   ],
                                 ),
                               ),
@@ -250,10 +248,9 @@ class _TodayScreenState extends State<TodayScreen> {
                               loading
                                   ? '…'
                                   : '${[
-                                      ecampus.attendance != null,
                                       dailyFive.completedToday,
                                       taskCompleted
-                                    ].where((v) => v).length}/3',
+                                    ].where((v) => v).length}/2',
                               style: GoogleFonts.inter(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w800,
@@ -264,15 +261,6 @@ class _TodayScreenState extends State<TodayScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         child: Column(children: [
                           _LoopTile(
-                              icon: LucideIcons.graduationCap,
-                              title: 'Check attendance',
-                              subtitle: ecampus.attendance == null
-                                  ? 'Refresh your academic attendance'
-                                  : '${ecampus.attendance!.summary.overallPercentage.toStringAsFixed(1)}% overall attendance',
-                              done: ecampus.attendance != null,
-                              onTap: () => context.push('/campus')),
-                          const SizedBox(height: 10),
-                          _LoopTile(
                               icon: LucideIcons.brain,
                               title: 'Complete Daily Five',
                               subtitle: dailyFive.completedToday
@@ -281,6 +269,26 @@ class _TodayScreenState extends State<TodayScreen> {
                               done: dailyFive.completedToday,
                               primary: !dailyFive.completedToday,
                               onTap: () => context.push('/daily-five')),
+                          if (!dailyFive.completedToday &&
+                              (dailyFive.streak?.currentStreak ?? 0) > 0 &&
+                              (dailyFive.streak?.hasFreeze ?? false)) ...[
+                            const SizedBox(height: 10),
+                            _StreakFreezeBanner(
+                                freezesRemaining:
+                                    dailyFive.streak!.freezesRemaining,
+                                onUseFreeze: () async {
+                                  final result = await context
+                                      .read<DailyFiveProvider>()
+                                      .applyFreeze(user.uid);
+                                  if (!context.mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                        content: Text(result == 'ok'
+                                            ? 'Streak protected for today.'
+                                            : 'Could not use a freeze right now.')),
+                                  );
+                                }),
+                          ],
                           const SizedBox(height: 10),
                           _LoopTile(
                               icon: LucideIcons.mic,
@@ -305,13 +313,9 @@ class _TodayScreenState extends State<TodayScreen> {
                 SliverToBoxAdapter(
                     child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Container(
+                        child: PremiumCard(
                             padding: const EdgeInsets.all(18),
-                            decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(20),
-                                border:
-                                    Border.all(color: const Color(0xFFE8EAF0))),
+                            radius: AppRadius.card,
                             child: Row(children: [
                               Container(
                                   width: 58,
@@ -346,7 +350,7 @@ class _TodayScreenState extends State<TodayScreen> {
                                             : 'Open Progress to see the evidence behind this score.',
                                         style: GoogleFonts.inter(
                                             fontSize: 12,
-                                            color: const Color(0xFF64748B)))
+                                            color: AppTheme.mutedText))
                                   ])),
                               IconButton(
                                   tooltip: 'Open progress',
@@ -370,7 +374,7 @@ class _TodayScreenState extends State<TodayScreen> {
                                   border: Border.all(
                                       color: announcements.first.isPriority
                                           ? const Color(0xFFFFCAB8)
-                                          : const Color(0xFFE8EAF0))),
+                                          : AppTheme.cardBorder)),
                               child: Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -394,7 +398,7 @@ class _TodayScreenState extends State<TodayScreen> {
                                                   fontSize: 12,
                                                   height: 1.45,
                                                   color:
-                                                      const Color(0xFF64748B)))
+                                                      AppTheme.mutedText))
                                         ]))
                                   ])))),
                 if (announcements.isEmpty)
@@ -470,6 +474,38 @@ class _HeroCard extends StatelessWidget {
       ]));
 }
 
+class _StreakFreezeBanner extends StatelessWidget {
+  const _StreakFreezeBanner(
+      {required this.freezesRemaining, required this.onUseFreeze});
+  final int freezesRemaining;
+  final VoidCallback onUseFreeze;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+            color: const Color(0xFFFFF4ED),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: const Color(0xFFFFD4BF))),
+        child: Row(children: [
+          const Icon(LucideIcons.snowflake,
+              size: 18, color: AppTheme.accentCoral),
+          const SizedBox(width: 10),
+          Expanded(
+              child: Text(
+                  "Your streak is at risk — you haven't done today's five yet.",
+                  style: GoogleFonts.inter(
+                      fontSize: 11, color: const Color(0xFF7C2D12)))),
+          const SizedBox(width: 8),
+          TextButton(
+              onPressed: onUseFreeze,
+              child: Text('Use freeze ($freezesRemaining)',
+                  style: GoogleFonts.inter(
+                      fontSize: 11, fontWeight: FontWeight.w800))),
+        ]),
+      );
+}
+
 class _LoopTile extends StatelessWidget {
   const _LoopTile(
       {required this.icon,
@@ -498,7 +534,7 @@ class _LoopTile extends StatelessWidget {
                 border: Border.all(
                     color: primary
                         ? const Color(0xFFFFCAB8)
-                        : const Color(0xFFE8EAF0))),
+                        : AppTheme.cardBorder)),
             child: Row(children: [
               Container(
                   width: 42,
@@ -522,7 +558,7 @@ class _LoopTile extends StatelessWidget {
                     const SizedBox(height: 3),
                     Text(subtitle,
                         style: GoogleFonts.inter(
-                            fontSize: 11.5, color: const Color(0xFF64748B)))
+                            fontSize: 11.5, color: AppTheme.mutedText))
                   ])),
               Icon(done ? LucideIcons.circleCheckBig : LucideIcons.chevronRight,
                   size: 19,

@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/notification.dart';
 import '../../services/notification_service.dart';
+import '../widgets/empty_state.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -256,32 +257,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         physics: const AlwaysScrollableScrollPhysics(),
         child: ConstrainedBox(
           constraints: BoxConstraints(minHeight: constraints.maxHeight),
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(32),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 72,
-                    height: 72,
-                    decoration: BoxDecoration(
-                      color: AppTheme.accentCoral.withValues(alpha: 0.08),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(LucideIcons.bellOff, size: 32, color: AppTheme.accentCoral),
-                  ),
-                  const SizedBox(height: 16),
-                  Text("You're all caught up", style: GoogleFonts.sora(fontSize: 16, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
-                  const SizedBox(height: 8),
-                  Text(
-                    'New announcements, reminders and streak updates will show up here.',
-                    style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748B)),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
+          child: const EmptyState(
+            icon: LucideIcons.bellOff,
+            title: "You're all caught up",
+            message: 'New announcements, reminders and streak updates will show up here.',
           ),
         ),
       ),
@@ -294,27 +273,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         physics: const AlwaysScrollableScrollPhysics(),
         child: ConstrainedBox(
           constraints: BoxConstraints(minHeight: constraints.maxHeight),
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(32),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(LucideIcons.wifiOff, size: 40, color: Color(0xFF94A3B8)),
-                  const SizedBox(height: 12),
-                  Text('Could not load notifications', style: GoogleFonts.sora(fontWeight: FontWeight.bold, color: const Color(0xFF1E293B))),
-                  const SizedBox(height: 8),
-                  Text(_error ?? '', style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF64748B)), textAlign: TextAlign.center),
-                  const SizedBox(height: 16),
-                  TextButton.icon(
-                    onPressed: _load,
-                    icon: const Icon(LucideIcons.refreshCw, size: 14),
-                    label: Text('Retry', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
-                    style: TextButton.styleFrom(foregroundColor: AppTheme.accentCoral),
-                  ),
-                ],
-              ),
-            ),
+          child: EmptyState(
+            icon: LucideIcons.wifiOff,
+            title: 'Could not load notifications',
+            message: _error,
+            onRetry: _load,
           ),
         ),
       ),

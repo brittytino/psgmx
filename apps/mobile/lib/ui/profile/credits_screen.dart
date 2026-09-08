@@ -149,7 +149,7 @@ class CreditsScreen extends StatelessWidget {
                   // GitHub Button
                   OutlinedButton.icon(
                     onPressed: () => launchUrl(
-                      Uri.parse('https://github.com/brittytino/psgmx/issues'),
+                      Uri.parse('https://github.com/brittytino/psgmx-flutter/issues'),
                       mode: LaunchMode.externalApplication,
                     ),
                     icon: const Icon(Icons.code, size: 16),

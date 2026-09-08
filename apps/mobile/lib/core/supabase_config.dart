@@ -1,18 +1,24 @@
-/// Supabase configuration loaded from compile-time environment variables,
-/// with fallback values from `.env.flutter` for out-of-the-box local execution.
+/// Supabase configuration loaded from compile-time environment variables
+/// (`flutter run/build --dart-define-from-file=.env.flutter`, or the
+/// equivalent generated in CI from GitHub Secrets — see
+/// .github/workflows/firebase-hosting-merge.yml and release.yml).
+///
+/// There is deliberately no hardcoded fallback here. A previous version of
+/// this file fell back to this project's real production Supabase URL and
+/// anon key when the env vars were absent, which meant `main.dart`'s
+/// "missing configuration" startup check could never actually trigger, and
+/// baked live production credentials into source control. If the env vars
+/// are missing, `isConfigured` is false and main.dart fails loudly with
+/// instructions instead of silently connecting to production.
 class SupabaseConfig {
   static const String _envSupabaseUrl = String.fromEnvironment('SUPABASE_URL');
   static const String _envSupabaseAnonKey =
       String.fromEnvironment('SUPABASE_ANON_KEY');
   static const String _envAppApiUrl = String.fromEnvironment('APP_API_URL');
 
-  static String get supabaseUrl => _envSupabaseUrl.isNotEmpty
-      ? _envSupabaseUrl
-      : 'https://ucmskbgdpnolnyrmkotz.supabase.co';
+  static String get supabaseUrl => _envSupabaseUrl;
 
-  static String get supabaseAnonKey => _envSupabaseAnonKey.isNotEmpty
-      ? _envSupabaseAnonKey
-      : 'sb_publishable_FYSPL2NrQ7uby010u8hTmg_26v9e2MI';
+  static String get supabaseAnonKey => _envSupabaseAnonKey;
 
   /// All privileged integrations are brokered by the trusted web backend.
   /// No shared eCampus or AI secret is ever compiled into the mobile app.

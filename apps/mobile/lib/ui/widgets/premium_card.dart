@@ -7,6 +7,14 @@ class PremiumCard extends StatefulWidget {
   final Color? color;
   final bool hasBorder;
   final EdgeInsetsGeometry padding;
+  final double radius;
+
+  /// Optional header row — title (+ optional subtitle) with a divider before
+  /// [child]. Lets call sites that used to reach for the old, unused
+  /// `ContentCard` widget just add these params to `PremiumCard` instead.
+  final String? title;
+  final String? subtitle;
+  final Widget? trailing;
 
   const PremiumCard({
     super.key,
@@ -15,9 +23,13 @@ class PremiumCard extends StatefulWidget {
     this.color,
     this.hasBorder = true,
     this.padding = const EdgeInsets.all(AppSpacing.cardPadding),
+    this.radius = AppRadius.md,
+    this.title,
+    this.subtitle,
+    this.trailing,
     this.backgroundColor, // Optional override alias for color
   });
-  
+
   // ignore: unused_field
   final Color? backgroundColor;
 
@@ -67,8 +79,8 @@ class _PremiumCardState extends State<PremiumCard> with SingleTickerProviderStat
           child: Container(
             decoration: BoxDecoration(
               color: cardColor,
-              borderRadius: BorderRadius.circular(AppRadius.md),
-              border: widget.hasBorder 
+              borderRadius: BorderRadius.circular(widget.radius),
+              border: widget.hasBorder
                   ? Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.5))
                   : null,
               boxShadow: [
@@ -80,10 +92,44 @@ class _PremiumCardState extends State<PremiumCard> with SingleTickerProviderStat
               ],
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(AppRadius.md),
+              borderRadius: BorderRadius.circular(widget.radius),
               child: Padding(
                 padding: widget.padding,
-                child: widget.child,
+                child: widget.title == null
+                    ? widget.child
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(widget.title!,
+                                        style: theme.textTheme.titleLarge),
+                                    if (widget.subtitle != null) ...[
+                                      const SizedBox(height: AppSpacing.xs),
+                                      Text(widget.subtitle!,
+                                          style: theme.textTheme.bodyMedium
+                                              ?.copyWith(
+                                                  color: theme.colorScheme
+                                                      .onSurfaceVariant)),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                              if (widget.trailing != null) widget.trailing!,
+                            ],
+                          ),
+                          const SizedBox(height: AppSpacing.md),
+                          const Divider(height: 1),
+                          const SizedBox(height: AppSpacing.md),
+                          widget.child,
+                        ],
+                      ),
               ),
             ),
           ),

@@ -41,6 +41,7 @@ const sidebarLinks = [
   { name: 'Knowledge Brain', href: '/student/knowledge-brain', icon: BookOpen },
   { name: 'Peer Squads', href: '/student/squads', icon: Users },
   { name: 'Lineage Mentors', href: '/student/lineage', icon: GraduationCap },
+  { name: 'Community Board', href: '/student/community-board', icon: Megaphone },
   { name: 'FYP Portfolio', href: '/student/fyp', icon: Folder },
   { name: 'Interview Patterns', href: '/student/interview-patterns', icon: Building2 },
   { name: 'Recovery Support', href: '/student/recovery-hub', icon: ShieldCheck },
@@ -72,6 +73,9 @@ const getSidebarCardContent = (pathname: string) => {
   }
   if (pathname.includes('/announcements')) {
     return { title: 'Stay in the loop. Never miss what matters.', desc: 'Department updates and important notices.', icon: Megaphone };
+  }
+  if (pathname.includes('/community-board')) {
+    return { title: 'Build together, across batches.', desc: 'Projects, opportunities, and mentoring — not official drives.', icon: Megaphone };
   }
   if (pathname.includes('/settings')) {
     return { title: 'Your profile, your identity.', desc: 'Manage your preferences and account.', icon: Settings };

@@ -71,15 +71,31 @@ class AnnouncementProvider extends ChangeNotifier {
 
       // 2. If priority, trigger a system-wide notification
       if (isPriority) {
-        await _supabaseService.client.from('notifications').insert({
-          'title': title,
-          'message': message,
-          'notification_type': 'announcement',
-          'tone': 'friendly',
-          'target_audience': 'all',
-          'created_by': user.id,
-          'generated_at': DateTime.now().toIso8601String(),
-        });
+        final inserted = await _supabaseService.client
+            .from('notifications')
+            .insert({
+              'title': title,
+              'message': message,
+              'notification_type': 'announcement',
+              'tone': 'friendly',
+              'target_audience': 'all',
+              'created_by': user.id,
+              'generated_at': DateTime.now().toIso8601String(),
+            })
+            .select('id')
+            .single();
+
+        // Best-effort real push (PRD Ch. 13.1) — never blocks the
+        // announcement itself. Returns 501 until FCM_SERVICE_ACCOUNT_JSON is
+        // configured (see supabase/functions/send-push); harmless either way
+        // since in-app delivery (Realtime + the notifications feed) already
+        // happened via the insert above.
+        try {
+          await _supabaseService.client.functions.invoke('send-push',
+              body: {'notification_id': inserted['id']});
+        } catch (e) {
+          debugPrint('[AnnouncementProvider] send-push failed: $e');
+        }
       }
 
       // Refresh list

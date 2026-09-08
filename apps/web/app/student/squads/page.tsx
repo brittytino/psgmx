@@ -40,61 +40,33 @@ export default function StudentSquadsPage() {
           return;
         }
 
-        // Fetch user's team if assigned
-        let teamData: any = null;
-        if (me.team_uuid) {
-          const { data: team } = await (supabase as any)
-            .from('teams')
-            .select('id, team_name, team_code, batch_id')
-            .eq('id', me.team_uuid)
-            .maybeSingle();
-          teamData = team;
-        }
+        // The member roster (name, reg no, Team Leader flag, streak, verified
+        // quest count) is served by get_my_squad() rather than reading
+        // `users`/`daily_five_streaks`/`code_submissions` directly — those
+        // tables' RLS only ever granted read access to the row's own owner
+        // or an admin role, never to a squadmate, so the old direct-query
+        // version of this page always rendered an empty member list for
+        // anyone without an admin capability.
+        const { data: squadData, error: rpcError } = await supabase.rpc('get_my_squad' as never);
+        if (rpcError) throw rpcError;
 
-        // Fetch team members if team exists
-        let members: Member[] = [];
-        if (teamData?.id) {
-          const { data: userRows } = await supabase
-            .from('users')
-            .select('id, name, reg_no, roles')
-            .eq('team_uuid', teamData.id)
-            .order('name');
+        const teamData = squadData as {
+          team_id: string;
+          team_name: string;
+          team_code: string;
+          objective: string;
+          members: { id: string; name: string; reg_no: string; is_team_leader: boolean; current_streak: number; verified_quest_count: number }[];
+          feed: { member_name: string; quest_title: string; completed_at: string }[];
+        } | null;
 
-          if (userRows && userRows.length > 0) {
-            // Fetch streaks for these members
-            const memberIds = userRows.map(u => u.id);
-            const { data: streakRows } = await supabase
-              .from('daily_five_streaks')
-              .select('user_id, current_streak')
-              .in('user_id', memberIds);
-
-            const streakMap = new Map((streakRows || []).map(s => [s.user_id, s.current_streak]));
-
-            // Fetch verified quest submissions for these members
-            const { data: submissionRows } = await (supabase as any)
-              .from('code_submissions')
-              .select('student_id, is_verified_complete')
-              .in('student_id', memberIds)
-              .eq('is_verified_complete', true);
-
-            const questCountMap = new Map<string, number>();
-            (submissionRows || []).forEach((sub: any) => {
-              questCountMap.set(sub.student_id, (questCountMap.get(sub.student_id) || 0) + 1);
-            });
-
-            members = userRows.map(u => {
-              const isTL = (u.roles as any)?.isTeamLeader === true;
-              return {
-                id: u.id,
-                name: u.name || 'Student',
-                reg_no: u.reg_no || '—',
-                role: isTL ? 'Team Leader' : 'Member',
-                quests: questCountMap.get(u.id) || 0,
-                streak: streakMap.get(u.id) || 0,
-              };
-            });
-          }
-        }
+        const members: Member[] = (teamData?.members || []).map(m => ({
+          id: m.id,
+          name: m.name || 'Student',
+          reg_no: m.reg_no || '—',
+          role: m.is_team_leader ? 'Team Leader' : 'Member',
+          quests: m.verified_quest_count,
+          streak: m.current_streak,
+        }));
 
         if (!teamData || members.length === 0) {
           setSquad(null);
@@ -107,10 +79,19 @@ export default function StudentSquadsPage() {
             name: teamData.team_name || `Squad ${teamData.team_code}`,
             team_code: teamData.team_code,
             leader: `${leaderMember.name} (${leaderMember.reg_no})`,
-            objective: `Complete ${members.length * 3} combined CodeBox verified quests and maintain active Daily Five streaks.`,
+            // Real, PR-settable objective (get_my_squad() falls back to a
+            // computed default when the PR hasn't set one for this squad yet).
+            objective: teamData.objective,
             completion_rate: completionRate,
             members,
-            feed: []
+            // Real verified-quest-completion events from the last 7 days —
+            // this used to always be an empty array.
+            feed: (teamData.feed || []).map(f => ({
+              text: `${f.member_name} verified "${f.quest_title}"`,
+              time: new Date(f.completed_at).toLocaleString(undefined, {
+                month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
+              }),
+            })),
           });
         }
       } catch (err) {

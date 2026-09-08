@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/app_dimens.dart';
+import '../../core/theme/app_theme.dart';
 import '../widgets/premium_card.dart';
 
 /// Comprehensive Help & Support Screen
@@ -17,7 +19,7 @@ class HelpSupportScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(
           'Help & Support',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+          style: GoogleFonts.sora(fontWeight: FontWeight.w600),
         ),
         centerTitle: false,
       ),
@@ -88,7 +90,7 @@ class HelpSupportScreen extends StatelessWidget {
               children: [
                 Text(
                   'We\'re here to help!',
-                  style: GoogleFonts.poppins(
+                  style: GoogleFonts.sora(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
@@ -181,7 +183,7 @@ class HelpSupportScreen extends StatelessWidget {
   Widget _buildSectionTitle(BuildContext context, String title) {
     return Text(
       title,
-      style: GoogleFonts.poppins(
+      style: GoogleFonts.sora(
         fontSize: 12,
         fontWeight: FontWeight.bold,
       ),
@@ -192,35 +194,31 @@ class HelpSupportScreen extends StatelessWidget {
     final faqs = [
       {
         'q': 'How do I update my LeetCode username?',
-        'a': 'Go to Profile → Personal Details → LeetCode Username. Tap on it to edit and save your username. Your stats will sync automatically within 24 hours.',
+        'a': 'Go to You → Profile and edit your LeetCode username. Your stats sync automatically on a schedule and feed into your Coding readiness dimension.',
       },
       {
-        'q': 'Why can\'t I mark attendance?',
-        'a': 'Only Team Leaders can mark attendance for their team members. If you\'re a Team Leader and still can\'t mark attendance, make sure:\n• It\'s a scheduled class day\n• You\'re marking within the allowed time window\n• Your team members are properly assigned to your team',
+        'q': 'How is my readiness score calculated?',
+        'a': 'Your score is computed server-side from six evidence-backed dimensions (like Coding, Core CS, and Communication) — never self-reported. Evidence ages over time, so staying consistent matters more than a single big push. See Progress for a breakdown per dimension.',
       },
       {
-        'q': 'How is the LeetCode leaderboard calculated?',
-        'a': 'The leaderboard tracks two metrics:\n• Weekly Score: Problems solved in the last 7 days\n• Total Score: All-time problems solved\n\nStats are refreshed automatically every 24 hours or manually by Placement Reps.',
+        'q': 'Why didn\'t my Daily Five streak update?',
+        'a': 'Streaks and XP are updated by the server once your submission is graded, not by opening the app. If you completed a session and it still doesn\'t show, pull to refresh on Today or Train, or reach out via Report Bug below.',
       },
       {
         'q': 'How do I receive notifications?',
-        'a': 'Ensure notifications are enabled in your phone settings for PSGMX app. You can customize which notifications you receive in Profile → Settings → Notifications.',
+        'a': 'Ensure notifications are enabled in your phone settings for the PSGMX app. You can customize which ones you receive from You → Settings → Notifications.',
       },
       {
-        'q': 'What do the different roles mean?',
-        'a': 'Student: View personal attendance and LeetCode stats\nTeam Leader: Mark attendance for team members\nCoordinator: View scheduled classes and team analytics\nPlacement Rep: Full access to all features including scheduling and overall analytics',
+        'q': 'What\'s the difference between Student and Placement Rep access?',
+        'a': 'Every account is a Student account with full access to Today, Train, Progress, Community, and your profile. A Placement Rep additionally gets the Command Center — a batch-wide readiness pulse dashboard — but never sees another student\'s individual score.',
       },
       {
-        'q': 'How accurate is the attendance percentage?',
-        'a': 'Attendance is calculated based on scheduled class days only. Non-class days (weekends, holidays) are not counted against your attendance percentage.',
+        'q': 'How accurate is my Campus attendance?',
+        'a': 'Campus (Bunker) pulls your attendance and timetable directly from the college eCampus portal using your own eCampus credentials — it mirrors the official record, refreshed each time you open or pull to refresh the tab.',
       },
       {
-        'q': 'Can I see my attendance history?',
-        'a': 'Yes! Go to Attendance → My Attendance tab to view your complete attendance history with dates and status.',
-      },
-      {
-        'q': 'Why is my LeetCode profile picture not showing?',
-        'a': 'Profile pictures are fetched from LeetCode. Make sure:\n• Your LeetCode username is correct\n• Your LeetCode profile is public\n• Wait for the next sync cycle (every 24 hours)',
+        'q': 'Why is my LeetCode data not showing?',
+        'a': 'Make sure your LeetCode username is correct in your profile and that your LeetCode profile is public, then wait for the next scheduled sync.',
       },
     ];
 
@@ -261,7 +259,7 @@ class HelpSupportScreen extends StatelessWidget {
             answer,
             style: GoogleFonts.inter(
               fontSize: 11,
-              color: isDark ? Colors.grey[400] : Colors.grey[700],
+              color: AppTheme.mutedText,
               height: 1.5,
             ),
           ),
@@ -274,33 +272,33 @@ class HelpSupportScreen extends StatelessWidget {
     final features = [
       {
         'icon': Icons.dashboard_rounded,
-        'title': 'Home Dashboard',
-        'desc': 'View daily inspiration, announcements, personal LeetCode stats, and the class leaderboard.',
+        'title': 'Today',
+        'desc': 'One coherent morning brief — your best-next action, urgent items, and the Daily Five habit. Not a feed of widgets.',
       },
       {
-        'icon': Icons.code_rounded,
-        'title': 'LeetCode Tracking',
-        'desc': 'Automatic tracking of your LeetCode progress with weekly and all-time leaderboards.',
-      },
-      {
-        'icon': Icons.assignment_turned_in_rounded,
-        'title': 'Attendance System',
-        'desc': 'Track attendance for scheduled placement classes with team-wise management.',
-      },
-      {
-        'icon': Icons.task_alt_rounded,
-        'title': 'Daily Tasks',
-        'desc': 'Stay updated with daily LeetCode problems and core subject topics assigned by coordinators.',
+        'icon': Icons.fitness_center_rounded,
+        'title': 'Train',
+        'desc': 'Daily Five practice questions and AI-evaluated Communication Practice recordings, both feeding your readiness score.',
       },
       {
         'icon': Icons.analytics_rounded,
-        'title': 'Reports & Analytics',
-        'desc': 'View comprehensive attendance analytics, long absentees, and team-wise breakdowns.',
+        'title': 'Progress',
+        'desc': 'Your readiness score broken down by dimension, computed server-side from real evidence — never self-reported.',
+      },
+      {
+        'icon': Icons.groups_rounded,
+        'title': 'Community',
+        'desc': 'Department announcements, Knowledge Brain articles, alumni Interview Patterns, your MX lineage senior, and Ask AI Senior.',
+      },
+      {
+        'icon': Icons.school_rounded,
+        'title': 'Campus (Bunker)',
+        'desc': 'Your personal eCampus attendance and weekly timetable, synced directly from the college portal.',
       },
       {
         'icon': Icons.notifications_rounded,
         'title': 'Notifications',
-        'desc': 'Receive push notifications for announcements, reminders, birthdays, and attendance alerts.',
+        'desc': 'Receive push notifications for department announcements, reminders, and readiness nudges.',
       },
     ];
 
@@ -325,7 +323,7 @@ class HelpSupportScreen extends StatelessWidget {
                   children: [
                     Text(
                       f['title'] as String,
-                      style: GoogleFonts.poppins(
+                      style: GoogleFonts.sora(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                       ),
@@ -335,7 +333,7 @@ class HelpSupportScreen extends StatelessWidget {
                       f['desc'] as String,
                       style: GoogleFonts.inter(
                         fontSize: 9,
-                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                        color: AppTheme.mutedText,
                       ),
                     ),
                   ],
@@ -354,41 +352,19 @@ class HelpSupportScreen extends StatelessWidget {
         'role': 'Student',
         'color': Colors.green,
         'access': [
-          'View personal attendance history',
-          'Track personal LeetCode stats',
-          'View class leaderboard',
-          'Receive announcements',
-        ],
-      },
-      {
-        'role': 'Team Leader',
-        'color': Colors.blue,
-        'access': [
-          'All Student features',
-          'Mark attendance for team members',
-          'View team attendance summary',
-          'Receive attendance reminders',
-        ],
-      },
-      {
-        'role': 'Coordinator',
-        'color': Colors.orange,
-        'access': [
-          'All Team Leader features',
-          'View scheduled classes',
-          'Access team analytics',
-          'Post announcements',
+          'Full companion access — Today, Train, Progress, Community, You',
+          'Personal readiness score and evidence history',
+          'Personal Campus (eCampus) attendance and timetable',
+          'Receive department announcements and notifications',
         ],
       },
       {
         'role': 'Placement Rep',
         'color': Colors.purple,
         'access': [
-          'Full access to all features',
-          'Schedule class dates',
-          'Refresh LeetCode data manually',
-          'View overall attendance analytics',
-          'Manage all teams and students',
+          'Everything a Student has',
+          'Command Center — batch-wide readiness pulse dashboard',
+          'Never sees another student\'s individual score without consent',
         ],
       },
     ];
@@ -411,7 +387,7 @@ class HelpSupportScreen extends StatelessWidget {
                     ),
                     child: Text(
                       r['role'] as String,
-                      style: GoogleFonts.poppins(
+                      style: GoogleFonts.sora(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                         color: r['color'] as Color,
@@ -433,7 +409,7 @@ class HelpSupportScreen extends StatelessWidget {
                         access,
                         style: GoogleFonts.inter(
                           fontSize: 11,
-                          color: isDark ? Colors.grey[300] : Colors.grey[700],
+                          color: AppTheme.mutedText,
                         ),
                       ),
                     ),
@@ -513,7 +489,7 @@ class HelpSupportScreen extends StatelessWidget {
                 children: [
                   Text(
                     'PSGMX',
-                    style: GoogleFonts.poppins(
+                    style: GoogleFonts.sora(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
                     ),
@@ -522,7 +498,7 @@ class HelpSupportScreen extends StatelessWidget {
                     'Placement Excellence',
                     style: GoogleFonts.inter(
                       fontSize: 9,
-                      color: Colors.grey[600],
+                      color: AppTheme.mutedText,
                     ),
                   ),
                 ],
@@ -530,11 +506,16 @@ class HelpSupportScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          Text(
-            'Version 2.2.4',
-            style: GoogleFonts.inter(
-              fontSize: 9,
-              color: Colors.grey[500],
+          FutureBuilder<PackageInfo>(
+            future: PackageInfo.fromPlatform(),
+            builder: (context, snapshot) => Text(
+              snapshot.hasData
+                  ? 'Version ${snapshot.data!.version} (${snapshot.data!.buildNumber})'
+                  : 'Checking installed version…',
+              style: GoogleFonts.inter(
+                fontSize: 9,
+                color: AppTheme.mutedText,
+              ),
             ),
           ),
           const SizedBox(height: 8),
@@ -542,7 +523,7 @@ class HelpSupportScreen extends StatelessWidget {
             'Made with ❤️ for PSG students',
             style: GoogleFonts.inter(
               fontSize: 9,
-              color: Colors.grey[500],
+              color: AppTheme.mutedText,
             ),
           ),
           const SizedBox(height: 16),
@@ -556,7 +537,7 @@ class HelpSupportScreen extends StatelessWidget {
                   style: GoogleFonts.inter(fontSize: 9),
                 ),
               ),
-              Text('•', style: TextStyle(color: Colors.grey[400])),
+              Text('•', style: TextStyle(color: AppTheme.mutedText)),
               TextButton(
                 onPressed: () => _showTermsOfService(context),
                 child: Text(
@@ -630,7 +611,7 @@ class HelpSupportScreen extends StatelessWidget {
           children: [
             const Icon(Icons.bug_report, color: Colors.orange),
             const SizedBox(width: 10),
-            Text('Report a Bug', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+            Text('Report a Bug', style: GoogleFonts.sora(fontWeight: FontWeight.bold)),
           ],
         ),
         content: Column(
@@ -681,7 +662,7 @@ class HelpSupportScreen extends StatelessWidget {
           children: [
             const Icon(Icons.lightbulb, color: Colors.green),
             const SizedBox(width: 10),
-            Text('Suggest a Feature', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+            Text('Suggest a Feature', style: GoogleFonts.sora(fontWeight: FontWeight.bold)),
           ],
         ),
         content: Column(
@@ -724,7 +705,7 @@ class HelpSupportScreen extends StatelessWidget {
           children: [
             const Icon(Icons.chat, color: Colors.green),
             const SizedBox(width: 10),
-            Text('WhatsApp Group', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+            Text('WhatsApp Group', style: GoogleFonts.sora(fontWeight: FontWeight.bold)),
           ],
         ),
         content: Text(
@@ -751,7 +732,7 @@ class HelpSupportScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Privacy Policy', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+        title: Text('Privacy Policy', style: GoogleFonts.sora(fontWeight: FontWeight.bold)),
         content: SingleChildScrollView(
           child: Text(
             'PSGMX Privacy Policy\n\n'
@@ -762,12 +743,11 @@ class HelpSupportScreen extends StatelessWidget {
             '• Name and registration number\n'
             '• LeetCode username (optional)\n'
             '• Date of birth (optional, for birthday wishes)\n'
-            '• Attendance records\n\n'
+            '• eCampus attendance, synced only if you connect Campus\n\n'
             '2. Data Usage\n'
             'Your data is used solely for:\n'
             '• Authentication and authorization\n'
-            '• Tracking placement preparation progress\n'
-            '• Displaying leaderboards\n'
+            '• Computing your personal readiness score\n'
             '• Sending relevant notifications\n\n'
             '3. Data Security\n'
             'All data is securely stored using Supabase with:\n'
@@ -796,7 +776,7 @@ class HelpSupportScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Terms of Service', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+        title: Text('Terms of Service', style: GoogleFonts.sora(fontWeight: FontWeight.bold)),
         content: SingleChildScrollView(
           child: Text(
             'PSGMX Terms of Service\n\n'
@@ -816,8 +796,8 @@ class HelpSupportScreen extends StatelessWidget {
             '• Falsifying LeetCode statistics\n'
             '• Disrupting app services\n\n'
             '5. Attendance Policy\n'
-            'Attendance data is official and used for placement tracking.\n'
-            'Any disputes should be raised with Coordinators.\n\n'
+            'Campus attendance mirrors the official eCampus record.\n'
+            'Any disputes should be raised with your department faculty.\n\n'
             '6. Modifications\n'
             'We may update these terms. Continued use implies acceptance.\n\n'
             '7. Contact\n'
@@ -878,7 +858,7 @@ class HelpSupportScreen extends StatelessWidget {
               Text(
                 'Placement Representative',
                 textAlign: TextAlign.center,
-                style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.bold),
+                style: GoogleFonts.sora(fontSize: 12, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               Text(
@@ -960,12 +940,12 @@ class _ContactCard extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 11),
+                        style: GoogleFonts.sora(fontWeight: FontWeight.w600, fontSize: 11),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         subtitle,
-                        style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[600]),
+                        style: GoogleFonts.inter(fontSize: 9, color: AppTheme.mutedText),
                       ),
                     ],
                   ),
@@ -987,13 +967,13 @@ class _ContactCard extends StatelessWidget {
                 const SizedBox(height: 12),
                 Text(
                   title,
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 11),
+                  style: GoogleFonts.sora(fontWeight: FontWeight.w600, fontSize: 11),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[600]),
+                  style: GoogleFonts.inter(fontSize: 9, color: AppTheme.mutedText),
                 ),
               ],
             ),
@@ -1014,13 +994,7 @@ class _RepActionItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.5)),
-      ),
+    return PremiumCard(
       child: Row(
         children: [
           Icon(icon, color: Colors.purple, size: 16),
@@ -1031,12 +1005,12 @@ class _RepActionItem extends StatelessWidget {
               children: [
                 Text(
                   text,
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 11),
+                  style: GoogleFonts.sora(fontWeight: FontWeight.w600, fontSize: 11),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   description,
-                  style: GoogleFonts.inter(fontSize: 9, color: Colors.grey[600]),
+                  style: GoogleFonts.inter(fontSize: 9, color: AppTheme.mutedText),
                 ),
               ],
             ),

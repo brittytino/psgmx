@@ -3,10 +3,13 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/theme/app_dimens.dart';
 import '../../core/theme/app_theme.dart';
 import '../../models/ecampus_attendance.dart';
 import '../../providers/ecampus_provider.dart';
 import '../../providers/user_provider.dart';
+import '../widgets/empty_state.dart';
+import '../widgets/premium_card.dart';
 
 class BunkerScreen extends StatefulWidget {
   const BunkerScreen({super.key});
@@ -52,7 +55,7 @@ class _BunkerScreenState extends State<BunkerScreen> {
                         const SizedBox(height: 4),
                         Text('Academic attendance and weekly timetable.',
                             style: GoogleFonts.inter(
-                                fontSize: 13, color: const Color(0xFF64748B)))
+                                fontSize: 13, color: AppTheme.mutedText))
                       ])),
                   IconButton.filledTonal(
                       onPressed: provider.isSyncing ? null : provider.sync,
@@ -109,13 +112,9 @@ class _WeeklyTimetableCard extends StatelessWidget {
     }
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
-      child: Container(
+      child: PremiumCard(
         padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFFE8EAF0)),
-        ),
+        radius: AppRadius.card,
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             const Icon(LucideIcons.calendarDays,
@@ -247,12 +246,9 @@ class _SubjectTile extends StatelessWidget {
         : subject.isCritical
             ? const Color(0xFFDC2626)
             : const Color(0xFFD97706);
-    return Container(
+    return PremiumCard(
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: const Color(0xFFE8EAF0))),
+        radius: AppRadius.card,
         child: Row(children: [
           Container(
               width: 48,
@@ -280,12 +276,12 @@ class _SubjectTile extends StatelessWidget {
                     style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w800,
-                        color: const Color(0xFF172033))),
+                        color: AppTheme.headingText)),
                 const SizedBox(height: 4),
                 Text(
                     '${subject.totalPresent}/${subject.totalHours} hours · ${subject.courseCode}',
                     style: GoogleFonts.inter(
-                        fontSize: 11, color: const Color(0xFF64748B)))
+                        fontSize: 11, color: AppTheme.mutedText))
               ])),
           Text(
               subject.classesToAttend > 0
@@ -301,28 +297,14 @@ class _EmptyAttendance extends StatelessWidget {
   const _EmptyAttendance({required this.provider});
   final EcampusProvider provider;
   @override
-  Widget build(BuildContext context) => Center(
-      child: Padding(
-          padding: const EdgeInsets.all(36),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            const Icon(LucideIcons.calendarCheck,
-                size: 44, color: AppTheme.accentCoral),
-            const SizedBox(height: 16),
-            Text('Attendance not synced yet',
-                style: GoogleFonts.sora(
-                    fontSize: 18, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 8),
-            Text(
-                provider.errorMessage ??
-                    'Refresh once to securely fetch your academic attendance.',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.inter(color: const Color(0xFF64748B))),
-            const SizedBox(height: 20),
-            FilledButton.icon(
-                onPressed: provider.sync,
-                icon: const Icon(LucideIcons.refreshCw, size: 16),
-                label: const Text('Refresh attendance'))
-          ])));
+  Widget build(BuildContext context) => EmptyState(
+        icon: LucideIcons.calendarCheck,
+        title: 'Attendance not synced yet',
+        message: provider.errorMessage ??
+            'Refresh once to securely fetch your academic attendance.',
+        onRetry: provider.sync,
+        retryLabel: 'Refresh attendance',
+      );
 }
 
 class _LoginBanner extends StatelessWidget {

@@ -5,8 +5,11 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/theme/app_dimens.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/announcement_provider.dart';
+import '../widgets/empty_state.dart';
+import '../widgets/premium_card.dart';
 
 class CommunityScreen extends StatefulWidget {
   const CommunityScreen({super.key});
@@ -19,6 +22,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
   bool _loading = true;
   String? _error;
   List<Map<String, dynamic>> _articles = const [];
+  Map<String, dynamic>? _lineage;
 
   @override
   void initState() {
@@ -35,15 +39,21 @@ class _CommunityScreenState extends State<CommunityScreen> {
       await context
           .read<AnnouncementProvider>()
           .fetchAnnouncements(forceRefresh: true);
-      final rows = await Supabase.instance.client
-          .from('knowledge_brain_articles')
-          .select('id, title, summary, tags, batch_year, created_at')
-          .eq('approval_status', 'approved')
-          .order('created_at', ascending: false)
-          .limit(5);
+      final client = Supabase.instance.client;
+      final results = await Future.wait<dynamic>([
+        client
+            .from('knowledge_brain_articles')
+            .select('id, title, summary, tags, batch_year, created_at')
+            .eq('approval_status', 'approved')
+            .order('created_at', ascending: false)
+            .limit(5),
+        client.rpc('get_my_lineage'),
+      ]);
       if (!mounted) return;
+      final lineageRows = List<Map<String, dynamic>>.from(results[1] as List);
       setState(() {
-        _articles = List<Map<String, dynamic>>.from(rows);
+        _articles = List<Map<String, dynamic>>.from(results[0] as List);
+        _lineage = lineageRows.isNotEmpty ? lineageRows.first : null;
         _loading = false;
       });
     } catch (_) {
@@ -52,6 +62,78 @@ class _CommunityScreenState extends State<CommunityScreen> {
         _loading = false;
         _error = 'Community updates could not be refreshed.';
       });
+    }
+  }
+
+  Future<void> _openLineageRequestSheet(String? seniorId, String seniorName) async {
+    if (seniorId == null) return;
+    final topicCtrl = TextEditingController();
+    final questionCtrl = TextEditingController();
+    final sent = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(sheetContext).viewInsets.bottom),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: const BoxDecoration(
+              color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Ask $seniorName', style: GoogleFonts.sora(fontSize: 16, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 4),
+            Text('A specific topic and question, not a general chat request.',
+                style: GoogleFonts.inter(fontSize: 11, color: AppTheme.mutedText)),
+            const SizedBox(height: 16),
+            TextField(
+              controller: topicCtrl,
+              decoration: const InputDecoration(labelText: 'Topic', border: OutlineInputBorder(), hintText: 'e.g. System design interviews'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: questionCtrl,
+              maxLines: 3,
+              decoration: const InputDecoration(labelText: 'Your question', border: OutlineInputBorder()),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () async {
+                  final topic = topicCtrl.text.trim();
+                  final question = questionCtrl.text.trim();
+                  if (topic.length < 2 || question.length < 5) {
+                    ScaffoldMessenger.of(sheetContext).showSnackBar(
+                        const SnackBar(content: Text('Add a topic and a fuller question first.')));
+                    return;
+                  }
+                  final studentId = Supabase.instance.client.auth.currentUser?.id;
+                  if (studentId == null) return;
+                  try {
+                    await Supabase.instance.client.from('lineage_requests').insert({
+                      'student_id': studentId,
+                      'alumni_id': seniorId,
+                      'topic': topic,
+                      'question': question,
+                    });
+                    if (sheetContext.mounted) Navigator.of(sheetContext).pop(true);
+                  } catch (_) {
+                    if (sheetContext.mounted) {
+                      ScaffoldMessenger.of(sheetContext)
+                          .showSnackBar(const SnackBar(content: Text('Could not send — try again shortly.')));
+                    }
+                  }
+                },
+                child: const Text('Send request'),
+              ),
+            ),
+          ]),
+        ),
+      ),
+    );
+    if (sent == true && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Sent. Your senior will accept, decline, or redirect it.')));
     }
   }
 
@@ -80,7 +162,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                       const SizedBox(height: 5),
                       Text('Learn from MX, then leave it stronger.',
                           style: GoogleFonts.inter(
-                              fontSize: 13, color: const Color(0xFF64748B))),
+                              fontSize: 13, color: AppTheme.mutedText)),
                     ])),
                 IconButton.filledTonal(
                     tooltip: 'Open inbox',
@@ -109,6 +191,18 @@ class _CommunityScreenState extends State<CommunityScreen> {
                         subtitle: 'Reusable alumni insight',
                         onTap: () => context.push('/interview-patterns'))),
               ]),
+              const SizedBox(height: 10),
+              _ActionCard(
+                  icon: LucideIcons.usersRound,
+                  title: 'Your squad',
+                  subtitle: 'See your teammates\' streaks and verified quests',
+                  onTap: () => context.push('/community/squads')),
+              const SizedBox(height: 10),
+              _ActionCard(
+                  icon: LucideIcons.messageSquarePlus,
+                  title: 'Community Board',
+                  subtitle: 'Projects, opportunities and mentoring offers',
+                  onTap: () => context.push('/community/board')),
               const SizedBox(height: 24),
               _SectionTitle(
                   title: 'Department inbox',
@@ -116,7 +210,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   onTap: () => context.push('/notifications')),
               const SizedBox(height: 10),
               if (announcements.isEmpty && !_loading)
-                const _EmptyCard(
+                const EmptyState(
                     icon: LucideIcons.circleCheck,
                     title: 'You are up to date',
                     message: 'Important department updates will appear here.')
@@ -133,7 +227,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                             border: Border.all(
                                 color: announcement.isPriority
                                     ? const Color(0xFFFFD4BF)
-                                    : const Color(0xFFE8EAF0))),
+                                    : AppTheme.cardBorder)),
                         child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -148,7 +242,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                                   style: GoogleFonts.inter(
                                       fontSize: 11,
                                       height: 1.45,
-                                      color: const Color(0xFF64748B))),
+                                      color: AppTheme.mutedText)),
                             ]),
                       ),
                     )),
@@ -156,19 +250,15 @@ class _CommunityScreenState extends State<CommunityScreen> {
               const _SectionTitle(title: 'From the Knowledge Brain'),
               const SizedBox(height: 10),
               if (_articles.isEmpty && !_loading)
-                const _EmptyCard(
+                const EmptyState(
                     icon: LucideIcons.bookOpen,
                     title: 'The next insight is being reviewed',
                     message: 'Only approved department knowledge appears here.')
               else
                 ..._articles.map((article) => Padding(
                       padding: const EdgeInsets.only(bottom: 9),
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(18),
-                            border: Border.all(color: const Color(0xFFE8EAF0))),
+                      child: PremiumCard(
+                        radius: AppRadius.card,
                         child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -200,18 +290,91 @@ class _CommunityScreenState extends State<CommunityScreen> {
                                           style: GoogleFonts.inter(
                                               fontSize: 10,
                                               height: 1.45,
-                                              color: const Color(0xFF64748B))),
+                                              color: AppTheme.mutedText)),
                                     ]
                                   ])),
                             ]),
                       ),
                     )),
-              const SizedBox(height: 18),
-              const _EmptyCard(
-                  icon: LucideIcons.usersRound,
-                  title: 'Your MX lineage',
-                  message:
-                      'Lineage and topic-based mentoring continue on the PSGMX web companion while mobile messaging is completed.'),
+              const SizedBox(height: 22),
+              const _SectionTitle(title: 'Your MX lineage'),
+              const SizedBox(height: 10),
+              if (_lineage == null && !_loading)
+                const EmptyState(
+                    icon: LucideIcons.usersRound,
+                    title: 'No senior assigned yet',
+                    message:
+                        'Your department mentor pairs each junior with a senior. Check back once yours is assigned.')
+              else if (_lineage != null)
+                PremiumCard(
+                  radius: AppRadius.card,
+                  child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                            width: 42,
+                            height: 42,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                                color: AppTheme.accentCoral
+                                    .withValues(alpha: .09),
+                                shape: BoxShape.circle),
+                            child: const Icon(LucideIcons.usersRound,
+                                size: 20, color: AppTheme.accentCoral)),
+                        const SizedBox(width: 12),
+                        Expanded(
+                            child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                              Text(
+                                  _lineage!['senior_name']?.toString() ??
+                                      'Your senior',
+                                  style: GoogleFonts.inter(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w800)),
+                              if ((_lineage!['senior_current_company']
+                                              as String?)
+                                          ?.isNotEmpty ==
+                                      true ||
+                                  (_lineage!['senior_current_role_title']
+                                              as String?)
+                                          ?.isNotEmpty ==
+                                      true) ...[
+                                const SizedBox(height: 2),
+                                Text([
+                                  _lineage!['senior_current_role_title'],
+                                  _lineage!['senior_current_company']
+                                ].where((v) => (v as String?)?.isNotEmpty == true).join(' · '),
+                                    style: GoogleFonts.inter(
+                                        fontSize: 10,
+                                        color: AppTheme.mutedText)),
+                              ],
+                              if ((_lineage!['senior_quote'] as String?)
+                                      ?.trim()
+                                      .isNotEmpty ==
+                                  true) ...[
+                                const SizedBox(height: 8),
+                                Text('"${_lineage!['senior_quote']}"',
+                                    style: GoogleFonts.inter(
+                                        fontSize: 11,
+                                        height: 1.45,
+                                        fontStyle: FontStyle.italic,
+                                        color: const Color(0xFF334155))),
+                              ],
+                              const SizedBox(height: 10),
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: TextButton.icon(
+                                  onPressed: () => _openLineageRequestSheet(
+                                      _lineage!['senior_user_id']?.toString(),
+                                      _lineage!['senior_name']?.toString() ?? 'your senior'),
+                                  icon: const Icon(LucideIcons.messageCircle, size: 14),
+                                  label: const Text('Ask a specific question'),
+                                ),
+                              ),
+                            ])),
+                      ]),
+                ),
             ],
           ),
         ),
@@ -232,31 +395,21 @@ class _ActionCard extends StatelessWidget {
       required this.onTap});
 
   @override
-  Widget build(BuildContext context) => Material(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(19),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(19),
-          onTap: onTap,
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(19),
-                border: Border.all(color: const Color(0xFFE8EAF0))),
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Icon(icon, color: AppTheme.accentCoral, size: 22),
-              const SizedBox(height: 17),
-              Text(title,
-                  style: GoogleFonts.inter(
-                      fontSize: 12, fontWeight: FontWeight.w800)),
-              const SizedBox(height: 3),
-              Text(subtitle,
-                  style: GoogleFonts.inter(
-                      fontSize: 9, color: const Color(0xFF64748B))),
-            ]),
-          ),
-        ),
+  Widget build(BuildContext context) => PremiumCard(
+        onTap: onTap,
+        radius: AppRadius.card,
+        child:
+            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Icon(icon, color: AppTheme.accentCoral, size: 22),
+          const SizedBox(height: 17),
+          Text(title,
+              style: GoogleFonts.inter(
+                  fontSize: 12, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 3),
+          Text(subtitle,
+              style: GoogleFonts.inter(
+                  fontSize: 9, color: AppTheme.mutedText)),
+        ]),
       );
 }
 
@@ -274,41 +427,6 @@ class _SectionTitle extends StatelessWidget {
                     fontSize: 17, fontWeight: FontWeight.w800))),
         if (action != null) TextButton(onPressed: onTap, child: Text(action!)),
       ]);
-}
-
-class _EmptyCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String message;
-  const _EmptyCard(
-      {required this.icon, required this.title, required this.message});
-
-  @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: const Color(0xFFE8EAF0))),
-        child: Row(children: [
-          Icon(icon, color: AppTheme.accentCoral),
-          const SizedBox(width: 12),
-          Expanded(
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                Text(title,
-                    style: GoogleFonts.inter(
-                        fontSize: 12, fontWeight: FontWeight.w800)),
-                const SizedBox(height: 3),
-                Text(message,
-                    style: GoogleFonts.inter(
-                        fontSize: 10,
-                        height: 1.45,
-                        color: const Color(0xFF64748B))),
-              ]))
-        ]),
-      );
 }
 
 class _CommunityNotice extends StatelessWidget {

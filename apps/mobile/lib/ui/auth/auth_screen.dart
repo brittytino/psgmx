@@ -28,6 +28,16 @@ class _AuthScreenState extends State<AuthScreen> {
 
   bool _isEmailValid = false;
 
+  // PRD Ch. 3.2 Step 2: "Three wrong attempts lock for 15 minutes with the
+  // exact unlock time shown." Supabase Auth itself rejects the wrong code;
+  // this just tracks the attempt count and surfaces the lockout clearly
+  // instead of letting the student keep guessing indefinitely.
+  int _wrongOtpAttempts = 0;
+  DateTime? _lockedUntil;
+  Timer? _lockoutTicker;
+
+  bool get _isLockedOut => _lockedUntil != null && DateTime.now().isBefore(_lockedUntil!);
+
   @override
   void initState() {
     super.initState();
@@ -42,10 +52,19 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   void dispose() {
     _resendTimer?.cancel();
+    _lockoutTicker?.cancel();
     _emailController.dispose();
     _otpController.dispose();
     _otpFocusNode.dispose();
     super.dispose();
+  }
+
+  String _formatUnlockTime(DateTime time) {
+    final local = time.toLocal();
+    final hour12 = local.hour % 12 == 0 ? 12 : local.hour % 12;
+    final minute = local.minute.toString().padLeft(2, '0');
+    final period = local.hour < 12 ? 'AM' : 'PM';
+    return '$hour12:$minute $period';
   }
 
   void _startResendCountdown() {
@@ -102,6 +121,7 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   Future<void> _handleOtpSubmit() async {
+    if (_isLockedOut) return;
     final otp = _otpController.text.trim();
     if (otp.length != 6) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -118,11 +138,32 @@ class _AuthScreenState extends State<AuthScreen> {
             email: _emailController.text.trim(),
             otp: otp,
           );
+      _wrongOtpAttempts = 0;
       // Navigation handled by router
     } catch (e) {
+      _wrongOtpAttempts++;
+      final locking = _wrongOtpAttempts >= 3;
       setState(() {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(e.toString().replaceAll('Exception:', '').trim())));
+        _otpController.clear();
+        if (locking) {
+          _lockedUntil = DateTime.now().add(const Duration(minutes: 15));
+          _lockoutTicker?.cancel();
+          _lockoutTicker = Timer.periodic(const Duration(seconds: 1), (timer) {
+            if (!mounted) return timer.cancel();
+            if (!_isLockedOut) {
+              timer.cancel();
+              setState(() {
+                _lockedUntil = null;
+                _wrongOtpAttempts = 0;
+              });
+            } else {
+              setState(() {}); // tick the countdown text
+            }
+          });
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(e.toString().replaceAll('Exception:', '').trim())));
+        }
         _isLoading = false;
       });
     }
@@ -146,7 +187,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 children: [
                   IconButton(
                     icon: const Icon(LucideIcons.arrowLeft,
-                        color: Color(0xFF1E293B)),
+                        color: AppTheme.headingText),
                     onPressed: () {
                       if (_isOtpSent) {
                         setState(() => _isOtpSent = false);
@@ -183,7 +224,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 style: GoogleFonts.sora(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: const Color(0xFF1E293B),
+                  color: AppTheme.headingText,
                 ),
               ),
               const SizedBox(height: 12),
@@ -291,10 +332,33 @@ class _AuthScreenState extends State<AuthScreen> {
                             ),
                           ),
                           const SizedBox(height: 8),
+                          if (_isLockedOut) ...[
+                            Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFEF2F2),
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(color: const Color(0xFFFECACA)),
+                              ),
+                              child: Row(children: [
+                                const Icon(LucideIcons.lock, size: 18, color: Color(0xFFDC2626)),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    'Too many wrong codes. Locked until ${_formatUnlockTime(_lockedUntil!)}.',
+                                    style: GoogleFonts.inter(
+                                        fontSize: 11, fontWeight: FontWeight.w600, color: const Color(0xFF991B1B)),
+                                  ),
+                                ),
+                              ]),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
                           Pinput(
                             length: 6,
                             controller: _otpController,
                             focusNode: _otpFocusNode,
+                            enabled: !_isLockedOut,
                             autofocus: true,
                             defaultPinTheme: PinTheme(
                               width: 48,
@@ -302,7 +366,7 @@ class _AuthScreenState extends State<AuthScreen> {
                               textStyle: GoogleFonts.inter(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: const Color(0xFF1E293B),
+                                color: AppTheme.headingText,
                               ),
                               decoration: BoxDecoration(
                                 color: Colors.white,
@@ -316,7 +380,7 @@ class _AuthScreenState extends State<AuthScreen> {
                               textStyle: GoogleFonts.inter(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: const Color(0xFF1E293B),
+                                color: AppTheme.headingText,
                               ),
                               decoration: BoxDecoration(
                                 color: Colors.white,
@@ -342,7 +406,7 @@ class _AuthScreenState extends State<AuthScreen> {
                           ),
                           const SizedBox(height: 8),
                           TextButton.icon(
-                            onPressed: _resendSeconds == 0 && !_isLoading
+                            onPressed: _resendSeconds == 0 && !_isLoading && !_isLockedOut
                                 ? _resendOtp
                                 : null,
                             icon: const Icon(LucideIcons.refreshCw, size: 14),
@@ -417,7 +481,7 @@ class _AuthScreenState extends State<AuthScreen> {
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
-                  onPressed: _isLoading
+                  onPressed: _isLoading || (_isOtpSent && _isLockedOut)
                       ? null
                       : (_isOtpSent ? _handleOtpSubmit : _handleEmailSubmit),
                   style: FilledButton.styleFrom(

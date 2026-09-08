@@ -17,13 +17,6 @@ type Person = {
   current_role_title: string | null
 }
 
-function intFromReg(reg: string): number {
-  if (!reg) return 0
-  const match = reg.match(/^(\d{2})MX/i)
-  if (match) return 2000 + parseInt(match[1], 10)
-  return 0
-}
-
 export default function AlumniLineagePage() {
   const supabase = useMemo(() => createClient(), [])
   const { showToast } = useUI()
@@ -42,70 +35,61 @@ export default function AlumniLineagePage() {
       setMe(profile)
       setMentorshipOpen(Boolean(profile.mentorship_open))
 
-      const meReg = (profile.reg_no || '').trim().toUpperCase()
-      const suf = meReg ? meReg.slice(-3) : ''
-
-      const [{ data: seniorMap }, { data: juniorMaps }] = await Promise.all([
-        supabase.from('lineage_map').select('senior_user_id').eq('student_id', profile.id).maybeSingle(),
-        supabase.from('lineage_map').select('student_id').eq('senior_user_id', profile.id),
+      // Both directions go through SECURITY DEFINER RPCs, not raw table
+      // reads — RLS on `users` has no policy letting an alumnus read an
+      // arbitrary junior's row (or a junior read an arbitrary senior's), so
+      // the previous direct queries here — and their client-side "guess by
+      // register-suffix" fallbacks — always returned nothing for a real
+      // account. get_my_lineage() is scoped to the caller's own senior;
+      // get_my_juniors() to students actually assigned to the caller.
+      const [{ data: seniorData, error: seniorErr }, { data: juniorData, error: juniorErr }] = await Promise.all([
+        supabase.rpc('get_my_lineage' as never),
+        supabase.rpc('get_my_juniors' as never),
       ])
+      if (seniorErr) throw seniorErr
+      if (juniorErr) throw juniorErr
 
-      const juniorIds = (juniorMaps ?? []).map((row) => row.student_id)
-      let [{ data: seniorRow }, { data: juniorRows }] = await Promise.all([
-        seniorMap?.senior_user_id
-          ? supabase
-              .from('users')
-              .select('id,name,reg_no,email,linkedin_url,current_company,current_role_title')
-              .eq('id', seniorMap.senior_user_id)
-              .maybeSingle()
-          : Promise.resolve({ data: null }),
-        juniorIds.length
-          ? supabase
-              .from('users')
-              .select('id,name,reg_no,email,linkedin_url,current_company,current_role_title')
-              .in('id', juniorIds)
-          : Promise.resolve({ data: [] }),
-      ])
-
-      // Fallback: Query users table by register number suffix if lineage_map is unlinked
-      if ((!juniorRows || juniorRows.length === 0) && suf) {
-        const { data: fallbackJuniors } = await supabase
-          .from('users')
-          .select('id,name,reg_no,email,linkedin_url,current_company,current_role_title')
-          .ilike('reg_no', `%MX${suf}`)
-          .neq('id', profile.id)
-          .order('reg_no', { ascending: false })
-
-        if (fallbackJuniors && fallbackJuniors.length > 0) {
-          // Filter to rows with larger batch start years or junior reg numbers
-          const meBatchNum = intFromReg(meReg)
-          const matchedJuniors = fallbackJuniors.filter((j) => intFromReg(j.reg_no) > meBatchNum)
-          if (matchedJuniors.length > 0) {
-            juniorRows = matchedJuniors
+      const seniorRows = (seniorData ?? []) as {
+        senior_user_id: string
+        senior_name: string
+        senior_reg_no: string | null
+        senior_email: string | null
+        senior_linkedin_url: string | null
+        senior_current_company: string | null
+        senior_current_role_title: string | null
+      }[]
+      const seniorRow = seniorRows[0]
+        ? {
+            id: seniorRows[0].senior_user_id,
+            name: seniorRows[0].senior_name,
+            reg_no: seniorRows[0].senior_reg_no ?? '',
+            email: seniorRows[0].senior_email ?? '',
+            linkedin_url: seniorRows[0].senior_linkedin_url,
+            current_company: seniorRows[0].senior_current_company,
+            current_role_title: seniorRows[0].senior_current_role_title,
           }
-        }
-      }
+        : null
 
-      if (!seniorRow && suf) {
-        const meBatchNum = intFromReg(meReg)
-        const { data: fallbackSenior } = await supabase
-          .from('users')
-          .select('id,name,reg_no,email,linkedin_url,current_company,current_role_title')
-          .ilike('reg_no', `%MX${suf}`)
-          .neq('id', profile.id)
-          .order('reg_no', { ascending: false })
-          .limit(10)
-
-        if (fallbackSenior && fallbackSenior.length > 0) {
-          const matchedSenior = fallbackSenior.find((s) => intFromReg(s.reg_no) < meBatchNum)
-          if (matchedSenior) {
-            seniorRow = matchedSenior
-          }
-        }
-      }
+      const juniorRows = ((juniorData ?? []) as {
+        junior_user_id: string
+        junior_name: string
+        junior_reg_no: string | null
+        junior_email: string | null
+        junior_linkedin_url: string | null
+        junior_current_company: string | null
+        junior_current_role_title: string | null
+      }[]).map((row) => ({
+        id: row.junior_user_id,
+        name: row.junior_name,
+        reg_no: row.junior_reg_no ?? '',
+        email: row.junior_email ?? '',
+        linkedin_url: row.junior_linkedin_url,
+        current_company: row.junior_current_company,
+        current_role_title: row.junior_current_role_title,
+      }))
 
       setSenior(seniorRow)
-      setJuniors(juniorRows ?? [])
+      setJuniors(juniorRows)
     } catch (cause) {
       const msg = cause instanceof Error ? cause.message : 'Lineage could not be loaded.'
       showToast(msg, 'error')

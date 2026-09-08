@@ -4,6 +4,17 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../widgets/empty_state.dart';
+
+const Map<String, String> _typeLabels = {
+  'aptitude_screening': 'Aptitude Screening',
+  'coding_round': 'Coding Round',
+  'technical_deep_dive': 'Technical Deep Dive',
+  'fyp_discussion': 'FYP Discussion',
+  'behavioural': 'Behavioural',
+  'group_discussion': 'Group Discussion',
+  'general': 'General',
+};
 
 class InterviewPatternsScreen extends StatefulWidget {
   const InterviewPatternsScreen({super.key});
@@ -31,28 +42,15 @@ class _InterviewPatternsScreenState extends State<InterviewPatternsScreen> {
     });
     try {
       final rows = await Supabase.instance.client
-          .from('knowledge_brain_articles')
+          .from('interview_patterns')
           .select(
-              'id, title, summary, content, tags, source, batch_year, created_at')
+              'id, title, pattern_type, historical_context, preparation_helped, mistakes, example_themes, advice, company_name, batch_year, created_at')
           .eq('approval_status', 'approved')
           .order('created_at', ascending: false)
           .limit(100);
-      final values = List<Map<String, dynamic>>.from(rows).where((row) {
-        final tags = (row['tags'] as List?)
-                ?.map((item) => item.toString().toLowerCase())
-                .toList() ??
-            const <String>[];
-        final source = row['source']?.toString().toLowerCase() ?? '';
-        return source.contains('placement') ||
-            source.contains('interview') ||
-            tags.any((tag) =>
-                tag.contains('interview') ||
-                tag.contains('experience') ||
-                tag.contains('pattern'));
-      }).toList();
       if (!mounted) return;
       setState(() {
-        _patterns = values;
+        _patterns = List<Map<String, dynamic>>.from(rows);
         _loading = false;
       });
     } catch (_) {
@@ -89,7 +87,7 @@ class _InterviewPatternsScreenState extends State<InterviewPatternsScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                       child: Text(
-                          'Historical preparation insight—not an official drive list. Use NEO PAT for current placement operations.',
+                          'Historical, faculty-reviewed interview accounts—not an official drive list. Use NEO PAT for current placement operations.',
                           style: GoogleFonts.inter(
                               fontSize: 11,
                               height: 1.45,
@@ -99,76 +97,150 @@ class _InterviewPatternsScreenState extends State<InterviewPatternsScreen> {
               const SizedBox(height: 18),
               if (_loading) const LinearProgressIndicator(minHeight: 3),
               if (_error != null)
-                Center(
-                    child: Padding(
-                  padding: const EdgeInsets.all(32),
-                  child: Column(children: [
-                    Text(_error!, textAlign: TextAlign.center),
-                    TextButton(onPressed: _load, child: const Text('Retry')),
-                  ]),
-                )),
-              if (!_loading && _error == null && _patterns.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 60),
-                  child: Column(children: [
-                    const Icon(LucideIcons.libraryBig,
-                        size: 38, color: AppTheme.accentCoral),
-                    const SizedBox(height: 12),
-                    Text('No approved patterns yet',
-                        style: GoogleFonts.sora(
-                            fontSize: 17, fontWeight: FontWeight.w800)),
-                    const SizedBox(height: 5),
-                    Text(
-                        'Faculty-reviewed senior and alumni insight will appear here.',
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(
-                            fontSize: 11, color: const Color(0xFF64748B))),
-                  ]),
+                EmptyState(
+                  icon: LucideIcons.wifiOff,
+                  title: 'Could not load patterns',
+                  message: _error,
+                  onRetry: _load,
                 ),
-              ..._patterns.map((pattern) => Padding(
-                    padding: const EdgeInsets.only(bottom: 11),
-                    child: ExpansionTile(
-                      tilePadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 5),
-                      childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                      backgroundColor: Colors.white,
-                      collapsedBackgroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18)),
-                      collapsedShape: RoundedRectangleBorder(
-                          side: const BorderSide(color: Color(0xFFE8EAF0)),
-                          borderRadius: BorderRadius.circular(18)),
-                      leading: const Icon(LucideIcons.messagesSquare,
-                          color: AppTheme.accentCoral),
-                      title: Text(pattern['title']?.toString() ?? '',
-                          style: GoogleFonts.inter(
-                              fontSize: 12, fontWeight: FontWeight.w800)),
-                      subtitle: Text(
-                          pattern['batch_year']?.toString() ??
-                              'Faculty-reviewed insight',
-                          style: GoogleFonts.inter(
-                              fontSize: 9, color: const Color(0xFF64748B))),
-                      children: [
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                              pattern['summary']
-                                          ?.toString()
-                                          .trim()
-                                          .isNotEmpty ==
-                                      true
-                                  ? pattern['summary'].toString()
-                                  : pattern['content']?.toString() ?? '',
-                              style: GoogleFonts.inter(
-                                  fontSize: 11,
-                                  height: 1.55,
-                                  color: const Color(0xFF475569))),
+              if (!_loading && _error == null && _patterns.isEmpty)
+                const EmptyState(
+                  icon: LucideIcons.libraryBig,
+                  title: 'No approved patterns yet',
+                  message:
+                      'Faculty-reviewed senior and alumni insight will appear here.',
+                ),
+              ..._patterns.map((pattern) {
+                final type = pattern['pattern_type']?.toString() ?? '';
+                final themes =
+                    (pattern['example_themes'] as List?)?.cast<dynamic>() ??
+                        const [];
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 11),
+                  child: ExpansionTile(
+                    tilePadding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+                    childrenPadding:
+                        const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    backgroundColor: Colors.white,
+                    collapsedBackgroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18)),
+                    collapsedShape: RoundedRectangleBorder(
+                        side: const BorderSide(color: AppTheme.cardBorder),
+                        borderRadius: BorderRadius.circular(18)),
+                    leading: const Icon(LucideIcons.messagesSquare,
+                        color: AppTheme.accentCoral),
+                    title: Text(pattern['title']?.toString() ?? '',
+                        style: GoogleFonts.inter(
+                            fontSize: 12, fontWeight: FontWeight.w800)),
+                    subtitle: Wrap(spacing: 6, runSpacing: 4, children: [
+                      _PatternTag(label: _typeLabels[type] ?? type),
+                      if ((pattern['company_name'] as String?)
+                              ?.isNotEmpty ==
+                          true)
+                        _PatternTag(label: pattern['company_name'].toString()),
+                      if ((pattern['batch_year'] as String?)?.isNotEmpty ==
+                          true)
+                        _PatternTag(label: pattern['batch_year'].toString()),
+                    ]),
+                    children: [
+                      if ((pattern['historical_context'] as String?)
+                              ?.trim()
+                              .isNotEmpty ==
+                          true) ...[
+                        _Section(
+                            text: pattern['historical_context'].toString()),
+                        const SizedBox(height: 10),
+                      ],
+                      _Section(
+                        label: 'What preparation helped',
+                        text: pattern['preparation_helped']?.toString() ?? '',
+                        color: const Color(0xFF047857),
+                        background: const Color(0xFFECFDF5),
+                      ),
+                      if ((pattern['mistakes'] as String?)?.trim().isNotEmpty ==
+                          true) ...[
+                        const SizedBox(height: 10),
+                        _Section(
+                          label: 'Mistakes to avoid',
+                          text: pattern['mistakes'].toString(),
+                          color: const Color(0xFFB91C1C),
+                          background: const Color(0xFFFEF2F2),
                         ),
                       ],
-                    ),
-                  )),
+                      const SizedBox(height: 10),
+                      _Section(
+                        label: 'Advice',
+                        text: pattern['advice']?.toString() ?? '',
+                        color: AppTheme.accentCoral,
+                        background: const Color(0xFFFFF4ED),
+                      ),
+                      if (themes.isNotEmpty) ...[
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: themes
+                              .map((t) => _PatternTag(label: t.toString()))
+                              .toList(),
+                        ),
+                      ],
+                    ],
+                  ),
+                );
+              }),
             ],
           ),
         ),
       );
+}
+
+class _PatternTag extends StatelessWidget {
+  final String label;
+  const _PatternTag({required this.label});
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+            color: const Color(0xFFF1F5F9),
+            borderRadius: BorderRadius.circular(20)),
+        child: Text(label,
+            style: GoogleFonts.inter(
+                fontSize: 9,
+                fontWeight: FontWeight.w800,
+                color: const Color(0xFF475569))),
+      );
+}
+
+class _Section extends StatelessWidget {
+  final String? label;
+  final String text;
+  final Color? color;
+  final Color? background;
+  const _Section({this.label, required this.text, this.color, this.background});
+
+  @override
+  Widget build(BuildContext context) {
+    final body = Text(text,
+        style: GoogleFonts.inter(
+            fontSize: 11, height: 1.55, color: const Color(0xFF475569)));
+    if (label == null) return Align(alignment: Alignment.centerLeft, child: body);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+          color: background, borderRadius: BorderRadius.circular(14)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(label!,
+            style: GoogleFonts.inter(
+                fontSize: 10, fontWeight: FontWeight.w800, color: color)),
+        const SizedBox(height: 6),
+        Text(text,
+            style: GoogleFonts.inter(
+                fontSize: 11, height: 1.55, color: const Color(0xFF334155))),
+      ]),
+    );
+  }
 }

@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
-import 'dart:async';
-import '../../providers/user_provider.dart';
 import '../../core/theme/app_theme.dart';
 
+// Navigation away from /splash is NOT handled here — it is driven entirely
+// by AppRouter's `redirect` callback (core/app_router.dart), which reacts to
+// UserProvider via `refreshListenable` the moment `initComplete` becomes
+// true. This screen used to also fire its own `context.go(...)` on a fixed
+// 2.5s timer, independently of real auth-state completion: on a slow
+// network, that could navigate an already-authenticated user to /login (or
+// otherwise disagree with the router's own reactive redirect that fires a
+// moment later). Keep this screen purely decorative — animation only.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -21,18 +25,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     _progressController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2000),
-    )..forward();
-
-    // After animation, navigate to the correct screen
-    Future.delayed(const Duration(milliseconds: 2500), () {
-      if (!mounted) return;
-      final auth = context.read<UserProvider>();
-      if (auth.currentUser != null) {
-        context.go('/');
-      } else {
-        context.go('/login');
-      }
-    });
+    )..repeat(reverse: true);
   }
 
   @override

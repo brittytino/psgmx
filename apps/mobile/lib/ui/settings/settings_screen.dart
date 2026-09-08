@@ -56,7 +56,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             floating: true,
             title: Text(
               'Settings',
-              style: GoogleFonts.poppins(
+              style: GoogleFonts.sora(
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -192,7 +192,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         const SizedBox(width: AppSpacing.sm),
         Text(
           title,
-          style: GoogleFonts.poppins(
+          style: GoogleFonts.sora(
             fontSize: 11,
             fontWeight: FontWeight.w600,
             color: Theme.of(context).colorScheme.primary,
@@ -447,7 +447,7 @@ class _UpdateCheckModalState extends State<_UpdateCheckModal> {
             // Title
             Text(
               _getTitle(),
-              style: GoogleFonts.poppins(
+              style: GoogleFonts.sora(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: Theme.of(context).colorScheme.onSurface,

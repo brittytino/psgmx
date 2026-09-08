@@ -12,6 +12,10 @@ import '../ui/auth/outcome_reveal_screen.dart';
 import '../ui/root_layout.dart';
 import '../ui/daily_five/daily_five_screen.dart';
 import '../ui/interview_patterns/interview_patterns_screen.dart';
+import '../ui/squads/squad_screen.dart';
+import '../ui/community/community_board_screen.dart';
+import '../ui/mentoring/mentoring_inbox_screen.dart';
+import '../ui/train/adaptive_sprint_screen.dart';
 import '../ui/bunker/bunker_screen.dart';
 import '../ui/ai_mentor/ai_mentor_screen.dart';
 import '../ui/notifications/notifications_screen.dart';
@@ -84,7 +88,7 @@ class AppRouter {
         ),
         GoRoute(
           path: '/community/squads',
-          builder: (context, state) => const _CompanionTabRoute(index: 3),
+          builder: (context, state) => const SquadScreen(),
         ),
         GoRoute(
           path: '/you',
@@ -124,7 +128,7 @@ class AppRouter {
         ),
         GoRoute(
           path: '/train/sprint',
-          builder: (context, state) => const DailyFiveScreen(),
+          builder: (context, state) => const AdaptiveSprintScreen(),
         ),
         GoRoute(
           path: '/train/communication',
@@ -149,6 +153,14 @@ class AppRouter {
         GoRoute(
           path: '/campus',
           builder: (context, state) => const BunkerScreen(),
+        ),
+        GoRoute(
+          path: '/mentoring-inbox',
+          builder: (context, state) => const MentoringInboxScreen(),
+        ),
+        GoRoute(
+          path: '/community/board',
+          builder: (context, state) => const CommunityBoardScreen(),
         ),
         GoRoute(
           path: '/ai-mentor',

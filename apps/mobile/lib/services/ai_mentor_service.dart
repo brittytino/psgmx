@@ -7,7 +7,7 @@ import '../models/daily_five.dart';
 
 /// The AI Mentor service — wraps OpenRouter with a fallback model chain.
 ///
-/// Scope (per Agent.md Section 8):
+/// Scope:
 ///   1. Explain a wrong daily-five answer (ephemeral — called in results window)
 ///   2. Weekly weak-topic note (based on streak/accuracy rates — not raw answers)
 ///   3. Optional student-initiated resume feedback / mock interview chat
@@ -99,8 +99,7 @@ class AiMentorService {
   /// Generates a short weekly note pointing at the student's weakest topic,
   /// based on their stored [accuracyByTopic] map and [currentStreak].
   ///
-  /// Does NOT use raw answer history — only aggregate accuracy rates, which
-  /// are retained per Agent.md Section 6.
+  /// Does NOT use raw answer history — only aggregate accuracy rates.
   Future<String> getWeeklyWeakTopicNote({
     required Map<String, double> accuracyByTopic,
     required int currentStreak,

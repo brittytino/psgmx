@@ -121,6 +121,16 @@ class AppTheme {
   static const Color scaffoldBg = Color(0xFFFBF6EE);
   static const Color borderLight = Color(0xFFEFE9E0);
 
+  // --- "Cool slate" tokens ---
+  // The majority of screens (Today, Community, Progress, Profile, Interview
+  // Patterns, etc.) use a second, never-named palette on white cards instead
+  // of the warm Daybreak one above (textMain/textMuted/borderLight). These
+  // three are that palette's most-repeated literals, named so new code (and
+  // migrated old code) has one place to point at instead of re-typing the hex.
+  static const Color headingText = Color(0xFF1E293B);
+  static const Color mutedText = Color(0xFF64748B);
+  static const Color cardBorder = Color(0xFFE8EAF0);
+
   // --- Daybreak Light Theme Colors ---
   static const Color _lightBg = Color(0xFFFBF6EE); // Paper Cream
   static const Color _lightSurface = Color(0xFFFFFFFF); 

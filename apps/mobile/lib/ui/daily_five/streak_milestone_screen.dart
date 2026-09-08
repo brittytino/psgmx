@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../models/daily_five.dart';
 import '../../core/theme/app_dimens.dart';
 
@@ -68,7 +69,8 @@ class _StreakMilestoneScreenState extends State<StreakMilestoneScreen> with Sing
                 const SizedBox(height: 48),
                 Text(
                   'MILESTONE REACHED!',
-                  style: theme.textTheme.headlineMedium?.copyWith(
+                  style: GoogleFonts.sora(
+                    textStyle: theme.textTheme.headlineMedium,
                     fontWeight: FontWeight.bold,
                     color: theme.colorScheme.onPrimary,
                     letterSpacing: 2,
@@ -77,7 +79,8 @@ class _StreakMilestoneScreenState extends State<StreakMilestoneScreen> with Sing
                 const SizedBox(height: 16),
                 Text(
                   '${widget.streak.currentStreak} Days',
-                  style: theme.textTheme.displayLarge?.copyWith(
+                  style: GoogleFonts.sora(
+                    textStyle: theme.textTheme.displayLarge,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
@@ -86,7 +89,8 @@ class _StreakMilestoneScreenState extends State<StreakMilestoneScreen> with Sing
                 Text(
                   'Incredible consistency! Keep the momentum going.',
                   textAlign: TextAlign.center,
-                  style: theme.textTheme.titleMedium?.copyWith(
+                  style: GoogleFonts.inter(
+                    textStyle: theme.textTheme.titleMedium,
                     color: theme.colorScheme.onPrimary.withValues(alpha: 0.8),
                   ),
                 ),

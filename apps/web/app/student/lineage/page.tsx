@@ -21,7 +21,6 @@ export default function LineagePage() {
   const supabase = React.useMemo(() => createClient(), [])
   const [senior, setSenior] = React.useState<Senior | null>(null)
   const [quote, setQuote] = React.useState<string | null>(null)
-  const [suffix, setSuffix] = React.useState('')
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState('')
 
@@ -31,53 +30,46 @@ export default function LineagePage() {
     try {
       const me = await getCurrentProfile(supabase)
       if (!me?.id) throw new Error('Sign in again to load your lineage.')
-      
-      const meReg = (me.reg_no || '').trim().toUpperCase()
-      const suf = meReg ? meReg.slice(-3) : ''
-      setSuffix(suf)
 
-      let resolvedSenior: Senior | null = null
-      let resolvedQuote: string | null = null
+      // get_my_lineage() is a SECURITY DEFINER RPC, not a raw table read —
+      // RLS on `users` has no policy letting a student read an arbitrary
+      // senior's row (only "own row", PR/coordinator/faculty, or same
+      // legacy team_id), so the previous direct query here — and its
+      // client-side "guess by register-suffix" fallback — always returned
+      // nothing for a real student. This is scoped to the caller's own
+      // assigned senior only.
+      const { data, error: rpcError } = await supabase.rpc('get_my_lineage' as never)
+      if (rpcError) throw rpcError
 
-      // 1. Try direct lineage_map lookup
-      const { data: map } = await supabase
-        .from('lineage_map')
-        .select('senior_user_id, senior_quote')
-        .eq('student_id', me.id)
-        .maybeSingle()
+      const rows = (data ?? []) as {
+        senior_user_id: string
+        senior_name: string
+        senior_reg_no: string | null
+        senior_current_company: string | null
+        senior_current_role_title: string | null
+        senior_linkedin_url: string | null
+        senior_email: string | null
+        senior_mentorship_open: boolean | null
+        senior_quote: string | null
+      }[]
+      const row = rows[0]
 
-      if (map?.senior_user_id) {
-        resolvedQuote = map.senior_quote ?? null
-        const { data: person } = await supabase
-          .from('users')
-          .select('id, name, reg_no, mentorship_open, linkedin_url, email, current_company, current_role_title')
-          .eq('id', map.senior_user_id)
-          .maybeSingle()
-
-        if (person) {
-          resolvedSenior = person as Senior
-        }
+      if (row) {
+        setSenior({
+          id: row.senior_user_id,
+          name: row.senior_name,
+          reg_no: row.senior_reg_no ?? '',
+          mentorship_open: row.senior_mentorship_open ?? false,
+          linkedin_url: row.senior_linkedin_url,
+          email: row.senior_email ?? '',
+          current_company: row.senior_current_company,
+          current_role_title: row.senior_current_role_title,
+        })
+        setQuote(row.senior_quote)
+      } else {
+        setSenior(null)
+        setQuote(null)
       }
-
-      // 2. Fallback: Search users table by register number suffix if map unlinked or not matched
-      if (!resolvedSenior && suf) {
-        const { data: fallbackSenior } = await supabase
-          .from('users')
-          .select('id, name, reg_no, mentorship_open, linkedin_url, email, current_company, current_role_title, batch')
-          .ilike('reg_no', `%MX${suf}`)
-          .neq('id', me.id)
-          .order('reg_no', { ascending: false })
-          .limit(1)
-          .maybeSingle()
-
-        if (fallbackSenior) {
-          resolvedSenior = fallbackSenior as Senior
-          resolvedQuote = resolvedQuote || `Graduate of PSG Tech MCA`
-        }
-      }
-
-      setSenior(resolvedSenior)
-      setQuote(resolvedQuote)
     } catch (cause) {
       console.warn('Lineage load notice:', cause)
       setError(cause instanceof Error ? cause.message : 'Lineage details could not be loaded.')
@@ -123,7 +115,7 @@ export default function LineagePage() {
             <InitialsAvatar name={senior.name} size={76} />
             <div>
               <span className="text-[10px] font-black uppercase tracking-wider text-primary-purple">
-                Assigned senior {suffix ? `· suffix ${suffix}` : ''}
+                Assigned senior
               </span>
               <h2 className="mt-1 text-2xl font-black text-text-main">{senior.name}</h2>
               <p className="mt-1 text-sm text-text-muted">

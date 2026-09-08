@@ -4,8 +4,10 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/theme/app_dimens.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/user_provider.dart';
+import '../widgets/premium_card.dart';
 
 class ProgressScreen extends StatefulWidget {
   const ProgressScreen({super.key});
@@ -25,6 +27,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
   int _longestStreak = 0;
   int? _leetcodeSolved;
   DateTime? _leetcodeUpdatedAt;
+  List<Map<String, dynamic>> _scoreHistory = const [];
 
   @override
   void initState() {
@@ -59,6 +62,12 @@ class _ProgressScreenState extends State<ProgressScreen> {
                 'dimension, score, confidence, evidence_count, evidence_fresh_at')
             .eq('user_id', user.uid)
             .eq('algorithm_version', 'v2'),
+        client
+            .from('readiness_scores')
+            .select('score, computed_at')
+            .eq('user_id', user.uid)
+            .order('computed_at', ascending: false)
+            .limit(4),
         if (user.leetcodeUsername != null && user.leetcodeUsername!.isNotEmpty)
           client
               .from('leetcode_stats')
@@ -74,7 +83,10 @@ class _ProgressScreenState extends State<ProgressScreen> {
       final dimensionRows = (futures[2] as List<dynamic>)
           .map((row) => Map<String, dynamic>.from(row as Map))
           .toList();
-      final leetcode = futures[3] as Map<String, dynamic>?;
+      final scoreHistory = (futures[3] as List<dynamic>)
+          .map((row) => Map<String, dynamic>.from(row as Map))
+          .toList();
+      final leetcode = futures[4] as Map<String, dynamic>?;
       if (!mounted) return;
       setState(() {
         _score = _asDouble(readiness?['score']);
@@ -86,6 +98,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
             DateTime.tryParse(readiness?['computed_at']?.toString() ?? '');
         _currentStreak = (streak?['current_streak'] as num?)?.toInt() ?? 0;
         _longestStreak = (streak?['longest_streak'] as num?)?.toInt() ?? 0;
+        _scoreHistory = scoreHistory;
         _leetcodeSolved = (leetcode?['total_solved'] as num?)?.toInt();
         _leetcodeUpdatedAt =
             DateTime.tryParse(leetcode?['last_updated']?.toString() ?? '');
@@ -104,6 +117,15 @@ class _ProgressScreenState extends State<ProgressScreen> {
   double? _asDouble(dynamic value) =>
       value == null ? null : double.tryParse(value.toString());
 
+  String _shortDate(DateTime date) {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    final local = date.toLocal();
+    return '${months[local.month - 1]} ${local.day}';
+  }
+
   double? _componentValue(List<String> keys) {
     for (final key in keys) {
       final value = _asDouble(_components[key]);
@@ -118,6 +140,32 @@ class _ProgressScreenState extends State<ProgressScreen> {
     if (days <= 0) return 'Verified today';
     if (days == 1) return 'Verified yesterday';
     return 'Verified $days days ago';
+  }
+
+  /// Mirrors the Freshness Job's own confidence tiers (PRD Ch. 5.3) so the
+  /// "best next move" pick accounts for stale evidence, not just the raw
+  /// weakest number — a 70 last refreshed 2 months ago is a worse signal
+  /// than a 65 refreshed yesterday.
+  double _freshnessMultiplier(DateTime? freshAt) {
+    if (freshAt == null) return 0.75;
+    final days = DateTime.now().difference(freshAt.toLocal()).inDays;
+    if (days <= 30) return 1.0;
+    if (days <= 60) return 0.9;
+    return 0.75;
+  }
+
+  /// Diffs consecutive `readiness_scores` rows (newest-first) into up to 3
+  /// "this changed because..." entries (PRD Ch. 5.1).
+  List<_ScoreChange> get _scoreChanges {
+    final changes = <_ScoreChange>[];
+    for (var i = 0; i < _scoreHistory.length - 1 && changes.length < 3; i++) {
+      final current = _asDouble(_scoreHistory[i]['score']);
+      final previous = _asDouble(_scoreHistory[i + 1]['score']);
+      final at = DateTime.tryParse(_scoreHistory[i]['computed_at']?.toString() ?? '');
+      if (current == null || previous == null || at == null) continue;
+      changes.add(_ScoreChange(delta: current - previous, at: at));
+    }
+    return changes;
   }
 
   @override
@@ -173,9 +221,17 @@ class _ProgressScreenState extends State<ProgressScreen> {
           evidence('portfolio_project')),
     ];
     final measured = dimensions.where((item) => item.value != null).toList();
+    double priority(_Dimension d) =>
+        d.value! * _freshnessMultiplier(
+            DateTime.tryParse(d.evidence?['evidence_fresh_at']?.toString() ?? ''));
     final focus = measured.isEmpty
         ? null
-        : measured.reduce((a, b) => a.value! <= b.value! ? a : b);
+        : measured.reduce((a, b) => priority(a) <= priority(b) ? a : b);
+    final focusFreshAt = focus == null
+        ? null
+        : DateTime.tryParse(focus.evidence?['evidence_fresh_at']?.toString() ?? '');
+    final focusIsStale = focusFreshAt != null &&
+        DateTime.now().difference(focusFreshAt.toLocal()).inDays > 30;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FA),
@@ -194,7 +250,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
               const SizedBox(height: 5),
               Text('Evidence, freshness and your next useful move.',
                   style: GoogleFonts.inter(
-                      fontSize: 13, color: const Color(0xFF64748B))),
+                      fontSize: 13, color: AppTheme.mutedText)),
               const SizedBox(height: 18),
               if (_loading)
                 const LinearProgressIndicator(minHeight: 3)
@@ -216,9 +272,28 @@ class _ProgressScreenState extends State<ProgressScreen> {
                     : 'Refresh ${focus.title.toLowerCase()}',
                 message: focus == null
                     ? 'Complete Daily Five or a practice quest to make this plan personal.'
-                    : 'This is currently your least-supported measured dimension. A focused sprint is the best next move.',
+                    : focusIsStale
+                        ? 'This dimension\'s evidence is ${_freshness(focusFreshAt)} and starting to fade — refreshing it moves your score more than any other action right now.'
+                        : 'This is currently your least-supported measured dimension. A focused sprint is the best next move.',
               ),
-              const SizedBox(height: 24),
+              if (_scoreChanges.isNotEmpty) ...[
+                const SizedBox(height: 14),
+                Text('This changed because...',
+                    style: GoogleFonts.sora(
+                        fontSize: 17, fontWeight: FontWeight.w800)),
+                const SizedBox(height: 10),
+                ..._scoreChanges.map((change) => Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: _MessageCard(
+                        icon: change.delta >= 0
+                            ? LucideIcons.trendingUp
+                            : LucideIcons.trendingDown,
+                        message:
+                            '${change.delta >= 0 ? '+' : ''}${change.delta.toStringAsFixed(1)} pts on ${_shortDate(change.at)}',
+                      ),
+                    )),
+              ],
+              const SizedBox(height: 10),
               Text('Readiness evidence',
                   style: GoogleFonts.sora(
                       fontSize: 17, fontWeight: FontWeight.w800)),
@@ -268,6 +343,12 @@ class _Dimension {
   final double? value;
   final Map<String, dynamic>? evidence;
   const _Dimension(this.title, this.icon, this.value, this.evidence);
+}
+
+class _ScoreChange {
+  final double delta;
+  final DateTime at;
+  const _ScoreChange({required this.delta, required this.at});
 }
 
 class _ScoreHero extends StatelessWidget {
@@ -371,12 +452,9 @@ class _DimensionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final value = item.value;
-    return Container(
+    return PremiumCard(
       padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: const Color(0xFFE8EAF0))),
+      radius: AppRadius.card,
       child: Row(children: [
         Container(
             width: 40,
@@ -418,7 +496,7 @@ class _DimensionCard extends StatelessWidget {
                   ? 'No verified evidence yet'
                   : '${item.evidence?['confidence'] ?? 'low'} confidence · ${item.evidence?['evidence_count'] ?? 1} source${item.evidence?['evidence_count'] == 1 ? '' : 's'}',
               style: GoogleFonts.inter(
-                  fontSize: 9, color: const Color(0xFF64748B))),
+                  fontSize: 9, color: AppTheme.mutedText)),
         ]))
       ]),
     );
@@ -437,12 +515,9 @@ class _StatCard extends StatelessWidget {
       required this.icon});
 
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) => PremiumCard(
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: const Color(0xFFE8EAF0))),
+        radius: AppRadius.card,
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Icon(icon, size: 19, color: AppTheme.accentCoral),
           const SizedBox(height: 12),
@@ -452,7 +527,7 @@ class _StatCard extends StatelessWidget {
           const SizedBox(height: 3),
           Text(label,
               style: GoogleFonts.inter(
-                  fontSize: 10, color: const Color(0xFF64748B))),
+                  fontSize: 10, color: AppTheme.mutedText)),
         ]),
       );
 }
@@ -466,22 +541,21 @@ class _MessageCard extends StatelessWidget {
       {required this.icon, required this.message, this.action, this.onTap});
 
   @override
-  Widget build(BuildContext context) => Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(15),
-        decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: const Color(0xFFE8EAF0))),
-        child: Row(children: [
-          Icon(icon, size: 19, color: AppTheme.accentCoral),
-          const SizedBox(width: 11),
-          Expanded(
-              child: Text(message,
-                  style: GoogleFonts.inter(
-                      fontSize: 11, height: 1.4, fontWeight: FontWeight.w600))),
-          if (action != null)
-            TextButton(onPressed: onTap, child: Text(action!)),
-        ]),
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: PremiumCard(
+          padding: const EdgeInsets.all(15),
+          radius: AppRadius.card,
+          child: Row(children: [
+            Icon(icon, size: 19, color: AppTheme.accentCoral),
+            const SizedBox(width: 11),
+            Expanded(
+                child: Text(message,
+                    style: GoogleFonts.inter(
+                        fontSize: 11, height: 1.4, fontWeight: FontWeight.w600))),
+            if (action != null)
+              TextButton(onPressed: onTap, child: Text(action!)),
+          ]),
+        ),
       );
 }

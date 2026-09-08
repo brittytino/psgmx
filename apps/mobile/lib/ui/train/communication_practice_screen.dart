@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:path_provider/path_provider.dart';
@@ -10,8 +11,10 @@ import 'package:record/record.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/supabase_config.dart';
+import '../../core/theme/app_dimens.dart';
 import '../../core/theme/app_theme.dart';
 import '../../services/recorded_audio_bytes.dart';
+import '../widgets/premium_card.dart';
 
 class CommunicationPracticeScreen extends StatefulWidget {
   const CommunicationPracticeScreen({super.key});
@@ -225,8 +228,8 @@ class _CommunicationPracticeScreenState
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBg,
       appBar: AppBar(
-        title: const Text('Communication Practice',
-            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
+        title: Text('Communication Practice',
+            style: GoogleFonts.sora(fontWeight: FontWeight.w900, fontSize: 18)),
         backgroundColor: Colors.white,
         elevation: 0,
       ),
@@ -259,12 +262,12 @@ class _CommunicationPracticeScreenState
     );
   }
 
-  Widget _promptCard() => Container(
+  Widget _promptCard() => PremiumCard(
         padding: const EdgeInsets.all(18),
-        decoration: _cardDecoration(),
+        radius: AppRadius.card,
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('YOUR PRACTICE PROMPT',
-              style: TextStyle(
+          Text('YOUR PRACTICE PROMPT',
+              style: GoogleFonts.inter(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
                   color: AppTheme.primaryPurple,
@@ -294,24 +297,26 @@ class _CommunicationPracticeScreenState
             const SizedBox(height: 10),
             Text(
               '${_selectedPrompt!['category'] ?? 'Interview'} · ${_selectedPrompt!['difficulty'] ?? 'adaptive'} · 2 minute maximum',
-              style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
+              style: GoogleFonts.inter(fontSize: 12, color: AppTheme.mutedText),
             ),
           ],
         ]),
       );
 
-  Widget _recorderCard() => Container(
+  Widget _recorderCard() => PremiumCard(
         padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
-        decoration: _cardDecoration(),
+        radius: AppRadius.card,
         child: Column(children: [
           Text(_formatTime(_seconds),
+              // Intentionally plain monospace, not Sora/Inter — a countdown
+              // needs fixed-width digits so they don't shift width each tick.
               style: TextStyle(
                   fontSize: 42,
                   fontWeight: FontWeight.w900,
                   fontFamily: 'monospace',
-                  color: _recording ? Colors.red : AppTheme.textMain)),
-          const Text('/ 02:00',
-              style: TextStyle(fontSize: 12, color: AppTheme.textMuted)),
+                  color: _recording ? Colors.red : AppTheme.headingText)),
+          Text('/ 02:00',
+              style: GoogleFonts.inter(fontSize: 12, color: AppTheme.mutedText)),
           const SizedBox(height: 24),
           IconButton.filled(
             onPressed: _selectedPrompt == null || _evaluating
@@ -331,10 +336,10 @@ class _CommunicationPracticeScreenState
                 : _recordedPath != null
                     ? 'Recording ready for private evaluation'
                     : 'Tap to start recording',
-            style: const TextStyle(
+            style: GoogleFonts.inter(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.textMuted),
+                color: AppTheme.mutedText),
           ),
           if (_recordedPath != null && _result == null) ...[
             const SizedBox(height: 20),
@@ -354,12 +359,12 @@ class _CommunicationPracticeScreenState
         ]),
       );
 
-  Widget _feedbackCard(Map<String, dynamic> scores) => Container(
+  Widget _feedbackCard(Map<String, dynamic> scores) => PremiumCard(
         padding: const EdgeInsets.all(20),
-        decoration: _cardDecoration(),
+        radius: AppRadius.card,
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('EVIDENCE-BASED FEEDBACK',
-              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
+          Text('EVIDENCE-BASED FEEDBACK',
+              style: GoogleFonts.inter(fontWeight: FontWeight.w900, fontSize: 13)),
           const SizedBox(height: 14),
           Wrap(spacing: 8, runSpacing: 8, children: [
             _scoreChip('Clarity', scores['clarity_score']),
@@ -369,20 +374,20 @@ class _CommunicationPracticeScreenState
           ]),
           const SizedBox(height: 16),
           Text(scores['brief_feedback']?.toString() ?? '',
-              style: const TextStyle(height: 1.45)),
+              style: GoogleFonts.inter(height: 1.45)),
           const SizedBox(height: 10),
           Text('Next attempt: ${scores['suggested_improvement'] ?? ''}',
-              style: const TextStyle(
+              style: GoogleFonts.inter(
                   height: 1.45,
                   fontWeight: FontWeight.w700,
                   color: AppTheme.primaryPurple)),
           if ((_result?['transcript']?.toString() ?? '').isNotEmpty) ...[
             const Divider(height: 28),
-            const Text('TRANSCRIPT',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+            Text('TRANSCRIPT',
+                style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 11)),
             const SizedBox(height: 6),
             Text(_result!['transcript'].toString(),
-                style: const TextStyle(color: AppTheme.textMuted, height: 1.4)),
+                style: GoogleFonts.inter(color: AppTheme.mutedText, height: 1.4)),
           ],
         ]),
       );
@@ -398,13 +403,7 @@ class _CommunicationPracticeScreenState
         child: Row(children: [
           Icon(icon, color: color),
           const SizedBox(width: 10),
-          Expanded(child: Text(message, style: TextStyle(color: color))),
+          Expanded(child: Text(message, style: GoogleFonts.inter(color: color))),
         ]),
-      );
-
-  BoxDecoration _cardDecoration() => BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppTheme.borderLight),
       );
 }

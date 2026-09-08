@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/layout_tokens.dart';
+import '../../core/theme/app_dimens.dart';
 
 class AdaptiveNavigationScaffold extends StatelessWidget {
   final String title;

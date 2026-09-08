@@ -204,7 +204,7 @@ class _OnboardingStoryScreenState extends State<OnboardingStoryScreen> {
                     padding: const EdgeInsets.only(bottom: 24.0),
                     child: Row(
                       children: List.generate(
-                        4,
+                        3,
                         (index) => Container(
                           margin: const EdgeInsets.only(right: 8),
                           height: 8,

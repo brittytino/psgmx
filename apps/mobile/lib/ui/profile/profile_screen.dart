@@ -4,9 +4,11 @@ import 'package:provider/provider.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../core/theme/app_dimens.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/user_provider.dart';
 import '../widgets/avatar_widget.dart';
+import '../widgets/premium_card.dart';
 
 class ProfileScreen extends StatefulWidget {
   // Keep param for backwards compat but ignore it
@@ -47,7 +49,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             style: GoogleFonts.sora(
                                 fontSize: 26,
                                 fontWeight: FontWeight.bold,
-                                color: const Color(0xFF0F172A),
+                                color: AppTheme.headingText,
                                 letterSpacing: -0.5)),
                         const SizedBox(height: 4),
                         Row(
@@ -55,7 +57,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             Text('Your profile, your journey.',
                                 style: GoogleFonts.inter(
                                     fontSize: 13,
-                                    color: const Color(0xFF64748B))),
+                                    color: AppTheme.mutedText)),
                             const SizedBox(width: 4),
                             const Icon(LucideIcons.sparkles,
                                 size: 12, color: AppTheme.illusGold),
@@ -75,7 +77,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               color: Colors.white,
                               shape: BoxShape.circle,
                               border:
-                                  Border.all(color: const Color(0xFFE2E8F0)),
+                                  Border.all(color: AppTheme.cardBorder),
                               boxShadow: [
                                 BoxShadow(
                                     color: Colors.black.withValues(alpha: 0.04),
@@ -84,7 +86,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                             child: const Center(
                                 child: Icon(LucideIcons.settings,
-                                    size: 18, color: Color(0xFF1E293B))),
+                                    size: 18, color: AppTheme.headingText)),
                           ),
                         ),
                       ],
@@ -96,6 +98,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 // ── Profile Card ──────────────────────────────────────
                 _ProfileCard(user: user),
                 const SizedBox(height: 24),
+
+                if (user?.isAlumni == true) ...[
+                  _buildSectionHeader('MENTORING'),
+                  _buildCard([
+                    _NavTile(
+                      icon: LucideIcons.handshake,
+                      iconColor: AppTheme.illusSage,
+                      label: 'Mentoring requests',
+                      subtitle: 'Juniors asking about a specific topic',
+                      onTap: () => context.push('/mentoring-inbox'),
+                    ),
+                  ]),
+                  const SizedBox(height: 24),
+                ],
 
                 if (userProvider.isPlacementRep) ...[
                   _buildSectionHeader('YOUR WORKSPACES'),
@@ -155,7 +171,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _divider(),
                   _NavTile(
                     icon: LucideIcons.helpCircle,
-                    iconColor: const Color(0xFF64748B),
+                    iconColor: AppTheme.mutedText,
                     label: 'Help & Support',
                     subtitle: 'Get help or report an issue',
                     onTap: () => context.push('/help-support'),
@@ -163,7 +179,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _divider(),
                   _NavTile(
                     icon: LucideIcons.info,
-                    iconColor: const Color(0xFF64748B),
+                    iconColor: AppTheme.mutedText,
                     label: 'About PSGMX',
                     subtitle: 'Version, team & credits',
                     onTap: () => context.push('/credits'),
@@ -219,24 +235,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildCard(List<Widget> children) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 12,
-              offset: const Offset(0, 3))
-        ],
-      ),
+    return PremiumCard(
+      padding: EdgeInsets.zero,
+      radius: AppRadius.card,
       child: Column(children: children),
     );
   }
 
   Widget _divider() => const Divider(
-      height: 1, indent: 52, endIndent: 16, color: Color(0xFFF1F5F9));
+      height: 1, indent: 52, endIndent: 16, color: AppTheme.cardBorder);
 
   Future<void> _launchUrl(String url) async {
     final uri = Uri.tryParse(url);
@@ -271,18 +278,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       width: 40,
                       height: 4,
                       decoration: BoxDecoration(
-                          color: const Color(0xFFE2E8F0),
+                          color: AppTheme.cardBorder,
                           borderRadius: BorderRadius.circular(2)))),
               const SizedBox(height: 20),
               Text('LeetCode Username',
                   style: GoogleFonts.sora(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: const Color(0xFF0F172A))),
+                      color: AppTheme.headingText)),
               const SizedBox(height: 6),
               Text('Link your LeetCode profile to track your progress.',
                   style: GoogleFonts.inter(
-                      fontSize: 13, color: const Color(0xFF64748B))),
+                      fontSize: 13, color: AppTheme.mutedText)),
               const SizedBox(height: 20),
               TextField(
                 controller: ctrl,
@@ -293,7 +300,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   helperText:
                       'Used for your live progress and batch leaderboard.',
                   labelStyle: GoogleFonts.inter(
-                      fontSize: 14, color: const Color(0xFF64748B)),
+                      fontSize: 14, color: AppTheme.mutedText),
                   border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14)),
                   focusedBorder: OutlineInputBorder(
@@ -309,7 +316,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: OutlinedButton(
                       onPressed: () => Navigator.pop(context),
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Color(0xFFE2E8F0)),
+                        side: const BorderSide(color: AppTheme.cardBorder),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14)),
@@ -374,7 +381,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: Text('Cancel',
-                style: GoogleFonts.inter(color: const Color(0xFF64748B))),
+                style: GoogleFonts.inter(color: AppTheme.mutedText)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -414,12 +421,12 @@ class _ProfileCard extends StatelessWidget {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF1E293B), Color(0xFF334155)],
+          colors: [AppTheme.headingText, Color(0xFF334155)],
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-              color: const Color(0xFF1E293B).withValues(alpha: 0.3),
+              color: AppTheme.headingText.withValues(alpha: 0.3),
               blurRadius: 20,
               offset: const Offset(0, 8))
         ],
@@ -515,7 +522,7 @@ class _NavTile extends StatelessWidget {
                       style: GoogleFonts.inter(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: const Color(0xFF1E293B))),
+                          color: AppTheme.headingText)),
                   const SizedBox(height: 1),
                   Text(subtitle,
                       style: GoogleFonts.inter(

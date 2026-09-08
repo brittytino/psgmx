@@ -46,6 +46,7 @@ export default function CommunityBoardPage() {
   const [posts, setPosts] = useState<Post[]>([])
   const [authors, setAuthors] = useState<Map<string, AuthorInfo>>(new Map())
   const [userId, setUserId] = useState('')
+  const [canModerate, setCanModerate] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [type, setType] = useState<PostType>('project')
   const [title, setTitle] = useState('')
@@ -62,8 +63,11 @@ export default function CommunityBoardPage() {
     setError('')
     try {
       const me = await getCurrentProfile(supabase)
-      if (!me) throw new Error('Your alumni profile could not be loaded.')
+      if (!me) throw new Error('Your profile could not be loaded.')
       setUserId(me.id)
+      setCanModerate(
+        me.role_label === 'Faculty' || me.role_label === 'HOD' || Boolean(me.roles?.isPlacementRep)
+      )
 
       const { data, error: loadError } = await supabase
         .from('collaboration_posts')
@@ -127,6 +131,21 @@ export default function CommunityBoardPage() {
       showToast(msg, 'error')
     } finally {
       setBusy(false)
+    }
+  }
+
+  async function hidePost(postId: string) {
+    try {
+      const { error: rpcError } = await supabase.rpc('moderate_collaboration_post' as never, {
+        p_post_id: postId,
+        p_hide: true,
+      } as never)
+      if (rpcError) throw rpcError
+      setPosts((current) => current.filter((post) => post.id !== postId))
+      showToast('Post hidden from the Community Board.', 'info')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to hide post'
+      showToast(msg, 'error')
     }
   }
 
@@ -375,6 +394,15 @@ export default function CommunityBoardPage() {
                       className="rounded-xl p-2 text-text-muted hover:bg-page-bg hover:text-rose-600 transition-colors"
                     >
                       <X className="h-4 w-4" />
+                    </button>
+                  )}
+                  {!isMine && canModerate && (
+                    <button
+                      onClick={() => void hidePost(post.id)}
+                      title="Hide this post (moderation)"
+                      className="rounded-xl p-2 text-text-muted hover:bg-page-bg hover:text-rose-600 transition-colors"
+                    >
+                      <ShieldCheck className="h-4 w-4" />
                     </button>
                   )}
                 </div>

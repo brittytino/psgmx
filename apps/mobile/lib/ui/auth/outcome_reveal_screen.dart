@@ -14,11 +14,26 @@ class OutcomeRevealScreen extends StatefulWidget {
   State<OutcomeRevealScreen> createState() => _OutcomeRevealScreenState();
 }
 
+const _dimensionLabels = {
+  'aptitude': 'Aptitude & Reasoning',
+  'coding': 'Coding & Problem Solving',
+  'core_cs': 'Core Computer Science',
+  'communication': 'Communication & Interviews',
+};
+
+const _focusMissions = {
+  'aptitude': 'a 7-minute aptitude sprint on Today',
+  'coding': 'today\'s Daily Five coding set',
+  'core_cs': 'a Core CS concept refresh',
+  'communication': 'a 2-minute Communication Practice recording',
+};
+
 class _OutcomeRevealScreenState extends State<OutcomeRevealScreen> with SingleTickerProviderStateMixin {
   late AnimationController _sparkController;
   late Animation<double> _sparkJumpAnimation;
-  int _finalScore = 68;
+  int _finalScore = 45;
   bool _hasJumped = false;
+  Map<String, dynamic> _calibration = const {};
 
   @override
   void initState() {
@@ -38,9 +53,33 @@ class _OutcomeRevealScreenState extends State<OutcomeRevealScreen> with SingleTi
   void didChangeDependencies() {
     super.didChangeDependencies();
     final extra = GoRouterState.of(context).extra;
-    if (extra is int) {
-      _finalScore = extra;
+    if (extra is Map) {
+      _calibration = Map<String, dynamic>.from(extra);
+      final confidence = Map<String, dynamic>.from(_calibration['confidence'] as Map? ?? const {});
+      if (confidence.isNotEmpty) {
+        // A friendly starting estimate from self-rated confidence (1-3 each,
+        // scaled to 0-100) — purely a "day one" number for this screen. The
+        // real readiness score is computed server-side from actual evidence
+        // once the student starts producing it.
+        final avg = confidence.values.map((v) => (v as num).toDouble()).reduce((a, b) => a + b) / confidence.length;
+        _finalScore = (avg / 3 * 60).round().clamp(20, 80);
+      }
+    } else if (extra is int) {
+      _finalScore = extra; // legacy fallback
     }
+  }
+
+  Map<String, int> get _confidence =>
+      Map<String, int>.from((_calibration['confidence'] as Map? ?? const {}).map((k, v) => MapEntry(k.toString(), (v as num).toInt())));
+
+  String? get _strengthKey {
+    if (_confidence.isEmpty) return null;
+    return _confidence.entries.reduce((a, b) => a.value >= b.value ? a : b).key;
+  }
+
+  String? get _focusKey {
+    if (_confidence.isEmpty) return null;
+    return _confidence.entries.reduce((a, b) => a.value <= b.value ? a : b).key;
   }
 
   @override
@@ -51,7 +90,7 @@ class _OutcomeRevealScreenState extends State<OutcomeRevealScreen> with SingleTi
 
   Future<void> _handleEnterApp() async {
     final userProvider = context.read<UserProvider>();
-    await userProvider.completeCalibration(_finalScore);
+    await userProvider.completeCalibration(_calibration);
     if (mounted) {
       context.go('/');
     }
@@ -136,7 +175,7 @@ class _OutcomeRevealScreenState extends State<OutcomeRevealScreen> with SingleTi
                               style: GoogleFonts.sora(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w800,
-                                color: const Color(0xFF1E293B),
+                                color: AppTheme.headingText,
                                 height: 1.1,
                                 letterSpacing: -0.5,
                               ),
@@ -151,7 +190,7 @@ class _OutcomeRevealScreenState extends State<OutcomeRevealScreen> with SingleTi
                             'Your personalized readiness score',
                             style: GoogleFonts.inter(
                               fontSize: 11,
-                              color: const Color(0xFF1E293B).withValues(alpha: 0.6),
+                              color: AppTheme.headingText.withValues(alpha: 0.6),
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -194,7 +233,7 @@ class _OutcomeRevealScreenState extends State<OutcomeRevealScreen> with SingleTi
                                       style: GoogleFonts.sora(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w800,
-                                        color: const Color(0xFF1E293B),
+                                        color: AppTheme.headingText,
                                         height: 1.0,
                                         letterSpacing: -2,
                                       ),
@@ -204,7 +243,7 @@ class _OutcomeRevealScreenState extends State<OutcomeRevealScreen> with SingleTi
                                       '/ 100',
                                       style: GoogleFonts.inter(
                                         fontSize: 11,
-                                        color: const Color(0xFF1E293B).withValues(alpha: 0.5),
+                                        color: AppTheme.headingText.withValues(alpha: 0.5),
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
@@ -276,19 +315,23 @@ class _OutcomeRevealScreenState extends State<OutcomeRevealScreen> with SingleTi
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
                                               Text(
-                                                'Keep going!',
+                                                _strengthKey == null
+                                                    ? 'Keep going!'
+                                                    : '${_dimensionLabels[_strengthKey] ?? 'That'} is your strength',
                                                 style: GoogleFonts.inter(
                                                   fontSize: 11,
                                                   fontWeight: FontWeight.bold,
-                                                  color: const Color(0xFF1E293B),
+                                                  color: AppTheme.headingText,
                                                 ),
                                               ),
                                               const SizedBox(height: 4),
                                               Text(
-                                                'Consistency is your\nsuperpower.',
+                                                _focusKey == null
+                                                    ? 'Consistency is your\nsuperpower.'
+                                                    : '${_dimensionLabels[_focusKey]} needs the most attention first.',
                                                 style: GoogleFonts.inter(
                                                   fontSize: 11,
-                                                  color: const Color(0xFF1E293B).withValues(alpha: 0.7),
+                                                  color: AppTheme.headingText.withValues(alpha: 0.7),
                                                   height: 1.3,
                                                 ),
                                               ),
@@ -328,7 +371,9 @@ class _OutcomeRevealScreenState extends State<OutcomeRevealScreen> with SingleTi
                       
                       // Bottom Text
                       Text(
-                        'This is just day one — most students\ngrow 30+ points in their first month. 🤍',
+                        _focusKey == null
+                            ? 'This is just day one — most students\ngrow 30+ points in their first month. 🤍'
+                            : 'Your 7-day starter journey begins with\n${_focusMissions[_focusKey]}. 🤍',
                         textAlign: TextAlign.center,
                         style: GoogleFonts.inter(
                           fontSize: 11,
@@ -374,7 +419,7 @@ class _OutcomeRevealScreenState extends State<OutcomeRevealScreen> with SingleTi
                             'Excited for what\'s ahead?',
                             style: GoogleFonts.inter(
                               fontSize: 9,
-                              color: const Color(0xFF1E293B).withValues(alpha: 0.4),
+                              color: AppTheme.headingText.withValues(alpha: 0.4),
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -382,7 +427,7 @@ class _OutcomeRevealScreenState extends State<OutcomeRevealScreen> with SingleTi
                           Icon(
                             LucideIcons.chevronDown,
                             size: 12,
-                            color: const Color(0xFF1E293B).withValues(alpha: 0.3),
+                            color: AppTheme.headingText.withValues(alpha: 0.3),
                           ),
                         ],
                       ),

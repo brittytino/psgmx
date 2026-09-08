@@ -192,22 +192,42 @@ class UserProvider with ChangeNotifier, SafeChangeNotifier {
     }
   }
 
-  Future<void> completeCalibration(int startingScore) async {
+  /// [calibration] is the map produced by the calibration wizard: confidence
+  /// ratings per dimension, target role family, practice schedule, and an
+  /// optional LeetCode username (see calibration_quiz_screen.dart /
+  /// outcome_reveal_screen.dart). Persists the real fields the PRD's Step 4
+  /// describes instead of a client-computed score that had nowhere to go.
+  Future<void> completeCalibration(Map<String, dynamic> calibration) async {
     if (_currentUser == null) return;
+
+    final leetcodeUsername = (calibration['leetcodeUsername'] as String?)?.trim();
+    final hasLeetcode = leetcodeUsername != null && leetcodeUsername.isNotEmpty;
 
     // 1. Update local state immediately (optimistic update) so the user is never trapped in a routing loop
     _needsCalibration = false;
-    _currentUser = _currentUser!.copyWith(onboardingComplete: true);
+    _currentUser = _currentUser!.copyWith(
+      onboardingComplete: true,
+      leetcodeUsername: hasLeetcode ? leetcodeUsername : _currentUser!.leetcodeUsername,
+    );
     notifyListeners();
 
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('calibrated_${_currentUser!.uid}', true);
 
+      final confidence = Map<String, dynamic>.from(calibration['confidence'] as Map? ?? const {});
       try {
-        await Supabase.instance.client
-            .from('users')
-            .update({'onboarding_complete': true}).eq('id', _currentUser!.uid);
+        await Supabase.instance.client.from('users').update({
+          'onboarding_complete': true,
+          'target_role_family': calibration['roleFamily'],
+          'confidence_aptitude': confidence['aptitude'],
+          'confidence_coding': confidence['coding'],
+          'confidence_core_cs': confidence['core_cs'],
+          'confidence_communication': confidence['communication'],
+          'practice_days_per_week': calibration['practiceDays'],
+          'reminder_window': calibration['reminderWindow'],
+          if (hasLeetcode) 'leetcode_username': leetcodeUsername,
+        }).eq('id', _currentUser!.uid);
       } catch (e) {
         debugPrint(
             '[UserProvider] Error updating users table onboarding_complete: $e');
@@ -227,11 +247,9 @@ class UserProvider with ChangeNotifier, SafeChangeNotifier {
 
       // Initialize leetcode_stats if it doesn't exist (with minimal info)
       try {
-        if (_currentUser!.leetcodeUsername != null &&
-            _currentUser!.leetcodeUsername!.isNotEmpty) {
+        if (hasLeetcode) {
           await Supabase.instance.client.from('leetcode_stats').upsert({
-            'user_id': _currentUser!.uid,
-            'username': _currentUser!.leetcodeUsername,
+            'username': leetcodeUsername,
           }, onConflict: 'username');
         }
       } catch (e) {

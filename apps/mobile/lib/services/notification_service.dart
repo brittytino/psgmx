@@ -27,6 +27,7 @@ class NotificationService extends ChangeNotifier {
 
   // Real-time subscription
   RealtimeChannel? _notificationChannel;
+  RealtimeChannel? _notificationReadsChannel;
 
   // Cached notifications from database
   List<AppNotification> _cachedNotifications = [];
@@ -57,6 +58,8 @@ class NotificationService extends ChangeNotifier {
       } else {
         _notificationChannel?.unsubscribe();
         _notificationChannel = null;
+        _notificationReadsChannel?.unsubscribe();
+        _notificationReadsChannel = null;
       }
     });
 
@@ -177,7 +180,55 @@ class NotificationService extends ChangeNotifier {
         )
         .subscribe();
 
+    // Read-state is written on whichever device the user acts on (mobile or
+    // web); this channel keeps the *other* device's unread badge/list live
+    // instead of only catching up on the next manual fetch (PRD Ch. 13.4).
+    _notificationReadsChannel?.unsubscribe();
+    _notificationReadsChannel = _supabase
+        .channel('notification_reads_channel')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.insert,
+          schema: 'public',
+          table: 'notification_reads',
+          callback: (payload) => _handleReadStateChange(payload.newRecord),
+        )
+        .onPostgresChanges(
+          event: PostgresChangeEvent.update,
+          schema: 'public',
+          table: 'notification_reads',
+          callback: (payload) => _handleReadStateChange(payload.newRecord),
+        )
+        .subscribe();
+
     debugPrint('[Notification] Real-time subscription active');
+  }
+
+  /// Applies a `notification_reads` row (from realtime) onto the matching
+  /// cached notification so read/dismiss state stays live across devices.
+  Future<void> _handleReadStateChange(Map<String, dynamic> data) async {
+    try {
+      final profileId = await LogicalIdentity.currentUserId(_supabase);
+      if (profileId == null || data['user_id'] != profileId) return;
+
+      final notificationId = data['notification_id'];
+      final index =
+          _cachedNotifications.indexWhere((n) => n.id == notificationId);
+      if (index == -1) return;
+
+      if (data['dismissed_at'] != null) {
+        _cachedNotifications.removeAt(index);
+      } else {
+        _cachedNotifications[index] = _cachedNotifications[index].copyWith(
+          isRead: true,
+          readAt: data['read_at'] != null
+              ? DateTime.tryParse(data['read_at'])
+              : DateTime.now(),
+        );
+      }
+      notifyListeners();
+    } catch (e) {
+      debugPrint('[Notification] Error applying read-state change: $e');
+    }
   }
 
   /// Handle new notification from real-time subscription
@@ -230,6 +281,33 @@ class NotificationService extends ChangeNotifier {
     // Skip on web
     if (kIsWeb) {
       debugPrint('[Notification] Web: In-app notification displayed instead');
+      return;
+    }
+
+    // PRD Ch. 16.2 ethical guardrail: never push between 10 PM and 7 AM.
+    // The notification still lands in-app (already added to the cache and
+    // stream by the caller) — only the OS-level push/vibration is suppressed.
+    final hour = DateTime.now().hour;
+    if (hour >= 22 || hour < 7) {
+      debugPrint('[Notification] Quiet hours — suppressing OS push, in-app delivery only');
+      return;
+    }
+
+    // PRD Ch. 13.4: "Low-priority notifications are bundled into a single
+    // push per day." Routine types (motivation/reminder/leetcode/birthday)
+    // don't interrupt with an individual OS push — they still land in the
+    // in-app inbox instantly. `alert` and `announcement` are always
+    // genuinely urgent (announcements only ever reach this table when
+    // explicitly marked priority — see AnnouncementProvider.createAnnouncement)
+    // so those still push immediately.
+    const lowPriorityTypes = {
+      NotificationType.motivation,
+      NotificationType.reminder,
+      NotificationType.leetcode,
+      NotificationType.birthday,
+    };
+    if (lowPriorityTypes.contains(notification.notificationType)) {
+      debugPrint('[Notification] Low-priority type — in-app delivery only, no individual push');
       return;
     }
 
@@ -302,7 +380,7 @@ class NotificationService extends ChangeNotifier {
             reads?.any((r) => r['dismissed_at'] != null) == true;
         if (isDismissed) continue;
 
-        notifications.add(AppNotification(
+        final notification = AppNotification(
           id: data['id'] ?? '',
           title: data['title'] ?? '',
           message: data['message'] ?? '',
@@ -323,7 +401,11 @@ class NotificationService extends ChangeNotifier {
           readAt: hasRead && reads!.isNotEmpty
               ? DateTime.tryParse(reads.first['read_at'] ?? '')
               : null,
-        ));
+        );
+        // Every notification has an expiry (PRD Ch. 13.4) — an expired one is
+        // never shown, whether or not it's been read/dismissed.
+        if (notification.isExpired) continue;
+        notifications.add(notification);
       }
 
       // Filter duplicates: Ensure only one LeetCode POTD per day
@@ -702,42 +784,6 @@ class NotificationService extends ChangeNotifier {
     } catch (e) {
       debugPrint('[Notification] ❌ Error checking birthdays: $e');
     }
-  }
-
-  /// Schedule attendance reminder for team leaders
-  Future<void> scheduleAttendanceReminder({
-    required bool isTeamLeader,
-    required String teamId,
-  }) async {
-    if (!isTeamLeader) return;
-    if (kIsWeb) {
-      debugPrint('[Notification] Web: Scheduled notifications not available');
-      return;
-    }
-
-    // Schedule daily reminder at 4:45 PM
-    await _scheduleDaily(
-      id: 300 + teamId.hashCode % 100,
-      title: '⚠️ Mark Today\'s Attendance',
-      body:
-          'If you forget to mark attendance for your team, the entire team will be absent..',
-      hour: 16,
-      minute: 45,
-      channel: 'psgmx_attendance',
-    );
-
-    debugPrint(
-        '[Notification] Attendance reminder scheduled for team: $teamId');
-  }
-
-  /// Cancel attendance reminders
-  Future<void> cancelAttendanceReminder(String teamId) async {
-    if (kIsWeb) {
-      debugPrint('[Notification] Web: Scheduled notifications not available');
-      return;
-    }
-
-    await _notifications.cancel(id: 300 + teamId.hashCode % 100);
   }
 
   /// Schedule LeetCode reminders
@@ -1487,6 +1533,7 @@ class NotificationService extends ChangeNotifier {
   @override
   void dispose() {
     _notificationChannel?.unsubscribe();
+    _notificationReadsChannel?.unsubscribe();
     _streamController.close();
     _selectNotificationStream.close();
     super.dispose();

@@ -35,14 +35,14 @@ class AttendanceProvider extends ChangeNotifier {
 
       var query = _supabaseService.client
           .from('placement_attendance')
-          .select('student_id, status')
+          .select('user_id, status')
           .eq('session_id', sessionId);
 
       final response = await query;
 
       _statusMap.clear();
       for (var record in response as List) {
-        final key = record['student_id'];
+        final key = record['user_id'];
         if (key != null) {
           _statusMap[key] = (record['status'] as String).toUpperCase();
         }
@@ -271,7 +271,7 @@ class AttendanceProvider extends ChangeNotifier {
 
       rows.add({
         'session_id': 'TO_BE_REPLACED', // Will be filled below
-        'student_id': resolvedUserId,
+        'user_id': resolvedUserId,
         'status': status.toLowerCase(),
         'marked_by': user.id,
       });
@@ -312,10 +312,10 @@ class AttendanceProvider extends ChangeNotifier {
       row['session_id'] = sessionId;
     }
 
-    // Upsert on (session_id, student_id) conflict
+    // Upsert on (session_id, user_id) conflict
     await _supabaseService.client
         .from('placement_attendance')
-        .upsert(rows, onConflict: 'session_id,student_id');
+        .upsert(rows, onConflict: 'session_id,user_id');
 
     if (!isRep && teamId != null) {
       _hasSubmittedToday = true;

@@ -12,6 +12,7 @@ import '../../core/theme/app_theme.dart';
 import '../../providers/daily_five_provider.dart';
 import '../../providers/user_provider.dart';
 import 'package:flutter/foundation.dart';
+import 'streak_milestone_screen.dart';
 
 class DailyFiveScreen extends StatefulWidget {
   const DailyFiveScreen({super.key});
@@ -502,7 +503,7 @@ class _DailyFiveScreenState extends State<DailyFiveScreen> with WidgetsBindingOb
                           // Title
                           Text(
                             'Daily Five Completed!',
-                            style: GoogleFonts.sora(fontSize: 11, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B)),
+                            style: GoogleFonts.sora(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.headingText),
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 8),
@@ -512,7 +513,7 @@ class _DailyFiveScreenState extends State<DailyFiveScreen> with WidgetsBindingOb
                             provider.isSubmitting 
                                ? 'Saving your score and updating readiness...'
                                : 'Great job! You\'ve completed your daily questions.',
-                            style: GoogleFonts.inter(fontSize: 9, color: const Color(0xFF64748B)),
+                            style: GoogleFonts.inter(fontSize: 9, color: AppTheme.mutedText),
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 32),
@@ -532,7 +533,7 @@ class _DailyFiveScreenState extends State<DailyFiveScreen> with WidgetsBindingOb
                               children: [
                                 _buildStatColumn(LucideIcons.checkCircle, const Color(0xFF65A30D), '$correctCount', 'Correct\nAnswers', theme),
                                 Container(height: 50, width: 1, color: theme.dividerColor.withValues(alpha: 0.1)),
-                                _buildStatColumn(LucideIcons.flame, AppTheme.accentCoral, '+10', 'Pulse\nEarned', theme),
+                                _buildStatColumn(LucideIcons.flame, AppTheme.accentCoral, '${provider.streak?.currentStreak ?? 0}', 'Day\nStreak', theme),
                                 Container(height: 50, width: 1, color: theme.dividerColor.withValues(alpha: 0.1)),
                                 _buildStatColumn(LucideIcons.trendingUp, const Color(0xFF8B5CF6), accuracyStr, 'Accuracy', theme),
                               ],
@@ -585,7 +586,7 @@ class _DailyFiveScreenState extends State<DailyFiveScreen> with WidgetsBindingOb
                     : SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: () => context.pop(),
+                          onPressed: () => _finishAndReturn(context, provider),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppTheme.accentCoral,
                             foregroundColor: Colors.white,
@@ -610,6 +611,17 @@ class _DailyFiveScreenState extends State<DailyFiveScreen> with WidgetsBindingOb
         ],
       ),
     );
+  }
+
+  Future<void> _finishAndReturn(BuildContext context, DailyFiveProvider provider) async {
+    final streak = provider.streak;
+    if (streak != null && streak.isAtMilestone) {
+      await Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => StreakMilestoneScreen(streak: streak)),
+      );
+      if (!context.mounted) return;
+    }
+    context.pop();
   }
 
   Widget _buildStatColumn(IconData icon, Color color, String value, String label, ThemeData theme) {

@@ -5,8 +5,10 @@ import 'package:provider/provider.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../core/theme/app_dimens.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/user_provider.dart';
+import '../widgets/premium_card.dart';
 
 class GraduationScreen extends StatefulWidget {
   const GraduationScreen({super.key});
@@ -52,11 +54,13 @@ class _GraduationScreenState extends State<GraduationScreen> {
           .maybeSingle();
           
       // Fetch leetcode stats
-      final leetcodeResp = await client
-          .from('leetcode_stats')
-          .select('batch_weighted_score')
-          .eq('user_id', user.uid)
-          .maybeSingle();
+      final leetcodeResp = (user.leetcodeUsername?.isNotEmpty ?? false)
+          ? await client
+              .from('leetcode_stats')
+              .select('total_solved')
+              .eq('username', user.leetcodeUsername!)
+              .maybeSingle()
+          : null;
           
       // Fetch mock exams count
       final examsResp = await client
@@ -66,9 +70,11 @@ class _GraduationScreenState extends State<GraduationScreen> {
 
       if (mounted) {
         setState(() {
-          _finalScore = (scoreResp != null ? (scoreResp['score'] as num).toDouble() : 0.0);
+          _finalScore = scoreResp != null
+              ? double.tryParse(scoreResp['score'].toString()) ?? 0.0
+              : 0.0;
           _longestStreak = (streakResp != null ? (streakResp['longest_streak'] as int?) ?? 0 : 0);
-          _leetcodeScore = (leetcodeResp != null ? (leetcodeResp['batch_weighted_score'] as int?) ?? 0 : 0);
+          _leetcodeScore = (leetcodeResp != null ? (leetcodeResp['total_solved'] as int?) ?? 0 : 0);
           _examsCount = (examsResp as List).length;
           _isLoading = false;
         });
@@ -205,20 +211,8 @@ class _GraduationScreenState extends State<GraduationScreen> {
   }
 
   Widget _buildStatCard(String title, String value, IconData icon, Color iconColor, ThemeData theme) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.1)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+    return PremiumCard(
+      radius: AppRadius.card,
       child: Row(
         children: [
           Container(

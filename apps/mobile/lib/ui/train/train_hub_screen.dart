@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import '../../core/theme/app_dimens.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/daily_five_provider.dart';
+import '../widgets/premium_card.dart';
 
 class TrainHubScreen extends StatelessWidget {
   const TrainHubScreen({super.key});
@@ -15,9 +18,9 @@ class TrainHubScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppTheme.scaffoldBg,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Preparation Gymnasium',
-          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
+          style: GoogleFonts.sora(fontWeight: FontWeight.w900, fontSize: 18),
         ),
         backgroundColor: Colors.white,
         elevation: 0,
@@ -60,13 +63,13 @@ class TrainHubScreen extends StatelessWidget {
                         ),
                         child: Row(
                           children: [
-                            Text('🔥', style: TextStyle(fontSize: 12)),
-                            SizedBox(width: 4),
+                            Text('🔥', style: GoogleFonts.inter(fontSize: 12)),
+                            const SizedBox(width: 4),
                             Text(
                               streak > 0
                                   ? '$streak DAY STREAK'
                                   : 'START YOUR STREAK',
-                              style: const TextStyle(
+                              style: GoogleFonts.inter(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 11,
@@ -76,9 +79,9 @@ class TrainHubScreen extends StatelessWidget {
                           ],
                         ),
                       ),
-                      const Text(
+                      Text(
                         'DAILY HABIT',
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           color: Colors.white70,
                           fontWeight: FontWeight.bold,
                           fontSize: 10,
@@ -88,18 +91,18 @@ class TrainHubScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  const Text(
+                  Text(
                     'Daily Five Concept Drill',
-                    style: TextStyle(
+                    style: GoogleFonts.sora(
                       color: Colors.white,
                       fontSize: 20,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
                   const SizedBox(height: 6),
-                  const Text(
+                  Text(
                     '5 targeted questions across DSA, DBMS, OS & Aptitude calibrated to your recent learning gaps.',
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                         color: Colors.white70, fontSize: 13, height: 1.4),
                   ),
                   const SizedBox(height: 20),
@@ -118,7 +121,7 @@ class TrainHubScreen extends StatelessWidget {
                       ),
                       child: Text(
                         completedToday ? 'Completed Today' : 'Start Daily Five',
-                        style: const TextStyle(
+                        style: GoogleFonts.inter(
                             fontWeight: FontWeight.bold, fontSize: 14),
                       ),
                     ),
@@ -128,12 +131,12 @@ class TrainHubScreen extends StatelessWidget {
             ),
 
             const SizedBox(height: 24),
-            const Text(
+            Text(
               'Targeted Micro-Drills',
-              style: TextStyle(
+              style: GoogleFonts.sora(
                 fontSize: 16,
                 fontWeight: FontWeight.w800,
-                color: AppTheme.textMain,
+                color: AppTheme.headingText,
               ),
             ),
             const SizedBox(height: 12),
@@ -147,7 +150,7 @@ class TrainHubScreen extends StatelessWidget {
               subtitle:
                   '5, 10, or 20 min focus drills that adapt question difficulty to live performance.',
               actionLabel: 'Launch Sprint',
-              onTap: () => context.push('/daily-five'),
+              onTap: () => context.push('/train/sprint'),
             ),
 
             const SizedBox(height: 12),
@@ -192,20 +195,8 @@ class TrainHubScreen extends StatelessWidget {
     required String actionLabel,
     required VoidCallback onTap,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppTheme.borderLight),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+    return PremiumCard(
+      radius: AppRadius.card,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -224,18 +215,18 @@ class TrainHubScreen extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: GoogleFonts.inter(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
-                    color: AppTheme.textMain,
+                    color: AppTheme.headingText,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
-                  style: const TextStyle(
+                  style: GoogleFonts.inter(
                     fontSize: 12,
-                    color: AppTheme.textMuted,
+                    color: AppTheme.mutedText,
                     height: 1.3,
                   ),
                 ),
@@ -247,7 +238,7 @@ class TrainHubScreen extends StatelessWidget {
                     children: [
                       Text(
                         actionLabel,
-                        style: TextStyle(
+                        style: GoogleFonts.inter(
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
                           color: color,
