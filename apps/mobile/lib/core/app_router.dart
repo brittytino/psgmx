@@ -14,6 +14,8 @@ import '../ui/daily_five/daily_five_screen.dart';
 import '../ui/interview_patterns/interview_patterns_screen.dart';
 import '../ui/squads/squad_screen.dart';
 import '../ui/community/community_board_screen.dart';
+import '../ui/community/knowledge_brain_screen.dart';
+import '../ui/community/lineage_screen.dart';
 import '../ui/mentoring/mentoring_inbox_screen.dart';
 import '../ui/train/adaptive_sprint_screen.dart';
 import '../ui/bunker/bunker_screen.dart';
@@ -22,10 +24,14 @@ import '../ui/notifications/notifications_screen.dart';
 import '../ui/profile/credits_screen.dart';
 import '../ui/profile/graduation_screen.dart';
 import '../ui/profile/help_support_screen.dart';
+import '../ui/profile/connected_services_screen.dart';
+import '../ui/profile/journey_archive_screen.dart';
+import '../ui/progress/dimension_detail_screen.dart';
 import '../ui/settings/settings_screen.dart';
 import '../ui/splash/splash_screen.dart';
 import '../ui/train/train_hub_screen.dart';
 import '../ui/train/communication_practice_screen.dart';
+import '../ui/train/deep_work_screen.dart';
 import '../ui/admin/command_center_screen.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -72,7 +78,9 @@ class AppRouter {
         ),
         GoRoute(
           path: '/progress/dimension/:dimension',
-          builder: (context, state) => const _CompanionTabRoute(index: 2),
+          builder: (context, state) => ReadinessDimensionScreen(
+            dimension: state.pathParameters['dimension']!,
+          ),
         ),
         GoRoute(
           path: '/community',
@@ -80,11 +88,11 @@ class AppRouter {
         ),
         GoRoute(
           path: '/community/knowledge-brain',
-          builder: (context, state) => const _CompanionTabRoute(index: 3),
+          builder: (context, state) => const KnowledgeBrainScreen(),
         ),
         GoRoute(
           path: '/community/lineage',
-          builder: (context, state) => const _CompanionTabRoute(index: 3),
+          builder: (context, state) => const LineageScreen(),
         ),
         GoRoute(
           path: '/community/squads',
@@ -96,7 +104,7 @@ class AppRouter {
         ),
         GoRoute(
           path: '/you/connected-services',
-          builder: (context, state) => const _CompanionTabRoute(index: 4),
+          builder: (context, state) => const ConnectedServicesScreen(),
         ),
         GoRoute(
           path: '/notifications',
@@ -116,7 +124,7 @@ class AppRouter {
         ),
         GoRoute(
           path: '/you/archive',
-          builder: (context, state) => const GraduationScreen(),
+          builder: (context, state) => const JourneyArchiveScreen(),
         ),
         GoRoute(
           path: '/train',
@@ -133,6 +141,10 @@ class AppRouter {
         GoRoute(
           path: '/train/communication',
           builder: (context, state) => const CommunicationPracticeScreen(),
+        ),
+        GoRoute(
+          path: '/train/deep-work',
+          builder: (context, state) => const DeepWorkScreen(),
         ),
         GoRoute(
           path: '/daily-five',

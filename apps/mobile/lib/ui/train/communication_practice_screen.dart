@@ -100,11 +100,6 @@ class _CommunicationPracticeScreenState
   }
 
   Future<void> _startRecording() async {
-    if (kIsWeb) {
-      setState(() => _error =
-          'Audio recording is available in the Android app. On desktop, use the PSGMX web portal.');
-      return;
-    }
     if (_selectedPrompt == null || _recording || _evaluating) return;
     try {
       if (!await _recorder.hasPermission()) {
@@ -113,19 +108,28 @@ class _CommunicationPracticeScreenState
         return;
       }
       await deleteRecordedAudio(_recordedPath);
-      final directory = await getTemporaryDirectory();
-      final path =
-          '${directory.path}/psgmx_answer_${DateTime.now().millisecondsSinceEpoch}.m4a';
+      final path = kIsWeb
+          ? ''
+          : '${(await getTemporaryDirectory()).path}/psgmx_answer_${DateTime.now().millisecondsSinceEpoch}.m4a';
       await _recorder.start(
-        const RecordConfig(
-          encoder: AudioEncoder.aacLc,
-          bitRate: 96000,
-          sampleRate: 44100,
-          numChannels: 1,
-          autoGain: true,
-          echoCancel: true,
-          noiseSuppress: true,
-        ),
+        kIsWeb
+            ? const RecordConfig(
+                encoder: AudioEncoder.wav,
+                sampleRate: 16000,
+                numChannels: 1,
+                autoGain: true,
+                echoCancel: true,
+                noiseSuppress: true,
+              )
+            : const RecordConfig(
+                encoder: AudioEncoder.aacLc,
+                bitRate: 96000,
+                sampleRate: 44100,
+                numChannels: 1,
+                autoGain: true,
+                echoCancel: true,
+                noiseSuppress: true,
+              ),
         path: path,
       );
       if (!mounted) return;
@@ -180,6 +184,7 @@ class _CommunicationPracticeScreenState
     });
     try {
       final bytes = await readRecordedAudio(path);
+      final isBrowserClip = kIsWeb;
       final request = http.MultipartRequest(
         'POST',
         Uri.parse('${SupabaseConfig.appApiUrl}/api/communication/evaluate'),
@@ -190,8 +195,10 @@ class _CommunicationPracticeScreenState
         ..files.add(http.MultipartFile.fromBytes(
           'audio',
           bytes,
-          filename: 'answer.m4a',
-          contentType: MediaType('audio', 'mp4'),
+          filename: isBrowserClip ? 'answer.wav' : 'answer.m4a',
+          contentType: isBrowserClip
+              ? MediaType('audio', 'wav')
+              : MediaType('audio', 'mp4'),
         ));
       final streamed =
           await request.send().timeout(const Duration(seconds: 60));
@@ -316,7 +323,8 @@ class _CommunicationPracticeScreenState
                   fontFamily: 'monospace',
                   color: _recording ? Colors.red : AppTheme.headingText)),
           Text('/ 02:00',
-              style: GoogleFonts.inter(fontSize: 12, color: AppTheme.mutedText)),
+              style:
+                  GoogleFonts.inter(fontSize: 12, color: AppTheme.mutedText)),
           const SizedBox(height: 24),
           IconButton.filled(
             onPressed: _selectedPrompt == null || _evaluating
@@ -364,7 +372,8 @@ class _CommunicationPracticeScreenState
         radius: AppRadius.card,
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text('EVIDENCE-BASED FEEDBACK',
-              style: GoogleFonts.inter(fontWeight: FontWeight.w900, fontSize: 13)),
+              style:
+                  GoogleFonts.inter(fontWeight: FontWeight.w900, fontSize: 13)),
           const SizedBox(height: 14),
           Wrap(spacing: 8, runSpacing: 8, children: [
             _scoreChip('Clarity', scores['clarity_score']),
@@ -384,10 +393,12 @@ class _CommunicationPracticeScreenState
           if ((_result?['transcript']?.toString() ?? '').isNotEmpty) ...[
             const Divider(height: 28),
             Text('TRANSCRIPT',
-                style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 11)),
+                style: GoogleFonts.inter(
+                    fontWeight: FontWeight.bold, fontSize: 11)),
             const SizedBox(height: 6),
             Text(_result!['transcript'].toString(),
-                style: GoogleFonts.inter(color: AppTheme.mutedText, height: 1.4)),
+                style:
+                    GoogleFonts.inter(color: AppTheme.mutedText, height: 1.4)),
           ],
         ]),
       );
@@ -403,7 +414,8 @@ class _CommunicationPracticeScreenState
         child: Row(children: [
           Icon(icon, color: color),
           const SizedBox(width: 10),
-          Expanded(child: Text(message, style: GoogleFonts.inter(color: color))),
+          Expanded(
+              child: Text(message, style: GoogleFonts.inter(color: color))),
         ]),
       );
 }

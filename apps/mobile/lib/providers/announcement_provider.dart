@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import '../core/logical_identity.dart';
 import '../models/announcement.dart';
 import '../services/supabase_service.dart';
 
@@ -58,6 +59,9 @@ class AnnouncementProvider extends ChangeNotifier {
   }) async {
     final user = _supabaseService.client.auth.currentUser;
     if (user == null) return;
+    final profileId =
+        await LogicalIdentity.currentUserId(_supabaseService.client);
+    if (profileId == null) return;
 
     try {
       // 1. Insert into announcements table for home feed
@@ -66,7 +70,7 @@ class AnnouncementProvider extends ChangeNotifier {
         'message': message,
         'is_priority': isPriority,
         'expiry_date': expiry?.toIso8601String(),
-        'created_by': user.id,
+        'created_by': profileId,
       });
 
       // 2. If priority, trigger a system-wide notification
@@ -79,7 +83,7 @@ class AnnouncementProvider extends ChangeNotifier {
               'notification_type': 'announcement',
               'tone': 'friendly',
               'target_audience': 'all',
-              'created_by': user.id,
+              'created_by': profileId,
               'generated_at': DateTime.now().toIso8601String(),
             })
             .select('id')
@@ -91,8 +95,8 @@ class AnnouncementProvider extends ChangeNotifier {
         // since in-app delivery (Realtime + the notifications feed) already
         // happened via the insert above.
         try {
-          await _supabaseService.client.functions.invoke('send-push',
-              body: {'notification_id': inserted['id']});
+          await _supabaseService.client.functions
+              .invoke('send-push', body: {'notification_id': inserted['id']});
         } catch (e) {
           debugPrint('[AnnouncementProvider] send-push failed: $e');
         }
@@ -133,12 +137,15 @@ class AnnouncementProvider extends ChangeNotifier {
   Future<bool> canManageAnnouncements() async {
     final user = _supabaseService.client.auth.currentUser;
     if (user == null) return false;
+    final profileId =
+        await LogicalIdentity.currentUserId(_supabaseService.client);
+    if (profileId == null) return false;
 
     try {
       final userData = await _supabaseService.client
           .from('users')
           .select('roles')
-          .eq('email', user.email!)
+          .eq('id', profileId)
           .maybeSingle();
 
       if (userData == null) return false;

@@ -83,6 +83,7 @@ class AppUser {
 
   // ── Existing fields ───────────────────────────────────────────────────────
   final String? leetcodeUsername;
+  final String? githubUrl;
   final DateTime? dob;
   final bool birthdayNotificationsEnabled;
   final bool leetcodeNotificationsEnabled;
@@ -116,6 +117,7 @@ class AppUser {
     this.roleLabel = 'Student',
     Set<UserPermission>? permissionFlags,
     this.leetcodeUsername,
+    this.githubUrl,
     this.dob,
     this.birthdayNotificationsEnabled = true,
     this.leetcodeNotificationsEnabled = true,
@@ -188,6 +190,7 @@ class AppUser {
           ? DateTime.parse(data['updated_at'])
           : null,
       leetcodeUsername: data['leetcode_username'],
+      githubUrl: data['github_url'] as String?,
       dob: data['dob'] != null
           ? DateTime.tryParse(data['dob'].toString())
           : null,
@@ -222,6 +225,7 @@ class AppUser {
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
       'leetcode_username': leetcodeUsername,
+      'github_url': githubUrl,
       'dob': dob?.toIso8601String().split('T')[0],
       'birthday_notifications_enabled': birthdayNotificationsEnabled,
       'leetcode_notifications_enabled': leetcodeNotificationsEnabled,
@@ -243,6 +247,7 @@ class AppUser {
     String? roleLabel,
     Set<UserPermission>? permissionFlags,
     String? leetcodeUsername,
+    String? githubUrl,
     DateTime? dob,
     bool? birthdayNotificationsEnabled,
     bool? leetcodeNotificationsEnabled,
@@ -273,6 +278,7 @@ class AppUser {
       createdAt: createdAt,
       updatedAt: DateTime.now(),
       leetcodeUsername: leetcodeUsername ?? this.leetcodeUsername,
+      githubUrl: githubUrl ?? this.githubUrl,
       dob: dob ?? this.dob,
       birthdayNotificationsEnabled:
           birthdayNotificationsEnabled ?? this.birthdayNotificationsEnabled,

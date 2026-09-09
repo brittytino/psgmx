@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:provider/provider.dart';
@@ -119,8 +120,18 @@ class _ProgressScreenState extends State<ProgressScreen> {
 
   String _shortDate(DateTime date) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
     ];
     final local = date.toLocal();
     return '${months[local.month - 1]} ${local.day}';
@@ -161,7 +172,8 @@ class _ProgressScreenState extends State<ProgressScreen> {
     for (var i = 0; i < _scoreHistory.length - 1 && changes.length < 3; i++) {
       final current = _asDouble(_scoreHistory[i]['score']);
       final previous = _asDouble(_scoreHistory[i + 1]['score']);
-      final at = DateTime.tryParse(_scoreHistory[i]['computed_at']?.toString() ?? '');
+      final at =
+          DateTime.tryParse(_scoreHistory[i]['computed_at']?.toString() ?? '');
       if (current == null || previous == null || at == null) continue;
       changes.add(_ScoreChange(delta: current - previous, at: at));
     }
@@ -187,34 +199,40 @@ class _ProgressScreenState extends State<ProgressScreen> {
 
     final dimensions = [
       _Dimension(
+          'aptitude_reasoning',
           'Aptitude & reasoning',
           LucideIcons.brain,
           measuredValue('aptitude_reasoning',
               ['daily_five_accuracy_pct', 'daily_five_score']),
           evidence('aptitude_reasoning')),
       _Dimension(
+          'coding_problem_solving',
           'Coding & problem solving',
           LucideIcons.code2,
           measuredValue('coding_problem_solving',
               ['leetcode_momentum_percentile', 'leetcode_score']),
           evidence('coding_problem_solving')),
       _Dimension(
+          'core_computer_science',
           'Core computer science',
           LucideIcons.database,
           measuredValue('core_computer_science', ['core_cs_score']),
           evidence('core_computer_science')),
       _Dimension(
+          'communication_interview',
           'Communication',
           LucideIcons.messagesSquare,
           measuredValue('communication_interview', ['communication_score']),
           evidence('communication_interview')),
       _Dimension(
+          'assessment_performance',
           'Assessment performance',
           LucideIcons.clipboardCheck,
           measuredValue('assessment_performance',
               ['mock_exam_score', 'assessment_score']),
           evidence('assessment_performance')),
       _Dimension(
+          'portfolio_project',
           'Portfolio & project proof',
           LucideIcons.folderKanban,
           measuredValue('portfolio_project', ['portfolio_score', 'fyp_score']),
@@ -222,14 +240,16 @@ class _ProgressScreenState extends State<ProgressScreen> {
     ];
     final measured = dimensions.where((item) => item.value != null).toList();
     double priority(_Dimension d) =>
-        d.value! * _freshnessMultiplier(
-            DateTime.tryParse(d.evidence?['evidence_fresh_at']?.toString() ?? ''));
+        d.value! *
+        _freshnessMultiplier(DateTime.tryParse(
+            d.evidence?['evidence_fresh_at']?.toString() ?? ''));
     final focus = measured.isEmpty
         ? null
         : measured.reduce((a, b) => priority(a) <= priority(b) ? a : b);
     final focusFreshAt = focus == null
         ? null
-        : DateTime.tryParse(focus.evidence?['evidence_fresh_at']?.toString() ?? '');
+        : DateTime.tryParse(
+            focus.evidence?['evidence_fresh_at']?.toString() ?? '');
     final focusIsStale = focusFreshAt != null &&
         DateTime.now().difference(focusFreshAt.toLocal()).inDays > 30;
 
@@ -338,11 +358,12 @@ class _ProgressScreenState extends State<ProgressScreen> {
 }
 
 class _Dimension {
+  final String key;
   final String title;
   final IconData icon;
   final double? value;
   final Map<String, dynamic>? evidence;
-  const _Dimension(this.title, this.icon, this.value, this.evidence);
+  const _Dimension(this.key, this.title, this.icon, this.value, this.evidence);
 }
 
 class _ScoreChange {
@@ -453,6 +474,7 @@ class _DimensionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final value = item.value;
     return PremiumCard(
+      onTap: () => context.push('/progress/dimension/${item.key}'),
       padding: const EdgeInsets.all(15),
       radius: AppRadius.card,
       child: Row(children: [
@@ -495,9 +517,11 @@ class _DimensionCard extends StatelessWidget {
               value == null
                   ? 'No verified evidence yet'
                   : '${item.evidence?['confidence'] ?? 'low'} confidence · ${item.evidence?['evidence_count'] ?? 1} source${item.evidence?['evidence_count'] == 1 ? '' : 's'}',
-              style: GoogleFonts.inter(
-                  fontSize: 9, color: AppTheme.mutedText)),
-        ]))
+              style: GoogleFonts.inter(fontSize: 9, color: AppTheme.mutedText)),
+        ])),
+        const SizedBox(width: 8),
+        const Icon(LucideIcons.chevronRight,
+            size: 16, color: Color(0xFF94A3B8)),
       ]),
     );
   }
@@ -526,8 +550,8 @@ class _StatCard extends StatelessWidget {
                   GoogleFonts.sora(fontSize: 18, fontWeight: FontWeight.w900)),
           const SizedBox(height: 3),
           Text(label,
-              style: GoogleFonts.inter(
-                  fontSize: 10, color: AppTheme.mutedText)),
+              style:
+                  GoogleFonts.inter(fontSize: 10, color: AppTheme.mutedText)),
         ]),
       );
 }
@@ -552,7 +576,9 @@ class _MessageCard extends StatelessWidget {
             Expanded(
                 child: Text(message,
                     style: GoogleFonts.inter(
-                        fontSize: 11, height: 1.4, fontWeight: FontWeight.w600))),
+                        fontSize: 11,
+                        height: 1.4,
+                        fontWeight: FontWeight.w600))),
             if (action != null)
               TextButton(onPressed: onTap, child: Text(action!)),
           ]),

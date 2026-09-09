@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/app_dimens.dart';
 import '../../core/theme/app_theme.dart';
+import '../../providers/user_provider.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/premium_card.dart';
 
@@ -33,12 +35,13 @@ class _MentoringInboxScreenState extends State<MentoringInboxScreen> {
   Future<void> _load() async {
     setState(() => _loading = true);
     try {
-      final userId = Supabase.instance.client.auth.currentUser?.id;
+      final userId = context.read<UserProvider>().currentUser?.uid;
+      if (userId == null) throw Exception('Not signed in.');
       final rows = await Supabase.instance.client
           .from('lineage_requests')
           .select(
               'id, topic, question, status, created_at, student:student_id(name, reg_no)')
-          .eq('alumni_id', userId as Object)
+          .eq('alumni_id', userId)
           .order('created_at', ascending: false);
       if (!mounted) return;
       setState(() {
@@ -54,10 +57,10 @@ class _MentoringInboxScreenState extends State<MentoringInboxScreen> {
   Future<void> _respond(String id, String status) async {
     setState(() => _responding.add(id));
     try {
-      await Supabase.instance.client
-          .from('lineage_requests')
-          .update({'status': status, 'responded_at': DateTime.now().toIso8601String()})
-          .eq('id', id);
+      await Supabase.instance.client.from('lineage_requests').update({
+        'status': status,
+        'responded_at': DateTime.now().toIso8601String()
+      }).eq('id', id);
       if (!mounted) return;
       setState(() {
         final index = _requests.indexWhere((r) => r['id'] == id);
@@ -67,7 +70,8 @@ class _MentoringInboxScreenState extends State<MentoringInboxScreen> {
     } catch (_) {
       if (!mounted) return;
       setState(() => _responding.remove(id));
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not update — try again.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not update — try again.')));
     }
   }
 
@@ -78,13 +82,17 @@ class _MentoringInboxScreenState extends State<MentoringInboxScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FA),
       appBar: AppBar(
-        title: Text('Mentoring requests', style: GoogleFonts.sora(fontWeight: FontWeight.w900, fontSize: 18)),
+        title: Text('Mentoring requests',
+            style: GoogleFonts.sora(fontWeight: FontWeight.w900, fontSize: 18)),
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(icon: const Icon(LucideIcons.chevronLeft), onPressed: () => context.pop()),
+        leading: IconButton(
+            icon: const Icon(LucideIcons.chevronLeft),
+            onPressed: () => context.pop()),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator(color: AppTheme.accentCoral))
+          ? const Center(
+              child: CircularProgressIndicator(color: AppTheme.accentCoral))
           : RefreshIndicator(
               onRefresh: _load,
               child: ListView(
@@ -95,24 +103,32 @@ class _MentoringInboxScreenState extends State<MentoringInboxScreen> {
                     const EmptyState(
                       icon: LucideIcons.handshake,
                       title: 'No requests yet',
-                      message: 'When a junior asks you a specific question, it will show up here.',
+                      message:
+                          'When a junior asks you a specific question, it will show up here.',
                     )
                   else ...[
                     if (pending.isNotEmpty) ...[
-                      Text('Pending (${pending.length})', style: GoogleFonts.sora(fontSize: 14, fontWeight: FontWeight.w800)),
+                      Text('Pending (${pending.length})',
+                          style: GoogleFonts.sora(
+                              fontSize: 14, fontWeight: FontWeight.w800)),
                       const SizedBox(height: 10),
                       ...pending.map((r) => _RequestCard(
                             request: r,
                             responding: _responding.contains(r['id']),
-                            onAccept: () => _respond(r['id'] as String, 'accepted'),
-                            onDecline: () => _respond(r['id'] as String, 'declined'),
+                            onAccept: () =>
+                                _respond(r['id'] as String, 'accepted'),
+                            onDecline: () =>
+                                _respond(r['id'] as String, 'declined'),
                           )),
                       const SizedBox(height: 20),
                     ],
                     if (resolved.isNotEmpty) ...[
-                      Text('Past requests', style: GoogleFonts.sora(fontSize: 14, fontWeight: FontWeight.w800)),
+                      Text('Past requests',
+                          style: GoogleFonts.sora(
+                              fontSize: 14, fontWeight: FontWeight.w800)),
                       const SizedBox(height: 10),
-                      ...resolved.map((r) => _RequestCard(request: r, responding: false)),
+                      ...resolved.map(
+                          (r) => _RequestCard(request: r, responding: false)),
                     ],
                   ],
                 ],
@@ -127,11 +143,16 @@ class _RequestCard extends StatelessWidget {
   final bool responding;
   final VoidCallback? onAccept;
   final VoidCallback? onDecline;
-  const _RequestCard({required this.request, required this.responding, this.onAccept, this.onDecline});
+  const _RequestCard(
+      {required this.request,
+      required this.responding,
+      this.onAccept,
+      this.onDecline});
 
   @override
   Widget build(BuildContext context) {
-    final student = Map<String, dynamic>.from(request['student'] as Map? ?? const {});
+    final student =
+        Map<String, dynamic>.from(request['student'] as Map? ?? const {});
     final status = request['status'] as String;
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
@@ -141,28 +162,41 @@ class _RequestCard extends StatelessWidget {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             Expanded(
-              child: Text('${student['name'] ?? 'A student'} · ${request['topic']}',
+              child: Text(
+                  '${student['name'] ?? 'A student'} · ${request['topic']}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w800)),
+                  style: GoogleFonts.inter(
+                      fontSize: 12, fontWeight: FontWeight.w800)),
             ),
             if (status != 'pending')
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(color: AppTheme.cardBorder, borderRadius: BorderRadius.circular(20)),
-                child: Text(status, style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w800)),
+                decoration: BoxDecoration(
+                    color: AppTheme.cardBorder,
+                    borderRadius: BorderRadius.circular(20)),
+                child: Text(status,
+                    style: GoogleFonts.inter(
+                        fontSize: 9, fontWeight: FontWeight.w800)),
               ),
           ]),
           const SizedBox(height: 6),
-          Text(request['question']?.toString() ?? '', style: GoogleFonts.inter(fontSize: 12, height: 1.4, color: AppTheme.mutedText)),
+          Text(request['question']?.toString() ?? '',
+              style: GoogleFonts.inter(
+                  fontSize: 12, height: 1.4, color: AppTheme.mutedText)),
           if (status == 'pending') ...[
             const SizedBox(height: 10),
             responding
-                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2))
                 : Row(children: [
-                    FilledButton(onPressed: onAccept, child: const Text('Accept')),
+                    FilledButton(
+                        onPressed: onAccept, child: const Text('Accept')),
                     const SizedBox(width: 8),
-                    OutlinedButton(onPressed: onDecline, child: const Text('Decline')),
+                    OutlinedButton(
+                        onPressed: onDecline, child: const Text('Decline')),
                   ]),
           ],
         ]),

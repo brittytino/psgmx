@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/leetcode_stats.dart';
 import './notification_service.dart';
 import '../models/notification.dart';
+import '../core/logical_identity.dart';
 
 /// Service for tracking and announcing top performers (C1 & C2)
 ///
@@ -236,19 +237,23 @@ class PerformanceService {
   /// Announce milestone achievement via notification
   Future<void> announceMilestone(MilestoneAchievement achievement) async {
     try {
+      final profileId = await LogicalIdentity.currentUserId(_supabase);
       const title = '🎉 Milestone Achievement!';
-      final message = '${achievement.userName} just crossed ${achievement.milestone} problems on LeetCode! 🌟';
-      
+      final message =
+          '${achievement.userName} just crossed ${achievement.milestone} problems on LeetCode! 🌟';
+
       // 1. Check for duplicates in DB to prevent multiple users from announcing the same milestone
       final existing = await _supabase
           .from('notifications')
           .select('id')
           .eq('title', title)
-          .ilike('message', '%${achievement.userName}%${achievement.milestone}%')
+          .ilike(
+              'message', '%${achievement.userName}%${achievement.milestone}%')
           .maybeSingle();
-          
+
       if (existing != null) {
-        debugPrint('[PerformanceService] Milestone already announced for ${achievement.userName}');
+        debugPrint(
+            '[PerformanceService] Milestone already announced for ${achievement.userName}');
         return;
       }
 
@@ -260,18 +265,18 @@ class PerformanceService {
         'notification_type': 'motivation', // Valid DB type
         'tone': 'friendly',
         'target_audience': 'all', // Everyone should see this
-        'created_by': _supabase.auth.currentUser?.id,
+        'created_by': profileId,
         'is_active': true,
         'generated_at': DateTime.now().toIso8601String(),
       });
-      
+
       // 3. Trigger local notification only for the achiever (if it's the current user)
-      final currentUser = _supabase.auth.currentUser;
-      if (currentUser != null && currentUser.id == achievement.userId) {
-         await _notificationService.showNotification(
+      if (profileId != null && profileId == achievement.userId) {
+        await _notificationService.showNotification(
           id: 902 + achievement.milestone,
           title: '🎉 Milestone Reached!',
-          body: 'Congratulations! You\'ve solved ${achievement.milestone} problems on LeetCode! Keep going! 🚀',
+          body:
+              'Congratulations! You\'ve solved ${achievement.milestone} problems on LeetCode! Keep going! 🚀',
           type: NotificationType.motivation,
           persistToDatabase: false, // Already added to DB above as announcement
         );
@@ -286,7 +291,7 @@ class PerformanceService {
 
   /// Check and announce milestone for current user
   Future<void> checkAndAnnounceMilestone() async {
-    final userId = _supabase.auth.currentUser?.id;
+    final userId = await LogicalIdentity.currentUserId(_supabase);
     if (userId == null) return;
 
     final achievement = await checkMilestoneAchieved(userId);
@@ -299,7 +304,7 @@ class PerformanceService {
   Future<void> checkAndAnnounceAllUsersMilestones() async {
     try {
       debugPrint('[PerformanceService] Checking milestones for all users...');
-      
+
       // Get all users with LeetCode usernames
       final usersResponse = await _supabase
           .from('users')
@@ -310,15 +315,16 @@ class PerformanceService {
       for (var user in usersResponse as List) {
         final userId = user['id'] as String;
         final achievement = await checkMilestoneAchieved(userId);
-        
+
         if (achievement != null) {
           await announceMilestone(achievement);
           milestonesFound++;
         }
       }
-      
+
       if (milestonesFound > 0) {
-        debugPrint('[PerformanceService] ✅ Found and announced $milestonesFound milestone(s)');
+        debugPrint(
+            '[PerformanceService] ✅ Found and announced $milestonesFound milestone(s)');
       } else {
         debugPrint('[PerformanceService] No new milestones detected');
       }
@@ -351,7 +357,8 @@ class PerformanceService {
   }
 
   /// Get Readiness Leaderboard scoped to batch
-  Future<List<Map<String, dynamic>>> getReadinessLeaderboard(String batchId) async {
+  Future<List<Map<String, dynamic>>> getReadinessLeaderboard(
+      String batchId) async {
     try {
       final response = await _supabase
           .from('readiness_scores')
@@ -367,17 +374,20 @@ class PerformanceService {
         };
       }).toList();
     } catch (e) {
-      debugPrint('[PerformanceService] Error getting readiness leaderboard: $e');
+      debugPrint(
+          '[PerformanceService] Error getting readiness leaderboard: $e');
       return [];
     }
   }
 
   /// Get LeetCode Leaderboard scoped to batch
-  Future<List<Map<String, dynamic>>> getLeetCodeLeaderboard(String batchId) async {
+  Future<List<Map<String, dynamic>>> getLeetCodeLeaderboard(
+      String batchId) async {
     try {
       final response = await _supabase
           .from('leetcode_stats')
-          .select('batch_weighted_score, batch_percentile, users!inner(name, batch_id)')
+          .select(
+              'batch_weighted_score, batch_percentile, users!inner(name, batch_id)')
           .eq('users.batch_id', batchId)
           .order('batch_weighted_score', ascending: false)
           .limit(20);
@@ -398,7 +408,7 @@ class PerformanceService {
   /// Get current user's rank
   Future<int?> getCurrentUserRank({bool weekly = true}) async {
     try {
-      final userId = _supabase.auth.currentUser?.id;
+      final userId = await LogicalIdentity.currentUserId(_supabase);
       if (userId == null) return null;
 
       // Get user's LeetCode username

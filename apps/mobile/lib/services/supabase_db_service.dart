@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../core/logical_identity.dart';
 import '../models/app_user.dart';
 
 /// A facade service specifically designed to support the UI's needs
@@ -16,6 +17,8 @@ class SupabaseDbService {
   Future<void> publishDailyTask(CompositeTask task) async {
     final user = _supabase.auth.currentUser;
     if (user == null) throw Exception("Not authenticated");
+    final profileId = await LogicalIdentity.currentUserId(_supabase);
+    if (profileId == null) throw Exception("User profile unavailable");
 
     final updates = <Future>[];
 
@@ -26,7 +29,7 @@ class SupabaseDbService {
         'topic_type': 'leetcode',
         'title': 'Daily LeetCode',
         'reference_link': task.leetcodeUrl,
-        'uploaded_by': user.id,
+        'uploaded_by': profileId,
       }, onConflict: 'date, topic_type, title'));
     }
 
@@ -38,7 +41,7 @@ class SupabaseDbService {
         'title': task.csTopic,
         'subject': task.csTopicDescription,
         // We use 'subject' column for description storage as per our interpretation
-        'uploaded_by': user.id,
+        'uploaded_by': profileId,
       }, onConflict: 'date, topic_type, title'));
     }
 
@@ -190,6 +193,8 @@ class SupabaseDbService {
   Future<int> bulkPublishTasks(List<CompositeTask> tasks) async {
     final user = _supabase.auth.currentUser;
     if (user == null) throw Exception("Not authenticated");
+    final profileId = await LogicalIdentity.currentUserId(_supabase);
+    if (profileId == null) throw Exception("User profile unavailable");
 
     final List<Map<String, dynamic>> rows = [];
 
@@ -200,7 +205,7 @@ class SupabaseDbService {
           'topic_type': 'leetcode',
           'title': 'Daily LeetCode',
           'reference_link': task.leetcodeUrl,
-          'uploaded_by': user.id,
+          'uploaded_by': profileId,
         });
       }
       if (task.csTopic.isNotEmpty) {
@@ -209,7 +214,7 @@ class SupabaseDbService {
           'topic_type': 'core',
           'title': task.csTopic,
           'subject': task.csTopicDescription,
-          'uploaded_by': user.id,
+          'uploaded_by': profileId,
         });
       }
     }
@@ -227,9 +232,8 @@ class SupabaseDbService {
       // 1. Total Students from whitelist (with fallback to users table)
       int totalStudents = 0;
       try {
-        totalStudents = await _supabase
-            .from('whitelist')
-            .count(CountOption.exact);
+        totalStudents =
+            await _supabase.from('whitelist').count(CountOption.exact);
       } catch (_) {
         totalStudents = await _supabase
             .from('users')

@@ -27,192 +27,206 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final userProvider = context.watch<UserProvider>();
     final user = userProvider.currentUser;
 
-    return MediaQuery(
-      data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
-      child: Scaffold(
-        backgroundColor: const Color(0xFFFAFAFA),
-        body: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 120),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // ── Header ────────────────────────────────────────────
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('You',
-                            style: GoogleFonts.sora(
-                                fontSize: 26,
-                                fontWeight: FontWeight.bold,
-                                color: AppTheme.headingText,
-                                letterSpacing: -0.5)),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Text('Your profile, your journey.',
-                                style: GoogleFonts.inter(
-                                    fontSize: 13,
-                                    color: AppTheme.mutedText)),
-                            const SizedBox(width: 4),
-                            const Icon(LucideIcons.sparkles,
-                                size: 12, color: AppTheme.illusGold),
-                          ],
-                        ),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        // Settings icon
-                        GestureDetector(
-                          onTap: () => context.push('/settings'),
-                          child: Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                              border:
-                                  Border.all(color: AppTheme.cardBorder),
-                              boxShadow: [
-                                BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.04),
-                                    blurRadius: 8)
-                              ],
-                            ),
-                            child: const Center(
-                                child: Icon(LucideIcons.settings,
-                                    size: 18, color: AppTheme.headingText)),
+    return Scaffold(
+      backgroundColor: const Color(0xFFFAFAFA),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 120),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // ── Header ────────────────────────────────────────────
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('You',
+                          style: GoogleFonts.sora(
+                              fontSize: 26,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.headingText,
+                              letterSpacing: -0.5)),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Text('Your profile, your journey.',
+                              style: GoogleFonts.inter(
+                                  fontSize: 13, color: AppTheme.mutedText)),
+                          const SizedBox(width: 4),
+                          const Icon(LucideIcons.sparkles,
+                              size: 12, color: AppTheme.illusGold),
+                        ],
+                      ),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      // Settings icon
+                      GestureDetector(
+                        onTap: () => context.push('/settings'),
+                        child: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: AppTheme.cardBorder),
+                            boxShadow: [
+                              BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.04),
+                                  blurRadius: 8)
+                            ],
                           ),
+                          child: const Center(
+                              child: Icon(LucideIcons.settings,
+                                  size: 18, color: AppTheme.headingText)),
                         ),
-                      ],
-                    ),
-                  ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              // ── Profile Card ──────────────────────────────────────
+              _ProfileCard(user: user),
+              const SizedBox(height: 24),
+
+              _buildSectionHeader('YOUR PSGMX'),
+              _buildCard([
+                _NavTile(
+                  icon: LucideIcons.plugZap,
+                  iconColor: const Color(0xFF7C3AED),
+                  label: 'Connected services',
+                  subtitle: 'LeetCode and GitHub evidence sources',
+                  onTap: () => context.push('/you/connected-services'),
                 ),
-                const SizedBox(height: 24),
+                _divider(),
+                _NavTile(
+                  icon: LucideIcons.archive,
+                  iconColor: AppTheme.accentCoral,
+                  label: 'Journey archive',
+                  subtitle: 'Weekly missions and earned evidence',
+                  onTap: () => context.push('/you/archive'),
+                ),
+              ]),
+              const SizedBox(height: 24),
 
-                // ── Profile Card ──────────────────────────────────────
-                _ProfileCard(user: user),
-                const SizedBox(height: 24),
-
-                if (user?.isAlumni == true) ...[
-                  _buildSectionHeader('MENTORING'),
-                  _buildCard([
-                    _NavTile(
-                      icon: LucideIcons.handshake,
-                      iconColor: AppTheme.illusSage,
-                      label: 'Mentoring requests',
-                      subtitle: 'Juniors asking about a specific topic',
-                      onTap: () => context.push('/mentoring-inbox'),
-                    ),
-                  ]),
-                  const SizedBox(height: 24),
-                ],
-
-                if (userProvider.isPlacementRep) ...[
-                  _buildSectionHeader('YOUR WORKSPACES'),
-                  _buildCard([
-                    _NavTile(
-                      icon: LucideIcons.shieldCheck,
-                      iconColor: AppTheme.accentCoral,
-                      label: 'PR Command Center',
-                      subtitle: 'Manage readiness, squads and participation',
-                      onTap: () => context.push('/admin'),
-                    ),
-                  ]),
-                  const SizedBox(height: 20),
-                ],
-
-                // ── ACCOUNT ───────────────────────────────────────────
-                _buildSectionHeader('ACCOUNT'),
+              if (user?.isAlumni == true || user?.isActiveSenior == true) ...[
+                _buildSectionHeader('MENTORING'),
                 _buildCard([
                   _NavTile(
-                    icon: LucideIcons.mail,
-                    iconColor: const Color(0xFF0EA5E9),
-                    label: 'Email',
-                    subtitle: user?.email ?? '—',
-                    showChevron: false,
-                  ),
-                  _divider(),
-                  _NavTile(
-                    icon: LucideIcons.hash,
-                    iconColor: const Color(0xFF6366F1),
-                    label: 'Register Number',
-                    subtitle: user?.regNo ?? '—',
-                    showChevron: false,
-                  ),
-                  _divider(),
-                  _NavTile(
-                    icon: LucideIcons.code,
-                    iconColor: const Color(0xFFEF4444),
-                    label: 'LeetCode Username',
-                    subtitle: user?.leetcodeUsername?.isNotEmpty == true
-                        ? user!.leetcodeUsername!
-                        : 'Not set',
-                    onTap: () => _showLeetcodeSheet(context, userProvider),
+                    icon: LucideIcons.handshake,
+                    iconColor: AppTheme.illusSage,
+                    label: 'Mentoring requests',
+                    subtitle: 'Juniors asking about a specific topic',
+                    onTap: () => context.push('/mentoring-inbox'),
                   ),
                 ]),
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
+              ],
 
-                // ── INFO ──────────────────────────────────────────────
-                _buildSectionHeader('INFO'),
+              if (userProvider.isPlacementRep) ...[
+                _buildSectionHeader('YOUR WORKSPACES'),
                 _buildCard([
                   _NavTile(
                     icon: LucideIcons.shieldCheck,
-                    iconColor: const Color(0xFF22C55E),
-                    label: 'Data Privacy',
-                    subtitle: 'How we protect your data',
-                    onTap: () => _launchUrl('https://psgmx.in/privacy'),
-                  ),
-                  _divider(),
-                  _NavTile(
-                    icon: LucideIcons.helpCircle,
-                    iconColor: AppTheme.mutedText,
-                    label: 'Help & Support',
-                    subtitle: 'Get help or report an issue',
-                    onTap: () => context.push('/help-support'),
-                  ),
-                  _divider(),
-                  _NavTile(
-                    icon: LucideIcons.info,
-                    iconColor: AppTheme.mutedText,
-                    label: 'About PSGMX',
-                    subtitle: 'Version, team & credits',
-                    onTap: () => context.push('/credits'),
+                    iconColor: AppTheme.accentCoral,
+                    label: 'PR Command Center',
+                    subtitle: 'Manage readiness, squads and participation',
+                    onTap: () => context.push('/admin'),
                   ),
                 ]),
-                const SizedBox(height: 28),
-
-                // ── Sign Out ──────────────────────────────────────────
-                OutlinedButton.icon(
-                  onPressed: _signingOut
-                      ? null
-                      : () => _confirmSignOut(context, userProvider),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFFEF4444),
-                    side:
-                        const BorderSide(color: Color(0xFFEF4444), width: 1.5),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
-                  ),
-                  icon: _signingOut
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                              color: Color(0xFFEF4444), strokeWidth: 2))
-                      : const Icon(LucideIcons.logOut, size: 16),
-                  label: Text('Sign Out',
-                      style: GoogleFonts.sora(
-                          fontSize: 15, fontWeight: FontWeight.bold)),
-                ),
+                const SizedBox(height: 20),
               ],
-            ),
+
+              // ── ACCOUNT ───────────────────────────────────────────
+              _buildSectionHeader('ACCOUNT'),
+              _buildCard([
+                _NavTile(
+                  icon: LucideIcons.mail,
+                  iconColor: const Color(0xFF0EA5E9),
+                  label: 'Email',
+                  subtitle: user?.email ?? '—',
+                  showChevron: false,
+                ),
+                _divider(),
+                _NavTile(
+                  icon: LucideIcons.hash,
+                  iconColor: const Color(0xFF6366F1),
+                  label: 'Register Number',
+                  subtitle: user?.regNo ?? '—',
+                  showChevron: false,
+                ),
+                _divider(),
+                _NavTile(
+                  icon: LucideIcons.code,
+                  iconColor: const Color(0xFFEF4444),
+                  label: 'LeetCode Username',
+                  subtitle: user?.leetcodeUsername?.isNotEmpty == true
+                      ? user!.leetcodeUsername!
+                      : 'Not set',
+                  onTap: () => _showLeetcodeSheet(context, userProvider),
+                ),
+              ]),
+              const SizedBox(height: 20),
+
+              // ── INFO ──────────────────────────────────────────────
+              _buildSectionHeader('INFO'),
+              _buildCard([
+                _NavTile(
+                  icon: LucideIcons.shieldCheck,
+                  iconColor: const Color(0xFF22C55E),
+                  label: 'Data Privacy',
+                  subtitle: 'How we protect your data',
+                  onTap: () => _launchUrl('https://www.psgmx.tech/privacy'),
+                ),
+                _divider(),
+                _NavTile(
+                  icon: LucideIcons.helpCircle,
+                  iconColor: AppTheme.mutedText,
+                  label: 'Help & Support',
+                  subtitle: 'Get help or report an issue',
+                  onTap: () => context.push('/help-support'),
+                ),
+                _divider(),
+                _NavTile(
+                  icon: LucideIcons.info,
+                  iconColor: AppTheme.mutedText,
+                  label: 'About PSGMX',
+                  subtitle: 'Version, team & credits',
+                  onTap: () => context.push('/credits'),
+                ),
+              ]),
+              const SizedBox(height: 28),
+
+              // ── Sign Out ──────────────────────────────────────────
+              OutlinedButton.icon(
+                onPressed: _signingOut
+                    ? null
+                    : () => _confirmSignOut(context, userProvider),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFFEF4444),
+                  side: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                ),
+                icon: _signingOut
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                            color: Color(0xFFEF4444), strokeWidth: 2))
+                    : const Icon(LucideIcons.logOut, size: 16),
+                label: Text('Sign Out',
+                    style: GoogleFonts.sora(
+                        fontSize: 15, fontWeight: FontWeight.bold)),
+              ),
+            ],
           ),
         ),
       ),

@@ -67,8 +67,9 @@ class UserProvider with ChangeNotifier, SafeChangeNotifier {
   Future<void> _checkAuthStateOnce() async {
     try {
       final supabaseUser = _authService.currentUser;
-      // Remove the native splash screen immediately to show UI skeletons
-      FlutterNativeSplash.remove();
+      // The PWA uses the Flutter /splash route; there is no generated
+      // flutter_native_splash JavaScript bridge to remove on web.
+      if (!kIsWeb) FlutterNativeSplash.remove();
 
       if (supabaseUser != null) {
         _currentUser = await _loadFullProfile(supabaseUser.id);
@@ -200,14 +201,16 @@ class UserProvider with ChangeNotifier, SafeChangeNotifier {
   Future<void> completeCalibration(Map<String, dynamic> calibration) async {
     if (_currentUser == null) return;
 
-    final leetcodeUsername = (calibration['leetcodeUsername'] as String?)?.trim();
+    final leetcodeUsername =
+        (calibration['leetcodeUsername'] as String?)?.trim();
     final hasLeetcode = leetcodeUsername != null && leetcodeUsername.isNotEmpty;
 
     // 1. Update local state immediately (optimistic update) so the user is never trapped in a routing loop
     _needsCalibration = false;
     _currentUser = _currentUser!.copyWith(
       onboardingComplete: true,
-      leetcodeUsername: hasLeetcode ? leetcodeUsername : _currentUser!.leetcodeUsername,
+      leetcodeUsername:
+          hasLeetcode ? leetcodeUsername : _currentUser!.leetcodeUsername,
     );
     notifyListeners();
 
@@ -215,7 +218,8 @@ class UserProvider with ChangeNotifier, SafeChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('calibrated_${_currentUser!.uid}', true);
 
-      final confidence = Map<String, dynamic>.from(calibration['confidence'] as Map? ?? const {});
+      final confidence = Map<String, dynamic>.from(
+          calibration['confidence'] as Map? ?? const {});
       try {
         await Supabase.instance.client.from('users').update({
           'onboarding_complete': true,
@@ -384,6 +388,25 @@ class UserProvider with ChangeNotifier, SafeChangeNotifier {
       debugPrint('[UserProvider] Error updating LeetCode username: $e');
       rethrow;
     }
+  }
+
+  Future<void> updateGitHubUrl(String value) async {
+    if (_currentUser == null) return;
+    final raw = value.trim();
+    final username = raw
+        .replaceFirst(RegExp(r'^https?://(www\.)?github\.com/'), '')
+        .replaceAll(RegExp(r'^/+|/+$'), '');
+    if (!RegExp(r'^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$')
+        .hasMatch(username)) {
+      throw const FormatException(
+          'Enter a valid GitHub username or profile URL.');
+    }
+    final url = 'https://github.com/$username';
+    await Supabase.instance.client
+        .from('users')
+        .update({'github_url': url}).eq('id', _currentUser!.uid);
+    _currentUser = _currentUser!.copyWith(githubUrl: url);
+    notifyListeners();
   }
 
   Future<void> updateLeetCodeNotification(bool enabled) async {

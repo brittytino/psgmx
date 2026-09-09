@@ -29,4 +29,20 @@ void main() {
     expect(user.isActiveSenior, isTrue);
     expect(user.isActiveJunior, isFalse);
   });
+
+  test('connected GitHub profile survives profile hydration', () {
+    final user = AppUser.fromMap({
+      'id': 'student-id',
+      'email': 'student@example.com',
+      'reg_no': '25MX001',
+      'name': 'Student',
+      'batch': 'G1',
+      'roles': {'isStudent': true},
+      'github_url': 'https://github.com/psgmx-student',
+      'batches': {'status': 'active_senior'},
+    });
+
+    expect(user.githubUrl, 'https://github.com/psgmx-student');
+    expect(user.toMap()['github_url'], 'https://github.com/psgmx-student');
+  });
 }

@@ -1,259 +1,302 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:provider/provider.dart';
+
 import '../../core/theme/app_dimens.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/daily_five_provider.dart';
+import '../../providers/user_provider.dart';
 import '../widgets/premium_card.dart';
 
-class TrainHubScreen extends StatelessWidget {
+class TrainHubScreen extends StatefulWidget {
   const TrainHubScreen({super.key});
+
+  @override
+  State<TrainHubScreen> createState() => _TrainHubScreenState();
+}
+
+class _TrainHubScreenState extends State<TrainHubScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final user = context.read<UserProvider>().currentUser;
+      if (user != null) context.read<DailyFiveProvider>().loadState(user.uid);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final dailyFive = context.watch<DailyFiveProvider>();
+    final user = context.watch<UserProvider>().currentUser;
     final streak = dailyFive.streak?.currentStreak ?? 0;
     final completedToday = dailyFive.completedToday;
+
     return Scaffold(
-      backgroundColor: AppTheme.scaffoldBg,
-      appBar: AppBar(
-        title: Text(
-          'Preparation Gymnasium',
-          style: GoogleFonts.sora(fontWeight: FontWeight.w900, fontSize: 18),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Daily Five Card
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppTheme.primaryPurple, Color(0xFF8B5CF6)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.primaryPurple.withValues(alpha: 0.3),
-                    blurRadius: 16,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          children: [
-                            Text('🔥', style: GoogleFonts.inter(fontSize: 12)),
-                            const SizedBox(width: 4),
-                            Text(
-                              streak > 0
-                                  ? '$streak DAY STREAK'
-                                  : 'START YOUR STREAK',
-                              style: GoogleFonts.inter(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 11,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Text(
-                        'DAILY HABIT',
-                        style: GoogleFonts.inter(
-                          color: Colors.white70,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 10,
-                          letterSpacing: 1,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Daily Five Concept Drill',
-                    style: GoogleFonts.sora(
-                      color: Colors.white,
-                      fontSize: 20,
+      backgroundColor: const Color(0xFFF7F8FA),
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: () async {
+            if (user != null) await dailyFive.loadState(user.uid);
+          },
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
+            children: [
+              Text('Train',
+                  style: GoogleFonts.sora(
+                      fontSize: 28,
                       fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    '5 targeted questions across DSA, DBMS, OS & Aptitude calibrated to your recent learning gaps.',
-                    style: GoogleFonts.inter(
-                        color: Colors.white70, fontSize: 13, height: 1.4),
-                  ),
-                  const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () => context.push('/daily-five'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: AppTheme.primaryPurple,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: Text(
-                        completedToday ? 'Completed Today' : 'Start Daily Five',
-                        style: GoogleFonts.inter(
-                            fontWeight: FontWeight.bold, fontSize: 14),
-                      ),
-                    ),
-                  ),
-                ],
+                      color: const Color(0xFF17132D))),
+              const SizedBox(height: 5),
+              Text(
+                user?.isActiveSenior == true
+                    ? 'Turn preparation into interview-ready proof.'
+                    : 'Small, focused practice that compounds every day.',
+                style:
+                    GoogleFonts.inter(fontSize: 13, color: AppTheme.mutedText),
               ),
-            ),
-
-            const SizedBox(height: 24),
-            Text(
-              'Targeted Micro-Drills',
-              style: GoogleFonts.sora(
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
-                color: AppTheme.headingText,
+              const SizedBox(height: 18),
+              _DailyFiveHero(
+                completed: completedToday,
+                streak: streak,
+                onTap: () => context.push('/train/daily-five'),
               ),
-            ),
-            const SizedBox(height: 12),
+              const SizedBox(height: 24),
+              Text('Quick practice',
+                  style: GoogleFonts.sora(
+                      fontSize: 17, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 10),
+              _PracticeCard(
+                icon: LucideIcons.timerReset,
+                title: 'Adaptive Skill Sprint',
+                subtitle:
+                    'Choose 5, 10 or 20 minutes. Difficulty grows with you.',
+                action: 'Launch sprint',
+                onTap: () => context.push('/train/sprint'),
+              ),
+              const SizedBox(height: 10),
+              _PracticeCard(
+                icon: LucideIcons.mic,
+                title: 'Communication Practice',
+                subtitle:
+                    'Record a private two-minute answer and receive clear feedback.',
+                action: 'Record audio',
+                onTap: () => context.push('/train/communication'),
+              ),
+              const SizedBox(height: 10),
+              _PracticeCard(
+                icon: LucideIcons.libraryBig,
+                title: 'Interview Pattern Library',
+                subtitle:
+                    'Learn reusable round patterns contributed by seniors and alumni.',
+                action: 'Explore patterns',
+                onTap: () => context.push('/interview-patterns'),
+              ),
+              const SizedBox(height: 24),
+              Text('Deep work',
+                  style: GoogleFonts.sora(
+                      fontSize: 17, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 10),
+              _DeepWorkGateway(
+                onTap: () => context.push('/train/deep-work'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 
-            // Adaptive Skill Sprint Card
-            _buildDrillCard(
-              context: context,
-              icon: Icons.psychology_outlined,
-              color: Colors.blue,
-              title: 'Adaptive Skill Sprint',
-              subtitle:
-                  '5, 10, or 20 min focus drills that adapt question difficulty to live performance.',
-              actionLabel: 'Launch Sprint',
-              onTap: () => context.push('/train/sprint'),
-            ),
+class _DailyFiveHero extends StatelessWidget {
+  final bool completed;
+  final int streak;
+  final VoidCallback onTap;
+  const _DailyFiveHero(
+      {required this.completed, required this.streak, required this.onTap});
 
-            const SizedBox(height: 12),
-
-            // Communication Audio Practice Card
-            _buildDrillCard(
-              context: context,
-              icon: Icons.mic_none_outlined,
-              color: Colors.orange,
-              title: 'Communication Practice',
-              subtitle:
-                  '2-minute audio recording evaluated by AI for clarity, answer structure & filler words.',
-              actionLabel: 'Record Audio (2m)',
-              onTap: () => context.push('/train/communication'),
-            ),
-
-            const SizedBox(height: 12),
-
-            // Interview Patterns Card
-            _buildDrillCard(
-              context: context,
-              icon: Icons.pattern_outlined,
-              color: Colors.teal,
-              title: 'Interview Pattern Library',
-              subtitle:
-                  'Real company interview rounds and problem breakdowns shared by alumni.',
-              actionLabel: 'Explore Patterns',
-              onTap: () => context.push('/interview-patterns'),
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF20163D), Color(0xFF5B2A86)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF5B2A86).withValues(alpha: .2),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
             ),
           ],
         ),
-      ),
-    );
-  }
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(children: [
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: .12),
+                  borderRadius: BorderRadius.circular(99),
+                ),
+                child: Text(
+                  streak > 0 ? '$streak day rhythm' : 'Start your rhythm',
+                  style: GoogleFonts.inter(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800),
+                ),
+              ),
+              const Spacer(),
+              Icon(completed ? LucideIcons.circleCheck : LucideIcons.brain,
+                  size: 21,
+                  color: completed
+                      ? const Color(0xFF86EFAC)
+                      : const Color(0xFFFFB899)),
+            ]),
+            const SizedBox(height: 18),
+            Text('Daily Five',
+                style: GoogleFonts.sora(
+                    color: Colors.white,
+                    fontSize: 21,
+                    fontWeight: FontWeight.w900)),
+            const SizedBox(height: 6),
+            Text(
+              completed
+                  ? 'Today\'s five are complete. Reopen your explanations any time.'
+                  : 'Five targeted questions selected from your learning gaps.',
+              style: GoogleFonts.inter(
+                  color: Colors.white70, fontSize: 12, height: 1.45),
+            ),
+            const SizedBox(height: 18),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: onTap,
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: const Color(0xFF3B2261),
+                ),
+                child: Text(completed ? 'Review today' : 'Start Daily Five'),
+              ),
+            ),
+          ],
+        ),
+      );
+}
 
-  Widget _buildDrillCard({
-    required BuildContext context,
-    required IconData icon,
-    required Color color,
-    required String title,
-    required String subtitle,
-    required String actionLabel,
-    required VoidCallback onTap,
-  }) {
-    return PremiumCard(
-      radius: AppRadius.card,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+class _PracticeCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final String action;
+  final VoidCallback onTap;
+
+  const _PracticeCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.action,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) => PremiumCard(
+        radius: AppRadius.card,
+        onTap: onTap,
+        padding: const EdgeInsets.all(16),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(16),
+              color: AppTheme.accentCoral.withValues(alpha: .09),
+              borderRadius: BorderRadius.circular(13),
             ),
-            child: Icon(icon, color: color, size: 24),
+            child: Icon(icon, color: AppTheme.accentCoral, size: 21),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 13),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(title,
                   style: GoogleFonts.inter(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.headingText,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
+                      fontSize: 13, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 4),
+              Text(subtitle,
                   style: GoogleFonts.inter(
-                    fontSize: 12,
-                    color: AppTheme.mutedText,
-                    height: 1.3,
-                  ),
+                      fontSize: 11, height: 1.4, color: AppTheme.mutedText)),
+              const SizedBox(height: 9),
+              Row(mainAxisSize: MainAxisSize.min, children: [
+                Flexible(
+                  child: Text(action,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.inter(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          color: AppTheme.accentCoral)),
                 ),
-                const SizedBox(height: 12),
-                InkWell(
-                  onTap: onTap,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        actionLabel,
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: color,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(Icons.arrow_forward_rounded, size: 14, color: color),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+                const SizedBox(width: 4),
+                const Icon(LucideIcons.arrowRight,
+                    size: 14, color: AppTheme.accentCoral),
+              ]),
+            ]),
           ),
-        ],
-      ),
-    );
-  }
+        ]),
+      );
+}
+
+class _DeepWorkGateway extends StatelessWidget {
+  final VoidCallback onTap;
+  const _DeepWorkGateway({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) => Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFF4ED),
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          border: Border.all(color: const Color(0xFFFFD4BF)),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          child: Padding(
+            padding: const EdgeInsets.all(17),
+            child: Row(children: [
+              const Icon(LucideIcons.monitorUp,
+                  color: AppTheme.accentCoral, size: 23),
+              const SizedBox(width: 13),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('CodeBox & mock assessments',
+                        style: GoogleFonts.inter(
+                            fontSize: 13, fontWeight: FontWeight.w800)),
+                    const SizedBox(height: 4),
+                    Text(
+                      'See open work here, then continue in the secure full-screen web workspace.',
+                      style: GoogleFonts.inter(
+                          fontSize: 11,
+                          height: 1.4,
+                          color: const Color(0xFF7C5B4A)),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Icon(LucideIcons.chevronRight,
+                  color: AppTheme.accentCoral, size: 18),
+            ]),
+          ),
+        ),
+      );
 }

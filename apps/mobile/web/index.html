@@ -22,8 +22,6 @@
   <title>PSGMX - Placement Readiness Companion</title>
   <link rel="manifest" href="manifest.json">
 
-  <!-- Flutter Initialization JS -->
-  <script src="flutter.js" defer></script>
   <style>
     body {
       background-color: #0F172A;
@@ -60,25 +58,6 @@
     <div style="font-size: 13px; color: #94A3B8; margin-top: 4px;">Loading Placement Companion...</div>
   </div>
 
-  <script>
-    window.addEventListener('load', function(ev) {
-      if (typeof _flutter === 'undefined' || !_flutter.loader) {
-        console.error('Flutter loader script failed to load.');
-        return;
-      }
-      
-      _flutter.loader.loadEntrypoint({
-        onEntrypointLoaded: function(engineInitializer) {
-          engineInitializer.initializeEngine({
-            useColorEmoji: true
-          }).then(function(appRunner) {
-            var loaderElem = document.getElementById('loading');
-            if (loaderElem) loaderElem.remove();
-            appRunner.runApp();
-          });
-        }
-      });
-    });
-  </script>
+  <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

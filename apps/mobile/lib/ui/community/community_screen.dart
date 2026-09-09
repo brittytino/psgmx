@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme/app_dimens.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/announcement_provider.dart';
+import '../../providers/user_provider.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/premium_card.dart';
 
@@ -65,7 +66,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
     }
   }
 
-  Future<void> _openLineageRequestSheet(String? seniorId, String seniorName) async {
+  Future<void> _openLineageRequestSheet(
+      String? seniorId, String seniorName) async {
     if (seniorId == null) return;
     final topicCtrl = TextEditingController();
     final questionCtrl = TextEditingController();
@@ -74,66 +76,92 @@ class _CommunityScreenState extends State<CommunityScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (sheetContext) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(sheetContext).viewInsets.bottom),
+        padding: EdgeInsets.only(
+            bottom: MediaQuery.of(sheetContext).viewInsets.bottom),
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: const BoxDecoration(
-              color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Ask $seniorName', style: GoogleFonts.sora(fontSize: 16, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 4),
-            Text('A specific topic and question, not a general chat request.',
-                style: GoogleFonts.inter(fontSize: 11, color: AppTheme.mutedText)),
-            const SizedBox(height: 16),
-            TextField(
-              controller: topicCtrl,
-              decoration: const InputDecoration(labelText: 'Topic', border: OutlineInputBorder(), hintText: 'e.g. System design interviews'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: questionCtrl,
-              maxLines: 3,
-              decoration: const InputDecoration(labelText: 'Your question', border: OutlineInputBorder()),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: () async {
-                  final topic = topicCtrl.text.trim();
-                  final question = questionCtrl.text.trim();
-                  if (topic.length < 2 || question.length < 5) {
-                    ScaffoldMessenger.of(sheetContext).showSnackBar(
-                        const SnackBar(content: Text('Add a topic and a fuller question first.')));
-                    return;
-                  }
-                  final studentId = Supabase.instance.client.auth.currentUser?.id;
-                  if (studentId == null) return;
-                  try {
-                    await Supabase.instance.client.from('lineage_requests').insert({
-                      'student_id': studentId,
-                      'alumni_id': seniorId,
-                      'topic': topic,
-                      'question': question,
-                    });
-                    if (sheetContext.mounted) Navigator.of(sheetContext).pop(true);
-                  } catch (_) {
-                    if (sheetContext.mounted) {
-                      ScaffoldMessenger.of(sheetContext)
-                          .showSnackBar(const SnackBar(content: Text('Could not send — try again shortly.')));
-                    }
-                  }
-                },
-                child: const Text('Send request'),
-              ),
-            ),
-          ]),
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+          child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Ask $seniorName',
+                    style: GoogleFonts.sora(
+                        fontSize: 16, fontWeight: FontWeight.w800)),
+                const SizedBox(height: 4),
+                Text(
+                    'A specific topic and question, not a general chat request.',
+                    style: GoogleFonts.inter(
+                        fontSize: 11, color: AppTheme.mutedText)),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: topicCtrl,
+                  decoration: const InputDecoration(
+                      labelText: 'Topic',
+                      border: OutlineInputBorder(),
+                      hintText: 'e.g. System design interviews'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: questionCtrl,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                      labelText: 'Your question', border: OutlineInputBorder()),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: () async {
+                      final topic = topicCtrl.text.trim();
+                      final question = questionCtrl.text.trim();
+                      if (topic.length < 2 || question.length < 5) {
+                        ScaffoldMessenger.of(sheetContext).showSnackBar(
+                            const SnackBar(
+                                content: Text(
+                                    'Add a topic and a fuller question first.')));
+                        return;
+                      }
+                      // A student may sign in through either their personal or
+                      // college email. Use the logical profile id, not the auth
+                      // identity id, for every row owned by the student.
+                      final studentId =
+                          context.read<UserProvider>().currentUser?.uid;
+                      if (studentId == null) return;
+                      try {
+                        await Supabase.instance.client
+                            .from('lineage_requests')
+                            .insert({
+                          'student_id': studentId,
+                          'alumni_id': seniorId,
+                          'topic': topic,
+                          'question': question,
+                        });
+                        if (sheetContext.mounted) {
+                          Navigator.of(sheetContext).pop(true);
+                        }
+                      } catch (_) {
+                        if (sheetContext.mounted) {
+                          ScaffoldMessenger.of(sheetContext).showSnackBar(
+                              const SnackBar(
+                                  content: Text(
+                                      'Could not send — try again shortly.')));
+                        }
+                      }
+                    },
+                    child: const Text('Send request'),
+                  ),
+                ),
+              ]),
         ),
       ),
     );
     if (sent == true && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Sent. Your senior will accept, decline, or redirect it.')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content:
+              Text('Sent. Your senior will accept, decline, or redirect it.')));
     }
   }
 
@@ -247,7 +275,10 @@ class _CommunityScreenState extends State<CommunityScreen> {
                       ),
                     )),
               const SizedBox(height: 22),
-              const _SectionTitle(title: 'From the Knowledge Brain'),
+              _SectionTitle(
+                  title: 'From the Knowledge Brain',
+                  action: 'Explore',
+                  onTap: () => context.push('/community/knowledge-brain')),
               const SizedBox(height: 10),
               if (_articles.isEmpty && !_loading)
                 const EmptyState(
@@ -258,6 +289,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                 ..._articles.map((article) => Padding(
                       padding: const EdgeInsets.only(bottom: 9),
                       child: PremiumCard(
+                        onTap: () => context.push('/community/knowledge-brain'),
                         radius: AppRadius.card,
                         child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -297,7 +329,10 @@ class _CommunityScreenState extends State<CommunityScreen> {
                       ),
                     )),
               const SizedBox(height: 22),
-              const _SectionTitle(title: 'Your MX lineage'),
+              _SectionTitle(
+                  title: 'Your MX lineage',
+                  action: 'Open',
+                  onTap: () => context.push('/community/lineage')),
               const SizedBox(height: 10),
               if (_lineage == null && !_loading)
                 const EmptyState(
@@ -307,6 +342,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                         'Your department mentor pairs each junior with a senior. Check back once yours is assigned.')
               else if (_lineage != null)
                 PremiumCard(
+                  onTap: () => context.push('/community/lineage'),
                   radius: AppRadius.card,
                   child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -316,8 +352,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
                             height: 42,
                             alignment: Alignment.center,
                             decoration: BoxDecoration(
-                                color: AppTheme.accentCoral
-                                    .withValues(alpha: .09),
+                                color:
+                                    AppTheme.accentCoral.withValues(alpha: .09),
                                 shape: BoxShape.circle),
                             child: const Icon(LucideIcons.usersRound,
                                 size: 20, color: AppTheme.accentCoral)),
@@ -341,10 +377,14 @@ class _CommunityScreenState extends State<CommunityScreen> {
                                           ?.isNotEmpty ==
                                       true) ...[
                                 const SizedBox(height: 2),
-                                Text([
-                                  _lineage!['senior_current_role_title'],
-                                  _lineage!['senior_current_company']
-                                ].where((v) => (v as String?)?.isNotEmpty == true).join(' · '),
+                                Text(
+                                    [
+                                      _lineage!['senior_current_role_title'],
+                                      _lineage!['senior_current_company']
+                                    ]
+                                        .where((v) =>
+                                            (v as String?)?.isNotEmpty == true)
+                                        .join(' · '),
                                     style: GoogleFonts.inter(
                                         fontSize: 10,
                                         color: AppTheme.mutedText)),
@@ -367,8 +407,10 @@ class _CommunityScreenState extends State<CommunityScreen> {
                                 child: TextButton.icon(
                                   onPressed: () => _openLineageRequestSheet(
                                       _lineage!['senior_user_id']?.toString(),
-                                      _lineage!['senior_name']?.toString() ?? 'your senior'),
-                                  icon: const Icon(LucideIcons.messageCircle, size: 14),
+                                      _lineage!['senior_name']?.toString() ??
+                                          'your senior'),
+                                  icon: const Icon(LucideIcons.messageCircle,
+                                      size: 14),
                                   label: const Text('Ask a specific question'),
                                 ),
                               ),
@@ -398,17 +440,15 @@ class _ActionCard extends StatelessWidget {
   Widget build(BuildContext context) => PremiumCard(
         onTap: onTap,
         radius: AppRadius.card,
-        child:
-            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Icon(icon, color: AppTheme.accentCoral, size: 22),
           const SizedBox(height: 17),
           Text(title,
-              style: GoogleFonts.inter(
-                  fontSize: 12, fontWeight: FontWeight.w800)),
+              style:
+                  GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w800)),
           const SizedBox(height: 3),
           Text(subtitle,
-              style: GoogleFonts.inter(
-                  fontSize: 9, color: AppTheme.mutedText)),
+              style: GoogleFonts.inter(fontSize: 9, color: AppTheme.mutedText)),
         ]),
       );
 }

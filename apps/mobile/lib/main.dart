@@ -12,6 +12,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
@@ -46,7 +47,14 @@ import 'package:flutter_native_splash/flutter_native_splash.dart';
 
 void main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
-  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+  // flutter_native_splash's web bridge is only generated when the package's
+  // optional web setup is run. PSGMX uses its own Flutter splash route on the
+  // PWA, so touching the native bridge there can throw before an existing
+  // authenticated session is restored. Keep the native splash lifecycle on
+  // Android/iOS and let Flutter render /splash on web.
+  if (!kIsWeb) {
+    FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+  }
 
   // Initialize Global Error Handling
   ErrorWidget.builder = (FlutterErrorDetails details) {

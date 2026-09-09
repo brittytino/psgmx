@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../core/logical_identity.dart';
 import '../models/app_user.dart';
 import '../services/supabase_service.dart';
 
@@ -29,7 +30,7 @@ class AttendanceProvider extends ChangeNotifier {
           .gte('session_datetime', '${dateStr}T00:00:00Z')
           .lte('session_datetime', '${dateStr}T23:59:59Z')
           .maybeSingle();
-          
+
       if (sessionResponse == null) return;
       final sessionId = sessionResponse['id'];
 
@@ -187,20 +188,20 @@ class AttendanceProvider extends ChangeNotifier {
           .gte('session_datetime', '${dateStr}T00:00:00Z')
           .lte('session_datetime', '${dateStr}T23:59:59Z')
           .maybeSingle();
-      
+
       if (sessionResponse == null) {
         _hasSubmittedToday = false;
         return;
       }
       final sessionId = sessionResponse['id'];
 
-      // Note: placement_attendance does not have team_id, but the UI considers it submitted if any records exist for these students. 
+      // Note: placement_attendance does not have team_id, but the UI considers it submitted if any records exist for these students.
       // For now, if the session has any attendance, we just say submitted (or we could check for specific student, but the UI is mostly 'has anyone marked it').
       final count = await _supabaseService.client
           .from('placement_attendance')
           .count()
           .eq('session_id', sessionId);
-          
+
       _hasSubmittedToday = count > 0;
     } catch (e) {
       debugPrint('Error checking submission status: $e');
@@ -227,6 +228,9 @@ class AttendanceProvider extends ChangeNotifier {
     final dateStr = normalizedSelected.toIso8601String().split('T')[0];
     final user = _supabaseService.client.auth.currentUser;
     if (user == null) throw Exception('User not authenticated');
+    final profileId =
+        await LogicalIdentity.currentUserId(_supabaseService.client);
+    if (profileId == null) throw Exception('User profile is unavailable');
 
     final List<Map<String, dynamic>> rows = [];
     final List<String> skippedUnregistered = [];
@@ -273,7 +277,7 @@ class AttendanceProvider extends ChangeNotifier {
         'session_id': 'TO_BE_REPLACED', // Will be filled below
         'user_id': resolvedUserId,
         'status': status.toLowerCase(),
-        'marked_by': user.id,
+        'marked_by': profileId,
       });
     }
 
@@ -296,17 +300,10 @@ class AttendanceProvider extends ChangeNotifier {
 
     String sessionId;
     if (sessionResponse == null) {
-      // If no session exists for this date, create one automatically
-      final newSession = await _supabaseService.client.from('placement_sessions').insert({
-        'session_datetime': '${dateStr}T00:00:00Z',
-        'topic': 'Scheduled Session',
-        'scheduled_by': user.id,
-        'batch_id': '00000000-0000-0000-0000-000000000000',
-      }).select().single();
-      sessionId = newSession['id'];
-    } else {
-      sessionId = sessionResponse['id'];
+      throw Exception(
+          'No placement session is scheduled for this date. Ask the PR to create the session first.');
     }
+    sessionId = sessionResponse['id'];
 
     for (var row in rows) {
       row['session_id'] = sessionId;
