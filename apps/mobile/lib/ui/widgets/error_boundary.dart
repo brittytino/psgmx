@@ -12,9 +12,10 @@ class GlobalErrorWidget extends StatelessWidget {
   Future<void> _reportIssueOnGitHub(BuildContext context) async {
     final error = errorDetails.exception.toString();
     final stackTrace = errorDetails.stack.toString();
-    
+
     // Format error for GitHub issue
-    final issueTitle = Uri.encodeComponent('App Crash: ${error.split('\n').first}');
+    final issueTitle =
+        Uri.encodeComponent('App Crash: ${error.split('\n').first}');
     final issueBody = Uri.encodeComponent('''
 ## 🐛 App Crash Report
 
@@ -35,9 +36,10 @@ ${stackTrace.length > 3000 ? '${stackTrace.substring(0, 3000)}...(truncated)' : 
 ---
 *Auto-generated crash report*
     ''');
-    
-    final url = 'https://github.com/brittytino/psgmx-flutter/issues/new?title=$issueTitle&body=$issueBody';
-    
+
+    final url =
+        'https://github.com/brittytino/psgmx/issues/new?title=$issueTitle&body=$issueBody';
+
     try {
       final uri = Uri.parse(url);
       await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -60,7 +62,7 @@ Error: ${errorDetails.exception}
 Stack Trace:
 ${errorDetails.stack}
     ''';
-    
+
     await Clipboard.setData(ClipboardData(text: errorText));
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -82,7 +84,7 @@ ${errorDetails.stack}
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF1A1A2E) : Colors.grey[50],
       body: SafeArea(
@@ -110,7 +112,7 @@ ${errorDetails.stack}
                       borderRadius: BorderRadius.circular(24),
                       child: Image.asset(
                         'assets/images/app_crash.png',
-                        height: 280,
+                        height: 220,
                         fit: BoxFit.contain,
                       ),
                     ),
@@ -122,34 +124,34 @@ ${errorDetails.stack}
                 Text(
                   'Thairyama Iru Kanna! 🔥',
                   style: GoogleFonts.poppins(
-                    fontSize: 16,
+                    fontSize: 22,
                     fontWeight: FontWeight.bold,
                     color: Colors.orange,
                   ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 12),
-                
+
                 Text(
                   'App crashed, but don\'t worry!',
                   style: GoogleFonts.inter(
-                    fontSize: 12,
+                    fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: isDark ? Colors.white : const Color(0xFF2D3748),
                   ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
-                
+
                 Text(
                   'We\'ve got your back. Let\'s fix this together.',
                   style: GoogleFonts.inter(
-                    fontSize: 11,
+                    fontSize: 14,
                     color: isDark ? Colors.grey[400] : Colors.grey[600],
                   ),
                   textAlign: TextAlign.center,
                 ),
-                
+
                 const SizedBox(height: 32),
 
                 // Action Buttons
@@ -167,7 +169,7 @@ ${errorDetails.stack}
                           label: Text(
                             'Report Issue on GitHub',
                             style: GoogleFonts.poppins(
-                              fontSize: 11,
+                              fontSize: 14,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -182,7 +184,7 @@ ${errorDetails.stack}
                         ),
                       ),
                       const SizedBox(height: 12),
-                      
+
                       // Copy Error Button
                       SizedBox(
                         width: double.infinity,
@@ -193,13 +195,15 @@ ${errorDetails.stack}
                           label: Text(
                             'Copy Error Details',
                             style: GoogleFonts.poppins(
-                              fontSize: 11,
+                              fontSize: 14,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: Colors.orange,
-                            side: BorderSide(color: Colors.orange.withValues(alpha: 0.5), width: 1.5),
+                            side: BorderSide(
+                                color: Colors.orange.withValues(alpha: 0.5),
+                                width: 1.5),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),
@@ -207,7 +211,7 @@ ${errorDetails.stack}
                         ),
                       ),
                       const SizedBox(height: 12),
-                      
+
                       // Restart App Button
                       SizedBox(
                         width: double.infinity,
@@ -218,12 +222,13 @@ ${errorDetails.stack}
                           label: Text(
                             'Restart App',
                             style: GoogleFonts.poppins(
-                              fontSize: 11,
+                              fontSize: 14,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                           style: TextButton.styleFrom(
-                            foregroundColor: isDark ? Colors.grey[400] : Colors.grey[700],
+                            foregroundColor:
+                                isDark ? Colors.grey[400] : Colors.grey[700],
                           ),
                         ),
                       ),
@@ -238,7 +243,7 @@ ${errorDetails.stack}
                   title: Text(
                     'Technical Details',
                     style: GoogleFonts.inter(
-                      fontSize: 11,
+                      fontSize: 13,
                       color: isDark ? Colors.grey[400] : Colors.grey[600],
                     ),
                   ),
@@ -253,7 +258,7 @@ ${errorDetails.stack}
                       child: SelectableText(
                         '${errorDetails.exception}\n\n${errorDetails.stack}',
                         style: GoogleFonts.jetBrainsMono(
-                          fontSize: 9,
+                          fontSize: 11,
                           color: isDark ? Colors.grey[300] : Colors.grey[800],
                         ),
                       ),
@@ -283,7 +288,8 @@ class CustomErrorWidget extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.warning_amber_rounded, size: 16, color: Colors.orange[300]),
+            Icon(Icons.warning_amber_rounded,
+                size: 16, color: Colors.orange[300]),
             const SizedBox(height: AppSpacing.md),
             Text(
               message,

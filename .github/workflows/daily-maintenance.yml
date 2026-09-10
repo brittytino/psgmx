@@ -14,9 +14,14 @@ jobs:
           APP_URL: ${{ vars.APP_API_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
-          test -n "$APP_URL"
           test -n "$CRON_SECRET"
-          status=$(curl --location --silent --show-error --output /tmp/maintenance.json --write-out "%{http_code}" \
+          APP_URL="${APP_URL:-https://www.psgmx.tech}"
+          APP_URL="${APP_URL%/}"
+          if [ "$APP_URL" = "https://psgmx.tech" ]; then APP_URL="https://www.psgmx.tech"; fi
+
+          status=$(curl --silent --show-error --retry 3 --retry-all-errors \
+            --connect-timeout 15 --max-time 120 \
+            --output /tmp/maintenance.json --write-out "%{http_code}" \
             --request POST \
             --header "Authorization: Bearer $CRON_SECRET" \
             --header "Content-Type: application/json" \

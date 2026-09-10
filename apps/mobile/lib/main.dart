@@ -11,6 +11,8 @@
 
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -77,28 +79,104 @@ void main() async {
       publishableKey: SupabaseConfig.supabaseAnonKey,
     );
     debugPrint('[APP] Supabase initialized successfully');
-
-    debugPrint('[APP] Initializing NotificationService...');
-    await NotificationService().init();
-    debugPrint('[APP] NotificationService initialized successfully');
-
-    debugPrint('[APP] Initializing BirthdayNotificationService...');
-    await BirthdayNotificationService().init();
-    debugPrint('[APP] BirthdayNotificationService initialized successfully');
-
-    debugPrint('[APP] Initializing UpdateService...');
-    await UpdateService().initialize();
-    debugPrint('[APP] UpdateService initialized successfully');
-
-    debugPrint('[APP] Initializing SyncService...');
-    SyncService(Supabase.instance.client, localDb);
-    debugPrint('[APP] SyncService initialized successfully');
-  } catch (e) {
-    debugPrint('[APP ERROR] Initialization failed: $e');
-    rethrow;
+  } catch (error, stackTrace) {
+    debugPrint('[APP ERROR] Critical initialization failed: $error');
+    debugPrintStack(stackTrace: stackTrace);
+    if (!kIsWeb) FlutterNativeSplash.remove();
+    runApp(const _StartupFailureApp());
+    return;
   }
 
   runApp(const PsgMxApp());
+  unawaited(_initializeBackgroundServices());
+}
+
+Future<void> _initializeBackgroundServices() async {
+  // These enhance the experience but must never delay the first frame or
+  // prevent cached study work when a permission or network call is unavailable.
+  await _initializeOptionalService(
+    'NotificationService',
+    NotificationService().init,
+  );
+  await Future.wait([
+    _initializeOptionalService(
+      'BirthdayNotificationService',
+      BirthdayNotificationService().init,
+    ),
+    _initializeOptionalService('SyncService', () async {
+      SyncService(Supabase.instance.client, localDb);
+    }),
+  ]);
+}
+
+Future<void> _initializeOptionalService(
+  String name,
+  Future<void> Function() initialize,
+) async {
+  try {
+    debugPrint('[APP] Initializing $name...');
+    await initialize();
+    debugPrint('[APP] $name initialized successfully');
+  } catch (error, stackTrace) {
+    debugPrint('[APP] $name unavailable; continuing safely: $error');
+    debugPrintStack(stackTrace: stackTrace);
+  }
+}
+
+class _StartupFailureApp extends StatelessWidget {
+  const _StartupFailureApp();
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.light(),
+      home: Scaffold(
+        body: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(32),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFFFE8E2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.cloud_off_rounded,
+                        size: 34,
+                        color: AppTheme.accentCoral,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      'PSGMX could not start',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Check your internet connection, then close and reopen the app. Your saved progress is safe.',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class PsgMxApp extends StatelessWidget {

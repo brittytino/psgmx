@@ -24,7 +24,6 @@ jobs:
     steps:
       - name: Validate secrets
         run: |
-          test -n "${{ vars.APP_API_URL }}" || (echo "ERROR: APP_API_URL variable not set" && exit 1)
           test -n "${{ secrets.CRON_SECRET }}" || (echo "ERROR: CRON_SECRET secret not set" && exit 1)
 
       - name: Generate weekly mock test via AI
@@ -33,13 +32,18 @@ jobs:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           echo "Calling AI mock test generator..."
-          HTTP_STATUS=$(curl --location --silent --show-error \
+          APP_URL="${APP_URL:-https://www.psgmx.tech}"
+          APP_URL="${APP_URL%/}"
+          if [ "$APP_URL" = "https://psgmx.tech" ]; then APP_URL="https://www.psgmx.tech"; fi
+
+          HTTP_STATUS=$(curl --silent --show-error --retry 3 --retry-all-errors \
             --output /tmp/mock_test_response.json \
             --write-out "%{http_code}" \
             --request POST \
             --header "x-cron-secret: $CRON_SECRET" \
             --header "Content-Type: application/json" \
-            --max-time 90 \
+            --connect-timeout 15 \
+            --max-time 120 \
             "$APP_URL/api/cron/mock-test-auto")
 
           echo "=== Response ==="

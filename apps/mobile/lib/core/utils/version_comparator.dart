@@ -1,6 +1,6 @@
 /// Semantic Version Comparison Utility
 /// Provides safe, correct version comparison for app updates
-/// 
+///
 /// Handles versions like:
 /// - "1.0.0"
 /// - "1.2.3"
@@ -25,43 +25,19 @@ class SemanticVersion implements Comparable<SemanticVersion> {
 
   /// Parse a version string like "1.2.3", "1.2.3-beta", or "1.2.3+build"
   factory SemanticVersion.parse(String version) {
-    // Remove leading 'v' if present
-    String cleanVersion = version.trim();
-    if (cleanVersion.toLowerCase().startsWith('v')) {
-      cleanVersion = cleanVersion.substring(1);
+    final match = RegExp(
+      r'^[vV]?(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?(?:\+([0-9A-Za-z.-]+))?$',
+    ).firstMatch(version.trim());
+    if (match == null) {
+      throw FormatException('Invalid semantic version', version);
     }
-
-    String? buildMetadata;
-    String? preRelease;
-    String coreVersion = cleanVersion;
-
-    // Extract build metadata (after +)
-    final buildIndex = cleanVersion.indexOf('+');
-    if (buildIndex != -1) {
-      buildMetadata = cleanVersion.substring(buildIndex + 1);
-      coreVersion = cleanVersion.substring(0, buildIndex);
-    }
-
-    // Extract pre-release (after -)
-    final preReleaseIndex = coreVersion.indexOf('-');
-    if (preReleaseIndex != -1) {
-      preRelease = coreVersion.substring(preReleaseIndex + 1);
-      coreVersion = coreVersion.substring(0, preReleaseIndex);
-    }
-
-    // Parse major.minor.patch
-    final parts = coreVersion.split('.');
-    
-    final major = parts.isNotEmpty ? int.tryParse(parts[0]) ?? 0 : 0;
-    final minor = parts.length > 1 ? int.tryParse(parts[1]) ?? 0 : 0;
-    final patch = parts.length > 2 ? int.tryParse(parts[2]) ?? 0 : 0;
 
     return SemanticVersion(
-      major: major,
-      minor: minor,
-      patch: patch,
-      preRelease: preRelease,
-      buildMetadata: buildMetadata,
+      major: int.parse(match.group(1)!),
+      minor: int.parse(match.group(2)!),
+      patch: int.parse(match.group(3)!),
+      preRelease: match.group(4),
+      buildMetadata: match.group(5),
     );
   }
 
@@ -106,7 +82,31 @@ class SemanticVersion implements Comparable<SemanticVersion> {
       return -1; // This is lesser (pre-release < stable)
     }
     if (preRelease != null && other.preRelease != null) {
-      return preRelease!.compareTo(other.preRelease!);
+      final currentParts = preRelease!.split('.');
+      final otherParts = other.preRelease!.split('.');
+      final sharedLength = currentParts.length < otherParts.length
+          ? currentParts.length
+          : otherParts.length;
+
+      for (var index = 0; index < sharedLength; index++) {
+        final currentPart = currentParts[index];
+        final otherPart = otherParts[index];
+        final currentNumber = int.tryParse(currentPart);
+        final otherNumber = int.tryParse(otherPart);
+
+        if (currentNumber != null && otherNumber != null) {
+          final comparison = currentNumber.compareTo(otherNumber);
+          if (comparison != 0) return comparison;
+        } else if (currentNumber != null) {
+          return -1;
+        } else if (otherNumber != null) {
+          return 1;
+        } else {
+          final comparison = currentPart.compareTo(otherPart);
+          if (comparison != 0) return comparison;
+        }
+      }
+      return currentParts.length.compareTo(otherParts.length);
     }
 
     // Build metadata is ignored in precedence
@@ -207,8 +207,8 @@ class VersionComparator {
 
     // Check if newer version available
     if (current < latest) {
-      return forceUpdate 
-          ? UpdateStatus.forceUpdateRequired 
+      return forceUpdate
+          ? UpdateStatus.forceUpdateRequired
           : UpdateStatus.optionalUpdateAvailable;
     }
 

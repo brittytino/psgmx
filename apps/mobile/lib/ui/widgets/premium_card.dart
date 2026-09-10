@@ -37,9 +37,11 @@ class PremiumCard extends StatefulWidget {
   State<PremiumCard> createState() => _PremiumCardState();
 }
 
-class _PremiumCardState extends State<PremiumCard> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scale;
+class _PremiumCardState extends State<PremiumCard>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _scale;
+  bool _isHovered = false;
 
   @override
   void initState() {
@@ -59,78 +61,113 @@ class _PremiumCardState extends State<PremiumCard> with SingleTickerProviderStat
     super.dispose();
   }
 
+  void _setPressed(bool pressed) {
+    if (MediaQuery.maybeOf(context)?.disableAnimations ?? false) {
+      _controller.value = 0;
+      return;
+    }
+    if (pressed) {
+      _controller.forward();
+    } else {
+      _controller.reverse();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
 
     // Use backgroundColor if provided, else color, else theme default
-    final cardColor = widget.backgroundColor ?? widget.color ?? theme.cardTheme.color;
+    final cardColor =
+        widget.backgroundColor ?? widget.color ?? theme.cardTheme.color;
+    final borderRadius = BorderRadius.circular(widget.radius);
 
-    return MouseRegion(
-      cursor: widget.onTap != null ? SystemMouseCursors.click : SystemMouseCursors.basic,
-      child: GestureDetector(
-        onTapDown: widget.onTap != null ? (_) => _controller.forward() : null,
-        onTapUp: widget.onTap != null ? (_) => _controller.reverse() : null,
-        onTapCancel: widget.onTap != null ? () => _controller.reverse() : null,
-        onTap: widget.onTap,
-        child: ScaleTransition(
-          scale: _scale,
-          child: Container(
-            decoration: BoxDecoration(
-              color: cardColor,
-              borderRadius: BorderRadius.circular(widget.radius),
-              border: widget.hasBorder
-                  ? Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.5))
-                  : null,
-              boxShadow: [
-                BoxShadow(
-                  color: isDark ? Colors.black.withValues(alpha: 0.2) : Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(widget.radius),
-              child: Padding(
-                padding: widget.padding,
-                child: widget.title == null
-                    ? widget.child
-                    : Column(
+    final content = Padding(
+      padding: widget.padding,
+      child: widget.title == null
+          ? widget.child
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(widget.title!,
-                                        style: theme.textTheme.titleLarge),
-                                    if (widget.subtitle != null) ...[
-                                      const SizedBox(height: AppSpacing.xs),
-                                      Text(widget.subtitle!,
-                                          style: theme.textTheme.bodyMedium
-                                              ?.copyWith(
-                                                  color: theme.colorScheme
-                                                      .onSurfaceVariant)),
-                                    ],
-                                  ],
-                                ),
+                          Text(widget.title!,
+                              style: theme.textTheme.titleLarge),
+                          if (widget.subtitle != null) ...[
+                            const SizedBox(height: AppSpacing.xs),
+                            Text(
+                              widget.subtitle!,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
                               ),
-                              if (widget.trailing != null) widget.trailing!,
-                            ],
-                          ),
-                          const SizedBox(height: AppSpacing.md),
-                          const Divider(height: 1),
-                          const SizedBox(height: AppSpacing.md),
-                          widget.child,
+                            ),
+                          ],
                         ],
                       ),
+                    ),
+                    if (widget.trailing != null) widget.trailing!,
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+                const Divider(height: 1),
+                const SizedBox(height: AppSpacing.md),
+                widget.child,
+              ],
+            ),
+    );
+
+    return MouseRegion(
+      cursor: widget.onTap != null
+          ? SystemMouseCursors.click
+          : SystemMouseCursors.basic,
+      onEnter: widget.onTap == null
+          ? null
+          : (_) => setState(() => _isHovered = true),
+      onExit: widget.onTap == null
+          ? null
+          : (_) => setState(() => _isHovered = false),
+      child: ScaleTransition(
+        scale: _scale,
+        child: AnimatedContainer(
+          duration: reduceMotion ? Duration.zero : AppDurations.fast,
+          curve: Curves.easeOutCubic,
+          decoration: BoxDecoration(
+            borderRadius: borderRadius,
+            border: widget.hasBorder
+                ? Border.all(
+                    color: theme.colorScheme.outline.withValues(alpha: 0.5),
+                  )
+                : null,
+            boxShadow: [
+              BoxShadow(
+                color: isDark
+                    ? Colors.black.withValues(alpha: _isHovered ? 0.28 : 0.2)
+                    : Colors.black.withValues(alpha: _isHovered ? 0.09 : 0.05),
+                blurRadius: _isHovered ? 14 : 8,
+                offset: Offset(0, _isHovered ? 4 : 2),
               ),
+            ],
+          ),
+          child: Material(
+            color: cardColor,
+            borderRadius: borderRadius,
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: widget.onTap,
+              onHighlightChanged: widget.onTap == null ? null : _setPressed,
+              borderRadius: borderRadius,
+              splashColor: theme.colorScheme.primary.withValues(alpha: 0.08),
+              highlightColor: theme.colorScheme.primary.withValues(alpha: 0.04),
+              hoverColor: theme.colorScheme.primary.withValues(alpha: 0.025),
+              child: content,
             ),
           ),
         ),

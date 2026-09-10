@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import '../providers/navigation_provider.dart';
+import '../core/theme/app_dimens.dart';
 import '../core/utils/responsive_helper.dart';
 import 'today/today_screen.dart';
 import 'train/train_hub_screen.dart';
@@ -68,15 +69,7 @@ class _RootLayoutState extends State<RootLayout> {
           label: 'You'),
     ];
 
-    // Safety check for index
-    var currentIndex = navProvider.currentIndex;
-    if (currentIndex >= screens.length) {
-      currentIndex = 0;
-      // Schedule a fix for the provider as well
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        navProvider.setIndex(0);
-      });
-    }
+    final currentIndex = navProvider.currentIndex;
 
     // Use NavigationRail for desktop/tablet web, BottomNavigationBar for mobile
     final useRail = ResponsiveHelper.isDesktop(context) ||
@@ -99,7 +92,12 @@ class _RootLayoutState extends State<RootLayout> {
                   .toList(),
             ),
             const VerticalDivider(thickness: 1, width: 1),
-            Expanded(child: screens[currentIndex]),
+            Expanded(
+              child: _AnimatedTabBody(
+                index: currentIndex,
+                screens: screens,
+              ),
+            ),
           ],
         ),
       );
@@ -107,8 +105,85 @@ class _RootLayoutState extends State<RootLayout> {
 
     // Mobile layout with bottom navigation
     return Scaffold(
-      body: screens[currentIndex],
+      body: _AnimatedTabBody(index: currentIndex, screens: screens),
       bottomNavigationBar: const SharedBottomNavigationBar(),
+    );
+  }
+}
+
+/// Keeps already-visited tabs alive (so scroll position and fetched data are
+/// retained) while applying one short, GPU-friendly transition on tab change.
+class _AnimatedTabBody extends StatefulWidget {
+  final int index;
+  final List<Widget> screens;
+
+  const _AnimatedTabBody({required this.index, required this.screens});
+
+  @override
+  State<_AnimatedTabBody> createState() => _AnimatedTabBodyState();
+}
+
+class _AnimatedTabBodyState extends State<_AnimatedTabBody>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Set<int> _visitedIndexes;
+  double _direction = 1;
+
+  @override
+  void initState() {
+    super.initState();
+    _visitedIndexes = {widget.index};
+    _controller = AnimationController(
+      vsync: this,
+      duration: AppDurations.medium,
+      value: 1,
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant _AnimatedTabBody oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.index != widget.index) {
+      _direction = widget.index > oldWidget.index ? 1 : -1;
+      _visitedIndexes.add(widget.index);
+      _controller.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final stack = IndexedStack(
+      index: widget.index,
+      children: List<Widget>.generate(widget.screens.length, (index) {
+        if (!_visitedIndexes.contains(index)) return const SizedBox.shrink();
+        return TickerMode(
+          enabled: index == widget.index,
+          child: widget.screens[index],
+        );
+      }),
+    );
+
+    if (MediaQuery.disableAnimationsOf(context)) return stack;
+
+    return AnimatedBuilder(
+      animation: _controller,
+      child: stack,
+      builder: (context, child) {
+        final value = Curves.easeOutCubic.transform(_controller.value);
+        return Opacity(
+          opacity: 0.88 + (0.12 * value),
+          child: Transform.translate(
+            offset: Offset((1 - value) * 12 * _direction, 0),
+            child: child,
+          ),
+        );
+      },
     );
   }
 }

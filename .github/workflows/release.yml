@@ -1,7 +1,8 @@
-name: Release PSGMX
-# Triggers on push to release/* branches and version tags.
+name: Release PSGMX Mobile
+# Release branches produce installable verification artifacts. Version tags
+# additionally publish those artifacts as a GitHub Release.
 # PRD Appendix A decision 6: Android APK distributed via GitHub Releases only.
-# Push to release/v4.2.0 -> builds APK, creates GitHub Release, uploads signed APK.
+# Push v4.2.0 -> builds and publishes signed APKs.
 # See: docs/user-flow.md Chapter 11.6
 
 on:
@@ -20,68 +21,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  verify-web:
-    name: Verify Next.js web app
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: apps/web
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: npm
-          cache-dependency-path: apps/web/package-lock.json
-
-      - name: Validate web configuration
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-        run: |
-          test -n "$SUPABASE_URL" || { echo "Missing SUPABASE_URL secret"; exit 1; }
-          test -n "$SUPABASE_ANON_KEY" || { echo "Missing SUPABASE_ANON_KEY secret"; exit 1; }
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Type check
-        run: npx tsc --noEmit
-
-      - name: Unit tests
-        run: npm run test:unit
-
-      - name: Lint
-        run: npm run lint
-
-      - name: Install Playwright browser
-        run: npx playwright install --with-deps chromium
-
-      - name: Public smoke tests
-        # Scoped to the public-smoke project only, same as web-deploy.yml:
-        # it needs no authenticated session. The unscoped `npm run test:e2e`
-        # also pulls in the role-based specs' Playwright "setup" project,
-        # whose auth.setup.ts tries to provision 5 test users through an
-        # endpoint that requires additional secrets this job doesn't have —
-        # that needs a real fix (driving the actual OTP flow, or passing the
-        # service-role key this job doesn't currently receive) before it
-        # belongs in a blocking release gate.
-        run: npx playwright test --project=public-smoke
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-
-      - name: Build production web app
-        run: npm run build
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-
   build-mobile:
     name: Build signed Android APKs
-    needs: verify-web
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -108,7 +49,7 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
           ANDROID_STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         run: |
-          APP_API_URL="${APP_API_URL:-https://psgmx.tech}"
+          APP_API_URL="${APP_API_URL:-https://www.psgmx.tech}"
           test -n "$SUPABASE_URL" || { echo "Missing SUPABASE_URL secret"; exit 1; }
           test -n "$SUPABASE_ANON_KEY" || { echo "Missing SUPABASE_ANON_KEY secret"; exit 1; }
           test -n "$ANDROID_KEYSTORE_BASE64" || { echo "Missing ANDROID_KEYSTORE_BASE64 secret"; exit 1; }
@@ -123,7 +64,11 @@ jobs:
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           APP_API_URL: ${{ vars.APP_API_URL }}
         run: |
-          APP_API_URL="${APP_API_URL:-https://psgmx.tech}"
+          APP_API_URL="${APP_API_URL:-https://www.psgmx.tech}"
+          APP_API_URL="${APP_API_URL%/}"
+          if [ "$APP_API_URL" = "https://psgmx.tech" ]; then
+            APP_API_URL="https://www.psgmx.tech"
+          fi
           umask 077
           printf 'SUPABASE_URL=%s\nSUPABASE_ANON_KEY=%s\nAPP_API_URL=%s\n' \
             "$SUPABASE_URL" "$SUPABASE_ANON_KEY" "$APP_API_URL" > .env.flutter
@@ -141,6 +86,22 @@ jobs:
         working-directory: apps/mobile
         run: dart run build_runner build
 
+      - name: Resolve release version
+        id: version
+        working-directory: apps/mobile
+        run: |
+          PACKAGE_VERSION=$(awk '/^version:/{print $2}' pubspec.yaml)
+          BUILD_NAME="${PACKAGE_VERSION%%+*}"
+          EXPECTED_TAG="v$BUILD_NAME"
+
+          if [ "$GITHUB_REF_TYPE" = "tag" ] && [ "$GITHUB_REF_NAME" != "$EXPECTED_TAG" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match pubspec version $EXPECTED_TAG"
+            exit 1
+          fi
+
+          echo "build_name=$BUILD_NAME" >> "$GITHUB_OUTPUT"
+          echo "release_tag=$EXPECTED_TAG" >> "$GITHUB_OUTPUT"
+
       - name: Analyze
         working-directory: apps/mobile
         run: flutter analyze --fatal-infos --fatal-warnings
@@ -149,7 +110,7 @@ jobs:
         working-directory: apps/mobile
         run: flutter test
 
-      - name: Build signed split APKs
+      - name: Build signed APKs
         working-directory: apps/mobile
         env:
           ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/psgmx-upload-keystore.jks
@@ -157,14 +118,25 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
           ANDROID_STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         run: |
-          BUILD_NAME="${GITHUB_REF_NAME#v}"
-          if [ "$GITHUB_REF_NAME" = "main" ]; then
-            BUILD_NAME="4.0.1"
-          fi
+          mkdir -p release-artifacts
+
+          flutter build apk --release \
+            --dart-define-from-file=.env.flutter \
+            --build-name="${{ steps.version.outputs.build_name }}" \
+            --build-number="$GITHUB_RUN_NUMBER"
+          cp build/app/outputs/flutter-apk/app-release.apk \
+            "release-artifacts/PSGMX-${{ steps.version.outputs.release_tag }}-android.apk"
+
           flutter build apk --release --split-per-abi \
             --dart-define-from-file=.env.flutter \
-            --build-name="$BUILD_NAME" \
+            --build-name="${{ steps.version.outputs.build_name }}" \
             --build-number="$GITHUB_RUN_NUMBER"
+          cp build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk \
+            "release-artifacts/PSGMX-${{ steps.version.outputs.release_tag }}-armeabi-v7a.apk"
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk \
+            "release-artifacts/PSGMX-${{ steps.version.outputs.release_tag }}-arm64-v8a.apk"
+          cp build/app/outputs/flutter-apk/app-x86_64-release.apk \
+            "release-artifacts/PSGMX-${{ steps.version.outputs.release_tag }}-x86_64.apk"
 
       - name: Build Flutter web client
         working-directory: apps/mobile
@@ -176,9 +148,7 @@ jobs:
           zip -r ../../../../psgmx-flutter-web-build.zip .
           cd ../../../../
           sha256sum \
-            apps/mobile/build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk \
-            apps/mobile/build/app/outputs/flutter-apk/app-arm64-v8a-release.apk \
-            apps/mobile/build/app/outputs/flutter-apk/app-x86_64-release.apk \
+            apps/mobile/release-artifacts/*.apk \
             psgmx-flutter-web-build.zip > SHA256SUMS.txt
 
       - name: Upload APK verification artifacts
@@ -186,7 +156,8 @@ jobs:
         with:
           name: psgmx-${{ github.ref_name }}-android
           path: |
-            apps/mobile/build/app/outputs/flutter-apk/*-release.apk
+            apps/mobile/release-artifacts/*.apk
+            psgmx-flutter-web-build.zip
             SHA256SUMS.txt
           if-no-files-found: error
 
@@ -199,9 +170,13 @@ jobs:
           make_latest: true
           generate_release_notes: true
           fail_on_unmatched_files: true
+          body: |
+            ## PSGMX ${{ github.ref_name }}
+
+            Download **PSGMX-${{ github.ref_name }}-android.apk** for the simplest Android installation. Device-specific APKs are also included for smaller downloads.
+
+            This release supports the complete 25MX and 26MX companion journeys. SHA-256 checksums are included for verification.
           files: |
-            apps/mobile/build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
-            apps/mobile/build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
-            apps/mobile/build/app/outputs/flutter-apk/app-x86_64-release.apk
+            apps/mobile/release-artifacts/*.apk
             psgmx-flutter-web-build.zip
             SHA256SUMS.txt

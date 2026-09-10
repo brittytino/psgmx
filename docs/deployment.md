@@ -92,7 +92,7 @@ ANDROID_STORE_PASSWORD
 Add this repository variable under Settings → Secrets and variables → Actions → Variables:
 
 ```text
-APP_API_URL=https://psgmx.tech
+APP_API_URL=https://www.psgmx.tech
 ```
 
 Generate `ANDROID_KEYSTORE_BASE64` on Linux with:

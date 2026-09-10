@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_windowmanager_plus/flutter_windowmanager_plus.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:provider/provider.dart';
@@ -11,6 +10,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/daily_five_provider.dart';
 import '../../providers/user_provider.dart';
+import '../../services/screen_security_service.dart';
 import 'package:flutter/foundation.dart';
 import 'streak_milestone_screen.dart';
 
@@ -21,7 +21,8 @@ class DailyFiveScreen extends StatefulWidget {
   State<DailyFiveScreen> createState() => _DailyFiveScreenState();
 }
 
-class _DailyFiveScreenState extends State<DailyFiveScreen> with WidgetsBindingObserver {
+class _DailyFiveScreenState extends State<DailyFiveScreen>
+    with WidgetsBindingObserver {
   Timer? _timer;
   int _timeLeft = 0;
   int _totalTime = 1;
@@ -34,17 +35,17 @@ class _DailyFiveScreenState extends State<DailyFiveScreen> with WidgetsBindingOb
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _secureScreen();
-    
+
     // Start initial timer after first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
-       _startTimerForCurrentQuestion();
+      _startTimerForCurrentQuestion();
     });
   }
 
   Future<void> _secureScreen() async {
     try {
       if (!kIsWeb) {
-        await FlutterWindowManagerPlus.addFlags(FlutterWindowManagerPlus.FLAG_SECURE);
+        await ScreenSecurityService.setSecure(true);
       }
       await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     } catch (e) {
@@ -55,7 +56,7 @@ class _DailyFiveScreenState extends State<DailyFiveScreen> with WidgetsBindingOb
   Future<void> _unsecureScreen() async {
     try {
       if (!kIsWeb) {
-        await FlutterWindowManagerPlus.clearFlags(FlutterWindowManagerPlus.FLAG_SECURE);
+        await ScreenSecurityService.setSecure(false);
       }
       await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     } catch (e) {
@@ -73,7 +74,8 @@ class _DailyFiveScreenState extends State<DailyFiveScreen> with WidgetsBindingOb
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
       final provider = context.read<DailyFiveProvider>();
       final auth = context.read<UserProvider>();
       if (auth.currentUser != null && provider.sessionActive) {
@@ -98,13 +100,13 @@ class _DailyFiveScreenState extends State<DailyFiveScreen> with WidgetsBindingOb
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        title: Row(
-          children: [
-            const Icon(LucideIcons.alertTriangle, color: Colors.red),
-            const SizedBox(width: 8),
-            Text('Proctoring Warning ($_warningCount/3)', style: GoogleFonts.sora(fontSize: 11, fontWeight: FontWeight.bold)),
-          ]
-        ),
+        title: Row(children: [
+          const Icon(LucideIcons.alertTriangle, color: Colors.red),
+          const SizedBox(width: 8),
+          Text('Proctoring Warning ($_warningCount/3)',
+              style:
+                  GoogleFonts.sora(fontSize: 11, fontWeight: FontWeight.bold)),
+        ]),
         content: Text(
           'Please do not exit the app, use split screen, or pull down the notification center during the exam.\n\nExceeding 3 warnings will terminate your exam and reset your streak to 0.',
           style: GoogleFonts.inter(),
@@ -115,7 +117,9 @@ class _DailyFiveScreenState extends State<DailyFiveScreen> with WidgetsBindingOb
               Navigator.of(ctx).pop();
               _isWarningOpen = false;
             },
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.accentCoral, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.accentCoral,
+                foregroundColor: Colors.white),
             child: const Text('I Understand'),
           ),
         ],
@@ -127,8 +131,9 @@ class _DailyFiveScreenState extends State<DailyFiveScreen> with WidgetsBindingOb
     final provider = context.read<DailyFiveProvider>();
     if (!provider.sessionActive || provider.session == null) return;
 
-    final question = provider.session!.questions[provider.session!.currentIndex];
-    
+    final question =
+        provider.session!.questions[provider.session!.currentIndex];
+
     int duration = 35; // Default medium
     if (question.difficulty == 'easy') duration = 25;
     if (question.difficulty == 'hard') duration = 45;
@@ -158,17 +163,19 @@ class _DailyFiveScreenState extends State<DailyFiveScreen> with WidgetsBindingOb
 
   void _submitAnswer(int index) {
     if (_timer != null) _timer!.cancel();
-    
+
     final provider = context.read<DailyFiveProvider>();
     final auth = context.read<UserProvider>();
     if (auth.currentUser == null) return;
 
-    provider.submitAnswer(userId: auth.currentUser!.uid, optionIndex: index).then((_) {
-       if (provider.sessionActive) {
-          _startTimerForCurrentQuestion();
-       } else if (provider.sessionFinished) {
-          _unsecureScreen(); // Quiz over, unsecure
-       }
+    provider
+        .submitAnswer(userId: auth.currentUser!.uid, optionIndex: index)
+        .then((_) {
+      if (provider.sessionActive) {
+        _startTimerForCurrentQuestion();
+      } else if (provider.sessionFinished) {
+        _unsecureScreen(); // Quiz over, unsecure
+      }
     });
   }
 
@@ -180,7 +187,8 @@ class _DailyFiveScreenState extends State<DailyFiveScreen> with WidgetsBindingOb
     if (provider.isLoading) {
       return Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,
-        body: const Center(child: CircularProgressIndicator(color: AppTheme.accentCoral)),
+        body: const Center(
+            child: CircularProgressIndicator(color: AppTheme.accentCoral)),
       );
     }
 
@@ -193,7 +201,8 @@ class _DailyFiveScreenState extends State<DailyFiveScreen> with WidgetsBindingOb
         backgroundColor: theme.scaffoldBackgroundColor,
         appBar: AppBar(leading: const BackButton()),
         body: Center(
-           child: Text('No questions available today.', style: GoogleFonts.inter(fontSize: 11)),
+          child: Text('No questions available today.',
+              style: GoogleFonts.inter(fontSize: 11)),
         ),
       );
     }
@@ -217,7 +226,8 @@ class _DailyFiveScreenState extends State<DailyFiveScreen> with WidgetsBindingOb
                     children: [
                       Row(
                         children: [
-                          const Icon(LucideIcons.target, size: 12, color: AppTheme.accentCoral),
+                          const Icon(LucideIcons.target,
+                              size: 12, color: AppTheme.accentCoral),
                           const SizedBox(width: 8),
                           Text(
                             'Daily Five',
@@ -241,7 +251,8 @@ class _DailyFiveScreenState extends State<DailyFiveScreen> with WidgetsBindingOb
                             TextSpan(
                               text: '/ ${session.questions.length}',
                               style: TextStyle(
-                                color: AppTheme.accentCoral.withValues(alpha: 0.5),
+                                color:
+                                    AppTheme.accentCoral.withValues(alpha: 0.5),
                               ),
                             ),
                           ],
@@ -254,7 +265,8 @@ class _DailyFiveScreenState extends State<DailyFiveScreen> with WidgetsBindingOb
                     borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
                       value: (currentIndex + 1) / session.questions.length,
-                      backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                      backgroundColor:
+                          theme.colorScheme.surfaceContainerHighest,
                       color: AppTheme.accentCoral,
                       minHeight: 6,
                     ),
@@ -262,10 +274,11 @@ class _DailyFiveScreenState extends State<DailyFiveScreen> with WidgetsBindingOb
                 ],
               ),
             ),
-            
+
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 24.0, vertical: 16.0),
                 child: Column(
                   children: [
                     // Timer
@@ -277,9 +290,12 @@ class _DailyFiveScreenState extends State<DailyFiveScreen> with WidgetsBindingOb
                         children: [
                           CustomPaint(
                             painter: _TimerGaugePainter(
-                              progress: _totalTime > 0 ? _timeLeft / _totalTime : 0,
+                              progress:
+                                  _totalTime > 0 ? _timeLeft / _totalTime : 0,
                               color: AppTheme.accentCoral,
-                              trackColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                              trackColor: theme
+                                  .colorScheme.surfaceContainerHighest
+                                  .withValues(alpha: 0.3),
                             ),
                           ),
                           Column(
@@ -298,7 +314,8 @@ class _DailyFiveScreenState extends State<DailyFiveScreen> with WidgetsBindingOb
                                 'sec',
                                 style: GoogleFonts.inter(
                                   fontSize: 9,
-                                  color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
+                                  color: theme.textTheme.bodyMedium?.color
+                                      ?.withValues(alpha: 0.5),
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -308,19 +325,22 @@ class _DailyFiveScreenState extends State<DailyFiveScreen> with WidgetsBindingOb
                       ),
                     ),
                     const SizedBox(height: 24),
-                    
+
                     // Category Tag
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: AppTheme.accentCoral.withValues(alpha: 0.2)),
+                        border: Border.all(
+                            color: AppTheme.accentCoral.withValues(alpha: 0.2)),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(LucideIcons.lightbulb, size: 12, color: AppTheme.accentCoral),
+                          const Icon(LucideIcons.lightbulb,
+                              size: 12, color: AppTheme.accentCoral),
                           const SizedBox(width: 6),
                           Flexible(
                             child: Text(
@@ -338,7 +358,7 @@ class _DailyFiveScreenState extends State<DailyFiveScreen> with WidgetsBindingOb
                       ),
                     ),
                     const SizedBox(height: 32),
-                    
+
                     // Question Text
                     Text(
                       question.questionText,
@@ -352,13 +372,14 @@ class _DailyFiveScreenState extends State<DailyFiveScreen> with WidgetsBindingOb
                       ),
                     ),
                     const SizedBox(height: 32),
-                    
+
                     // Options
                     ...List.generate(question.options.length, (index) {
                       final optionLetters = ['A', 'B', 'C', 'D', 'E'];
-                      return _buildOption(index, optionLetters[index], question.options[index]);
+                      return _buildOption(
+                          index, optionLetters[index], question.options[index]);
                     }),
-                    
+
                     const SizedBox(height: 48),
                   ],
                 ),
@@ -367,24 +388,29 @@ class _DailyFiveScreenState extends State<DailyFiveScreen> with WidgetsBindingOb
           ],
         ),
       ),
-      
+
       // Submit Button
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: ElevatedButton(
-            onPressed: _selectedOption != null ? () => _submitAnswer(_selectedOption!) : null,
+            onPressed: _selectedOption != null
+                ? () => _submitAnswer(_selectedOption!)
+                : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.accentCoral,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              disabledBackgroundColor: theme.colorScheme.surfaceContainerHighest,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
+              disabledBackgroundColor:
+                  theme.colorScheme.surfaceContainerHighest,
               elevation: 0,
             ),
             child: Text(
               'Submit Answer',
-              style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.bold),
+              style:
+                  GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.bold),
             ),
           ),
         ),
@@ -395,7 +421,7 @@ class _DailyFiveScreenState extends State<DailyFiveScreen> with WidgetsBindingOb
   Widget _buildOption(int index, String letter, String text) {
     final theme = Theme.of(context);
     final isSelected = _selectedOption == index;
-    
+
     return GestureDetector(
       onTap: () => setState(() => _selectedOption = index),
       child: Container(
@@ -405,16 +431,20 @@ class _DailyFiveScreenState extends State<DailyFiveScreen> with WidgetsBindingOb
           color: isSelected ? AppTheme.accentCoral : theme.colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? AppTheme.accentCoral : theme.dividerColor.withValues(alpha: 0.2),
+            color: isSelected
+                ? AppTheme.accentCoral
+                : theme.dividerColor.withValues(alpha: 0.2),
             width: 2,
           ),
-          boxShadow: isSelected ? [
-            BoxShadow(
-              color: AppTheme.accentCoral.withValues(alpha: 0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            )
-          ] : [],
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppTheme.accentCoral.withValues(alpha: 0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  )
+                ]
+              : [],
         ),
         child: Row(
           children: [
@@ -422,7 +452,9 @@ class _DailyFiveScreenState extends State<DailyFiveScreen> with WidgetsBindingOb
               width: 32,
               height: 32,
               decoration: BoxDecoration(
-                color: isSelected ? Colors.white : theme.colorScheme.surfaceContainerHighest,
+                color: isSelected
+                    ? Colors.white
+                    : theme.colorScheme.surfaceContainerHighest,
                 shape: BoxShape.circle,
               ),
               child: Center(
@@ -431,7 +463,9 @@ class _DailyFiveScreenState extends State<DailyFiveScreen> with WidgetsBindingOb
                   style: GoogleFonts.sora(
                     fontSize: 9,
                     fontWeight: FontWeight.bold,
-                    color: isSelected ? AppTheme.accentCoral : theme.colorScheme.onSurface,
+                    color: isSelected
+                        ? AppTheme.accentCoral
+                        : theme.colorScheme.onSurface,
                   ),
                 ),
               ),
@@ -443,7 +477,8 @@ class _DailyFiveScreenState extends State<DailyFiveScreen> with WidgetsBindingOb
                 style: GoogleFonts.inter(
                   fontSize: 9,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                  color: isSelected ? Colors.white : theme.colorScheme.onSurface,
+                  color:
+                      isSelected ? Colors.white : theme.colorScheme.onSurface,
                 ),
               ),
             ),
@@ -453,7 +488,8 @@ class _DailyFiveScreenState extends State<DailyFiveScreen> with WidgetsBindingOb
     );
   }
 
-  Widget _buildCompletionScreen(BuildContext context, ThemeData theme, DailyFiveProvider provider) {
+  Widget _buildCompletionScreen(
+      BuildContext context, ThemeData theme, DailyFiveProvider provider) {
     // Grading now happens server-side (Section 4.2) — correctOption isn't
     // available on this device for online-fetched questions anymore, so
     // provider.session!.accuracyRate/correctCount can't be trusted here.
@@ -486,14 +522,15 @@ class _DailyFiveScreenState extends State<DailyFiveScreen> with WidgetsBindingOb
               fit: BoxFit.cover,
             ),
           ),
-          
+
           SafeArea(
             child: Column(
               children: [
                 Expanded(
                   child: SingleChildScrollView(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 40.0),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24.0, vertical: 40.0),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -503,48 +540,79 @@ class _DailyFiveScreenState extends State<DailyFiveScreen> with WidgetsBindingOb
                             height: 220,
                           ),
                           const SizedBox(height: 32),
-                          
+
                           // Title
                           Text(
                             'Daily Five Completed!',
-                            style: GoogleFonts.sora(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.headingText),
+                            style: GoogleFonts.sora(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.headingText),
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 8),
-                          
+
                           // Subtitle
                           Text(
-                            provider.isSubmitting 
-                               ? 'Saving your score and updating readiness...'
-                               : 'Great job! You\'ve completed your daily questions.',
-                            style: GoogleFonts.inter(fontSize: 9, color: AppTheme.mutedText),
+                            provider.isSubmitting
+                                ? 'Saving your score and updating readiness...'
+                                : 'Great job! You\'ve completed your daily questions.',
+                            style: GoogleFonts.inter(
+                                fontSize: 9, color: AppTheme.mutedText),
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 32),
-                          
+
                           // Stats Card
                           Container(
-                            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 24, horizontal: 16),
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(20),
                               boxShadow: [
-                                BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 20, offset: const Offset(0, 10))
+                                BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.03),
+                                    blurRadius: 20,
+                                    offset: const Offset(0, 10))
                               ],
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
-                                _buildStatColumn(LucideIcons.checkCircle, const Color(0xFF65A30D), '$correctCount', 'Correct\nAnswers', theme),
-                                Container(height: 50, width: 1, color: theme.dividerColor.withValues(alpha: 0.1)),
-                                _buildStatColumn(LucideIcons.flame, AppTheme.accentCoral, '${provider.streak?.currentStreak ?? 0}', 'Day\nStreak', theme),
-                                Container(height: 50, width: 1, color: theme.dividerColor.withValues(alpha: 0.1)),
-                                _buildStatColumn(LucideIcons.trendingUp, const Color(0xFF8B5CF6), accuracyStr, 'Accuracy', theme),
+                                _buildStatColumn(
+                                    LucideIcons.checkCircle,
+                                    const Color(0xFF65A30D),
+                                    '$correctCount',
+                                    'Correct\nAnswers',
+                                    theme),
+                                Container(
+                                    height: 50,
+                                    width: 1,
+                                    color: theme.dividerColor
+                                        .withValues(alpha: 0.1)),
+                                _buildStatColumn(
+                                    LucideIcons.flame,
+                                    AppTheme.accentCoral,
+                                    '${provider.streak?.currentStreak ?? 0}',
+                                    'Day\nStreak',
+                                    theme),
+                                Container(
+                                    height: 50,
+                                    width: 1,
+                                    color: theme.dividerColor
+                                        .withValues(alpha: 0.1)),
+                                _buildStatColumn(
+                                    LucideIcons.trendingUp,
+                                    const Color(0xFF8B5CF6),
+                                    accuracyStr,
+                                    'Accuracy',
+                                    theme),
                               ],
                             ),
                           ),
                           const SizedBox(height: 24),
-                          
+
                           // Consistency Banner
                           Container(
                             padding: const EdgeInsets.all(16),
@@ -557,19 +625,29 @@ class _DailyFiveScreenState extends State<DailyFiveScreen> with WidgetsBindingOb
                                 Container(
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF84CC16).withValues(alpha: 0.2),
+                                    color: const Color(0xFF84CC16)
+                                        .withValues(alpha: 0.2),
                                     shape: BoxShape.circle,
                                   ),
-                                  child: const Icon(LucideIcons.trophy, color: Color(0xFF65A30D)),
+                                  child: const Icon(LucideIcons.trophy,
+                                      color: Color(0xFF65A30D)),
                                 ),
                                 const SizedBox(width: 16),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      Text('Consistency is your superpower.', style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w600, color: const Color(0xFF3F6212))),
+                                      Text('Consistency is your superpower.',
+                                          style: GoogleFonts.inter(
+                                              fontSize: 9,
+                                              fontWeight: FontWeight.w600,
+                                              color: const Color(0xFF3F6212))),
                                       const SizedBox(height: 2),
-                                      Text('Keep going, keep growing!', style: GoogleFonts.inter(fontSize: 9, color: const Color(0xFF4D7C0F))),
+                                      Text('Keep going, keep growing!',
+                                          style: GoogleFonts.inter(
+                                              fontSize: 9,
+                                              color: const Color(0xFF4D7C0F))),
                                     ],
                                   ),
                                 ),
@@ -581,33 +659,39 @@ class _DailyFiveScreenState extends State<DailyFiveScreen> with WidgetsBindingOb
                     ),
                   ),
                 ),
-                
+
                 // Bottom Button
                 Padding(
                   padding: const EdgeInsets.all(24.0),
                   child: provider.isSubmitting
-                    ? const CircularProgressIndicator(color: AppTheme.accentCoral)
-                    : SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () => _finishAndReturn(context, provider),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.accentCoral,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 18),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            elevation: 0,
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text('Back to Dashboard', style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.bold)),
-                              const SizedBox(width: 8),
-                              const Icon(LucideIcons.arrowRight, size: 12),
-                            ],
+                      ? const CircularProgressIndicator(
+                          color: AppTheme.accentCoral)
+                      : SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: () =>
+                                _finishAndReturn(context, provider),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.accentCoral,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 18),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16)),
+                              elevation: 0,
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text('Back to Dashboard',
+                                    style: GoogleFonts.inter(
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.bold)),
+                                const SizedBox(width: 8),
+                                const Icon(LucideIcons.arrowRight, size: 12),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
                 ),
               ],
             ),
@@ -617,18 +701,21 @@ class _DailyFiveScreenState extends State<DailyFiveScreen> with WidgetsBindingOb
     );
   }
 
-  Future<void> _finishAndReturn(BuildContext context, DailyFiveProvider provider) async {
+  Future<void> _finishAndReturn(
+      BuildContext context, DailyFiveProvider provider) async {
     final streak = provider.streak;
     if (streak != null && streak.isAtMilestone) {
       await Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => StreakMilestoneScreen(streak: streak)),
+        MaterialPageRoute(
+            builder: (_) => StreakMilestoneScreen(streak: streak)),
       );
       if (!context.mounted) return;
     }
     context.pop();
   }
 
-  Widget _buildStatColumn(IconData icon, Color color, String value, String label, ThemeData theme) {
+  Widget _buildStatColumn(
+      IconData icon, Color color, String value, String label, ThemeData theme) {
     return Column(
       children: [
         Container(
@@ -640,9 +727,16 @@ class _DailyFiveScreenState extends State<DailyFiveScreen> with WidgetsBindingOb
           child: Icon(icon, color: color, size: 12),
         ),
         const SizedBox(height: 8),
-        Text(value, style: GoogleFonts.sora(fontSize: 9, fontWeight: FontWeight.bold, color: color)),
+        Text(value,
+            style: GoogleFonts.sora(
+                fontSize: 9, fontWeight: FontWeight.bold, color: color)),
         const SizedBox(height: 2),
-        Text(label, textAlign: TextAlign.center, style: GoogleFonts.inter(fontSize: 9, color: theme.colorScheme.onSurface, fontWeight: FontWeight.w500)),
+        Text(label,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+                fontSize: 9,
+                color: theme.colorScheme.onSurface,
+                fontWeight: FontWeight.w500)),
       ],
     );
   }
@@ -653,7 +747,8 @@ class _TimerGaugePainter extends CustomPainter {
   final Color color;
   final Color trackColor;
 
-  _TimerGaugePainter({required this.progress, required this.color, required this.trackColor});
+  _TimerGaugePainter(
+      {required this.progress, required this.color, required this.trackColor});
 
   @override
   void paint(Canvas canvas, Size size) {

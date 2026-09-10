@@ -40,7 +40,12 @@ jobs:
         run: npm run lint
 
       - name: Install Playwright browser
-        run: npx playwright install --with-deps chromium
+        run: |
+          for attempt in 1 2 3; do
+            npx playwright install --with-deps chromium && exit 0
+            if [ "$attempt" -eq 3 ]; then exit 1; fi
+            sleep $((attempt * 10))
+          done
 
       - name: Public smoke tests
         # Scoped to the public-smoke project only: it needs no authenticated

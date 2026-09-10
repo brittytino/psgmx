@@ -17,21 +17,22 @@
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
   <title>PSGMX - Placement Readiness Companion</title>
   <link rel="manifest" href="manifest.json">
 
   <style>
     body {
-      background-color: #0F172A;
+      background-color: #FBF6EE;
       margin: 0;
       padding: 0;
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
-      color: #F8FAFC;
+      min-height: 100vh;
+      min-height: 100dvh;
+      color: #221F1A;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
     .loading-container {
@@ -48,6 +49,9 @@
     }
     @keyframes spin {
       to { transform: rotate(360deg); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .spinner { animation: none; }
     }
   </style>
 </head>

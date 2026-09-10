@@ -68,10 +68,12 @@ class SemanticColors extends ThemeExtension<SemanticColors> {
     if (other is! SemanticColors) return this;
     return SemanticColors(
       success: Color.lerp(success, other.success, t)!,
-      successContainer: Color.lerp(successContainer, other.successContainer, t)!,
+      successContainer:
+          Color.lerp(successContainer, other.successContainer, t)!,
       onSuccess: Color.lerp(onSuccess, other.onSuccess, t)!,
       warning: Color.lerp(warning, other.warning, t)!,
-      warningContainer: Color.lerp(warningContainer, other.warningContainer, t)!,
+      warningContainer:
+          Color.lerp(warningContainer, other.warningContainer, t)!,
       onWarning: Color.lerp(onWarning, other.onWarning, t)!,
       info: Color.lerp(info, other.info, t)!,
       infoContainer: Color.lerp(infoContainer, other.infoContainer, t)!,
@@ -133,18 +135,19 @@ class AppTheme {
 
   // --- Daybreak Light Theme Colors ---
   static const Color _lightBg = Color(0xFFFBF6EE); // Paper Cream
-  static const Color _lightSurface = Color(0xFFFFFFFF); 
-  static const Color _lightBorder = Color(0xFFEFE9E0); // Subtle darker cream for borders
-  
+  static const Color _lightSurface = Color(0xFFFFFFFF);
+  static const Color _lightBorder =
+      Color(0xFFEFE9E0); // Subtle darker cream for borders
+
   static const Color _lightTextPrimary = Color(0xFF221F1A); // Ink primary
 
   static const Color _lightTextMuted = Color(0xFF9E9A92); // Muted ink
 
   // --- Daybreak Dark Theme Colors (Derived) ---
-  static const Color _darkBg = Color(0xFF0C0C0E); 
-  static const Color _darkSurface = Color(0xFF17171B); 
+  static const Color _darkBg = Color(0xFF0C0C0E);
+  static const Color _darkSurface = Color(0xFF17171B);
   static const Color _darkBorder = Color(0x1AFFFFFF); // Low opacity white
-  
+
   static const Color _darkTextPrimary = Color(0xFFF5F4F2);
 
   static const Color _darkTextMuted = Color(0xFF6B7078);
@@ -225,25 +228,41 @@ class AppTheme {
       brightness: brightness,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: scaffoldBg,
+      visualDensity: VisualDensity.standard,
+      materialTapTargetSize: MaterialTapTargetSize.padded,
       extensions: <ThemeExtension<dynamic>>[semanticColors],
-      
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: <TargetPlatform, PageTransitionsBuilder>{
+          TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+          TargetPlatform.iOS: FadeUpwardsPageTransitionsBuilder(),
+          TargetPlatform.macOS: FadeUpwardsPageTransitionsBuilder(),
+          TargetPlatform.linux: FadeUpwardsPageTransitionsBuilder(),
+          TargetPlatform.windows: FadeUpwardsPageTransitionsBuilder(),
+          TargetPlatform.fuchsia: FadeUpwardsPageTransitionsBuilder(),
+        },
+      ),
+
       // Typography
       textTheme: AppTypography.getTextTheme(isDark),
-      
+
       // AppBar
       appBarTheme: AppBarTheme(
         backgroundColor: scaffoldBg,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        iconTheme: IconThemeData(color: isDark ? Colors.white : const Color(0xFF221F1A)),
+        iconTheme: IconThemeData(
+            color: isDark ? Colors.white : const Color(0xFF221F1A)),
       ),
-      
+
       // Card Theme (flat cards, soft shadow on light, 1px border on both)
       cardTheme: CardThemeData(
         color: surfaceColor,
-        elevation: isDark ? 0 : 2, 
-        shadowColor: isDark ? Colors.transparent : const Color(0xFFE8B84B).withValues(alpha: 0.05), // Soft warm shadow on light
+        elevation: isDark ? 0 : 2,
+        shadowColor: isDark
+            ? Colors.transparent
+            : const Color(0xFFE8B84B)
+                .withValues(alpha: 0.05), // Soft warm shadow on light
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -256,7 +275,8 @@ class AppTheme {
         filled: true,
         fillColor: scaffoldBg,
         hintStyle: TextStyle(color: textMuted, fontSize: 14),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.md),
           borderSide: BorderSide(color: borderColor, width: 1),
@@ -274,7 +294,7 @@ class AppTheme {
           borderSide: BorderSide(color: colorScheme.error, width: 1),
         ),
       ),
-      
+
       // Buttons
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
@@ -284,10 +304,11 @@ class AppTheme {
             borderRadius: BorderRadius.circular(AppRadius.md),
           ),
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+          minimumSize: const Size(48, 48),
           elevation: 0,
         ),
       ),
-      
+
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: textPrimary,
@@ -296,15 +317,16 @@ class AppTheme {
             borderRadius: BorderRadius.circular(AppRadius.md),
           ),
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+          minimumSize: const Size(48, 48),
         ),
       ),
-      
+
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: textPrimary,
         ),
       ),
-      
+
       // Bottom Navigation
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: surfaceColor,
@@ -314,19 +336,24 @@ class AppTheme {
         elevation: 0,
         showSelectedLabels: true,
         showUnselectedLabels: true,
-        selectedLabelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-        unselectedLabelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+        selectedLabelStyle:
+            const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+        unselectedLabelStyle:
+            const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
       ),
-      
+
       // NavigationBar (Material 3)
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: surfaceColor,
+        height: 70,
         indicatorColor: accentCoral.withValues(alpha: 0.1),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: accentCoral);
+            return const TextStyle(
+                fontSize: 12, fontWeight: FontWeight.w600, color: accentCoral);
           }
-          return TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: textMuted);
+          return TextStyle(
+              fontSize: 12, fontWeight: FontWeight.w500, color: textMuted);
         }),
         iconTheme: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
@@ -336,7 +363,37 @@ class AppTheme {
         }),
         elevation: 0,
       ),
-      
+
+      // Consistent floating feedback and modal surfaces across every journey.
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: isDark ? const Color(0xFF27272C) : _lightTextPrimary,
+        contentTextStyle: const TextStyle(color: Colors.white),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+        ),
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: surfaceColor,
+        modalBackgroundColor: surfaceColor,
+        showDragHandle: true,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppRadius.lg),
+          ),
+        ),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: surfaceColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+        ),
+      ),
+      progressIndicatorTheme: const ProgressIndicatorThemeData(
+        color: accentCoral,
+        linearMinHeight: 4,
+      ),
+
       // Divider
       dividerTheme: DividerThemeData(
         color: borderColor,

@@ -17,9 +17,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Ping keepalive endpoint
+        env:
+          APP_URL: ${{ vars.APP_API_URL }}
         run: |
-          HTTP_STATUS=$(curl --location --silent --show-error -o /dev/null -w "%{http_code}" \
-            "${{ vars.APP_API_URL }}/api/health")
+          APP_URL="${APP_URL:-https://www.psgmx.tech}"
+          APP_URL="${APP_URL%/}"
+          if [ "$APP_URL" = "https://psgmx.tech" ]; then APP_URL="https://www.psgmx.tech"; fi
+
+          HTTP_STATUS=$(curl --silent --show-error --retry 3 --retry-all-errors \
+            --connect-timeout 15 --max-time 60 -o /dev/null -w "%{http_code}" \
+            "$APP_URL/api/health")
 
           echo "Keepalive HTTP status: $HTTP_STATUS"
 
