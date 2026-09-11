@@ -1,11 +1,11 @@
 services:
   - type: web
-    name: psgmx-ecampus
+    name: psgmx-ecampus-api
     runtime: python
     plan: free
     rootDir: services/ecampus
     buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT --workers 1
     healthCheckPath: /health
     autoDeployTrigger: commit
     envVars:
@@ -16,4 +16,4 @@ services:
       - key: SUPABASE_SERVICE_KEY
         sync: false
       - key: API_SECRET
-        generateValue: true
+        sync: false
