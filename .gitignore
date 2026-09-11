@@ -76,6 +76,7 @@ dist/
 .env.local
 .env.*.local
 .env.flutter
+.env.vercel
 
 # IDE & Editor
 *.swp
