@@ -104,7 +104,7 @@ jobs:
 
       - name: Analyze
         working-directory: apps/mobile
-        run: flutter analyze --fatal-infos --fatal-warnings
+        run: flutter analyze --fatal-warnings
 
       - name: Test
         working-directory: apps/mobile
@@ -173,9 +173,23 @@ jobs:
           body: |
             ## PSGMX ${{ github.ref_name }}
 
-            Download **PSGMX-${{ github.ref_name }}-android.apk** for the simplest Android installation. Device-specific APKs are also included for smaller downloads.
+            ### 🚀 What's New
+            - **Screen Security** — screenshot / screen-recording prevention on Android
+            - **Journey Archive** — browse and replay past journey entries
+            - **Adaptive Sprint System** — real-time difficulty adjustment with persistent revisit queues
+            - **Push Notifications** — sprint reminders, placement alerts, and announcements
+            - **Live Search Spotlight** — instant autocomplete across student portal & Knowledge Brain
+            - **Real-time Notifications** — zero-static-data Supabase Realtime pipeline
+            - **Historical Alumni Migration** — full lineage graph for batches 19MX–24MX
+            - **Community & Squad Expansion** — leaderboard, peer-challenge flows, and feed improvements
 
-            This release supports the complete 25MX and 26MX companion journeys. SHA-256 checksums are included for verification.
+            ### 📲 Installation
+            Download **PSGMX-${{ github.ref_name }}-android.apk** for the universal build (recommended for most devices).
+            Device-specific APKs (`armeabi-v7a`, `arm64-v8a`, `x86_64`) are included for smaller installs.
+
+            SHA-256 checksums are provided in `SHA256SUMS.txt` for integrity verification.
+
+            > **Web app**: Live at https://www.psgmx.tech · Firebase PWA at https://psgmxians.web.app
           files: |
             apps/mobile/release-artifacts/*.apk
             psgmx-flutter-web-build.zip

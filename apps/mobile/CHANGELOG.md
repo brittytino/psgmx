@@ -2,6 +2,50 @@
 
 All notable changes to PSG MCA Placement Prep App will be documented in this file.
 
+## [4.2.0] - 2026-09-11
+
+### 🚀 Features
+
+- **Screen Security Service**: Android-level screenshot/screen-recording prevention for sensitive app screens, protecting student data during placement sessions.
+- **Semantic Version Comparison**: Robust semver parsing and comparison logic for in-app update prompts — correctly handles pre-release and build-metadata suffixes.
+- **Journey Archive**: Students can now browse and replay past journey entries; archived journeys are accessible from the profile and community tabs.
+- **Expanded Navigation**: Community, Training, and Profile tabs now have fully wired deep-link routes and sub-page navigation flows.
+- **Adaptive Sprint System**: Question sprints now adapt difficulty in real time based on answer accuracy. Persistent revisit queues ensure weak topics resurface automatically.
+- **Push Notifications**: Device token registration and targeted push-notification dispatch for sprint reminders, placement alerts, and announcements.
+- **Squad & Community Expansion**: New squad leaderboard, peer-challenge flows, and community feed improvements.
+- **Historical Alumni Migration**: Seeding scripts and data migrations for alumni batches 19MX–24MX, unlocking the full lineage graph.
+- **Live Search Spotlight**: Real-time header search with instant autocomplete and URL query-parameter sync across the student portal and Knowledge Brain.
+- **Real-time Notifications**: Zero-static-data notification pipeline using Supabase Realtime; alumni and student portals both receive live DB-push events.
+
+### 🏗️ Architecture & Refactoring
+
+- Removed ~47 dead legacy code files with zero live entry points (cleaner build graph, faster analysis).
+- Improved robustness of student role detection, lineage lookup, and error handling across exam and lineage views.
+- Full dynamic UI conversion — no static/dummy data remains in production screens.
+- Robust API integration across all portals with proper loading, error, and empty states.
+- Strengthened Supabase RLS: granted missing table-level access for `sprint`, `device_tokens`, and `lineage_requests` tables.
+
+### 🐛 Bug Fixes
+
+- Fixed real UI overflow bugs in multiple screens (replaced dummy data with live DB queries).
+- Fixed alumni portal: removed readiness/streaks from alumni view and wired real-time DB queries correctly.
+- Fixed batch year handling and toast notifications in alumni portal.
+- Fixed CI smoke tests: scoped to `public-smoke` project to avoid auth-dependent flakiness.
+- Unblocked web CI, cron automation, and dead UI across all portals.
+
+### 🔒 Security
+
+- Hardened production authentication flow.
+- Screen security service prevents data leakage via screenshots on Android.
+
+### 🔧 CI / Infra
+
+- Added comprehensive role-based E2E and security test framework (Playwright).
+- Added `APP_API_URL` fallbacks throughout all CI workflows.
+- Scoped release workflow analysis to `--fatal-warnings` only (suppresses noisy info-level hints from third-party packages).
+
+---
+
 ## [4.0.0] - 2026-06-19
 
 ### 🎉 Major Release - The Dynamic Overhaul

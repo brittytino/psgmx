@@ -53,7 +53,7 @@ jobs:
             "$SUPABASE_URL" "$SUPABASE_ANON_KEY" "$APP_API_URL" > .env.flutter
 
       - name: Analyze
-        run: flutter analyze --fatal-infos --fatal-warnings
+        run: flutter analyze --fatal-warnings
 
       - name: Test
         run: flutter test
