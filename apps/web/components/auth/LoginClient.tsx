@@ -2,12 +2,13 @@
 
 import React, { Suspense } from 'react'
 import { ArrowRight, Loader2, Mail, ShieldAlert } from 'lucide-react'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useUI } from '@/components/providers/ui-provider'
 
 function LoginForm() {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const redirectTo = searchParams.get('redirect')
   const { showToast } = useUI()
   const [mode, setMode] = React.useState<'student' | 'staff'>('student')
@@ -39,7 +40,11 @@ function LoginForm() {
         showToast(result.message || `A six-digit verification code has been sent to ${email}.`, 'success')
       } else {
         showToast('Signed in successfully!', 'success')
-        window.location.href = (redirectTo && redirectTo !== '/app') ? redirectTo : (result.redirect || (mode === 'staff' ? '/faculty' : '/student'))
+        const safeRedirect = redirectTo?.startsWith('/') && !redirectTo.startsWith('//') && redirectTo !== '/app'
+          ? redirectTo
+          : (result.redirect || (mode === 'staff' ? '/faculty' : '/student'))
+        router.replace(safeRedirect)
+        router.refresh()
       }
     } catch {
       const errMsg = 'Network error. Check your connection and try again.'

@@ -55,6 +55,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Too many attempts. Wait one minute and try again.' }, { status: 429 })
     }
 
+    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString()
+    const { count: recentSends, error: rateError } = await supabaseAdmin
+      .from('otp_rate_log')
+      .select('id', { count: 'exact', head: true })
+      .eq('email', email)
+      .gte('sent_at', tenMinutesAgo)
+    if (rateError) throw rateError
+    if ((recentSends ?? 0) >= 5) {
+      return NextResponse.json({ error: 'Too many codes requested. Wait ten minutes and try again.' }, { status: 429 })
+    }
+
     if (isStaffEmail(email)) await provisionStaffByEmail(email)
     if (!(await isApprovedIdentity(email))) {
       return NextResponse.json(

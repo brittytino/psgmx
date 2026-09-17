@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   Home,
   PenLine,
@@ -61,6 +61,7 @@ const getSidebarCardContent = (pathname: string) => {
 
 export default function AlumniLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [profileOpen, setProfileOpen] = React.useState(false);
   const [notificationsOpen, setNotificationsOpen] = React.useState(false);
@@ -90,7 +91,8 @@ export default function AlumniLayout({ children }: { children: React.ReactNode }
 
   const handleLogout = async () => {
     try { await fetch('/api/auth/logout', { method: 'POST' }); } catch {}
-    window.location.href = '/login';
+    router.replace('/login');
+    router.refresh();
   };
 
   return (

@@ -871,6 +871,25 @@ export interface Database {
         Relationships: []
       }
 
+      otp_verification_attempts: {
+        Row: {
+          email: string
+          failed_count: number
+          last_failed_at: string | null
+          locked_until: string | null
+          updated_at: string
+        }
+        Insert: {
+          email: string
+          failed_count?: number
+          last_failed_at?: string | null
+          locked_until?: string | null
+          updated_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['otp_verification_attempts']['Insert']>
+        Relationships: []
+      }
+
       readiness_scores: {
         Row: {
           id: string

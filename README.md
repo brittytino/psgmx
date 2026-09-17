@@ -102,7 +102,7 @@ Supabase migrations are located in `supabase/migrations/`. To apply migrations t
 # Using Supabase CLI
 supabase db push
 
-# Or run migration scripts in order 00_reset.sql -> 39_seed_alumni_and_lineage.sql
+# Or run migration scripts in order 00_reset.sql -> 40_private_progress_guardrails.sql
 ```
 
 ---

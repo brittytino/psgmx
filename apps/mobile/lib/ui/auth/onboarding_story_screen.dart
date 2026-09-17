@@ -4,7 +4,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../core/theme/app_theme.dart';
 
-
 class OnboardingStoryScreen extends StatefulWidget {
   const OnboardingStoryScreen({super.key});
 
@@ -48,15 +47,18 @@ class _OnboardingStoryScreenState extends State<OnboardingStoryScreen> {
           children: [
             // Top Bar
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   TextButton(
                     onPressed: _skip,
                     style: TextButton.styleFrom(
-                      backgroundColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      backgroundColor: theme.colorScheme.surfaceContainerHighest
+                          .withValues(alpha: 0.5),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
                       ),
@@ -86,17 +88,27 @@ class _OnboardingStoryScreenState extends State<OnboardingStoryScreen> {
                     titleSpan: const TextSpan(
                       children: [
                         TextSpan(text: 'Built by an\n'),
-                        TextSpan(text: 'MX', style: TextStyle(color: AppTheme.accentCoral)),
+                        TextSpan(
+                            text: 'MX',
+                            style: TextStyle(color: AppTheme.accentCoral)),
                         TextSpan(text: ' student,\nfor '),
-                        TextSpan(text: 'MX', style: TextStyle(color: AppTheme.accentCoral)),
+                        TextSpan(
+                            text: 'MX',
+                            style: TextStyle(color: AppTheme.accentCoral)),
                         TextSpan(text: ' students.'),
                       ],
                     ),
                     subtitle: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text('From our dorm rooms to yours. ', style: GoogleFonts.inter(fontSize: 11, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7), fontWeight: FontWeight.w500)),
-                        const Icon(LucideIcons.heart, color: AppTheme.accentCoral, size: 12),
+                        Text('From our dorm rooms to yours. ',
+                            style: GoogleFonts.inter(
+                                fontSize: 11,
+                                color: theme.textTheme.bodyMedium?.color
+                                    ?.withValues(alpha: 0.7),
+                                fontWeight: FontWeight.w500)),
+                        const Icon(LucideIcons.heart,
+                            color: AppTheme.accentCoral, size: 12),
                       ],
                     ),
                     bottomTitle: Column(
@@ -110,9 +122,16 @@ class _OnboardingStoryScreenState extends State<OnboardingStoryScreen> {
                             borderRadius: BorderRadius.circular(2),
                           ),
                         ),
-                        Text('Every feature you need,\nbuilt with love. ', textAlign: TextAlign.center, style: GoogleFonts.inter(fontSize: 11, color: theme.textTheme.bodyMedium?.color, fontWeight: FontWeight.w600, height: 1.4)),
+                        Text('Every feature you need,\nbuilt with love. ',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.inter(
+                                fontSize: 11,
+                                color: theme.textTheme.bodyMedium?.color,
+                                fontWeight: FontWeight.w600,
+                                height: 1.4)),
                         const SizedBox(height: 4),
-                        const Icon(LucideIcons.heart, color: AppTheme.accentCoral, size: 16),
+                        const Icon(LucideIcons.heart,
+                            color: AppTheme.accentCoral, size: 16),
                       ],
                     ),
                     imagePath: 'assets/images/onboarding/studying.png',
@@ -121,18 +140,32 @@ class _OnboardingStoryScreenState extends State<OnboardingStoryScreen> {
                     titleSpan: const TextSpan(
                       children: [
                         TextSpan(text: 'One place.\n'),
-                        TextSpan(text: 'Everything', style: TextStyle(color: AppTheme.accentCoral)),
+                        TextSpan(
+                            text: 'Everything',
+                            style: TextStyle(color: AppTheme.accentCoral)),
                         TextSpan(text: ' that\nmatters.'),
                       ],
                     ),
                     bottomTitle: Column(
                       children: [
-                        Text('All your prep, progress and placements.', textAlign: TextAlign.center, style: GoogleFonts.inter(fontSize: 11, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7), fontWeight: FontWeight.w500, height: 1.4)),
+                        Text('Your preparation, evidence and private progress.',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.inter(
+                                fontSize: 11,
+                                color: theme.textTheme.bodyMedium?.color
+                                    ?.withValues(alpha: 0.7),
+                                fontWeight: FontWeight.w500,
+                                height: 1.4)),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text('Now working together for you. ', style: GoogleFonts.inter(fontSize: 11, color: theme.textTheme.bodyMedium?.color, fontWeight: FontWeight.w600)),
-                            const Icon(LucideIcons.heart, color: AppTheme.accentCoral, size: 12),
+                            Text('Now working together for you. ',
+                                style: GoogleFonts.inter(
+                                    fontSize: 11,
+                                    color: theme.textTheme.bodyMedium?.color,
+                                    fontWeight: FontWeight.w600)),
+                            const Icon(LucideIcons.heart,
+                                color: AppTheme.accentCoral, size: 12),
                           ],
                         ),
                       ],
@@ -143,19 +176,28 @@ class _OnboardingStoryScreenState extends State<OnboardingStoryScreen> {
                     titleSpan: const TextSpan(
                       children: [
                         TextSpan(text: 'Your whole batch,\n'),
-                        TextSpan(text: 'one app.', style: TextStyle(color: AppTheme.accentCoral)),
+                        TextSpan(
+                            text: 'one app.',
+                            style: TextStyle(color: AppTheme.accentCoral)),
                       ],
                     ),
                     subtitle: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(LucideIcons.heart, color: AppTheme.accentCoral, size: 12),
+                        const Icon(LucideIcons.heart,
+                            color: AppTheme.accentCoral, size: 12),
                         const SizedBox(width: 6),
-                        Text('Together, we grow.', style: GoogleFonts.inter(fontSize: 11, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7), fontWeight: FontWeight.w500)),
+                        Text('Together, we grow.',
+                            style: GoogleFonts.inter(
+                                fontSize: 11,
+                                color: theme.textTheme.bodyMedium?.color
+                                    ?.withValues(alpha: 0.7),
+                                fontWeight: FontWeight.w500)),
                       ],
                     ),
                     bottomTitle: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
                       decoration: BoxDecoration(
                         color: AppTheme.illusGold.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
@@ -169,7 +211,8 @@ class _OnboardingStoryScreenState extends State<OnboardingStoryScreen> {
                               color: AppTheme.illusGold.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Icon(LucideIcons.users, color: AppTheme.illusTerracotta, size: 12),
+                            child: const Icon(LucideIcons.users,
+                                color: AppTheme.illusTerracotta, size: 12),
                           ),
                           const SizedBox(width: 12),
                           // This whole row sits inside an outer Row with
@@ -185,13 +228,24 @@ class _OnboardingStoryScreenState extends State<OnboardingStoryScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('From first years to final placements,', style: GoogleFonts.inter(fontSize: 11, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.8))),
+                                Text(
+                                    'From your first practice to alumni guidance,',
+                                    style: GoogleFonts.inter(
+                                        fontSize: 11,
+                                        color: theme.textTheme.bodyMedium?.color
+                                            ?.withValues(alpha: 0.8))),
                                 Row(
                                   children: [
                                     Flexible(
-                                      child: Text('we\'re in this together. ', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface)),
+                                      child: Text('we\'re in this together. ',
+                                          style: GoogleFonts.inter(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w600,
+                                              color:
+                                                  theme.colorScheme.onSurface)),
                                     ),
-                                    const Icon(LucideIcons.heart, color: AppTheme.accentCoral, size: 12),
+                                    const Icon(LucideIcons.heart,
+                                        color: AppTheme.accentCoral, size: 12),
                                   ],
                                 ),
                               ],
@@ -205,7 +259,7 @@ class _OnboardingStoryScreenState extends State<OnboardingStoryScreen> {
                 ],
               ),
             ),
-            
+
             // Bottom Navigation
             Padding(
               padding: const EdgeInsets.fromLTRB(32, 0, 32, 48),

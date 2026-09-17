@@ -13,7 +13,7 @@ import {
   Flame,
   FileText,
   Route,
-  Star,
+  ShieldCheck,
   ChevronRight,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -63,7 +63,6 @@ interface DashboardData {
   recentArticles: { id: string; title: string; tag: string; authorName: string; authorRole: string }[];
   upcomingExams: { id: string; title: string; examDate: string | null; durationMinutes: number }[];
   senior: { name: string; quote: string | null } | null;
-  leaderboard: { userId: string; name: string; score: number; isYou: boolean }[];
   preparationTracks: { id: string; title: string; stage: string; weeks: number }[];
 }
 
@@ -95,7 +94,6 @@ export default function StudentDashboard() {
       let exams: any[] = [];
       let publishedExams: any[] = [];
       let seniorInfo: { name: string; quote: string | null } | null = null;
-      let leaderboardList: { userId: string; name: string; score: number; isYou: boolean }[] = [];
       let tracks: any[] = [];
       let articlesCount = 0;
 
@@ -188,26 +186,6 @@ export default function StudentDashboard() {
           }
         }
 
-        // Resolve Batch Leaderboard
-        const { data: topScores } = await supabase
-          .from('current_readiness_scores')
-          .select('user_id, score')
-          .order('score', { ascending: false })
-          .limit(5);
-
-        if (topScores && topScores.length > 0) {
-          const userIds = topScores.map((s) => s.user_id);
-          const { data: boardUsers } = await supabase.from('users').select('id, name').in('id', userIds);
-          const nameMap = new Map((boardUsers || []).map((u) => [u.id, u.name]));
-
-          leaderboardList = topScores.map((s) => ({
-            userId: s.user_id,
-            name: nameMap.get(s.user_id) || 'Scholar',
-            score: s.score || 0,
-            isYou: s.user_id === me.id,
-          }));
-        }
-
         if (cancelled) return;
 
         const examResultsList = (exams || []) as any[];
@@ -243,7 +221,6 @@ export default function StudentDashboard() {
           }),
           upcomingExams,
           senior: seniorInfo,
-          leaderboard: leaderboardList,
           preparationTracks: tracks.map((track) => ({
             id: track.id,
             title: track.title,
@@ -661,12 +638,12 @@ export default function StudentDashboard() {
             )}
           </div>
 
-          {/* Batch Leaderboard Mini */}
+          {/* Private readiness summary — peer scores are never exposed. */}
           <div className="bg-white rounded-[20px] border border-border-light shadow-[0_2px_12px_rgba(0,0,0,0.02)] p-6">
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-2">
-                <Star className="w-5 h-5 text-illus-gold" />
-                <h3 className="text-[14px] font-bold text-text-main">Batch Leaderboard</h3>
+                <ShieldCheck className="w-5 h-5 text-primary-purple" />
+                <h3 className="text-[14px] font-bold text-text-main">Your Private Readiness</h3>
               </div>
               {data?.batchCode && (
                 <span className="text-[10px] font-bold text-text-muted bg-page-bg px-2 py-1 rounded-lg">
@@ -674,37 +651,15 @@ export default function StudentDashboard() {
                 </span>
               )}
             </div>
-            {(data?.leaderboard.length ?? 0) === 0 ? (
-              <p className="text-[13px] text-text-muted text-center py-4">No scores yet in your batch.</p>
+            {data?.score === null || data?.score === undefined ? (
+              <p className="text-[13px] text-text-muted text-center py-4">Complete verified preparation activities to build your first readiness snapshot.</p>
             ) : (
-              <div className="space-y-3">
-                {data?.leaderboard.map((s, i) => (
-                  <div
-                    key={s.userId}
-                    className={`flex items-center gap-3 p-2.5 rounded-[10px] transition-colors ${
-                      s.isYou ? 'bg-primary-purple/10 border border-primary-purple/20' : 'hover:bg-page-bg'
-                    }`}
-                  >
-                    <span
-                      className={`text-[13px] font-black w-5 text-center ${
-                        i < 3 ? 'text-illus-gold' : 'text-text-muted'
-                      }`}
-                    >
-                      {i + 1}
-                    </span>
-                    <span
-                      className={`text-[13px] font-bold flex-1 truncate ${
-                        s.isYou ? 'text-primary-purple' : 'text-text-main'
-                      }`}
-                    >
-                      {s.name} {s.isYou && '(You)'}
-                    </span>
-                    <span className="text-[13px] font-black text-text-main">{Math.round(s.score)}</span>
-                  </div>
-                ))}
+              <div className="rounded-2xl border border-primary-purple/15 bg-primary-purple/5 p-4 text-center">
+                <p className="text-3xl font-black text-primary-purple">{Math.round(data.score)}</p>
+                <p className="mt-1 text-[11px] font-bold text-text-muted">Your latest evidence-based score</p>
               </div>
             )}
-            <p className="text-[10px] text-text-muted mt-3 text-center">Live readiness ranking synced with DB</p>
+            <p className="text-[10px] text-text-muted mt-3 text-center">Private by design. PSGMX never ranks you against named peers.</p>
           </div>
 
           {/* Preparation track teaser */}

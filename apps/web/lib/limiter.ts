@@ -13,6 +13,12 @@ const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
 
 export function checkRateLimit(ip: string): { limit: number; remaining: number; success: boolean } {
   const now = Date.now();
+  // Opportunistic cleanup avoids a process-wide timer in serverless runtimes.
+  if (rateLimitMap.size > 1_000) {
+    rateLimitMap.forEach((value, key) => {
+      if (now > value.resetTime) rateLimitMap.delete(key);
+    });
+  }
   const info = rateLimitMap.get(ip);
 
   if (!info) {
@@ -38,13 +44,3 @@ export function checkRateLimit(ip: string): { limit: number; remaining: number; 
   rateLimitMap.set(ip, info);
   return { limit: RATE_LIMIT_COUNT, remaining: RATE_LIMIT_COUNT - info.count, success: true };
 }
-
-// Optional cleanup loop if needed for long-running instances
-setInterval(() => {
-  const now = Date.now();
-  rateLimitMap.forEach((value, key) => {
-    if (now > value.resetTime) {
-      rateLimitMap.delete(key);
-    }
-  });
-}, 5 * 60 * 1000); // Clean up every 5 minutes

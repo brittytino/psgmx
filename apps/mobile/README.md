@@ -87,7 +87,11 @@ Built with **Flutter** for a responsive cross-platform experience and **Supabase
     ```env
     SUPABASE_URL=your_supabase_project_url
     SUPABASE_ANON_KEY=your_supabase_anon_key
+    APP_API_URL=https://www.psgmx.tech
     ```
+
+    Flutter build values are public. Keep service-role, email, AI-provider,
+    eCampus shared, and external-platform secrets on the server only.
 
 4.  **Database Initialization**
     Run the SQL scripts located in `database/` inside your Supabase SQL Editor to provision the schema, RLS policies, and triggers. Check `database/README.md` for execution order.

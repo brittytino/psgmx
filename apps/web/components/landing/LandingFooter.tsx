@@ -46,7 +46,7 @@ export default function LandingFooter() {
               <span className="text-[22px] font-black text-[#221F1A] tracking-tight">PSGMX</span>
             </Link>
             <p className="text-[#9E9A92] text-[14px] font-medium leading-relaxed max-w-[280px] mb-7">
-              The all-in-one placement operating system built for PSG Tech MCA. Track, prepare, collaborate and succeed—together.
+              A private, evidence-led readiness companion for PSG Tech MCA preparation, reflection and alumni knowledge.
             </p>
             <div className="flex items-center gap-2">
               {socials.map((s, i) => (
@@ -54,6 +54,7 @@ export default function LandingFooter() {
                   key={i}
                   href={s.href}
                   target="_blank"
+                  rel="noopener noreferrer"
                   aria-label={s.label}
                   className="w-10 h-10 rounded-full bg-[#FBF6EE] border border-[#EFE9E0] flex items-center justify-center text-[#716D64] hover:bg-[#FF6B4A] hover:text-white hover:border-[#FF6B4A] transition-all shadow-sm"
                 >
@@ -73,6 +74,7 @@ export default function LandingFooter() {
                     <Link
                       href={link.href}
                       target={link.href.startsWith('http') ? '_blank' : undefined}
+                      rel={link.href.startsWith('http') ? 'noopener noreferrer' : undefined}
                       className="text-[#9E9A92] hover:text-[#FF6B4A] text-[14px] font-medium transition-colors flex items-center gap-1 group"
                     >
                       {link.label}

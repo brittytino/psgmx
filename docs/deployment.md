@@ -62,6 +62,11 @@ In Supabase Dashboard → Settings → API:
 ## 2. Flutter Mobile App (Android APK)
 
 ### 2.1 Build the APK Locally
+Create `apps/mobile/.env.flutter` from `.env.flutter.example`. It must contain
+only `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `APP_API_URL`. Never add service
+role, email, AI-provider, eCampus shared, or external-platform secrets to a
+Flutter define file; client build values are inspectable.
+
 ```bash
 cd apps/mobile
 flutter pub get

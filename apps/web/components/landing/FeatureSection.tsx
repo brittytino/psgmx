@@ -11,24 +11,24 @@ const features = [
     id: 'tasks',
     title: 'Task Management',
     subtitle: 'Daily Progress Engine',
-    desc: 'Structured daily workflows that keep every student on track. Assign, monitor, and complete tasks with full accountability across your cohort.',
+    desc: 'Structured coding and preparation activities that become progress evidence after a verified submission or attempt.',
     icon: <CheckSquare className="w-5 h-5 text-white" />,
     accentBg: 'bg-[#E8B84B]',
     accentLight: 'bg-[#FFF8E7]',
     accentColor: '#E8B84B',
-    metrics: ['10K+ tasks logged', 'Daily reminders', 'Progress tracking'],
+    metrics: ['Verified attempts', 'Daily focus', 'Private progress'],
     photo: 'https://images.unsplash.com/photo-1611532736597-de2d4265fba3?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
   },
   {
     id: 'readiness',
     title: 'Readiness Metrics',
     subtitle: 'Interview Preparedness',
-    desc: 'Comprehensive analytics engine that quantifies your interview readiness with a composite score derived from mock tests, attendance, and task completion.',
+    desc: 'A transparent readiness index built from participation, Daily Five, verified quests and coding momentum—with missing evidence shown honestly.',
     icon: <LineChart className="w-5 h-5 text-white" />,
     accentBg: 'bg-[#FF6B4A]',
     accentLight: 'bg-[#FFF0EA]',
     accentColor: '#FF6B4A',
-    metrics: ['Score 0–100', 'Weekly reports', 'Gap analysis'],
+    metrics: ['6 dimensions', 'Evidence confidence', 'Growth guidance'],
     photo: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
   },
   {
@@ -45,33 +45,33 @@ const features = [
   },
   {
     id: 'placements',
-    title: 'Placement Intel',
-    subtitle: 'Opportunity Dashboard',
-    desc: 'Centralised feed of active placement drives, company requirements, deadlines and application statuses—all in one intelligent dashboard.',
+    title: 'Interview Patterns',
+    subtitle: 'Reviewed Alumni Evidence',
+    desc: 'Search reviewed historical interview experiences and reusable preparation patterns. Official drives and applications remain in NEO PAT.',
     icon: <Briefcase className="w-5 h-5 text-white" />,
     accentBg: 'bg-[#6B8CFF]',
     accentLight: 'bg-[#EEF2FF]',
     accentColor: '#6B8CFF',
-    metrics: ['100+ drives', 'Live updates', 'Company profiles'],
+    metrics: ['Historical patterns', 'Faculty review', 'NEO PAT boundary'],
     photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
   },
   {
     id: 'announcements',
     title: 'Announcements',
     subtitle: 'Instant Notifications',
-    desc: 'Push critical announcements directly to students and faculty. Never miss a deadline, drive, or update with the smart notification engine.',
+    desc: 'Receive relevant preparation and department updates with quiet hours, preference controls and low-priority bundling.',
     icon: <Bell className="w-5 h-5 text-white" />,
     accentBg: 'bg-[#E87070]',
     accentLight: 'bg-[#FEEEEE]',
     accentColor: '#E87070',
-    metrics: ['Push alerts', 'Priority tagging', 'Read receipts'],
+    metrics: ['Quiet hours', 'Priority tagging', 'Read receipts'],
     photo: 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
   },
   {
     id: 'knowledge',
     title: 'Knowledge Brain',
     subtitle: 'Resource Library',
-    desc: 'Curated resource repository: notes, previous interview questions, company profiles and study materials—all searchable, all accessible.',
+    desc: 'A reviewed resource repository for notes, historical interview questions and study material—with clear source and approval context.',
     icon: <BookOpen className="w-5 h-5 text-white" />,
     accentBg: 'bg-[#C47ED6]',
     accentLight: 'bg-[#F7EEFB]',
@@ -110,7 +110,7 @@ export default function FeatureSection() {
             Every tool you need<br />to <span className="text-[#FF6B4A]">succeed.</span>
           </h2>
           <p className="text-[#716D64] text-[1.05rem] md:text-[1.1rem] font-medium leading-relaxed max-w-[560px] mx-auto">
-            PSGMX unifies your entire placement preparation into a single, intelligent platform—so you can focus on growth, not logistics.
+            PSGMX connects preparation evidence, private reflection and reviewed departmental knowledge without replacing official placement systems.
           </p>
         </div>
 
@@ -230,10 +230,10 @@ export default function FeatureSection() {
         {/* ── STATS ROW ── */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { value: '120+', label: 'Students Onboarded', color: '#FF6B4A' },
-            { value: '10K+', label: 'Tasks Completed', color: '#E8B84B' },
-            { value: '99%', label: 'Uptime', color: '#8FB996' },
-            { value: '100+', label: 'Placement Drives', color: '#6B8CFF' },
+            { value: '6', label: 'Readiness Dimensions', color: '#FF6B4A' },
+            { value: '5', label: 'Daily Questions', color: '#E8B84B' },
+            { value: '2 min', label: 'Practice Recording Cap', color: '#8FB996' },
+            { value: '10', label: 'Saved Audio Attempts', color: '#6B8CFF' },
           ].map((s, i) => (
             <div key={i} className="bg-white rounded-2xl border border-[#EFE9E0] p-6 text-center shadow-sm hover:shadow-md transition-shadow">
               <div className="text-[2.2rem] font-black leading-none mb-2" style={{ color: s.color }}>

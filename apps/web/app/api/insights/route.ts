@@ -1,6 +1,6 @@
 // ============================================================
 // GET /api/insights
-// Dashboard insights: student count, readiness bands, leaderboard.
+// Staff-only aggregate dashboard insights.
 // Migrated to Supabase.
 // Now queries Supabase readiness_scores + users tables.
 // ============================================================
@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await requireRole(req, ['faculty', 'hod', 'student', 'alumni'])
+    const session = await requireRole(req, ['faculty', 'hod'])
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -48,15 +48,6 @@ export async function GET(req: NextRequest) {
       bands[bandFor(row.score)]++
     }
 
-    // Top 10 leaderboard by current score
-    const { data: leaderboard, error: leaderboardErr } = await supabaseAdmin
-      .from('current_readiness_scores')
-      .select('user_id, score, users!inner(name, reg_no, batch_id)')
-      .order('score', { ascending: false })
-      .limit(10)
-
-    if (leaderboardErr) throw leaderboardErr
-
     // Active student count
     const { count: activeStudents } = await supabaseAdmin
       .from('users')
@@ -66,7 +57,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       success: true,
       bands,
-      leaderboard: leaderboard ?? [],
       activeStudents: activeStudents ?? 0,
     })
   } catch (error) {

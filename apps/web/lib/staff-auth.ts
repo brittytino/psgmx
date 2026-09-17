@@ -39,7 +39,7 @@ export function isStaffEmail(email: string | null | undefined): boolean {
 }
 
 export function isStaticOtpEnabled(): boolean {
-  return process.env.ALLOW_STATIC_OTP === 'true'
+  return process.env.NODE_ENV !== 'production' && process.env.ALLOW_STATIC_OTP === 'true'
 }
 
 export function isStaticStaffOtp(email: string, token: string): boolean {

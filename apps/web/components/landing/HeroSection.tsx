@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
   Heart, Monitor, ArrowRight, ChevronRight,
   CheckSquare, LineChart, CalendarCheck, ShieldCheck,
-  TrendingUp, Users, Star
+  TrendingUp
 } from 'lucide-react';
 
 export default function HeroSection() {
@@ -55,7 +55,7 @@ export default function HeroSection() {
             </h1>
 
             <p className="text-[1.05rem] md:text-[1.15rem] text-[#716D64] leading-relaxed max-w-[480px] mb-10 font-medium">
-              PSGMX is the all-in-one placement operating system built for PSG Tech MCA. Track progress, prepare smarter, and succeed—together.
+              PSGMX is a readiness companion for PSG Tech MCA. Build verified preparation evidence, understand your private progress, and learn from reviewed alumni experience.
             </p>
 
             {/* Stat pills row */}
@@ -102,7 +102,7 @@ export default function HeroSection() {
             {/* Trust line */}
             <div className="flex items-center gap-2 text-[#9E9A92] text-sm font-medium">
               <ShieldCheck className="w-4 h-4 text-[#8FB996] shrink-0" />
-              <span>Trusted by students, coordinators &amp; departments at PSG Tech</span>
+              <span>Designed for students, placement representatives, faculty and alumni</span>
             </div>
           </div>
 
@@ -124,23 +124,19 @@ export default function HeroSection() {
                   <TrendingUp className="w-5 h-5 text-[#FF6B4A]" />
                 </div>
                 <div>
-                  <div className="text-[#221F1A] font-black text-[18px] leading-none">85%</div>
-                  <div className="text-[#9E9A92] text-[11px] font-medium mt-0.5">Readiness Score</div>
+                  <div className="text-[#221F1A] font-black text-[15px] leading-none">Evidence-led</div>
+                  <div className="text-[#9E9A92] text-[11px] font-medium mt-0.5">Private readiness</div>
                 </div>
               </div>
 
-              {/* Floating badge – bottom left */}
+              {/* Floating privacy badge – bottom left */}
               <div className="absolute -left-2 bottom-16 bg-white rounded-2xl shadow-xl border border-[#F0EAE1] py-3 px-4 hidden sm:flex items-center gap-2.5" style={{ animationDelay: '2s' }}>
-                <div className="flex -space-x-2">
-                  {[11,12,13].map(i => (
-                    <img key={i} src={`https://i.pravatar.cc/40?img=${i}`} alt="" className="w-7 h-7 rounded-full border-2 border-white object-cover" />
-                  ))}
+                <div className="w-9 h-9 rounded-xl bg-[#EAF6EC] flex items-center justify-center">
+                  <ShieldCheck className="w-5 h-5 text-[#789B51]" />
                 </div>
                 <div>
-                  <div className="text-[#221F1A] font-bold text-[12px]">120+ Students</div>
-                  <div className="flex items-center gap-1">
-                    {[1,2,3,4,5].map(s => <Star key={s} className="w-2.5 h-2.5 fill-[#E8B84B] text-[#E8B84B]" />)}
-                  </div>
+                  <div className="text-[#221F1A] font-bold text-[12px]">Private by default</div>
+                  <div className="text-[#9E9A92] text-[10px] font-medium">No peer scoreboards</div>
                 </div>
               </div>
 
@@ -160,7 +156,7 @@ export default function HeroSection() {
 
         {/* ── MARQUEE TRUST BAR ── */}
         <div className="border-t border-[#EFE9E0] py-6 flex items-center gap-8 overflow-hidden">
-          <span className="text-[#9E9A92] text-[12px] font-bold uppercase tracking-widest shrink-0">Used by</span>
+          <span className="text-[#9E9A92] text-[12px] font-bold uppercase tracking-widest shrink-0">Built for</span>
           <div className="flex items-center gap-12 text-[#B5AFA5] font-black text-[13px] tracking-tight overflow-hidden">
             {['PSG Tech MCA', 'Placement Cell', 'Faculty Council', 'Alumni Network', 'Student Senate'].map((t, i) => (
               <React.Fragment key={i}>

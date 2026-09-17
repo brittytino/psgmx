@@ -3,7 +3,7 @@
 // FYP Project listings and submission endpoints via Supabase.
 // ============================================================
 import { NextRequest, NextResponse } from 'next/server'
-import { getUserFromRequest } from '@/lib/auth'
+import { getUserFromRequest, isStudent } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 
 export async function GET(req: NextRequest) {
@@ -11,6 +11,9 @@ export async function GET(req: NextRequest) {
     const session = await getUserFromRequest(req)
     if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    if (!['faculty', 'hod'].includes(session.roleLabel.toLowerCase())) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     const { searchParams } = new URL(req.url)
@@ -31,7 +34,6 @@ export async function GET(req: NextRequest) {
         student_id,
         users (
           name,
-          email,
           reg_no
         )
       `)
@@ -61,12 +63,32 @@ export async function POST(req: NextRequest) {
     if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    if (!isStudent(session)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
 
     const body = await req.json()
-    const { title, description, guide_name, team_members_count, repository_url } = body
+    const title = typeof body.title === 'string' ? body.title.trim() : ''
+    const description = typeof body.description === 'string' ? body.description.trim() : ''
+    const guideName = typeof body.guide_name === 'string' ? body.guide_name.trim() : ''
+    const teamMembersCount = Number(body.team_members_count ?? 1)
+    const repositoryUrl = typeof body.repository_url === 'string' && body.repository_url.trim()
+      ? body.repository_url.trim()
+      : null
 
-    if (!title) {
-      return NextResponse.json({ error: 'title is required' }, { status: 400 })
+    if (!title || title.length > 160 || description.length > 5_000 || guideName.length > 120) {
+      return NextResponse.json({ error: 'Enter a valid title and project details.' }, { status: 400 })
+    }
+    if (!Number.isInteger(teamMembersCount) || teamMembersCount < 1 || teamMembersCount > 10) {
+      return NextResponse.json({ error: 'Team size must be between 1 and 10.' }, { status: 400 })
+    }
+    if (repositoryUrl) {
+      try {
+        const url = new URL(repositoryUrl)
+        if (url.protocol !== 'https:') throw new Error('invalid protocol')
+      } catch {
+        return NextResponse.json({ error: 'Repository URL must be a valid HTTPS URL.' }, { status: 400 })
+      }
     }
 
     const { data: newProject, error } = await supabaseAdmin
@@ -75,10 +97,10 @@ export async function POST(req: NextRequest) {
         student_id: session.id,
         batch_id: session.batch_id,
         title,
-        description: description ?? '',
-        guide_name: guide_name ?? null,
-        team_members_count: team_members_count ?? 1,
-        repository_url: repository_url ?? null,
+        description,
+        guide_name: guideName || null,
+        team_members_count: teamMembersCount,
+        repository_url: repositoryUrl,
         status: 'in_progress',
       })
       .select()

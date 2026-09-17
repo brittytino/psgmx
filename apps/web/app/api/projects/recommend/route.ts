@@ -3,7 +3,7 @@
 // Returns recommended FYP projects from Knowledge Brain & fyp_projects.
 // ============================================================
 import { NextRequest, NextResponse } from 'next/server'
-import { getUserFromRequest } from '@/lib/auth'
+import { getUserFromRequest, isStudent } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 
 export async function GET(req: NextRequest) {
@@ -11,6 +11,9 @@ export async function GET(req: NextRequest) {
     const session = await getUserFromRequest(req)
     if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    if (!isStudent(session)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     const { data: recommendations, error } = await supabaseAdmin

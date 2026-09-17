@@ -70,7 +70,7 @@ void main() async {
       throw Exception(
         'Missing required environment variables.\n'
         'Run the app with: flutter run --dart-define-from-file=.env.flutter\n'
-        'Copy .env.example to .env.flutter and fill in your values.',
+        'Copy .env.flutter.example to .env.flutter and add only the public client values.',
       );
     }
     debugPrint('[APP] Initializing Supabase...');

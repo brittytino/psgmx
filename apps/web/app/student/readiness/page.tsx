@@ -28,9 +28,10 @@ const components = [
   { key: 'leetcode_momentum_percentile', label: 'LeetCode momentum', weight: 15, icon: Code2, action: 'Solve one useful problem today' },
 ]
 
-function numeric(value: unknown) {
+function numeric(value: unknown): number | null {
+  if (value === null || value === undefined || value === '') return null
   const parsed = Number(value)
-  return Number.isFinite(parsed) ? Math.max(0, Math.min(100, parsed)) : 70
+  return Number.isFinite(parsed) ? Math.max(0, Math.min(100, parsed)) : null
 }
 
 function band(score: number) {
@@ -115,7 +116,8 @@ export default function ReadinessPage() {
   const score = Math.round(Number(snapshot.score))
   const currentBand = band(score)
   const values = components.map((item) => ({ ...item, value: numeric(snapshot.components_json?.[item.key]) }))
-  const focus = [...values].sort((a, b) => a.value - b.value)[0]
+  const measuredValues = values.filter((item): item is typeof item & { value: number } => item.value !== null)
+  const focus = [...measuredValues].sort((a, b) => a.value - b.value)[0]
   const previous = history.length > 1 ? Number(history.at(-2)?.score ?? score) : score
   const change = Math.round(score - previous)
 
@@ -145,8 +147,10 @@ export default function ReadinessPage() {
           
           <div className="mt-5 rounded-2xl bg-page-bg p-4 border border-border-light">
             <p className="text-xs font-black uppercase text-text-muted">Targeted Growth Opportunity</p>
-            <p className="mt-1 font-black text-text-main">{focus.action}</p>
-            <p className="mt-1 text-xs text-text-muted">{focus.label} is currently your clearest growth opportunity.</p>
+            <p className="mt-1 font-black text-text-main">{focus?.action ?? 'Complete one verified preparation activity'}</p>
+            <p className="mt-1 text-xs text-text-muted">
+              {focus ? `${focus.label} is currently your clearest growth opportunity.` : 'More evidence is needed before a targeted recommendation can be made.'}
+            </p>
           </div>
 
           <p className="mt-4 text-xs font-bold text-text-muted">
@@ -197,13 +201,13 @@ export default function ReadinessPage() {
                 <div className="flex-1">
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-sm font-black text-text-main">{item.label}</p>
-                    <p className="text-sm font-black text-text-main">{Math.round(item.value)}%</p>
+                    <p className="text-sm font-black text-text-main">{item.value === null ? 'No evidence' : `${Math.round(item.value)}%`}</p>
                   </div>
                   <p className="text-xs text-text-muted">{item.weight}% of overall readiness</p>
                 </div>
               </div>
               <div className="mt-4 h-2 overflow-hidden rounded-full bg-page-bg">
-                <div className="h-full rounded-full bg-primary-purple" style={{ width: `${item.value}%` }}/>
+                <div className="h-full rounded-full bg-primary-purple" style={{ width: `${item.value ?? 0}%` }}/>
               </div>
               <p className="mt-3 text-xs text-text-muted">{item.action}</p>
             </div>

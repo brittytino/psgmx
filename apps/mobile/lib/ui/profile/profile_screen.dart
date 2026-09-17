@@ -312,7 +312,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   labelText: 'Username',
                   hintText: 'e.g. john_doe or a LeetCode profile URL',
                   helperText:
-                      'Used for your live progress and batch leaderboard.',
+                      'Used for your private coding progress and readiness evidence.',
                   labelStyle: GoogleFonts.inter(
                       fontSize: 14, color: AppTheme.mutedText),
                   border: OutlineInputBorder(

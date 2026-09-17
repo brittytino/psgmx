@@ -166,11 +166,11 @@ jobs:
             - **Screen Security** — screenshot / screen-recording prevention on Android
             - **Journey Archive** — browse and replay past journey entries
             - **Adaptive Sprint System** — real-time difficulty adjustment with persistent revisit queues
-            - **Push Notifications** — sprint reminders, placement alerts, and announcements
+            - **Respectful Notifications** — preparation reminders, quiet hours, and announcements
             - **Live Search Spotlight** — instant autocomplete across student portal & Knowledge Brain
             - **Real-time Notifications** — zero-static-data Supabase Realtime pipeline
             - **Historical Alumni Migration** — full lineage graph for batches 19MX–24MX
-            - **Community & Squad Expansion** — leaderboard, peer-challenge flows, and feed improvements
+            - **Private Progress** — evidence-led readiness without peer scoreboards
 
             ### 📲 Installation
             Download **PSGMX-${{ github.ref_name }}-android.apk** and install it on any Android device.

@@ -122,7 +122,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       _buildModernToggle(
                         context,
                         title: 'LeetCode Reminders',
-                        subtitle: 'Daily problem & weekly leaderboard updates',
+                        subtitle:
+                            'Daily problem and personal progress reminders',
                         icon: Icons.code,
                         value: leetcodeNotifications,
                         isLoading: _isSaving,
@@ -135,8 +136,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
 
                 const SizedBox(height: AppSpacing.lg),
-
-
 
                 // Support Section
                 _buildSectionHeader(context, 'Support', Icons.help),
@@ -285,8 +284,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-
-
   Widget _buildActionTile(
     BuildContext context, {
     required String title,
@@ -370,14 +367,14 @@ class _UpdateCheckModalState extends State<_UpdateCheckModal> {
   Future<void> _checkForUpdates() async {
     try {
       final updateService = UpdateService();
-      
+
       // Get current version
       final packageInfo = await PackageInfo.fromPlatform();
       _currentVersion = packageInfo.version;
 
       // Force check for updates
       final status = await updateService.checkForUpdates(forceCheck: true);
-      
+
       if (mounted) {
         setState(() {
           _updateStatus = status;
@@ -422,8 +419,14 @@ class _UpdateCheckModalState extends State<_UpdateCheckModal> {
                 gradient: _isChecking
                     ? LinearGradient(
                         colors: [
-                          Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
-                          Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                          Theme.of(context)
+                              .colorScheme
+                              .primary
+                              .withValues(alpha: 0.2),
+                          Theme.of(context)
+                              .colorScheme
+                              .primary
+                              .withValues(alpha: 0.1),
                         ],
                       )
                     : (_updateStatus == UpdateStatus.optionalUpdateAvailable ||
@@ -434,7 +437,10 @@ class _UpdateCheckModalState extends State<_UpdateCheckModal> {
                         : LinearGradient(
                             colors: [
                               Theme.of(context).colorScheme.primary,
-                              Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
+                              Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .withValues(alpha: 0.7),
                             ],
                           ),
                 shape: BoxShape.circle,
@@ -519,12 +525,12 @@ class _UpdateCheckModalState extends State<_UpdateCheckModal> {
   String _getTitle() {
     if (_isChecking) return 'Checking for Updates';
     if (_errorMessage != null) return 'Check Failed';
-    
+
     if (_updateStatus == UpdateStatus.optionalUpdateAvailable ||
         _updateStatus == UpdateStatus.forceUpdateRequired) {
       return 'Update Available';
     }
-    
+
     return 'You\'re Up to Date';
   }
 
@@ -626,7 +632,7 @@ class _UpdateCheckModalState extends State<_UpdateCheckModal> {
               onPressed: () async {
                 final updateService = UpdateService();
                 final launched = await updateService.openUpdateUrl();
-                
+
                 if (!launched && mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(

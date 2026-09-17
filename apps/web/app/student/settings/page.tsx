@@ -4,9 +4,11 @@ import React, { useState, useEffect } from 'react'
 import { Bell, Github, Linkedin, Loader2, LogOut, Save, Settings, ShieldCheck, UserRound, Code2, Sparkles, CheckCircle2, Sliders, Volume2, Globe } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { getCurrentProfile } from '@/lib/current-profile'
+import { useRouter } from 'next/navigation'
 
 export default function StudentSettingsPage() {
   const supabase = React.useMemo(() => createClient(), [])
+  const router = useRouter()
   const [profile, setProfile] = useState<any>({
     id: '', name: '', email: '', reg_no: '', role_label: '', batch: '',
     batch_id: null,
@@ -102,7 +104,7 @@ export default function StudentSettingsPage() {
           Account Settings & Platform Controls
         </h1>
         <p className="mt-1 text-sm text-text-muted">
-          Configure your student profile, placement portfolio links, and real-time application behavior.
+          Configure your student profile, preparation portfolio links, and application preferences.
         </p>
       </div>
 
@@ -139,11 +141,11 @@ export default function StudentSettingsPage() {
         </p>
       </section>
 
-      {/* Public Placement & Technical Profile */}
+      {/* Public Preparation & Technical Profile */}
       <section className="rounded-3xl border border-border-light bg-white p-6 sm:p-8 shadow-sm space-y-5">
         <div className="flex items-center gap-2">
           <UserRound className="h-5 w-5 text-primary-purple"/>
-          <h2 className="font-black text-text-main text-lg">Public Placement Profile</h2>
+          <h2 className="font-black text-text-main text-lg">Public Preparation Profile</h2>
         </div>
 
         <div className="space-y-4">
@@ -303,7 +305,8 @@ export default function StudentSettingsPage() {
             try { 
               await fetch('/api/auth/logout', { method: 'POST' }) 
             } finally { 
-              window.location.href = '/login' 
+              router.replace('/login')
+              router.refresh()
             } 
           }} 
           className="mt-5 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50/60 px-5 py-3 text-sm font-bold text-red-700 hover:bg-red-100 transition-colors"

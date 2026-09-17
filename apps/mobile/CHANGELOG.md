@@ -2,6 +2,15 @@
 
 All notable changes to PSG MCA Placement Prep App will be documented in this file.
 
+## Unreleased
+
+### Privacy & Reliability
+
+- Removed peer leaderboards, top-performer announcements, and cohort-wide client refreshes; coding evidence now refreshes only for the signed-in user.
+- Replaced manual-completion pressure notifications with one evidence-focused reminder and moved birthday alerts outside quiet hours.
+- Compressed browser communication recordings and enforced the two-minute, 2 MB upload limit.
+- Restricted Flutter build configuration to public client values only.
+
 ## [4.2.0] - 2026-09-11
 
 ### 🚀 Features

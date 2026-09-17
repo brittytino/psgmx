@@ -57,7 +57,7 @@ export default function PrivacyPolicyPage() {
 
         <section>
           <h2 className="text-lg font-bold text-[#221F1A]">Contact</h2>
-          <p className="mt-2">For any privacy question or data request, open an issue at <Link href="https://github.com/brittytino/psgmx/issues" target="_blank" className="font-bold text-[#FF6B4A] underline">github.com/brittytino/psgmx/issues</Link>.</p>
+          <p className="mt-2">For any privacy question or data request, open an issue at <Link href="https://github.com/brittytino/psgmx/issues" target="_blank" rel="noopener noreferrer" className="font-bold text-[#FF6B4A] underline">github.com/brittytino/psgmx/issues</Link>.</p>
         </section>
       </div>
     </div>

@@ -10,12 +10,10 @@ import {
   ArrowRight,
   CheckCircle2,
   GraduationCap,
-  Link2,
   Loader2,
   LockKeyhole,
   Mail,
   ShieldCheck,
-  UserRound,
 } from 'lucide-react'
 
 type Step = 'profile' | 'otp' | 'success'
@@ -27,7 +25,7 @@ export default function JoinAlumniPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [otp, setOtp] = useState('')
-  const [form, setForm] = useState({ name: '', regNo: '', email: '', linkedin: '' })
+  const [form, setForm] = useState({ regNo: '', email: '' })
   const batch = useMemo(() => parseBatchFromRegisterNumber(form.regNo), [form.regNo])
 
   async function sendCode() {
@@ -117,7 +115,7 @@ export default function JoinAlumniPage() {
                 <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-[#ECFDF3] text-[#039855]">
                   <CheckCircle2 className="h-8 w-8" />
                 </div>
-                <h2 className="mt-6 text-3xl font-black text-[#101828]">Welcome back to PSGMX</h2>
+                <h1 className="mt-6 text-3xl font-black text-[#101828]">Welcome back to PSGMX</h1>
                 <p className="mt-3 text-sm leading-6 text-[#667085]">Your verified alumni workspace is opening now.</p>
                 <Loader2 className="mx-auto mt-7 h-6 w-6 animate-spin text-[#FF5A1F]" />
               </div>
@@ -131,12 +129,12 @@ export default function JoinAlumniPage() {
                   Verify
                 </div>
 
-                <h2 className="mt-7 text-4xl font-black tracking-tight text-[#101828]">
+                <h1 className="mt-7 text-4xl font-black tracking-tight text-[#101828]">
                   {step === 'profile' ? <>Join the <span className="text-[#FF5A1F]">alumni network</span></> : 'Check your email'}
-                </h2>
+                </h1>
                 <p className="mt-2 text-sm leading-6 text-[#667085]">
                   {step === 'profile'
-                    ? 'Your admission batch is derived from your MCA register number and securely linked to your profile.'
+                    ? 'Use the register number and email already approved in department records. This reactivates an existing profile; it does not create a new one.'
                     : <>Enter the six-digit code sent to <strong className="text-[#344054]">{form.email}</strong>.</>}
                 </p>
 
@@ -144,9 +142,6 @@ export default function JoinAlumniPage() {
 
                 {step === 'profile' ? (
                   <form onSubmit={submitProfile} className="mt-7 space-y-4">
-                    <Field icon={<UserRound />} label="Full name">
-                      <input required autoComplete="name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Your name as in department records" className="auth-input" />
-                    </Field>
                     <Field icon={<GraduationCap />} label="MCA register number">
                       <input required value={form.regNo} onChange={(e) => setForm({ ...form, regNo: e.target.value.toUpperCase() })} placeholder="e.g. 21MX114" maxLength={7} className="auth-input uppercase" />
                     </Field>
@@ -156,9 +151,6 @@ export default function JoinAlumniPage() {
                     </div>
                     <Field icon={<Mail />} label="Email for OTP">
                       <input required type="email" autoComplete="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value.toLowerCase() })} placeholder="you@example.com" className="auth-input" />
-                    </Field>
-                    <Field icon={<Link2 />} label="LinkedIn profile (optional)">
-                      <input type="url" value={form.linkedin} onChange={(e) => setForm({ ...form, linkedin: e.target.value })} placeholder="https://linkedin.com/in/username" className="auth-input" />
                     </Field>
                     <PrimaryButton loading={loading} label="Continue with secure OTP" />
                   </form>

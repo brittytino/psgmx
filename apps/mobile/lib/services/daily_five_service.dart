@@ -38,11 +38,14 @@ class DailyFiveService {
         debugPrint('[DailyFiveService] Offline mode: loading from Drift cache');
         final cached = await localDb.select(localDb.dailyFiveCache).get();
         if (cached.isEmpty) {
-          throw Exception('No offline questions available. Please connect to internet.');
+          throw Exception(
+              'No offline questions available. Please connect to internet.');
         }
-        
+
         final questions = cached.map((c) {
-          final optsList = (jsonDecode(c.optionsJson) as List).map((e) => e.toString()).toList();
+          final optsList = (jsonDecode(c.optionsJson) as List)
+              .map((e) => e.toString())
+              .toList();
           return DailyFiveQuestion(
             id: c.id,
             questionText: c.questionText,
@@ -56,7 +59,7 @@ class DailyFiveService {
             isActive: c.isActive,
           );
         }).toList();
-        
+
         questions.shuffle(_rng);
         final selected = questions.take(5).toList();
         return DailyFiveSession(questions: selected);
@@ -78,7 +81,8 @@ class DailyFiveService {
           .toList();
 
       if (selected.isEmpty) {
-        throw Exception('No active questions found in question bank for your batch.');
+        throw Exception(
+            'No active questions found in question bank for your batch.');
       }
 
       // Cache for offline READ availability only — correct_option is not
@@ -88,7 +92,8 @@ class DailyFiveService {
       // (see submitSession's offline branch).
       _cacheQuestionsInDrift(selected);
 
-      debugPrint('[DailyFiveService] Loaded ${selected.length} questions via get_daily_five_questions RPC');
+      debugPrint(
+          '[DailyFiveService] Loaded ${selected.length} questions via get_daily_five_questions RPC');
       return DailyFiveSession(questions: selected);
     } catch (e) {
       debugPrint('[DailyFiveService] fetchTodaysSession error: $e');
@@ -116,7 +121,8 @@ class DailyFiveService {
               )),
         );
       });
-      debugPrint('[DailyFiveService] Successfully cached ${questions.length} questions to Drift');
+      debugPrint(
+          '[DailyFiveService] Successfully cached ${questions.length} questions to Drift');
     } catch (e) {
       debugPrint('[DailyFiveService] Failed to cache to Drift: $e');
     }
@@ -169,14 +175,15 @@ class DailyFiveService {
     final isOffline = connectivityResult.contains(ConnectivityResult.none);
 
     if (isOffline) {
-      debugPrint('[DailyFiveService] Offline mode: queueing answers for server-side grading on reconnect');
+      debugPrint(
+          '[DailyFiveService] Offline mode: queueing answers for server-side grading on reconnect');
       await localDb.into(localDb.syncQueue).insert(SyncQueueCompanion.insert(
-        actionType: 'submit_daily_five',
-        payloadJson: jsonEncode({
-          'user_id': userId,
-          'answers': answersByQuestionId,
-        }),
-      ));
+            actionType: 'submit_daily_five',
+            payloadJson: jsonEncode({
+              'user_id': userId,
+              'answers': answersByQuestionId,
+            }),
+          ));
 
       // Optimistic UI: bump the locally-cached streak count, but the real
       // accuracy is unknown until this syncs and is server-graded — no
@@ -223,7 +230,8 @@ class DailyFiveService {
     try {
       await ReadinessScoreService(_supabase).computeAndStore(userId);
     } catch (e) {
-      debugPrint('[DailyFiveService] Could not dynamically update readiness score: $e');
+      debugPrint(
+          '[DailyFiveService] Could not dynamically update readiness score: $e');
     }
 
     final updated = await fetchStreak(userId);
@@ -231,18 +239,21 @@ class DailyFiveService {
     // Cache the updated streak for next offline run
     if (updated != null) {
       try {
-        await localDb.into(localDb.offlineStreaks).insertOnConflictUpdate(OfflineStreaksCompanion.insert(
-          userId: updated.userId,
-          currentStreak: updated.currentStreak,
-          longestStreak: updated.longestStreak,
-          freezesRemaining: updated.freezesRemaining,
-          freezesResetMonth: updated.freezesResetMonth,
-          lastCompletedDate: drift.Value(updated.lastCompletedDate?.toIso8601String()),
-          lastAccuracyRate: drift.Value(updated.lastAccuracyRate),
-          updatedAt: updated.updatedAt,
-        ));
+        await localDb
+            .into(localDb.offlineStreaks)
+            .insertOnConflictUpdate(OfflineStreaksCompanion.insert(
+              userId: updated.userId,
+              currentStreak: updated.currentStreak,
+              longestStreak: updated.longestStreak,
+              freezesRemaining: updated.freezesRemaining,
+              freezesResetMonth: updated.freezesResetMonth,
+              lastCompletedDate:
+                  drift.Value(updated.lastCompletedDate?.toIso8601String()),
+              lastAccuracyRate: drift.Value(updated.lastAccuracyRate),
+              updatedAt: updated.updatedAt,
+            ));
       } catch (e) {
-         debugPrint('[DailyFiveService] Could not cache streak: $e');
+        debugPrint('[DailyFiveService] Could not cache streak: $e');
       }
     }
 
@@ -253,8 +264,12 @@ class DailyFiveService {
   /// powers the post-submission "why was I wrong" AI explanation. Returns
   /// a map of question id → correct option index.
   Future<Map<String, int>> fetchTodaysResults(String userId) async {
-    final response = await _supabase.rpc('get_daily_five_results', params: {'p_user_id': userId});
-    return {for (final row in (response as List)) row['id'] as String: row['correct_option'] as int};
+    final response = await _supabase
+        .rpc('get_daily_five_results', params: {'p_user_id': userId});
+    return {
+      for (final row in (response as List))
+        row['id'] as String: row['correct_option'] as int
+    };
   }
 
   /// Terminates the exam due to a proctoring violation.
@@ -266,12 +281,13 @@ class DailyFiveService {
       'p_user_id': userId,
       'p_accuracy_rate': 0.0,
     });
-    
+
     // 2. Punish by resetting streak to 0 — via RPC, not a direct table
     // write (Section 4.5: no client role should have direct UPDATE on
     // daily_five_streaks; see 10_sprint2_anticheat.sql).
-    await _supabase.rpc('reset_daily_five_streak_violation', params: {'p_user_id': userId});
-    
+    await _supabase.rpc('reset_daily_five_streak_violation',
+        params: {'p_user_id': userId});
+
     // 3. Log violation
     await _supabase.from('audit_logs').insert({
       'actor_id': userId,
@@ -279,12 +295,13 @@ class DailyFiveService {
       'entity_type': 'daily_five_streaks',
       'entity_id': null,
     });
-    
+
     // 4. Update readiness score
     try {
       await ReadinessScoreService(_supabase).computeAndStore(userId);
     } catch (e) {
-      debugPrint('[DailyFiveService] Could not dynamically update readiness score: $e');
+      debugPrint(
+          '[DailyFiveService] Could not dynamically update readiness score: $e');
     }
 
     final updated = await fetchStreak(userId);
@@ -317,7 +334,9 @@ class DailyFiveService {
   /// would error the whole request for every caller, not just students).
   Future<List<DailyFiveQuestion>> fetchAllQuestions() async {
     final response = await _supabase.rpc('get_question_bank_full');
-    return (response as List).map((r) => DailyFiveQuestion.fromMap(r as Map<String, dynamic>)).toList();
+    return (response as List)
+        .map((r) => DailyFiveQuestion.fromMap(r as Map<String, dynamic>))
+        .toList();
   }
 
   /// Creates a new question in the bank.
@@ -338,14 +357,18 @@ class DailyFiveService {
     // the coordinator who just wrote it. The caller already knows
     // correctOption locally (they just typed it in), so it's filled in below
     // rather than re-fetched.
-    final response = await _supabase.from('question_bank').insert({
-      'question_text': questionText,
-      'options': options,
-      'correct_option': correctOption,
-      'topic': topic,
-      'difficulty': difficulty,
-      'created_by': createdBy,
-    }).select('id, question_text, options, topic, difficulty, is_active').single();
+    final response = await _supabase
+        .from('question_bank')
+        .insert({
+          'question_text': questionText,
+          'options': options,
+          'correct_option': correctOption,
+          'topic': topic,
+          'difficulty': difficulty,
+          'created_by': createdBy,
+        })
+        .select('id, question_text, options, topic, difficulty, is_active')
+        .single();
 
     await _supabase.from('audit_logs').insert({
       'actor_id': createdBy,
@@ -355,7 +378,8 @@ class DailyFiveService {
       'metadata': {'topic': topic, 'difficulty': difficulty},
     });
 
-    return DailyFiveQuestion.fromMap({...response, 'correct_option': correctOption});
+    return DailyFiveQuestion.fromMap(
+        {...response, 'correct_option': correctOption});
   }
 
   /// Updates an existing question.
@@ -381,7 +405,8 @@ class DailyFiveService {
   }
 
   /// Soft-deletes a question by marking it inactive.
-  Future<void> deactivateQuestion(String questionId, {required String deactivatedBy}) async {
+  Future<void> deactivateQuestion(String questionId,
+      {required String deactivatedBy}) async {
     await _supabase
         .from('question_bank')
         .update({'is_active': false}).eq('id', questionId);
@@ -393,20 +418,5 @@ class DailyFiveService {
       'entity_id': null,
       'metadata': {'question_id': questionId},
     });
-  }
-
-  // ── Leaderboard ────────────────────────────────────────────────────────────
-
-  /// Returns streak data for all users in a batch (for leaderboard display).
-  /// Requires [view_batch_analytics] permission (enforced by RLS).
-  Future<List<DailyFiveStreak>> fetchBatchStreaks(String batchId) async {
-    final response = await _supabase
-        .from('daily_five_streaks')
-        .select('*, users!inner(batch_id)')
-        .eq('users.batch_id', batchId)
-        .order('current_streak', ascending: false);
-    return (response as List)
-        .map((r) => DailyFiveStreak.fromMap(r))
-        .toList();
   }
 }

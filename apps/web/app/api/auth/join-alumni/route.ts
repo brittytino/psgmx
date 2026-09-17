@@ -1,207 +1,76 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { normalizeEmail, normalizeRegisterNumber, parseBatchFromRegisterNumber } from '@/lib/auth-input'
+import { normalizeEmail, normalizeRegisterNumber } from '@/lib/auth-input'
+import { checkRateLimit } from '@/lib/limiter'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 
-const ALUMNI_ROLES = {
-  isStudent: false,
-  isTeamLeader: false,
-  isCoordinator: false,
-  isPlacementRep: false,
-}
-
-function cleanName(value: unknown): string | null {
-  if (typeof value !== 'string') return null
-  const name = value.replace(/\s+/g, ' ').trim()
-  return name.length >= 2 && name.length <= 100 ? name : null
-}
-
-function cleanLinkedIn(value: unknown): string | null {
-  if (value === undefined || value === null || value === '') return null
-  if (typeof value !== 'string') return null
-  try {
-    const url = new URL(value.trim())
-    if (url.protocol !== 'https:' || !/(^|\.)linkedin\.com$/i.test(url.hostname)) return null
-    return url.toString()
-  } catch {
-    return null
-  }
-}
-
-async function findAuthUserId(email: string): Promise<string | null> {
-  for (let page = 1; page <= 20; page += 1) {
-    const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 200 })
-    if (error) throw error
-    const match = data.users.find((user) => user.email?.toLowerCase() === email)
-    if (match) return match.id
-    if (data.users.length < 200) break
-  }
-  return null
-}
-
-async function ensureGraduatedBatch(regNo: string) {
-  const batchInfo = parseBatchFromRegisterNumber(regNo)
-  if (!batchInfo || batchInfo.startYear < 1980) {
-    throw new Error('INVALID_BATCH')
-  }
-
-  const { data: existing, error } = await supabaseAdmin
-    .from('batches')
-    .select('id, batch_code, start_year, end_year, status')
-    .eq('batch_code', batchInfo.code)
-    .maybeSingle()
-  if (error) throw error
-  if (existing) {
-    if (existing.status !== 'graduated') throw new Error('ACTIVE_BATCH')
-    return existing
-  }
-
-  if (!batchInfo.isGraduated) {
-    throw new Error('ACTIVE_BATCH')
-  }
-
-  const { data, error: insertError } = await supabaseAdmin
-    .from('batches')
-    .insert({
-      batch_code: batchInfo.code,
-      start_year: batchInfo.startYear,
-      end_year: batchInfo.endYear,
-      status: 'graduated',
-    })
-    .select('id, batch_code, start_year, end_year, status')
-    .single()
-  if (insertError) throw insertError
-  return data
+function requestIp(request: NextRequest) {
+  return request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+    || request.headers.get('x-real-ip')
+    || 'unknown'
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const name = cleanName(body.name)
-    const regNo = normalizeRegisterNumber(body.regNo ?? body.token)
-    const email = normalizeEmail(body.email)
-    const linkedin = cleanLinkedIn(body.linkedin)
+    const body = await request.json().catch(() => null) as { regNo?: unknown; token?: unknown; email?: unknown } | null
+    const regNo = normalizeRegisterNumber(body?.regNo ?? body?.token)
+    const email = normalizeEmail(body?.email)
 
-    if (!name || !regNo || !email) {
+    if (!regNo || !email) {
       return NextResponse.json(
-        { error: 'Enter your full name, valid MCA register number, and email address.' },
+        { error: 'Enter your MCA register number and approved email address.' },
         { status: 400 },
       )
     }
-    if (body.linkedin && !linkedin) {
-      return NextResponse.json({ error: 'Enter a valid https://linkedin.com profile URL.' }, { status: 400 })
+
+    const rate = checkRateLimit(`join-alumni:${requestIp(request)}:${regNo}`)
+    if (!rate.success) {
+      return NextResponse.json({ error: 'Too many attempts. Wait one minute and try again.' }, { status: 429 })
     }
 
-    let batch
-    try {
-      batch = await ensureGraduatedBatch(regNo)
-    } catch (error) {
-      if (error instanceof Error && error.message === 'ACTIVE_BATCH') {
-        return NextResponse.json(
-          { error: 'This register number belongs to a current batch. Please use Student OTP login.' },
-          { status: 400 },
-        )
-      }
-      if (error instanceof Error && error.message === 'INVALID_BATCH') {
-        return NextResponse.json(
-          { error: 'Enter a valid MCA register number.' },
-          { status: 400 },
-        )
-      }
-      throw error
-    }
-
-    const [{ data: existingByReg }, { data: existingByEmail }] = await Promise.all([
-      supabaseAdmin
-        .from('users')
-        .select('id, email, personal_email, college_email, role_label')
-        .eq('reg_no', regNo)
-        .maybeSingle(),
-      supabaseAdmin
-        .from('users')
-        .select('id, reg_no')
-        .eq('email', email)
-        .maybeSingle(),
-    ])
-
-    if (existingByEmail && existingByEmail.reg_no !== regNo) {
-      return NextResponse.json({ error: 'This email is already linked to another account.' }, { status: 409 })
-    }
-    if (existingByReg && existingByReg.role_label !== 'Alumni') {
-      return NextResponse.json({ error: 'This register number already has an active PSGMX account.' }, { status: 409 })
-    }
-    if (existingByReg) {
-      const acceptedEmails = [existingByReg.email, existingByReg.personal_email, existingByReg.college_email]
-        .filter((value): value is string => Boolean(value))
-        .map((value) => value.toLowerCase())
-      if (!acceptedEmails.includes(email)) {
-        return NextResponse.json(
-          { error: 'This register number is already linked to a different email. Contact the department to add another identity.' },
-          { status: 409 },
-        )
-      }
-    }
-
-    let authUserId = existingByReg?.id ?? null
-    if (!authUserId) {
-      const created = await supabaseAdmin.auth.admin.createUser({ email, email_confirm: true })
-      authUserId = created.data.user?.id ?? await findAuthUserId(email)
-      if (!authUserId) throw created.error ?? new Error('Could not create the secure login identity.')
-    }
-
-    if (!existingByReg) {
-      const { error } = await supabaseAdmin.from('users').insert({
-        id: authUserId,
-        email,
-        personal_email: email.endsWith('@psgtech.ac.in') ? null : email,
-        college_email: email.endsWith('@psgtech.ac.in') ? email : null,
-        reg_no: regNo,
-        name,
-        batch: 'G1',
-        batch_id: batch.id,
-        role_label: 'Alumni',
-        roles: ALUMNI_ROLES,
-        linkedin_url: linkedin,
-        onboarding_complete: true,
-      })
-      if (error) throw error
-    } else {
-      const update = {
-        name,
-        batch_id: batch.id,
-        onboarding_complete: true,
-        ...(linkedin ? { linkedin_url: linkedin } : {}),
-      }
-      const { error } = await supabaseAdmin.from('users').update(update).eq('id', existingByReg.id)
-      if (error) throw error
-    }
-
-    const { data: roster } = await supabaseAdmin
+    const { data: roster, error: rosterError } = await supabaseAdmin
       .from('whitelist')
-      .select('email')
+      .select('email, personal_email, college_email, reg_no, batch_id, role_label')
       .eq('reg_no', regNo)
       .maybeSingle()
-    const rosterRow = {
-      name,
-      reg_no: regNo,
-      batch: 'G1' as const,
-      batch_id: batch.id,
-      personal_email: email.endsWith('@psgtech.ac.in') ? null : email,
-      college_email: email.endsWith('@psgtech.ac.in') ? email : null,
-      role_label: 'Alumni',
-      roles: ALUMNI_ROLES,
+    if (rosterError) throw rosterError
+
+    // Alumni access reactivates a department roster entry; it never creates a
+    // public account from user-supplied profile details.
+    if (!roster?.batch_id) {
+      return NextResponse.json(
+        { error: 'These details do not match an approved alumni record. Contact the department for access.' },
+        { status: 403 },
+      )
     }
-    const rosterResult = roster
-      ? await supabaseAdmin.from('whitelist').update(rosterRow).eq('reg_no', regNo)
-      : await supabaseAdmin.from('whitelist').insert({ email, ...rosterRow })
-    if (rosterResult.error) throw rosterResult.error
+
+    const [{ data: batch, error: batchError }, { data: alias, error: aliasError }, { data: existingProfile, error: profileError }] = await Promise.all([
+      supabaseAdmin.from('batches').select('batch_code, end_year, status').eq('id', roster.batch_id).maybeSingle(),
+      supabaseAdmin.from('whitelist_email_aliases').select('whitelist_email').eq('email', email).maybeSingle(),
+      supabaseAdmin.from('users').select('role_label').eq('reg_no', regNo).maybeSingle(),
+    ])
+    if (batchError || aliasError || profileError) throw batchError || aliasError || profileError
+
+    const approvedEmails = [roster.email, roster.personal_email, roster.college_email]
+      .filter((value): value is string => Boolean(value))
+      .map((value) => value.toLowerCase())
+    const matchesRoster = approvedEmails.includes(email) || alias?.whitelist_email === roster.email
+    const isAlumniRecord = batch?.status === 'graduated'
+      && (!existingProfile || existingProfile.role_label === 'Alumni')
+
+    if (!matchesRoster || !isAlumniRecord) {
+      return NextResponse.json(
+        { error: 'These details do not match an approved alumni record. Contact the department for access.' },
+        { status: 403 },
+      )
+    }
 
     return NextResponse.json({
       success: true,
-      message: 'Your alumni profile is ready. We will now send a secure sign-in code.',
+      message: 'Approved alumni record found. A secure sign-in code can now be sent.',
       batch: { code: batch.batch_code, graduationYear: batch.end_year },
-    }, { status: existingByReg ? 200 : 201 })
+    })
   } catch (error) {
     console.error('[POST /api/auth/join-alumni]', error)
-    return NextResponse.json({ error: 'We could not prepare this alumni account. Please try again.' }, { status: 500 })
+    return NextResponse.json({ error: 'We could not verify this alumni record. Please try again.' }, { status: 500 })
   }
 }

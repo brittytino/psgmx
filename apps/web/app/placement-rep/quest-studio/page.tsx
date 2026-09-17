@@ -27,13 +27,15 @@ export default function QuestStudio() {
   const updateCase = (type: 'visible' | 'hidden', index: number, field: string, value: string) => {
     const list = type === 'visible' ? [...visibleCases] : [...hiddenCases];
     list[index] = { ...list[index], [field]: value };
-    type === 'visible' ? setVisibleCases(list) : setHiddenCases(list);
+    if (type === 'visible') setVisibleCases(list);
+    else setHiddenCases(list);
   };
   
   const removeCase = (type: 'visible' | 'hidden', index: number) => {
     const list = type === 'visible' ? [...visibleCases] : [...hiddenCases];
     list.splice(index, 1);
-    type === 'visible' ? setVisibleCases(list) : setHiddenCases(list);
+    if (type === 'visible') setVisibleCases(list);
+    else setHiddenCases(list);
   };
 
   const handleSave = async () => {

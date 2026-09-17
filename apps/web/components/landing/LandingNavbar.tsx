@@ -36,7 +36,7 @@ export default function LandingNavbar() {
           <div className="hidden lg:flex items-center gap-1">
             <NavLink href="#features">Features</NavLink>
             <NavLink href="#access">Access</NavLink>
-            <NavLink href="#testimonials">Reviews</NavLink>
+            <NavLink href="#testimonials">Principles</NavLink>
             <NavLink href="#about">About</NavLink>
           </div>
 
@@ -52,6 +52,9 @@ export default function LandingNavbar() {
 
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
+              aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'}
+              aria-expanded={mobileOpen}
+              aria-controls="landing-mobile-menu"
               className="w-10 h-10 rounded-full bg-white border border-[#EFE9E0] flex items-center justify-center text-[#221F1A] hover:bg-[#FBF6EE] transition-colors lg:hidden shadow-sm"
             >
               {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
@@ -71,12 +74,13 @@ export default function LandingNavbar() {
           onClick={() => setMobileOpen(false)}
         />
         <div
+          id="landing-mobile-menu"
           className={`absolute top-[72px] left-4 right-4 bg-white rounded-2xl border border-[#EFE9E0] shadow-2xl p-6 transition-all duration-300 ${
             mobileOpen ? 'translate-y-0 opacity-100' : '-translate-y-4 opacity-0'
           }`}
         >
           <div className="flex flex-col gap-1 mb-6">
-            {[['#features','Features'],['#access','Access'],['#testimonials','Reviews'],['#about','About']].map(([href, label]) => (
+            {[['#features','Features'],['#access','Access'],['#testimonials','Principles'],['#about','About']].map(([href, label]) => (
               <a
                 key={href}
                 href={href}

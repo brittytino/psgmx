@@ -30,7 +30,7 @@ enum UserPermission {
   /// Can triage interview-pattern submissions before faculty review.
   moderateInterviewPatterns,
 
-  /// Can read batch-wide analytics, leaderboards, and attendance summaries.
+  /// Can read batch-level aggregate analytics and attendance summaries.
   viewBatchAnalytics,
 
   /// Can view and interact with the AI mentor.

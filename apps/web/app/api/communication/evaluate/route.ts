@@ -4,7 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase/admin'
 import { executeOpenRouterPrompt } from '@/lib/ai/openrouter-free-chain'
 
 const db = supabaseAdmin as any
-const MAX_AUDIO_BYTES = 12 * 1024 * 1024
+const MAX_AUDIO_BYTES = 2 * 1024 * 1024
 const ALLOWED_AUDIO = new Set(['audio/webm', 'audio/ogg', 'audio/mpeg', 'audio/mp4', 'audio/wav', 'audio/x-wav'])
 
 function parseScores(text: string) {

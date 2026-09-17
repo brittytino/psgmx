@@ -289,7 +289,8 @@ class NotificationService extends ChangeNotifier {
     // stream by the caller) — only the OS-level push/vibration is suppressed.
     final hour = DateTime.now().hour;
     if (hour >= 22 || hour < 7) {
-      debugPrint('[Notification] Quiet hours — suppressing OS push, in-app delivery only');
+      debugPrint(
+          '[Notification] Quiet hours — suppressing OS push, in-app delivery only');
       return;
     }
 
@@ -307,7 +308,8 @@ class NotificationService extends ChangeNotifier {
       NotificationType.birthday,
     };
     if (lowPriorityTypes.contains(notification.notificationType)) {
-      debugPrint('[Notification] Low-priority type — in-app delivery only, no individual push');
+      debugPrint(
+          '[Notification] Low-priority type — in-app delivery only, no individual push');
       return;
     }
 
@@ -693,46 +695,17 @@ class NotificationService extends ChangeNotifier {
       debugPrint(
           '[Notification] 🎂 Checking birthdays for today: $todayStr (${now.year}-${now.month}-${now.day})');
 
-      // Check BOTH whitelist AND users tables for birthdays
-      List whitelistResponse = [];
-      try {
-        whitelistResponse = await _supabase
-            .from('whitelist')
-            .select('email, name, dob')
-            .not('dob', 'is', null);
-      } catch (e) {
-        debugPrint('[Notification] Whitelist birthday query skipped/restricted: $e');
-      }
-
       final usersResponse = await _supabase
           .from('users')
           .select('id, email, name, dob')
-          .not('dob', 'is', null);
-
-      // Combine both lists (prefer users table data if exists)
-      final Map<String, Map<String, dynamic>> allUsersMap = {};
-
-      // Add whitelist entries first
-      for (var user in whitelistResponse) {
-        final email = user['email'] as String?;
-        if (email != null) {
-          allUsersMap[email] = user;
-        }
-      }
-
-      // Override with users table data (more up-to-date)
-      for (var user in usersResponse as List) {
-        final email = user['email'] as String?;
-        if (email != null) {
-          allUsersMap[email] = user;
-        }
-      }
+          .eq('show_birthday_publicly', true)
+          .not('dob', 'is', null) as List;
 
       debugPrint(
-          '[Notification] Found ${allUsersMap.length} users to check for birthdays');
+          '[Notification] Found ${usersResponse.length} opted-in profiles to check for birthdays');
 
       int birthdaysFound = 0;
-      for (var user in allUsersMap.values) {
+      for (var user in usersResponse) {
         final dobStr = user['dob'] as String?;
         final dob = DateTime.tryParse(dobStr ?? '');
 
@@ -798,15 +771,8 @@ class NotificationService extends ChangeNotifier {
       channel: 'psgmx_leetcode',
     );
 
-    // Weekly leaderboard update (Saturday 9:00 AM)
-    await _scheduleWeekly(
-      id: 101,
-      title: '🏆 Weekly Leaderboard Update',
-      body: 'Check out who topped the charts this week! Are you in the Top 3?',
-      day: DateTime.saturday,
-      hour: 9,
-      minute: 0,
-    );
+    // Remove the retired peer-leaderboard reminder from existing installs.
+    if (!kIsWeb) await _notifications.cancel(id: 101);
   }
 
   Future<void> cancelLeetCodeReminders() async {
@@ -1049,11 +1015,11 @@ class NotificationService extends ChangeNotifier {
     final firstName = userName.split(' ').first;
 
     var birthdayDate =
-        tz.TZDateTime(tz.local, now.year, dob.month, dob.day, 0, 0);
+        tz.TZDateTime(tz.local, now.year, dob.month, dob.day, 9, 0);
 
     if (birthdayDate.isBefore(now)) {
       birthdayDate =
-          tz.TZDateTime(tz.local, now.year + 1, dob.month, dob.day, 0, 0);
+          tz.TZDateTime(tz.local, now.year + 1, dob.month, dob.day, 9, 0);
     }
 
     try {
@@ -1128,45 +1094,6 @@ class NotificationService extends ChangeNotifier {
       ),
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       matchDateTimeComponents: DateTimeComponents.time,
-    );
-  }
-
-  Future<void> _scheduleWeekly({
-    required int id,
-    required String title,
-    required String body,
-    required int day,
-    required int hour,
-    required int minute,
-  }) async {
-    if (kIsWeb) return;
-
-    var date = tz.TZDateTime.now(tz.local);
-    while (date.weekday != day) {
-      date = date.add(const Duration(days: 1));
-    }
-    date =
-        tz.TZDateTime(tz.local, date.year, date.month, date.day, hour, minute);
-
-    if (date.isBefore(tz.TZDateTime.now(tz.local))) {
-      date = date.add(const Duration(days: 7));
-    }
-
-    await _notifications.zonedSchedule(
-      id: id,
-      title: title,
-      body: body,
-      scheduledDate: date,
-      notificationDetails: const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'psgmx_leetcode',
-          'LeetCode Reminders',
-          importance: Importance.defaultImportance,
-        ),
-        iOS: DarwinNotificationDetails(),
-      ),
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-      matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
     );
   }
 
@@ -1425,7 +1352,7 @@ class NotificationService extends ChangeNotifier {
   // B2: TASK DEADLINE REMINDERS
   // ========================================
 
-  /// Schedule task deadline reminder at 9 PM
+  /// Schedule one low-pressure reminder for verified preparation evidence.
   Future<void> scheduleTaskDeadlineReminder() async {
     try {
       // Check if user has task reminders enabled
@@ -1437,28 +1364,16 @@ class NotificationService extends ChangeNotifier {
 
       await _scheduleDaily(
         id: 400, // Unique ID for task deadline
-        title: '📝 Daily Task Reminder',
+        title: '📝 Preparation Check-in',
         body:
-            'Have you completed today\'s task? Don\'t forget to mark it as done!',
+            'If you practised today, submit the attempt so it can count as verified evidence.',
         hour: 21, // 9 PM
         minute: 0,
         channel: 'psgmx_channel_main',
       );
 
-      debugPrint('[Notification] Task deadline reminder scheduled for 9 PM');
-
-      // Also schedule task incomplete check at 9:15 PM (15 min after deadline)
-      await _scheduleDaily(
-        id: 401,
-        title: '⏰ Task Still Pending',
-        body:
-            'You haven\'t marked today\'s task as completed yet. Take a moment to finish it!',
-        hour: 21,
-        minute: 15,
-        channel: 'psgmx_channel_main',
-      );
-
-      debugPrint('[Notification] Task incomplete check scheduled for 9:15 PM');
+      if (!kIsWeb) await _notifications.cancel(id: 401);
+      debugPrint('[Notification] Preparation reminder scheduled for 9 PM');
     } catch (e) {
       debugPrint('[Notification] Error scheduling task reminder: $e');
     }
@@ -1466,7 +1381,9 @@ class NotificationService extends ChangeNotifier {
 
   /// Cancel task deadline reminder
   Future<void> cancelTaskDeadlineReminder() async {
+    if (kIsWeb) return;
     await _notifications.cancel(id: 400);
+    await _notifications.cancel(id: 401);
   }
 
   /// Send immediate task reminder (called if task not completed)
@@ -1477,9 +1394,9 @@ class NotificationService extends ChangeNotifier {
 
       await showNotification(
         id: 401,
-        title: '⏰ Task Still Pending',
+        title: '📝 Preparation Check-in',
         body:
-            'You haven\'t marked today\'s task as completed yet. Take a moment to finish it!',
+            'Submit a practice attempt when you are ready so your progress is based on verified evidence.',
         type: NotificationType.reminder,
       );
     } catch (e) {

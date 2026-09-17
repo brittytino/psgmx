@@ -1,6 +1,6 @@
 // ============================================================
 // GET /api/governance/stats
-// Governance statistics for Faculty and HOD portal.
+// Governance statistics for the HOD portal.
 // Aggregates audit logs, knowledge brain stats, and readiness overview.
 // ============================================================
 import { NextRequest, NextResponse } from 'next/server'
@@ -10,8 +10,11 @@ import { supabaseAdmin } from '@/lib/supabase/admin'
 export async function GET(req: NextRequest) {
   try {
     const session = await getUserFromRequest(req)
-    if (!session?.id || !['faculty', 'hod'].includes(session.roleLabel.toLowerCase())) {
-      return NextResponse.json({ error: 'Unauthorized — Faculty or HOD required' }, { status: 401 })
+    if (!session?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    if (session.roleLabel.toLowerCase() !== 'hod') {
+      return NextResponse.json({ error: 'Forbidden — HOD access required' }, { status: 403 })
     }
 
     const [articlesRes, pendingLogRes, usersRes, auditRes] = await Promise.all([

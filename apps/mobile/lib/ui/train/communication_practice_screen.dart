@@ -114,7 +114,8 @@ class _CommunicationPracticeScreenState
       await _recorder.start(
         kIsWeb
             ? const RecordConfig(
-                encoder: AudioEncoder.wav,
+                encoder: AudioEncoder.opus,
+                bitRate: 64000,
                 sampleRate: 16000,
                 numChannels: 1,
                 autoGain: true,
@@ -123,7 +124,7 @@ class _CommunicationPracticeScreenState
               )
             : const RecordConfig(
                 encoder: AudioEncoder.aacLc,
-                bitRate: 96000,
+                bitRate: 64000,
                 sampleRate: 44100,
                 numChannels: 1,
                 autoGain: true,
@@ -195,9 +196,9 @@ class _CommunicationPracticeScreenState
         ..files.add(http.MultipartFile.fromBytes(
           'audio',
           bytes,
-          filename: isBrowserClip ? 'answer.wav' : 'answer.m4a',
+          filename: isBrowserClip ? 'answer.webm' : 'answer.m4a',
           contentType: isBrowserClip
-              ? MediaType('audio', 'wav')
+              ? MediaType('audio', 'webm')
               : MediaType('audio', 'mp4'),
         ));
       final streamed =

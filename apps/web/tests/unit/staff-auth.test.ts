@@ -37,10 +37,13 @@ describe('dashboardPath', () => {
 
 describe('static staff OTP', () => {
   const previous = process.env.ALLOW_STATIC_OTP
+  const previousNodeEnv = process.env.NODE_ENV
 
   afterEach(() => {
     if (previous === undefined) delete process.env.ALLOW_STATIC_OTP
     else process.env.ALLOW_STATIC_OTP = previous
+    if (previousNodeEnv === undefined) delete process.env.NODE_ENV
+    else process.env.NODE_ENV = previousNodeEnv
   })
 
   it('accepts 098765 for faculty when enabled', () => {
@@ -59,5 +62,12 @@ describe('static staff OTP', () => {
   it('is disabled unless explicitly enabled', () => {
     delete process.env.ALLOW_STATIC_OTP
     expect(isStaticOtpEnabled()).toBe(false)
+  })
+
+  it('cannot be enabled in production', () => {
+    process.env.NODE_ENV = 'production'
+    process.env.ALLOW_STATIC_OTP = 'true'
+    expect(isStaticOtpEnabled()).toBe(false)
+    expect(isStaticStaffOtp('nir.mca@psgtech.ac.in', STATIC_STAFF_OTP)).toBe(false)
   })
 })

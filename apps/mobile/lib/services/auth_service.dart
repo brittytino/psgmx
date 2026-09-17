@@ -42,7 +42,8 @@ class AuthService {
       }
       debugPrint('[AuthService] Requesting Resend OTP for: $email');
 
-      var targetUrl = Uri.parse('${SupabaseConfig.appApiUrl}/api/auth/request-otp');
+      var targetUrl =
+          Uri.parse('${SupabaseConfig.appApiUrl}/api/auth/request-otp');
       var response = await http
           .post(
             targetUrl,
@@ -52,7 +53,9 @@ class AuthService {
           .timeout(const Duration(seconds: 15));
 
       // Handle HTTP Redirects (301, 302, 307, 308)
-      if (response.statusCode >= 300 && response.statusCode < 400 && response.headers['location'] != null) {
+      if (response.statusCode >= 300 &&
+          response.statusCode < 400 &&
+          response.headers['location'] != null) {
         final redirectUrl = Uri.parse(response.headers['location']!);
         debugPrint('[AuthService] Following redirect to: $redirectUrl');
         response = await http
@@ -66,7 +69,8 @@ class AuthService {
 
       final bodyStr = response.body;
       if (response.statusCode >= 200 && response.statusCode < 300) {
-        debugPrint('[AuthService] ✅ OTP issued via Resend API (notifications@psgmx.tech)');
+        debugPrint(
+            '[AuthService] ✅ OTP issued via Resend API (notifications@psgmx.tech)');
         return true;
       }
 
@@ -81,8 +85,8 @@ class AuthService {
         }
       }
 
-      throw Exception('Could not reach the Resend login service (${response.statusCode}). Please try again.');
-
+      throw Exception(
+          'Could not reach the Resend login service (${response.statusCode}). Please try again.');
     } on AuthException catch (e) {
       if (e.message.contains('rate limit')) {
         throw Exception('Too many requests. Please wait a moment.');
@@ -91,7 +95,8 @@ class AuthService {
     } catch (e) {
       debugPrint('[AuthService] Resend OTP error: $e');
       if (e is Exception) rethrow;
-      throw Exception('Could not send verification code via Resend. Please try again.');
+      throw Exception(
+          'Could not send verification code via Resend. Please try again.');
     }
   }
 
@@ -100,7 +105,8 @@ class AuthService {
         email.length <= 254;
   }
 
-  /// STEP 2: VERIFY OTP (Magic Link Token)
+  /// STEP 2: VERIFY OTP through the trusted backend so lockout policy is
+  /// shared across devices and cannot be bypassed by restarting the app.
   Future<void> verifyOtp({
     required String email,
     required String otp,
@@ -108,38 +114,47 @@ class AuthService {
     try {
       email = email.trim().toLowerCase();
 
-      if (otp.length != 6) {
+      if (!RegExp(r'^\d{6}$').hasMatch(otp)) {
         throw 'OTP must be 6 digits';
       }
 
       debugPrint('[AuthService] Verifying OTP');
 
-      final response = await _supabaseService.auth.verifyOTP(
-        email: email,
-        token: otp,
-        type: OtpType.email,
-      );
-
-      if (response.session == null) {
-        throw 'Verification failed. Please try again.';
+      final response = await http
+          .post(
+            Uri.parse('${SupabaseConfig.appApiUrl}/api/auth/verify'),
+            headers: const {
+              'Content-Type': 'application/json',
+              'x-psgmx-client': 'mobile',
+            },
+            body: jsonEncode({'email': email, 'token': otp}),
+          )
+          .timeout(const Duration(seconds: 20));
+      final payload = jsonDecode(response.body) as Map<String, dynamic>;
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw Exception(
+            payload['error'] ?? 'Verification failed. Please try again.');
       }
-
-      final user = response.user;
-      if (user == null) {
-        throw 'User data not available.';
+      final session = payload['session'];
+      if (session is! Map ||
+          session['refresh_token'] is! String ||
+          session['access_token'] is! String) {
+        throw Exception(
+            'The secure session could not be established. Please try again.');
+      }
+      final authResponse = await _supabaseService.auth.setSession(
+        session['refresh_token'] as String,
+        accessToken: session['access_token'] as String,
+      );
+      if (authResponse.session == null || authResponse.user == null) {
+        throw Exception('Verification failed. Please try again.');
       }
 
       debugPrint('[AuthService] ✅ OTP verified successfully');
       debugPrint('[AuthService] User authenticated');
-    } on AuthException catch (e) {
-      debugPrint('[AuthService] Auth error: ${e.message}');
-      if (e.message.contains('Invalid') || e.message.contains('expired')) {
-        throw 'Invalid or expired OTP. Please request a new one.';
-      }
-      throw e.message;
     } catch (e) {
       debugPrint('[AuthService] Unexpected error: $e');
-      throw e.toString();
+      throw e.toString().replaceFirst('Exception: ', '');
     }
   }
 
