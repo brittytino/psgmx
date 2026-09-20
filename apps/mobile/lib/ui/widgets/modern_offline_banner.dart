@@ -6,7 +6,7 @@ import '../../services/connectivity_service.dart';
 /// Modern, sleek offline banner with smooth animations
 class ModernOfflineBanner extends StatefulWidget {
   final Widget child;
-  
+
   const ModernOfflineBanner({super.key, required this.child});
 
   @override
@@ -23,31 +23,30 @@ class _ModernOfflineBannerState extends State<ModernOfflineBanner>
   @override
   void initState() {
     super.initState();
-    
+
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
-    
+
     _slideAnimation = CurvedAnimation(
       parent: _animationController,
       curve: Curves.easeOut,
     );
-    
+
     ConnectivityService().init();
     _isOffline = !ConnectivityService().hasConnection;
-    
+
     if (_isOffline) {
       _animationController.forward();
     }
-    
-    _connectionSubscription = ConnectivityService()
-        .connectionChange
-        .listen((isConnected) {
+
+    _connectionSubscription =
+        ConnectivityService().connectionChange.listen((isConnected) {
       setState(() {
         final wasOffline = _isOffline;
         _isOffline = !isConnected;
-        
+
         if (_isOffline && !wasOffline) {
           // Just went offline
           _animationController.forward();
@@ -69,7 +68,7 @@ class _ModernOfflineBannerState extends State<ModernOfflineBanner>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Column(
       children: [
         SizeTransition(
@@ -96,7 +95,7 @@ class _ModernOfflineBannerState extends State<ModernOfflineBanner>
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: isDark 
+                    color: isDark
                         ? Colors.orange.withValues(alpha: 0.2)
                         : Colors.orange.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(8),
@@ -118,9 +117,8 @@ class _ModernOfflineBannerState extends State<ModernOfflineBanner>
                         style: GoogleFonts.inter(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: isDark 
-                              ? Colors.orange[300]
-                              : Colors.orange[900],
+                          color:
+                              isDark ? Colors.orange[300] : Colors.orange[900],
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -128,9 +126,7 @@ class _ModernOfflineBannerState extends State<ModernOfflineBanner>
                         'Some features may be unavailable',
                         style: GoogleFonts.inter(
                           fontSize: 9,
-                          color: isDark 
-                              ? Colors.grey[400]
-                              : Colors.grey[700],
+                          color: isDark ? Colors.grey[400] : Colors.grey[700],
                         ),
                       ),
                     ],

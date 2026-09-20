@@ -20,10 +20,9 @@ Color kSurfaceColor(bool isDark) =>
     isDark ? const Color(0xFF1E1E2E) : Colors.white;
 Color kBgColor(bool isDark) =>
     isDark ? const Color(0xFF0F0F1E) : const Color(0xFFF8F9FA);
-Color kCardBorderColor(bool isDark) =>
-    isDark
-        ? Colors.white.withValues(alpha: 0.08)
-        : Colors.grey.withValues(alpha: 0.15);
+Color kCardBorderColor(bool isDark) => isDark
+    ? Colors.white.withValues(alpha: 0.08)
+    : Colors.grey.withValues(alpha: 0.15);
 Color kBodyTextColor(bool isDark) =>
     isDark ? Colors.grey.shade300 : Colors.grey.shade700;
 Color kSubtextColor(bool isDark) =>
@@ -128,8 +127,7 @@ class UpdateSecondaryButton extends StatelessWidget {
           style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w500),
         ),
         style: OutlinedButton.styleFrom(
-          foregroundColor:
-              isDark ? Colors.grey.shade400 : Colors.grey.shade700,
+          foregroundColor: isDark ? Colors.grey.shade400 : Colors.grey.shade700,
           side: BorderSide(
             color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
             width: 1.5,
@@ -187,8 +185,7 @@ class UpdateVersionCard extends StatelessWidget {
     );
   }
 
-  Widget _versionBadge(
-      String label, String version, Color color, bool isDark) {
+  Widget _versionBadge(String label, String version, Color color, bool isDark) {
     return Column(
       children: [
         Text(
@@ -201,13 +198,12 @@ class UpdateVersionCard extends StatelessWidget {
         ),
         const SizedBox(height: 5),
         Container(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-                color: color.withValues(alpha: 0.35), width: 1.5),
+            border:
+                Border.all(color: color.withValues(alpha: 0.35), width: 1.5),
           ),
           child: Text(
             version,
@@ -246,13 +242,14 @@ class UpdateMessageCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: accentColor.withValues(alpha: isDark ? 0.08 : 0.05),
         borderRadius: BorderRadius.circular(kCardRadius),
-        border: Border.all(
-            color: accentColor.withValues(alpha: 0.25), width: 1.5),
+        border:
+            Border.all(color: accentColor.withValues(alpha: 0.25), width: 1.5),
       ),
       child: Column(
         children: [
           if (leadingIcon != null) ...[
-            Icon(leadingIcon, size: 16, color: accentColor.withValues(alpha: 0.85)),
+            Icon(leadingIcon,
+                size: 16, color: accentColor.withValues(alpha: 0.85)),
             const SizedBox(height: 10),
           ],
           Text(

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/app_user.dart';
+import '../models/batch.dart';
 import '../models/user_permission.dart';
 import '../services/auth_service.dart';
 import '../services/batch_service.dart';
@@ -148,7 +149,11 @@ class UserProvider with ChangeNotifier, SafeChangeNotifier {
         final batch = await _batchService.batchFromRollNumber(user.regNo);
         if (batch != null) {
           await _batchService.assignUserToBatch(user.uid, batch.id);
-          user = user.copyWith(batchId: batch.id);
+          user = user.copyWith(
+            batchId: batch.id,
+            batchStatus: batch.status.dbValue,
+            isGraduatedBatch: batch.isGraduated,
+          );
           debugPrint(
               '[UserProvider] Auto-assigned to batch ${batch.batchCode}');
         }

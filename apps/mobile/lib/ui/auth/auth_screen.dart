@@ -28,15 +28,14 @@ class _AuthScreenState extends State<AuthScreen> {
 
   bool _isEmailValid = false;
 
-  // PRD Ch. 3.2 Step 2: "Three wrong attempts lock for 15 minutes with the
-  // exact unlock time shown." Supabase Auth itself rejects the wrong code;
-  // this just tracks the attempt count and surfaces the lockout clearly
-  // instead of letting the student keep guessing indefinitely.
-  int _wrongOtpAttempts = 0;
+  // The backend owns the cross-device three-attempt lockout. This screen only
+  // mirrors a lock returned by the server, so network failures never count as
+  // incorrect codes.
   DateTime? _lockedUntil;
   Timer? _lockoutTicker;
 
-  bool get _isLockedOut => _lockedUntil != null && DateTime.now().isBefore(_lockedUntil!);
+  bool get _isLockedOut =>
+      _lockedUntil != null && DateTime.now().isBefore(_lockedUntil!);
 
   @override
   void initState() {
@@ -44,7 +43,9 @@ class _AuthScreenState extends State<AuthScreen> {
     _emailController.addListener(() {
       final email = _emailController.text.trim().toLowerCase();
       setState(() {
-        _isEmailValid = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(email);
+        _isEmailValid = RegExp(
+          r"^[A-Za-z0-9.!#$%&'*+/=?^_{}|~-]+@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$",
+        ).hasMatch(email);
       });
     });
   }
@@ -138,11 +139,12 @@ class _AuthScreenState extends State<AuthScreen> {
             email: _emailController.text.trim(),
             otp: otp,
           );
-      _wrongOtpAttempts = 0;
       // Navigation handled by router
     } catch (e) {
-      _wrongOtpAttempts++;
-      final locking = _wrongOtpAttempts >= 3;
+      final message = e.toString().replaceAll('Exception:', '').trim();
+      final lowerMessage = message.toLowerCase();
+      final locking = lowerMessage.contains('locked') ||
+          lowerMessage.contains('too many invalid codes');
       setState(() {
         _otpController.clear();
         if (locking) {
@@ -154,15 +156,14 @@ class _AuthScreenState extends State<AuthScreen> {
               timer.cancel();
               setState(() {
                 _lockedUntil = null;
-                _wrongOtpAttempts = 0;
               });
             } else {
               setState(() {}); // tick the countdown text
             }
           });
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text(e.toString().replaceAll('Exception:', '').trim())));
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text(message)));
         }
         _isLoading = false;
       });
@@ -349,16 +350,20 @@ class _AuthScreenState extends State<AuthScreen> {
                               decoration: BoxDecoration(
                                 color: const Color(0xFFFEF2F2),
                                 borderRadius: BorderRadius.circular(14),
-                                border: Border.all(color: const Color(0xFFFECACA)),
+                                border:
+                                    Border.all(color: const Color(0xFFFECACA)),
                               ),
                               child: Row(children: [
-                                const Icon(LucideIcons.lock, size: 18, color: Color(0xFFDC2626)),
+                                const Icon(LucideIcons.lock,
+                                    size: 18, color: Color(0xFFDC2626)),
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: Text(
                                     'Too many wrong codes. Locked until ${_formatUnlockTime(_lockedUntil!)}.',
                                     style: GoogleFonts.inter(
-                                        fontSize: 11, fontWeight: FontWeight.w600, color: const Color(0xFF991B1B)),
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: const Color(0xFF991B1B)),
                                   ),
                                 ),
                               ]),
@@ -417,7 +422,9 @@ class _AuthScreenState extends State<AuthScreen> {
                           ),
                           const SizedBox(height: 8),
                           TextButton.icon(
-                            onPressed: _resendSeconds == 0 && !_isLoading && !_isLockedOut
+                            onPressed: _resendSeconds == 0 &&
+                                    !_isLoading &&
+                                    !_isLockedOut
                                 ? _resendOtp
                                 : null,
                             icon: const Icon(LucideIcons.refreshCw, size: 14),

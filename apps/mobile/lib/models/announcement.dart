@@ -23,9 +23,13 @@ class Announcement {
       title: map['title'] ?? '',
       message: map['message'] ?? '',
       isPriority: map['is_priority'] ?? false,
-      expiryDate: map['expiry_date'] != null ? DateTime.parse(map['expiry_date']) : null,
+      expiryDate: map['expiry_date'] != null
+          ? DateTime.parse(map['expiry_date'])
+          : null,
       createdBy: map['created_by'] ?? '',
-      createdAt: map['created_at'] != null ? DateTime.parse(map['created_at']) : DateTime.now(),
+      createdAt: map['created_at'] != null
+          ? DateTime.parse(map['created_at'])
+          : DateTime.now(),
     );
   }
 

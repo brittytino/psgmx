@@ -10,31 +10,17 @@ import '../core/safe_change_notifier.dart';
 
 class LeetCodeProvider extends ChangeNotifier with SafeChangeNotifier {
   final SupabaseService _supabaseService;
-  
+
   bool _isLoading = false;
   bool get isLoading => _isLoading;
-  
-  String _loadingMessage = '';
-  String get loadingMessage => _loadingMessage;
-  
+
   final Map<String, LeetCodeStats> _statsCache = {};
   Map<String, LeetCodeStats> get statsCache => _statsCache;
 
   final Set<String> _pendingRequests = {}; // Request deduplication
-  
-  List<LeetCodeStats> _allUsers = [];
-  List<LeetCodeStats> get allUsers => _allUsers;
-  
-  DateTime? _lastBatchUpdate;
-  
+
   LeetCodeProvider(this._supabaseService);
-  
-  // Check if we need to refresh (every 12 hours)
-  bool get needsRefresh {
-    if (_lastBatchUpdate == null) return true;
-    return DateTime.now().difference(_lastBatchUpdate!).inHours >= 12;
-  }
-  
+
   // Clean username helper
   String _cleanUsername(String username) {
     if (username.contains('/')) {
@@ -49,7 +35,9 @@ class LeetCodeProvider extends ChangeNotifier with SafeChangeNotifier {
   /// flood the log with hundreds of lines of markup.
   String _sanitizeError(Object e) {
     final s = e.toString();
-    if (s.contains('<!DOCTYPE') || s.contains('<html') || s.contains('</html>')) {
+    if (s.contains('<!DOCTYPE') ||
+        s.contains('<html') ||
+        s.contains('</html>')) {
       // Extract just the first meaningful line / code from the HTML
       final codeMatch = RegExp(r'Error code (\d+)').firstMatch(s);
       final code = codeMatch?.group(1);
@@ -59,7 +47,7 @@ class LeetCodeProvider extends ChangeNotifier with SafeChangeNotifier {
     }
     return s.length > 300 ? '${s.substring(0, 300)}…' : s;
   }
-  
+
   LeetCodeStats? getCachedStats(String username) {
     final clean = _cleanUsername(username);
     return _statsCache[clean];
@@ -77,32 +65,32 @@ class LeetCodeProvider extends ChangeNotifier with SafeChangeNotifier {
         return stats;
       }
     }
-    
+
     // 2. Prevent duplicate in-flight requests
     if (_pendingRequests.contains(username)) {
       return _statsCache[username]; // Return what we have, or null
     }
     _pendingRequests.add(username);
-    
+
     // Only set loading if we don't have cache to show
     if (!_statsCache.containsKey(username)) {
-       _isLoading = true;
-       notifyListeners();
+      _isLoading = true;
+      notifyListeners();
     }
-    
+
     try {
       // 3. Try to fetch from Supabase (Offline Support)
       if (!_statsCache.containsKey(username)) {
-         final dbData = await _supabaseService.client
+        final dbData = await _supabaseService.client
             .from('leetcode_stats')
             .select()
             .eq('username', username)
             .maybeSingle();
-            
+
         if (dbData != null) {
           final stats = LeetCodeStats.fromMap(dbData);
           _statsCache[username] = stats;
-          
+
           // If Supabase data is fresh (<12 hours), stop here
           if (DateTime.now().difference(stats.lastUpdated).inHours < 12) {
             _pendingRequests.remove(username);
@@ -111,23 +99,22 @@ class LeetCodeProvider extends ChangeNotifier with SafeChangeNotifier {
             return stats;
           }
           // We got stale data from DB, show it while we fetch fresh
-          notifyListeners(); 
+          notifyListeners();
         }
       }
 
       // 4. Fetch from LeetCode API (Network) - it will save to DB internally
       final stats = await _fetchFromLeetCodeApi(username);
-      
+
       // 5. Update Cache
       if (stats != null) {
         _statsCache[username] = stats;
       }
-      
+
       _pendingRequests.remove(username);
       _isLoading = false;
       notifyListeners();
       return stats ?? _statsCache[username];
-      
     } catch (e) {
       debugPrint('Error fetching LeetCode stats: ${_sanitizeError(e)}');
       _pendingRequests.remove(username);
@@ -137,359 +124,12 @@ class LeetCodeProvider extends ChangeNotifier with SafeChangeNotifier {
     }
   }
 
-  Future<List<LeetCodeStats>> fetchLeaderboard({
-    int limit = 10, 
-    int offset = 0,
-    bool isWeekly = false,
-  }) async {
-    try {
-      final orderBy = isWeekly ? 'weekly_score' : 'total_solved';
-
-      final response = await _supabaseService.client
-          .from('leetcode_stats')
-          .select()
-          .order(orderBy, ascending: false)
-          .range(offset, offset + limit - 1);
-      
-      return (response as List).map((e) => LeetCodeStats.fromMap(e)).toList();
-    } catch (e) {
-      debugPrint('Error fetching leaderboard: $e');
-      // Return empty list on error instead of crashing
-      return [];
-    }
-  }
-
-  Future<List<LeetCodeStats>> fetchAllUsers() async {
-    try {
-      // 1. Fetch ALL whitelisted students AND active users (Source of Truth for Names)
-      // We merge both, prioritizing the 'users' table for updated leetcode usernames
-      List whitelistResponse = [];
-      try {
-        whitelistResponse = await _supabaseService.client
-            .from('whitelist')
-            .select('leetcode_username, name, reg_no');
-      } catch (e) {
-        debugPrint('[LeetCodeProvider] Whitelist query fallback: $e');
-      }
-
-      final usersResponse = await _supabaseService.client
-          .from('users')
-          .select('leetcode_username, name, reg_no')
-          .not('leetcode_username', 'is', null);
-          
-      final nameMap = <String, String>{};
-      final activeUsernames = <String>{};
-      
-      // Temporary registry by Reg No to handle overrides correctly
-      final registry = <String, Map<String, String>>{};
-
-      // Load whitelist first (baseline)
-      for (var entry in whitelistResponse) {
-        final regNo = entry['reg_no'] as String?;
-        final username = entry['leetcode_username'] as String?;
-        final name = entry['name'] as String?;
-        
-        if (regNo != null && username != null && username.isNotEmpty) {
-          registry[regNo] = {
-            'username': _cleanUsername(username),
-            'name': name ?? 'Unknown Student',
-          };
-        }
-      }
-
-      // Overlay with users table (production-grade override for profile updates)
-      for (var entry in usersResponse as List) {
-        final regNo = entry['reg_no'] as String?;
-        final username = entry['leetcode_username'] as String?;
-        final name = entry['name'] as String?;
-        
-        if (regNo != null && username != null && username.isNotEmpty) {
-          registry[regNo] = {
-            'username': _cleanUsername(username),
-            'name': name ?? registry[regNo]?['name'] ?? 'Unknown Student',
-          };
-        }
-      }
-
-      // Finalize the active lists
-      for (var item in registry.values) {
-        final u = item['username']!;
-        activeUsernames.add(u);
-        nameMap[u] = item['name']!;
-      }
-
-      // 2. Fetch ALL stats from database
-      final statsResponse = await _supabaseService.client
-          .from('leetcode_stats')
-          .select()
-          .order('total_solved', ascending: false)
-          .limit(200); 
-      
-      final dbStatsList = (statsResponse as List).map((e) => LeetCodeStats.fromMap(e)).toList();
-      
-      // 3. Merge: Only include users from the active registry
-      final mergedUsers = <LeetCodeStats>[];
-      final seenUsernames = <String>{};
-      
-      // First, add existing stats for active users (prioritizing updated usernames)
-      for (var stat in dbStatsList) {
-        final cleanUser = _cleanUsername(stat.username);
-        
-        // ONLY include if in active registry (Source of Truth)
-        if (activeUsernames.contains(cleanUser)) {
-           seenUsernames.add(cleanUser);
-           mergedUsers.add(stat.copyWith(name: nameMap[cleanUser]));
-        }
-      }
-      
-      // Second, add students from active registry who have no stats entry yet (create empty placeholder)
-      for (var username in activeUsernames) {
-        if (!seenUsernames.contains(username)) {
-           mergedUsers.add(
-             LeetCodeStats.empty(username).copyWith(name: nameMap[username])
-           );
-        }
-      }
-      
-      // Sort again just to be safe (Total solved desc)
-      mergedUsers.sort((a, b) => b.totalSolved.compareTo(a.totalSolved));
-
-      _allUsers = mergedUsers;
-      
-      // Update cache
-      for (var user in mergedUsers) {
-        _statsCache[user.username] = user;
-      }
-      
-      notifyListeners();
-      return mergedUsers;
-    } catch (e) {
-      debugPrint('Error fetching all users: ${_sanitizeError(e)}');
-      return _allUsers; // Return cached data
-    }
-  }
-
-  /// Load all users from database (no API calls)
-  /// This is called on app startup for all users
-  Future<void> loadAllUsersFromDatabase() async {
-    _isLoading = true;
-    _loadingMessage = 'Loading user stats...';
-    notifyListeners();
-    
-    try {
-      // Just fetch from database - fast and no network calls
-      await fetchAllUsers();
-      
-      // Check and notify POTD (run in background)
-      // checkAndNotifyPOTD(); // Moving to a safer place or ensuring it has checks
-      _checkPotdDebounced();
-    } catch (e) {
-      debugPrint('Error loading users from database: $e');
-    } finally {
-      _isLoading = false;
-      _loadingMessage = '';
-      notifyListeners();
-    }
-  }
-
-  /// Refresh all users from LeetCode API (Placement Rep Only)
-  /// This should only be called by authorized users
-  Future<void> refreshAllUsersFromAPI() async {
-    if (_isLoading) {
-      debugPrint('[LeetCode] Sync already in progress, skipping request.');
-      return;
-    }
-
-    _isLoading = true;
-    _loadingMessage = 'Preparing refresh...';
-    notifyListeners();
-    
-    try {
-      // 1. Get all leetcode usernames from both tables (Source of Truth)
-      // We prioritize the 'users' table because students can update their profiles there.
-      _loadingMessage = 'Loading student list...';
-      notifyListeners();
-
-      List whitelistResponse = [];
-      try {
-        whitelistResponse = await _supabaseService.client
-            .from('whitelist')
-            .select('leetcode_username, reg_no')
-            .not('leetcode_username', 'is', null);
-      } catch (e) {
-        debugPrint('[LeetCodeProvider] Whitelist refresh query fallback: $e');
-      }
-
-      final usersResponse = await _supabaseService.client
-          .from('users')
-          .select('leetcode_username, reg_no')
-          .not('leetcode_username', 'is', null);
-
-      final usernameByRegNo = <String, String>{};
-      
-      // Load whitelist baseline
-      for (var entry in whitelistResponse) {
-        final regNo = entry['reg_no'] as String?;
-        final username = entry['leetcode_username'] as String?;
-        if (regNo != null && username != null && username.isNotEmpty && username != 'NULL') {
-          usernameByRegNo[regNo] = _cleanUsername(username);
-        }
-      }
-
-      // Overlay with actual user table (prioritizes manual profile updates)
-      for (var entry in usersResponse as List) {
-        final regNo = entry['reg_no'] as String?;
-        final username = entry['leetcode_username'] as String?;
-        if (regNo != null && username != null && username.isNotEmpty && username != 'NULL') {
-          usernameByRegNo[regNo] = _cleanUsername(username);
-        }
-      }
-      
-      final usernames = usernameByRegNo.values.toSet().toList();
-      
-      debugPrint('[LeetCode] Found ${usernames.length} students to refresh across tables');
-
-      // 2. Show current database data first (with names attached)
-      _loadingMessage = 'Loading cached data...';
-      notifyListeners();
-      await fetchAllUsers();
-
-      // 3. Fetch fresh data from LeetCode API
-      if (usernames.isNotEmpty) {
-        await _refreshInBackground(usernames.toList());
-      }
-    } catch (e) {
-      debugPrint('Error refreshing from API: $e');
-    } finally {
-      _isLoading = false;
-      _loadingMessage = '';
-      notifyListeners();
-    }
-  }
-  
-  /// Check if data needs daily refresh (for auto-refresh)
-  bool get needsDailyRefresh {
-    if (_lastBatchUpdate == null) return true;
-    return DateTime.now().difference(_lastBatchUpdate!).inHours >= 24;
-  }
-
-  /// Background refresh from LeetCode API (non-blocking)
-  Future<void> _refreshInBackground(List<String> usernames) async {
-    debugPrint('[LeetCode] 🔄 Starting background refresh for ${usernames.length} users...');
-    
-    int successCount = 0;
-    int failCount = 0;
-    int consecutiveFailures = 0;
-    
-    // Dynamic delay base - Increased for both platforms due to aggressive rate limiting
-    int currentDelayMs = kIsWeb ? 4000 : 3000;
-    
-    for (var i = 0; i < usernames.length; i++) {
-      final username = usernames[i];
-      try {
-        // Update progress message
-        _loadingMessage = 'Fetching ${i + 1}/${usernames.length} users...';
-        notifyListeners();
-        
-        // Rate limiting with dynamic backoff
-        // Actually WAIT here.
-        await Future.delayed(Duration(milliseconds: currentDelayMs));
-        
-        final stats = await _fetchFromLeetCodeApi(username); 
-        
-        if (stats != null) {
-          _statsCache[username] = stats;
-          successCount++;
-          consecutiveFailures = 0;
-          
-          // Reset delay on success (gradually) but keep it safe
-          if (currentDelayMs > (kIsWeb ? 4000 : 3000)) {
-            currentDelayMs -= 500;
-          }
-          
-          // Notify UI every 5 users for progressive loading
-          if (successCount % 5 == 0) {
-            debugPrint('[LeetCode] 📊 Progress: $successCount synced');
-            await fetchAllUsers();
-          }
-        } else {
-          failCount++;
-          consecutiveFailures++;
-          debugPrint('[LeetCode] ⚠️  Failed to fetch: $username');
-          
-          // Exponential backoff if failing repeatedly (likely rate limit)
-          if (consecutiveFailures >= 2) {
-             // 5s, 7.5s, 11s, 16s...
-            currentDelayMs = (currentDelayMs * 1.5).toInt();
-            // Cap at 30 seconds (longer wait if blocked)
-            if (currentDelayMs > 30000) currentDelayMs = 30000;
-            debugPrint('[LeetCode] ⏳ Increasing delay to ${currentDelayMs}ms due to failures');
-            
-            // If we are hitting 429s, maybe we should pause for a big chunk
-             if (consecutiveFailures >= 5) {
-                 debugPrint('[LeetCode] 🛑 Too many failures, pausing for 60 seconds...');
-                 await Future.delayed(const Duration(seconds: 60));
-                 consecutiveFailures = 2; // Reset slightly
-                 currentDelayMs = 5000; // Reset to safe slow speed
-             }
-          }
-        }
-      } catch (e) {
-        debugPrint('[LeetCode] ❌ Error fetching $username: $e');
-        failCount++;
-        // If error is 429 directly caught (though usually it returns null)
-        await Future.delayed(const Duration(seconds: 5));
-      }
-    }
-    
-    debugPrint('[LeetCode] ✅ Batch refresh complete: $successCount success, $failCount failed');
-    _lastBatchUpdate = DateTime.now();
-    _loadingMessage = '';
-    notifyListeners();
-    
-    // Save timestamp to database for tracking
-    await _saveLastRefreshTimestamp();
-    
-    // Final UI refresh with all new data
-    await fetchAllUsers();
-
-    // Production-Grade: Notify background completion
-    try {
-      final notifService = NotificationService();
-      await notifService.showNotification(
-        id: 888, // Unique ID for sync notifications
-        title: 'LeetCode Sync Complete',
-        body: 'Successfully updated $successCount student profiles.',
-        type: NotificationType.leetcode,
-        persistToDatabase: false,
-      );
-    } catch (e) {
-      debugPrint('[LeetCode] Failed to show background notification: $e');
-    }
-  }
-  
-  /// Save last refresh timestamp to database
-  Future<void> _saveLastRefreshTimestamp() async {
-    try {
-      // You could store this in a settings table or metadata table
-      // For now, we'll just keep it in memory
-      debugPrint('[LeetCode] Last refresh: ${_lastBatchUpdate.toString()}');
-    } catch (e) {
-      debugPrint('[LeetCode] Error saving timestamp: $e');
-    }
-  }
-
-  Future<List<LeetCodeStats>> fetchTopSolvers() async {
-     return fetchLeaderboard(limit: 150, isWeekly: false); // Fetch all users, sort by total
-  }
-
-
   Future<LeetCodeStats?> _fetchFromLeetCodeApi(String username) async {
     // Try official LeetCode GraphQL API first (even on Web, trying to use CORS bypass or proxy if available)
     // Users requested to prioritize this over Alpha API to avoid rate limits
     final stats = await _fetchFromOfficialApi(username);
     if (stats != null) return stats;
-    
+
     // Fallback to Alpha API if official fails
     return await _fetchFromAlphaApi(username);
   }
@@ -498,7 +138,7 @@ class LeetCodeProvider extends ChangeNotifier with SafeChangeNotifier {
     try {
       // Use official LeetCode GraphQL API with User's requested query
       const url = 'https://leetcode.com/graphql';
-      
+
       const query = '''
         query getUserProfile(\$username: String!) {
           matchedUser(username: \$username) {
@@ -526,36 +166,42 @@ class LeetCodeProvider extends ChangeNotifier with SafeChangeNotifier {
         }
       ''';
 
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-          'Referer': 'https://leetcode.com',
-          'Origin': 'https://leetcode.com',
-        },
-        body: jsonEncode({
-          'query': query,
-          'variables': {'username': username}
-        }),
-      ).timeout(const Duration(seconds: 15));
+      final response = await http
+          .post(
+            Uri.parse(url),
+            headers: {
+              'Content-Type': 'application/json',
+              'User-Agent':
+                  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+              'Referer': 'https://leetcode.com',
+              'Origin': 'https://leetcode.com',
+            },
+            body: jsonEncode({
+              'query': query,
+              'variables': {'username': username}
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
-        
+
         if (body['errors'] != null) {
-          debugPrint('[LeetCode] ⚠️  GraphQL Error for $username: ${body['errors'][0]['message']}');
+          debugPrint(
+              '[LeetCode] ⚠️  GraphQL Error for $username: ${body['errors'][0]['message']}');
           return null;
         }
 
         final matchedUser = body['data']?['matchedUser'];
         if (matchedUser == null) {
-          debugPrint('[LeetCode] ⚠️  User not found in official API: $username');
+          debugPrint(
+              '[LeetCode] ⚠️  User not found in official API: $username');
           return null;
         }
 
         // Parse stats
-        final submitStats = matchedUser['submitStatsGlobal']['acSubmissionNum'] as List;
+        final submitStats =
+            matchedUser['submitStatsGlobal']['acSubmissionNum'] as List;
         int totalSolved = 0;
         int easySolved = 0;
         int mediumSolved = 0;
@@ -564,7 +210,7 @@ class LeetCodeProvider extends ChangeNotifier with SafeChangeNotifier {
         for (var stat in submitStats) {
           final difficulty = stat['difficulty'] as String;
           final count = stat['count'] as int;
-          
+
           switch (difficulty) {
             case 'All':
               totalSolved = count;
@@ -587,19 +233,22 @@ class LeetCodeProvider extends ChangeNotifier with SafeChangeNotifier {
         // Calculate weekly score
         int weeklyScore = 0;
         // User query structure has submissionCalendar inside userCalendar
-        final submissionCalendarStr = matchedUser['userCalendar']?['submissionCalendar'] as String?;
-        
+        final submissionCalendarStr =
+            matchedUser['userCalendar']?['submissionCalendar'] as String?;
+
         if (submissionCalendarStr != null && submissionCalendarStr.isNotEmpty) {
           try {
-            final submissionCalendar = jsonDecode(submissionCalendarStr) as Map<String, dynamic>;
+            final submissionCalendar =
+                jsonDecode(submissionCalendarStr) as Map<String, dynamic>;
             final now = DateTime.now();
             final sevenDaysAgo = now.subtract(const Duration(days: 7));
-            
+
             submissionCalendar.forEach((timestampStr, count) {
               try {
                 final timestamp = int.tryParse(timestampStr);
                 if (timestamp != null) {
-                  final date = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
+                  final date =
+                      DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
                   if (date.isAfter(sevenDaysAgo)) {
                     weeklyScore += (count as int? ?? 0);
                   }
@@ -613,8 +262,9 @@ class LeetCodeProvider extends ChangeNotifier with SafeChangeNotifier {
           }
         }
 
-        debugPrint('[LeetCode] ✅ [Official API] $username: $totalSolved problems (E:$easySolved M:$mediumSolved H:$hardSolved)');
-        
+        debugPrint(
+            '[LeetCode] ✅ [Official API] $username: $totalSolved problems (E:$easySolved M:$mediumSolved H:$hardSolved)');
+
         final stats = LeetCodeStats(
           username: username,
           profilePicture: profilePicture,
@@ -630,7 +280,8 @@ class LeetCodeProvider extends ChangeNotifier with SafeChangeNotifier {
         await _saveToDatabase(stats);
         return stats;
       } else {
-        debugPrint('[LeetCode] ⚠️  Official API returned ${response.statusCode}');
+        debugPrint(
+            '[LeetCode] ⚠️  Official API returned ${response.statusCode}');
         return null;
       }
     } catch (e) {
@@ -658,28 +309,32 @@ class LeetCodeProvider extends ChangeNotifier with SafeChangeNotifier {
         }
       ''';
 
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-          'Referer': 'https://leetcode.com',
-          'Origin': 'https://leetcode.com',
-        },
-        body: jsonEncode({'query': query}),
-      ).timeout(const Duration(seconds: 10));
+      final response = await http
+          .post(
+            Uri.parse(url),
+            headers: {
+              'Content-Type': 'application/json',
+              'User-Agent':
+                  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+              'Referer': 'https://leetcode.com',
+              'Origin': 'https://leetcode.com',
+            },
+            body: jsonEncode({'query': query}),
+          )
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final question = data['data']?['activeDailyCodingChallengeQuestion'];
         if (question != null) {
-             final q = question['question'];
-             return {
-               'title': q['title'],
-               'link': question['link'],
-               'difficulty': q['difficulty'],
-               'acRate': '${double.parse(q['acRate'].toString()).toStringAsFixed(1)}%'
-             };
+          final q = question['question'];
+          return {
+            'title': q['title'],
+            'link': question['link'],
+            'difficulty': q['difficulty'],
+            'acRate':
+                '${double.parse(q['acRate'].toString()).toStringAsFixed(1)}%'
+          };
         }
       }
       return null;
@@ -687,12 +342,6 @@ class LeetCodeProvider extends ChangeNotifier with SafeChangeNotifier {
       debugPrint('[LeetCode] Error fetching POTD: $e');
       return null;
     }
-  }
-
-  void _checkPotdDebounced() async {
-    // Only check POTD if enough time has passed since last check to avoid API spam
-    // This is a UI-level check, actual notification logic also has day-check
-    await checkAndNotifyPOTD();
   }
 
   /// Check for POTD and send notification if enabled
@@ -703,14 +352,15 @@ class LeetCodeProvider extends ChangeNotifier with SafeChangeNotifier {
       final now = DateTime.now();
       final todayStr = '${now.year}-${now.month}-${now.day}';
       const lastCheckKey = 'leetcode_potd_last_check_date';
-      
+
       if (prefs.getString(lastCheckKey) == todayStr) {
         debugPrint('[LeetCode] Already checked POTD for today ($todayStr)');
         return;
       }
 
       // Check user preference using the centralized service
-      final shouldSend = await NotificationService().shouldSendNotification('leetcode');
+      final shouldSend =
+          await NotificationService().shouldSendNotification('leetcode');
       if (!shouldSend) {
         return; // Notifications disabled
       }
@@ -725,7 +375,7 @@ class LeetCodeProvider extends ChangeNotifier with SafeChangeNotifier {
           payload: 'https://leetcode.com${potd['link']}',
           uniqueKey: 'potd_$todayStr', // Deduplicate by date
         );
-        
+
         // Mark as done for today
         await prefs.setString(lastCheckKey, todayStr);
         debugPrint('[LeetCode] POTD Notification Sent: ${potd['title']}');
@@ -738,8 +388,9 @@ class LeetCodeProvider extends ChangeNotifier with SafeChangeNotifier {
   Future<LeetCodeStats?> _fetchFromAlphaApi(String username) async {
     try {
       // Fallback to Alpha API
-      final alphaUrl = 'https://alfa-leetcode-api.onrender.com/userProfile/$username';
-      
+      final alphaUrl =
+          'https://alfa-leetcode-api.onrender.com/userProfile/$username';
+
       final response = await http.get(
         Uri.parse(alphaUrl),
         headers: {
@@ -750,7 +401,7 @@ class LeetCodeProvider extends ChangeNotifier with SafeChangeNotifier {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        
+
         if (data['errors'] != null || data['status'] == 'error') {
           debugPrint('[LeetCode] ❌ User not found: $username');
           return null;
@@ -768,12 +419,13 @@ class LeetCodeProvider extends ChangeNotifier with SafeChangeNotifier {
         if (submissionCalendar != null && submissionCalendar is Map) {
           final now = DateTime.now();
           final sevenDaysAgo = now.subtract(const Duration(days: 7));
-          
+
           submissionCalendar.forEach((timestampStr, count) {
             try {
               final timestamp = int.tryParse(timestampStr.toString());
               if (timestamp != null) {
-                final date = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
+                final date =
+                    DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
                 if (date.isAfter(sevenDaysAgo)) {
                   weeklyScore += (count as int? ?? 0);
                 }
@@ -785,7 +437,7 @@ class LeetCodeProvider extends ChangeNotifier with SafeChangeNotifier {
         }
 
         debugPrint('[LeetCode] ✅ [Alpha API] $username: $totalSolved problems');
-        
+
         final stats = LeetCodeStats(
           username: username,
           totalSolved: totalSolved,
@@ -802,7 +454,7 @@ class LeetCodeProvider extends ChangeNotifier with SafeChangeNotifier {
         return stats;
       } else if (response.statusCode == 429) {
         debugPrint('[LeetCode] ⏳ Alpha API Rate Limit 429 for $username');
-        // If specific 429, we should propagate this signal ideally, but returning null 
+        // If specific 429, we should propagate this signal ideally, but returning null
         // with the error log allows the background loop to catch failures and backoff.
         return null;
       } else {

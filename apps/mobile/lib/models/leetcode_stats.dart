@@ -12,7 +12,7 @@ class LeetCodeStats {
 
   LeetCodeStats({
     required this.username,
-    this.name, 
+    this.name,
     this.profilePicture,
     required this.totalSolved,
     required this.easySolved,
@@ -34,7 +34,9 @@ class LeetCodeStats {
       hardSolved: map['hard_solved'] ?? 0,
       ranking: map['ranking'] ?? 0,
       weeklyScore: map['weekly_score'] ?? 0,
-      lastUpdated: map['last_updated'] != null ? DateTime.parse(map['last_updated']) : DateTime.now(),
+      lastUpdated: map['last_updated'] != null
+          ? DateTime.parse(map['last_updated'])
+          : DateTime.now(),
     );
   }
 
@@ -52,20 +54,19 @@ class LeetCodeStats {
       'last_updated': lastUpdated.toIso8601String(),
     };
   }
-  
+
   // Empty state
   factory LeetCodeStats.empty(String username) {
     return LeetCodeStats(
-      username: username, 
-      totalSolved: 0, 
-      easySolved: 0, 
-      mediumSolved: 0, 
-      hardSolved: 0, 
-      ranking: 0, 
-      lastUpdated: DateTime.now()
-    );
+        username: username,
+        totalSolved: 0,
+        easySolved: 0,
+        mediumSolved: 0,
+        hardSolved: 0,
+        ranking: 0,
+        lastUpdated: DateTime.now());
   }
-  
+
   LeetCodeStats copyWith({String? name, String? profilePicture}) {
     return LeetCodeStats(
       username: username,

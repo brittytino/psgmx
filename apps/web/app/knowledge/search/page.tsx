@@ -7,6 +7,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { normalizeSearchTerm } from '@/lib/search-input'
 
 interface Article {
   id: string
@@ -21,10 +22,11 @@ interface Article {
 }
 
 async function searchArticles(query: string, supabase: Awaited<ReturnType<typeof createClient>>): Promise<Article[]> {
-  if (!query.trim()) return []
+  const safeQuery = normalizeSearchTerm(query)
+  if (!safeQuery) return []
 
   // Try full-text search via tsvector
-  const tsQuery = query
+  const tsQuery = safeQuery
     .trim()
     .split(/\s+/)
     .map(w => w.replace(/[^a-zA-Z0-9]/g, ''))
@@ -50,7 +52,7 @@ async function searchArticles(query: string, supabase: Awaited<ReturnType<typeof
     .from('knowledge_brain_articles')
     .select('id, title, summary, company_name, tags, batch_year, author_id, view_count, created_at')
     .eq('approval_status', 'approved')
-    .or(`title.ilike.%${query}%,company_name.ilike.%${query}%,summary.ilike.%${query}%`)
+    .or(`title.ilike.%${safeQuery}%,company_name.ilike.%${safeQuery}%,summary.ilike.%${safeQuery}%`)
     .order('view_count', { ascending: false })
     .limit(20)
 

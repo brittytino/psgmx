@@ -130,8 +130,8 @@ class _TodayScreenState extends State<TodayScreen> {
                               decoration: BoxDecoration(
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(99),
-                                  border: Border.all(
-                                      color: AppTheme.cardBorder)),
+                                  border:
+                                      Border.all(color: AppTheme.cardBorder)),
                               child: Text(batchCode,
                                   style: GoogleFonts.sora(
                                       fontSize: 12,
@@ -299,12 +299,14 @@ class _TodayScreenState extends State<TodayScreen> {
                                   ? 'Done for today · keep the streak going tomorrow'
                                   : '2-min response practice evaluated on clarity & structure',
                               done: communicationDoneToday,
-                              onTap: () => context.push('/train/communication')),
+                              onTap: () =>
+                                  context.push('/train/communication')),
                           const SizedBox(height: 10),
                           _LoopTile(
                               icon: LucideIcons.bot,
                               title: 'Ask AI Senior',
-                              subtitle: 'Instant guidance grounded in approved Knowledge Brain',
+                              subtitle:
+                                  'Instant guidance grounded in approved Knowledge Brain',
                               done: false,
                               onTap: () => context.push('/ai-mentor')),
                         ]))),
@@ -401,8 +403,7 @@ class _TodayScreenState extends State<TodayScreen> {
                                               style: GoogleFonts.inter(
                                                   fontSize: 12,
                                                   height: 1.45,
-                                                  color:
-                                                      AppTheme.mutedText))
+                                                  color: AppTheme.mutedText))
                                         ]))
                                   ])))),
                 if (announcements.isEmpty)

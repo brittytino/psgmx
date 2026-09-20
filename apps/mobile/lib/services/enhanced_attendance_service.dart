@@ -85,8 +85,10 @@ class AttendanceRecord {
       status: AttendanceStatus.fromString(data['status'] ?? 'NA'),
       markedBy: data['marked_by'] ?? '',
       notes: data['notes'],
-      createdAt: DateTime.parse(data['created_at'] ?? DateTime.now().toIso8601String()),
-      updatedAt: DateTime.parse(data['updated_at'] ?? DateTime.now().toIso8601String()),
+      createdAt: DateTime.parse(
+          data['created_at'] ?? DateTime.now().toIso8601String()),
+      updatedAt: DateTime.parse(
+          data['updated_at'] ?? DateTime.now().toIso8601String()),
     );
   }
 
@@ -118,7 +120,7 @@ class EnhancedAttendanceService {
           .select('id')
           .eq('date', dateStr)
           .maybeSingle();
-      
+
       return response != null;
     } catch (e) {
       debugPrint('Error checking if date is scheduled: $e');
@@ -197,10 +199,7 @@ class EnhancedAttendanceService {
   /// Delete scheduled date
   Future<void> deleteScheduledDate(String id) async {
     try {
-      await _supabase
-          .from('scheduled_attendance_dates')
-          .delete()
-          .eq('id', id);
+      await _supabase.from('scheduled_attendance_dates').delete().eq('id', id);
     } catch (e) {
       throw Exception('Failed to delete scheduled date: $e');
     }
@@ -253,13 +252,10 @@ class EnhancedAttendanceService {
     String? notes,
   }) async {
     try {
-      await _supabase
-          .from('attendance_records')
-          .update({
-            'status': status.displayName,
-            'notes': notes,
-          })
-          .eq('id', recordId);
+      await _supabase.from('attendance_records').update({
+        'status': status.displayName,
+        'notes': notes,
+      }).eq('id', recordId);
     } catch (e) {
       throw Exception('Failed to update attendance: $e');
     }
@@ -298,24 +294,26 @@ class EnhancedAttendanceService {
     try {
       final dateStr = date.toIso8601String().split('T')[0];
 
-      final response = await _supabase
-          .rpc('get_team_attendance_for_date', params: {
-            'check_date': dateStr,
-            'check_team_id': teamId,
-          });
+      final response =
+          await _supabase.rpc('get_team_attendance_for_date', params: {
+        'check_date': dateStr,
+        'check_team_id': teamId,
+      });
 
-      return (response as List).map((data) => AttendanceRecord.fromMap({
-        'id': data['student_id'],
-        'date': dateStr,
-        'student_id': data['student_id'],
-        'student_name': data['student_name'] ?? '',
-        'reg_no': data['reg_no'] ?? '',
-        'team_id': teamId,
-        'status': data['status'] ?? 'NA',
-        'marked_by': data['marked_by'] ?? '',
-        'created_at': DateTime.now().toIso8601String(),
-        'updated_at': DateTime.now().toIso8601String(),
-      })).toList();
+      return (response as List)
+          .map((data) => AttendanceRecord.fromMap({
+                'id': data['student_id'],
+                'date': dateStr,
+                'student_id': data['student_id'],
+                'student_name': data['student_name'] ?? '',
+                'reg_no': data['reg_no'] ?? '',
+                'team_id': teamId,
+                'status': data['status'] ?? 'NA',
+                'marked_by': data['marked_by'] ?? '',
+                'created_at': DateTime.now().toIso8601String(),
+                'updated_at': DateTime.now().toIso8601String(),
+              }))
+          .toList();
     } catch (e) {
       throw Exception('Failed to get team attendance for date: $e');
     }
@@ -451,9 +449,7 @@ class EnhancedAttendanceService {
           .eq('team_id', teamId)
           .order('reg_no');
 
-      return (response as List)
-          .map((data) => AppUser.fromMap(data))
-          .toList();
+      return (response as List).map((data) => AppUser.fromMap(data)).toList();
     } catch (e) {
       throw Exception('Failed to get team members: $e');
     }

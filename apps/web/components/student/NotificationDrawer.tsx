@@ -228,6 +228,8 @@ export function NotificationDrawer({ isOpen, onClose, onUnreadCountChange }: Not
                   </div>
 
                   <button
+                    type="button"
+                    aria-label="Close notifications"
                     onClick={onClose}
                     className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-gray-200/70 text-text-muted hover:text-text-main transition-colors"
                   >
@@ -236,8 +238,8 @@ export function NotificationDrawer({ isOpen, onClose, onUnreadCountChange }: Not
                 </div>
 
                 {/* Filter Tabs & Mark as read */}
-                <div className="mt-5 flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-border-light">
+                <div className="mt-5 flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-1 overflow-x-auto bg-white p-1 rounded-xl border border-border-light">
                     <button
                       onClick={() => setActiveTab('all')}
                       className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${
@@ -273,7 +275,7 @@ export function NotificationDrawer({ isOpen, onClose, onUnreadCountChange }: Not
                   {unreadCount > 0 && (
                     <button
                       onClick={() => void markAllAsRead()}
-                      className="text-xs font-bold text-primary-purple hover:underline flex items-center gap-1"
+                      className="self-end text-xs font-bold text-primary-purple hover:underline flex items-center gap-1"
                     >
                       <CheckCheck className="w-3.5 h-3.5" /> Mark read
                     </button>

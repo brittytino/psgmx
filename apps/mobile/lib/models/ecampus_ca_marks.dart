@@ -56,12 +56,10 @@ class CaSubject {
   }
 
   /// Returns the CA1 test result if available.
-  CaTestResult? get ca1 =>
-      caTests.where((t) => t.test == 'CA1').firstOrNull;
+  CaTestResult? get ca1 => caTests.where((t) => t.test == 'CA1').firstOrNull;
 
   /// Returns the CA2 test result if available.
-  CaTestResult? get ca2 =>
-      caTests.where((t) => t.test == 'CA2').firstOrNull;
+  CaTestResult? get ca2 => caTests.where((t) => t.test == 'CA2').firstOrNull;
 
   /// Average percentage across all available tests.
   double? get averagePercentage {
@@ -78,6 +76,7 @@ class CaSubject {
 class EcampusCaMarks {
   final String regNo;
   final List<CaSubject> subjects;
+
   /// Backend note, e.g. "CA marks not published yet".
   final String? note;
   final DateTime syncedAt;

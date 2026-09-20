@@ -6,14 +6,14 @@ class PlatformUtils {
   /// Check if the app is running on iOS Safari
   static bool get isIOSSafari {
     final userAgent = html.window.navigator.userAgent.toLowerCase();
-    final isIOS = userAgent.contains('iphone') || 
-                  userAgent.contains('ipad') || 
-                  userAgent.contains('ipod');
-    final isSafari = userAgent.contains('safari') && 
-                     !userAgent.contains('chrome') && 
-                     !userAgent.contains('crios') && 
-                     !userAgent.contains('fxios');
-    
+    final isIOS = userAgent.contains('iphone') ||
+        userAgent.contains('ipad') ||
+        userAgent.contains('ipod');
+    final isSafari = userAgent.contains('safari') &&
+        !userAgent.contains('chrome') &&
+        !userAgent.contains('crios') &&
+        !userAgent.contains('fxios');
+
     return isIOS && isSafari;
   }
 

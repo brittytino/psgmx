@@ -26,7 +26,8 @@ class EcampusCaTimetable {
 
     final rawRows = (data['rows'] as List<dynamic>? ?? [])
         .whereType<Map<String, dynamic>>()
-        .map((e) => e.map((k, v) => MapEntry(k.toString(), v?.toString() ?? '')))
+        .map(
+            (e) => e.map((k, v) => MapEntry(k.toString(), v?.toString() ?? '')))
         .toList();
 
     return EcampusCaTimetable(

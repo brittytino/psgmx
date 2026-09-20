@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 class NotificationBellIcon extends StatelessWidget {
   /// Number of unread notifications (0 = no badge)
   final int unreadCount;
-  
+
   /// Callback when notification bell is tapped
   final VoidCallback? onTap;
 
@@ -19,7 +19,7 @@ class NotificationBellIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Container(
       margin: const EdgeInsets.only(right: 4),
       decoration: BoxDecoration(
@@ -29,9 +29,10 @@ class NotificationBellIcon extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       child: IconButton(
-        onPressed: onTap ?? () {
-          context.push('/notifications');
-        },
+        onPressed: onTap ??
+            () {
+              context.push('/notifications');
+            },
         icon: Stack(
           clipBehavior: Clip.none,
           children: [
@@ -80,7 +81,9 @@ class NotificationBellIcon extends StatelessWidget {
               ),
           ],
         ),
-        tooltip: unreadCount > 0 ? '$unreadCount new notifications' : 'Notifications',
+        tooltip: unreadCount > 0
+            ? '$unreadCount new notifications'
+            : 'Notifications',
         padding: const EdgeInsets.all(8),
         visualDensity: VisualDensity.compact,
       ),

@@ -48,7 +48,9 @@ class EmptyState extends StatelessWidget {
           curve: Curves.easeOutBack,
           builder: (context, value, child) => Transform.scale(
             scale: animated ? value : 1.0,
-            child: Opacity(opacity: (animated ? value : 1.0).clamp(0.0, 1.0), child: child),
+            child: Opacity(
+                opacity: (animated ? value : 1.0).clamp(0.0, 1.0),
+                child: child),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -64,7 +66,8 @@ class EmptyState extends StatelessWidget {
               const SizedBox(height: AppSpacing.lg),
               Text(title,
                   textAlign: TextAlign.center,
-                  style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w700)),
+                  style: theme.textTheme.headlineMedium
+                      ?.copyWith(fontWeight: FontWeight.w700)),
               if (message != null) ...[
                 const SizedBox(height: AppSpacing.sm),
                 Text(

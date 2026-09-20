@@ -16,6 +16,7 @@ class BatchProvider with ChangeNotifier {
 
   List<Batch> _activeBatches = [];
   List<Team> _teamsForBatch = [];
+
   /// Members loaded for a specific team (for the detail view).
   List<AppUser> _teamMembers = [];
 

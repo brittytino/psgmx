@@ -1,4 +1,4 @@
-package com.example.psgmx_placement_prep
+package tech.psgmx.app
 
 import android.view.WindowManager
 import io.flutter.embedding.android.FlutterActivity

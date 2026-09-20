@@ -34,9 +34,9 @@ class _GraduationScreenState extends State<GraduationScreen> {
     try {
       final user = context.read<UserProvider>().currentUser;
       if (user == null) return;
-      
+
       final client = Supabase.instance.client;
-      
+
       // Fetch readiness score history (latest)
       final scoreResp = await client
           .from('readiness_scores')
@@ -45,14 +45,14 @@ class _GraduationScreenState extends State<GraduationScreen> {
           .order('computed_at', ascending: false)
           .limit(1)
           .maybeSingle();
-      
+
       // Fetch streak
       final streakResp = await client
           .from('daily_five_streaks')
           .select('longest_streak')
           .eq('user_id', user.uid)
           .maybeSingle();
-          
+
       // Fetch leetcode stats
       final leetcodeResp = (user.leetcodeUsername?.isNotEmpty ?? false)
           ? await client
@@ -61,7 +61,7 @@ class _GraduationScreenState extends State<GraduationScreen> {
               .eq('username', user.leetcodeUsername!)
               .maybeSingle()
           : null;
-          
+
       // Fetch mock exams count
       final examsResp = await client
           .from('mock_exam_results')
@@ -73,8 +73,12 @@ class _GraduationScreenState extends State<GraduationScreen> {
           _finalScore = scoreResp != null
               ? double.tryParse(scoreResp['score'].toString()) ?? 0.0
               : 0.0;
-          _longestStreak = (streakResp != null ? (streakResp['longest_streak'] as int?) ?? 0 : 0);
-          _leetcodeScore = (leetcodeResp != null ? (leetcodeResp['total_solved'] as int?) ?? 0 : 0);
+          _longestStreak = (streakResp != null
+              ? (streakResp['longest_streak'] as int?) ?? 0
+              : 0);
+          _leetcodeScore = (leetcodeResp != null
+              ? (leetcodeResp['total_solved'] as int?) ?? 0
+              : 0);
           _examsCount = (examsResp as List).length;
           _isLoading = false;
         });
@@ -104,7 +108,8 @@ class _GraduationScreenState extends State<GraduationScreen> {
 
     if (_isLoading) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator(color: AppTheme.accentCoral)),
+        body: Center(
+            child: CircularProgressIndicator(color: AppTheme.accentCoral)),
       );
     }
 
@@ -117,7 +122,8 @@ class _GraduationScreenState extends State<GraduationScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 48),
-              Icon(LucideIcons.graduationCap, size: 64, color: AppTheme.accentCoral),
+              Icon(LucideIcons.graduationCap,
+                  size: 64, color: AppTheme.accentCoral),
               const SizedBox(height: 24),
               Text(
                 'Happy Graduation,\n$firstName! 🎉',
@@ -136,13 +142,12 @@ class _GraduationScreenState extends State<GraduationScreen> {
                 textAlign: TextAlign.center,
                 style: GoogleFonts.inter(
                   fontSize: 14,
-                  color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
+                  color:
+                      theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
                   height: 1.5,
                 ),
               ),
-              
               const SizedBox(height: 48),
-              
               Expanded(
                 child: Column(
                   children: [
@@ -188,7 +193,6 @@ class _GraduationScreenState extends State<GraduationScreen> {
                   ],
                 ),
               ),
-              
               FilledButton(
                 onPressed: _enterArchive,
                 style: FilledButton.styleFrom(
@@ -200,7 +204,8 @@ class _GraduationScreenState extends State<GraduationScreen> {
                 ),
                 child: Text(
                   'Enter Archive Mode',
-                  style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold),
+                  style: GoogleFonts.inter(
+                      fontSize: 14, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
@@ -210,7 +215,8 @@ class _GraduationScreenState extends State<GraduationScreen> {
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color iconColor, ThemeData theme) {
+  Widget _buildStatCard(String title, String value, IconData icon,
+      Color iconColor, ThemeData theme) {
     return PremiumCard(
       radius: AppRadius.card,
       child: Row(
@@ -233,7 +239,8 @@ class _GraduationScreenState extends State<GraduationScreen> {
                   style: GoogleFonts.inter(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
+                    color: theme.textTheme.bodyMedium?.color
+                        ?.withValues(alpha: 0.6),
                   ),
                 ),
                 const SizedBox(height: 4),

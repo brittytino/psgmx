@@ -7,9 +7,11 @@ class ReadinessScore {
   final String? userName;
   final String? avatarUrl;
   final String? gender;
+
   /// The overall score (0–100).
   final double score;
   final DateTime computedAt;
+
   /// Breakdown of each of the 5 components (values 0–100).
   final ReadinessComponents components;
 
@@ -32,8 +34,9 @@ class ReadinessScore {
       parsedName = data['users']['name'] as String?;
       parsedAvatarUrl = data['users']['avatar_url'] as String?;
     }
-    final parsedGender = (data['users'] is Map) ? data['users']['gender'] as String? : null;
-    
+    final parsedGender =
+        (data['users'] is Map) ? data['users']['gender'] as String? : null;
+
     return ReadinessScore(
       id: data['id'] as String,
       userId: data['user_id'] as String,

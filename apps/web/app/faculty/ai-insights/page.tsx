@@ -1,9 +1,7 @@
 'use client';
 
 import React from 'react';
-import { BrainCircuit, MessageSquare, Users, TrendingUp, Loader2, BookOpen, Clock } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
-import { getCurrentProfile } from '@/lib/current-profile';
+import { BrainCircuit, MessageSquare, Users, Loader2, BookOpen, Clock } from 'lucide-react';
 
 interface AIStats {
   totalConversations: number;
@@ -21,100 +19,33 @@ interface RecentArticle {
   created_at: string;
 }
 
-interface TopQuestion {
-  id: string;
-  query_text: string;
-  asked_count: number;
-  topic_tag: string | null;
-}
-
 export default function FacultyAIInsightsDashboard() {
-  const supabase = React.useMemo(() => createClient(), []);
   const [loading, setLoading] = React.useState(true);
   const [stats, setStats] = React.useState<AIStats | null>(null);
   const [recentArticles, setRecentArticles] = React.useState<RecentArticle[]>([]);
-  const [topQuestions, setTopQuestions] = React.useState<TopQuestion[]>([]);
-  const [batchCode, setBatchCode] = React.useState('');
   const [error, setError] = React.useState('');
 
   const load = React.useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      const me = await getCurrentProfile(supabase);
-      if (!me) throw new Error('Faculty profile could not be loaded.');
-
-      const [
-        { data: batchRow },
-        { count: conversationCount },
-        { data: articleRows, count: articleCount },
-        { count: pendingCount },
-        { data: questionRows },
-      ] = await Promise.all([
-        me.batch_id ? supabase.from('batches').select('batch_code').eq('id', me.batch_id).single() : Promise.resolve({ data: null }),
-        (supabase as any).from('ai_conversations').select('*', { count: 'exact', head: true }).gte('created_at', new Date(Date.now() - 30 * 86400000).toISOString()),
-        supabase.from('knowledge_brain_articles').select('id, title, approval_status, view_count, created_at, users!inner(name)', { count: 'exact' }).order('created_at', { ascending: false }).limit(5),
-        supabase.from('knowledge_brain_articles').select('*', { count: 'exact', head: true }).eq('approval_status', 'pending'),
-        (supabase as any).from('ai_senior_common_queries').select('id, query_text, asked_count, topic_tag').order('asked_count', { ascending: false }).limit(5),
-      ]);
-
-      setBatchCode((batchRow as any)?.batch_code ?? '');
-
-      // Count unique students from conversations
-      const { count: uniqueStudentCount } = await (supabase as any)
-        .from('ai_conversations')
-        .select('student_id', { count: 'exact', head: true })
-        .gte('created_at', new Date(Date.now() - 30 * 86400000).toISOString());
+      const response = await fetch('/api/insights', { cache: 'no-store' });
+      const payload = await response.json();
+      if (!response.ok || !payload.ai) throw new Error(payload.error || 'AI insights could not be loaded.');
 
       setStats({
-        totalConversations: conversationCount ?? 0,
-        uniqueStudents: uniqueStudentCount ?? 0,
-        knowledgeArticles: articleCount ?? 0,
-        pendingReviews: pendingCount ?? 0,
+        totalConversations: payload.ai.conversations30d ?? 0,
+        uniqueStudents: payload.ai.uniqueStudents30d ?? 0,
+        knowledgeArticles: payload.ai.knowledgeArticles ?? 0,
+        pendingReviews: payload.ai.pendingReviews ?? 0,
       });
-
-      setRecentArticles(
-        (articleRows ?? []).map((row) => ({
-          id: row.id,
-          title: row.title,
-          author_name: (row as any).users?.name ?? 'Unknown',
-          approval_status: row.approval_status,
-          view_count: row.view_count ?? 0,
-          created_at: row.created_at,
-        }))
-      );
-
-      setTopQuestions((questionRows ?? []) as TopQuestion[]);
-    } catch {
-      // If ai_conversations or ai_senior_common_queries tables don't exist yet,
-      // fall back to knowledge brain stats only
-      try {
-        const me = await getCurrentProfile(supabase);
-        const [
-          { data: batchRow },
-          { data: articleRows, count: articleCount },
-          { count: pendingCount },
-        ] = await Promise.all([
-          me?.batch_id ? supabase.from('batches').select('batch_code').eq('id', me.batch_id).single() : Promise.resolve({ data: null }),
-          supabase.from('knowledge_brain_articles').select('id, title, approval_status, view_count, created_at, users!inner(name)', { count: 'exact' }).order('created_at', { ascending: false }).limit(5),
-          supabase.from('knowledge_brain_articles').select('*', { count: 'exact', head: true }).eq('approval_status', 'pending'),
-        ]);
-
-        setBatchCode((batchRow as any)?.batch_code ?? '');
-        setStats({ totalConversations: 0, uniqueStudents: 0, knowledgeArticles: articleCount ?? 0, pendingReviews: pendingCount ?? 0 });
-        setRecentArticles(
-          (articleRows ?? []).map((row) => ({
-            id: row.id, title: row.title, author_name: (row as any).users?.name ?? 'Unknown',
-            approval_status: row.approval_status, view_count: row.view_count ?? 0, created_at: row.created_at,
-          }))
-        );
-      } catch (fallbackCause) {
-        setError(fallbackCause instanceof Error ? fallbackCause.message : 'AI insights could not be loaded.');
-      }
+      setRecentArticles(payload.ai.recentArticles ?? []);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'AI insights could not be loaded.');
     } finally {
       setLoading(false);
     }
-  }, [supabase]);
+  }, []);
 
   React.useEffect(() => { void load(); }, [load]);
 
@@ -142,7 +73,7 @@ export default function FacultyAIInsightsDashboard() {
         <div>
           <h1 className="text-[26px] font-bold text-text-main tracking-tight">AI Senior Insights</h1>
           <p className="text-[14px] text-text-muted">
-            Live usage statistics from the AI Senior and Knowledge Brain{batchCode ? ` — ${batchCode}` : ''}.
+            Aggregate usage statistics from the AI Senior and Knowledge Brain. Conversation content remains private.
           </p>
         </div>
       </div>
@@ -159,7 +90,7 @@ export default function FacultyAIInsightsDashboard() {
         ))}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6">
         {/* Recent Knowledge Articles */}
         <div className="rounded-2xl border border-border-light bg-white shadow-sm">
           <div className="border-b border-border-light px-6 py-4">
@@ -190,36 +121,11 @@ export default function FacultyAIInsightsDashboard() {
           </div>
         </div>
 
-        {/* Top AI Questions */}
-        <div className="rounded-2xl border border-border-light bg-white shadow-sm">
-          <div className="border-b border-border-light px-6 py-4">
-            <h2 className="flex items-center gap-2 font-black text-text-main">
-              <TrendingUp className="h-4 w-4 text-primary-purple" /> Top Student AI Queries
-            </h2>
-            <p className="mt-1 text-xs text-text-muted">
-              {topQuestions.length > 0 ? 'Most frequently asked questions to AI Senior.' : 'Query analytics will appear once the ai_senior_common_queries view is populated.'}
-            </p>
-          </div>
-          <div className="divide-y divide-border-light">
-            {topQuestions.length === 0 && (
-              <p className="px-6 py-8 text-center text-sm text-text-muted">No query analytics yet. Students need to use the AI Senior first.</p>
-            )}
-            {topQuestions.map((q, i) => (
-              <div key={q.id} className="flex items-start gap-4 px-6 py-4">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-violet-50 text-xs font-black text-primary-purple">{i + 1}</span>
-                <div>
-                  <p className="text-sm font-bold text-text-main">{q.query_text}</p>
-                  <p className="mt-0.5 text-xs text-text-muted">{q.asked_count} queries{q.topic_tag ? ` · ${q.topic_tag}` : ''}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
 
       {/* Guidance note */}
       <div className="rounded-2xl border border-amber-200 bg-amber-50 px-6 py-4 text-sm font-semibold text-amber-900">
-        <strong>Note:</strong> AI conversation tracking requires the <code>ai_conversations</code> and <code>ai_senior_common_queries</code> database views. Knowledge Brain statistics are always live. Satisfaction scores are not tracked to protect student privacy.
+        <strong>Privacy:</strong> This page reports counts only. Student prompts, responses and conversation titles are never shown to staff.
       </div>
     </div>
   );

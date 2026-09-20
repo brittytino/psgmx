@@ -125,7 +125,9 @@ class _CalibrationQuizScreenState extends State<CalibrationQuizScreen> {
   bool get _canAdvance {
     if (_currentStep < _infoPageIndex) return _selectedIndex != null;
     if (_currentStep == _infoPageIndex) {
-      return _roleFamily != null && _practiceDays != null && _reminderWindow != null;
+      return _roleFamily != null &&
+          _practiceDays != null &&
+          _reminderWindow != null;
     }
     return true; // diagnostic questions are optional/non-blocking
   }
@@ -137,7 +139,8 @@ class _CalibrationQuizScreenState extends State<CalibrationQuizScreen> {
       final dimension = _confidenceDimensions[_currentStep];
       _confidence[dimension.key] = _selectedIndex! + 1; // 1-3 scale
     } else if (_currentStep > _infoPageIndex) {
-      final question = _diagnosticQuestions[_currentStep - _diagnosticStartIndex];
+      final question =
+          _diagnosticQuestions[_currentStep - _diagnosticStartIndex];
       if (_selectedIndex != null) {
         _diagnosticAnswers[question['id'].toString()] = _selectedIndex!;
       }
@@ -180,7 +183,8 @@ class _CalibrationQuizScreenState extends State<CalibrationQuizScreen> {
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -197,7 +201,8 @@ class _CalibrationQuizScreenState extends State<CalibrationQuizScreen> {
                       ],
                     ),
                     child: IconButton(
-                      icon: const Icon(LucideIcons.arrowLeft, size: 16, color: AppTheme.headingText),
+                      icon: const Icon(LucideIcons.arrowLeft,
+                          size: 16, color: AppTheme.headingText),
                       onPressed: () => context.pop(),
                     ),
                   ),
@@ -208,7 +213,8 @@ class _CalibrationQuizScreenState extends State<CalibrationQuizScreen> {
                         value: (_currentStep + 1) / totalPages,
                         minHeight: 6,
                         borderRadius: BorderRadius.circular(3),
-                        backgroundColor: AppTheme.illusGold.withValues(alpha: 0.15),
+                        backgroundColor:
+                            AppTheme.illusGold.withValues(alpha: 0.15),
                         color: AppTheme.accentCoral,
                       ),
                     ),
@@ -233,7 +239,9 @@ class _CalibrationQuizScreenState extends State<CalibrationQuizScreen> {
                       ),
                       children: const [
                         TextSpan(text: 'Let\'s '),
-                        TextSpan(text: 'personalize\n', style: TextStyle(color: AppTheme.accentCoral)),
+                        TextSpan(
+                            text: 'personalize\n',
+                            style: TextStyle(color: AppTheme.accentCoral)),
                         TextSpan(text: 'your journey'),
                       ],
                     ),
@@ -260,34 +268,43 @@ class _CalibrationQuizScreenState extends State<CalibrationQuizScreen> {
                 itemCount: totalPages,
                 itemBuilder: (context, index) {
                   if (index < _infoPageIndex) {
-                    return _buildConfidenceCard(theme, _confidenceDimensions[index]);
+                    return _buildConfidenceCard(
+                        theme, _confidenceDimensions[index]);
                   } else if (index == _infoPageIndex) {
                     return _buildInfoCard(theme);
                   } else {
-                    final q = _diagnosticQuestions[index - _diagnosticStartIndex];
-                    return _buildDiagnosticCard(theme, q, index - _diagnosticStartIndex);
+                    final q =
+                        _diagnosticQuestions[index - _diagnosticStartIndex];
+                    return _buildDiagnosticCard(
+                        theme, q, index - _diagnosticStartIndex);
                   }
                 },
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
               child: SizedBox(
                 width: double.infinity,
                 child: FilledButton(
                   onPressed: _canAdvance ? _nextStep : null,
                   style: FilledButton.styleFrom(
                     backgroundColor: AppTheme.accentCoral,
-                    disabledBackgroundColor: AppTheme.accentCoral.withValues(alpha: 0.5),
+                    disabledBackgroundColor:
+                        AppTheme.accentCoral.withValues(alpha: 0.5),
                     padding: const EdgeInsets.symmetric(vertical: 20),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        _currentStep == totalPages - 1 ? 'See My Starting Plan' : 'Next',
-                        style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600),
+                        _currentStep == totalPages - 1
+                            ? 'See My Starting Plan'
+                            : 'Next',
+                        style: GoogleFonts.inter(
+                            fontSize: 12, fontWeight: FontWeight.w600),
                       ),
                       const SizedBox(width: 8),
                       const Icon(LucideIcons.arrowRight, size: 16),
@@ -302,30 +319,42 @@ class _CalibrationQuizScreenState extends State<CalibrationQuizScreen> {
     );
   }
 
-  Widget _buildCardShell(String eyebrow, String question, Widget content, {String? mascotLine}) {
+  Widget _buildCardShell(String eyebrow, String question, Widget content,
+      {String? mascotLine}) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
       child: Stack(
         clipBehavior: Clip.none,
         children: [
           Container(
-            padding: EdgeInsets.fromLTRB(24, 24, 24, mascotLine != null ? 80 : 24),
+            padding:
+                EdgeInsets.fromLTRB(24, 24, 24, mascotLine != null ? 80 : 24),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(32),
               boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 24, offset: const Offset(0, 12)),
+                BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 24,
+                    offset: const Offset(0, 12)),
               ],
             ),
             child: SingleChildScrollView(
               child: Column(children: [
                 Text(eyebrow,
                     style: GoogleFonts.inter(
-                        fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.accentCoral, letterSpacing: 0.5)),
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.accentCoral,
+                        letterSpacing: 0.5)),
                 const SizedBox(height: 12),
                 Text(question,
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.sora(fontSize: 14, fontWeight: FontWeight.w800, color: AppTheme.headingText, height: 1.3)),
+                    style: GoogleFonts.sora(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: AppTheme.headingText,
+                        height: 1.3)),
                 const SizedBox(height: 24),
                 content,
               ]),
@@ -335,20 +364,32 @@ class _CalibrationQuizScreenState extends State<CalibrationQuizScreen> {
             left: -16,
             bottom: -24,
             child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-              Image.asset('assets/images/onboarding/SmilingMascot.png', width: 110, height: 110, fit: BoxFit.contain),
+              Image.asset('assets/images/onboarding/SmilingMascot.png',
+                  width: 110, height: 110, fit: BoxFit.contain),
               if (mascotLine != null) ...[
                 const SizedBox(width: 8),
                 Container(
                   margin: const EdgeInsets.only(bottom: 40),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(16), topRight: Radius.circular(16), bottomRight: Radius.circular(16)),
-                    boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 12, offset: const Offset(0, 6))],
+                        topLeft: Radius.circular(16),
+                        topRight: Radius.circular(16),
+                        bottomRight: Radius.circular(16)),
+                    boxShadow: [
+                      BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.06),
+                          blurRadius: 12,
+                          offset: const Offset(0, 6))
+                    ],
                   ),
                   child: Text(mascotLine,
-                      style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: AppTheme.headingText)),
+                      style: GoogleFonts.inter(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.headingText)),
                 ),
               ],
             ]),
@@ -359,7 +400,8 @@ class _CalibrationQuizScreenState extends State<CalibrationQuizScreen> {
   }
 
   Widget _optionsList(List<({String title, String? subtitle})> options) {
-    return Column(children: List.generate(options.length, (idx) {
+    return Column(
+        children: List.generate(options.length, (idx) {
       final isSelected = _selectedIndex == idx;
       final option = options[idx];
       return GestureDetector(
@@ -369,10 +411,14 @@ class _CalibrationQuizScreenState extends State<CalibrationQuizScreen> {
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           decoration: BoxDecoration(
-            color: isSelected ? AppTheme.accentCoral.withValues(alpha: 0.02) : Colors.white,
+            color: isSelected
+                ? AppTheme.accentCoral.withValues(alpha: 0.02)
+                : Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isSelected ? AppTheme.accentCoral : Theme.of(context).dividerColor.withValues(alpha: 0.5),
+              color: isSelected
+                  ? AppTheme.accentCoral
+                  : Theme.of(context).dividerColor.withValues(alpha: 0.5),
               width: isSelected ? 2 : 1,
             ),
           ),
@@ -382,19 +428,33 @@ class _CalibrationQuizScreenState extends State<CalibrationQuizScreen> {
               height: 24,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isSelected ? AppTheme.accentCoral : AppTheme.accentCoral.withValues(alpha: 0.05),
+                color: isSelected
+                    ? AppTheme.accentCoral
+                    : AppTheme.accentCoral.withValues(alpha: 0.05),
               ),
-              child: isSelected ? const Icon(Icons.check, size: 12, color: Colors.white) : null,
+              child: isSelected
+                  ? const Icon(Icons.check, size: 12, color: Colors.white)
+                  : null,
             ),
             const SizedBox(width: 16),
             Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(option.title, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: AppTheme.headingText)),
-                if (option.subtitle != null) ...[
-                  const SizedBox(height: 2),
-                  Text(option.subtitle!, style: GoogleFonts.inter(fontSize: 11, color: AppTheme.headingText.withValues(alpha: 0.5))),
-                ],
-              ]),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(option.title,
+                        style: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.headingText)),
+                    if (option.subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(option.subtitle!,
+                          style: GoogleFonts.inter(
+                              fontSize: 11,
+                              color:
+                                  AppTheme.headingText.withValues(alpha: 0.5))),
+                    ],
+                  ]),
             ),
           ]),
         ),
@@ -402,11 +462,14 @@ class _CalibrationQuizScreenState extends State<CalibrationQuizScreen> {
     }));
   }
 
-  Widget _buildConfidenceCard(ThemeData theme, ({String key, String question, IconData icon}) dimension) {
+  Widget _buildConfidenceCard(ThemeData theme,
+      ({String key, String question, IconData icon}) dimension) {
     return _buildCardShell(
       'Question ${_currentStep + 1} of $_totalPages',
       dimension.question,
-      _optionsList(_confidenceOptions.map((o) => (title: o['title']!, subtitle: o['subtitle'])).toList()),
+      _optionsList(_confidenceOptions
+          .map((o) => (title: o['title']!, subtitle: o['subtitle']))
+          .toList()),
       mascotLine: _selectedIndex != null ? 'Good to know! 🤍' : null,
     );
   }
@@ -419,62 +482,105 @@ class _CalibrationQuizScreenState extends State<CalibrationQuizScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(32),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 24, offset: const Offset(0, 12))],
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 24,
+                offset: const Offset(0, 12))
+          ],
         ),
         child: SingleChildScrollView(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text('Question ${_currentStep + 1} of $_totalPages',
-                style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.accentCoral, letterSpacing: 0.5)),
+                style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.accentCoral,
+                    letterSpacing: 0.5)),
             const SizedBox(height: 12),
             Text('What role are you aiming for,\nand how will you practice?',
-                style: GoogleFonts.sora(fontSize: 14, fontWeight: FontWeight.w800, color: AppTheme.headingText, height: 1.3)),
+                style: GoogleFonts.sora(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.headingText,
+                    height: 1.3)),
             const SizedBox(height: 20),
-            Text('Target role', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: AppTheme.headingText)),
+            Text('Target role',
+                style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.headingText)),
             const SizedBox(height: 8),
-            Wrap(spacing: 8, runSpacing: 8, children: _roleFamilies.map((r) {
-              final selected = _roleFamily == r.$1;
-              return ChoiceChip(
-                label: Text(r.$2, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600)),
-                selected: selected,
-                selectedColor: AppTheme.accentCoral.withValues(alpha: 0.15),
-                onSelected: (_) => setState(() => _roleFamily = r.$1),
-              );
-            }).toList()),
+            Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _roleFamilies.map((r) {
+                  final selected = _roleFamily == r.$1;
+                  return ChoiceChip(
+                    label: Text(r.$2,
+                        style: GoogleFonts.inter(
+                            fontSize: 11, fontWeight: FontWeight.w600)),
+                    selected: selected,
+                    selectedColor: AppTheme.accentCoral.withValues(alpha: 0.15),
+                    onSelected: (_) => setState(() => _roleFamily = r.$1),
+                  );
+                }).toList()),
             const SizedBox(height: 20),
             Text('Days available to practice weekly',
-                style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: AppTheme.headingText)),
+                style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.headingText)),
             const SizedBox(height: 8),
-            Wrap(spacing: 8, runSpacing: 8, children: _practiceDayOptions.map((d) {
-              final selected = _practiceDays == d;
-              return ChoiceChip(
-                label: Text('$d days', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600)),
-                selected: selected,
-                selectedColor: AppTheme.accentCoral.withValues(alpha: 0.15),
-                onSelected: (_) => setState(() => _practiceDays = d),
-              );
-            }).toList()),
+            Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _practiceDayOptions.map((d) {
+                  final selected = _practiceDays == d;
+                  return ChoiceChip(
+                    label: Text('$d days',
+                        style: GoogleFonts.inter(
+                            fontSize: 11, fontWeight: FontWeight.w600)),
+                    selected: selected,
+                    selectedColor: AppTheme.accentCoral.withValues(alpha: 0.15),
+                    onSelected: (_) => setState(() => _practiceDays = d),
+                  );
+                }).toList()),
             const SizedBox(height: 20),
             Text('Preferred reminder time',
-                style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: AppTheme.headingText)),
+                style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.headingText)),
             const SizedBox(height: 8),
-            Wrap(spacing: 8, runSpacing: 8, children: _reminderWindows.map((w) {
-              final selected = _reminderWindow == w.$1;
-              return ChoiceChip(
-                label: Text(w.$2, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600)),
-                selected: selected,
-                selectedColor: AppTheme.accentCoral.withValues(alpha: 0.15),
-                onSelected: (_) => setState(() => _reminderWindow = w.$1),
-              );
-            }).toList()),
+            Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _reminderWindows.map((w) {
+                  final selected = _reminderWindow == w.$1;
+                  return ChoiceChip(
+                    label: Text(w.$2,
+                        style: GoogleFonts.inter(
+                            fontSize: 11, fontWeight: FontWeight.w600)),
+                    selected: selected,
+                    selectedColor: AppTheme.accentCoral.withValues(alpha: 0.15),
+                    onSelected: (_) => setState(() => _reminderWindow = w.$1),
+                  );
+                }).toList()),
             const SizedBox(height: 20),
             Text('LeetCode username (optional — you can add this later too)',
-                style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: AppTheme.headingText)),
+                style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.headingText)),
             const SizedBox(height: 8),
             TextField(
               controller: _leetcodeCtrl,
               decoration: InputDecoration(
                 hintText: 'e.g. tourist',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 isDense: true,
               ),
               style: GoogleFonts.inter(fontSize: 12),
@@ -485,9 +591,11 @@ class _CalibrationQuizScreenState extends State<CalibrationQuizScreen> {
     );
   }
 
-  Widget _buildDiagnosticCard(ThemeData theme, Map<String, dynamic> question, int position) {
+  Widget _buildDiagnosticCard(
+      ThemeData theme, Map<String, dynamic> question, int position) {
     if (_loadingDiagnostic) {
-      return const Center(child: CircularProgressIndicator(color: AppTheme.accentCoral));
+      return const Center(
+          child: CircularProgressIndicator(color: AppTheme.accentCoral));
     }
     final options = (question['options'] as List? ?? const [])
         .map((o) => (title: o.toString(), subtitle: null as String?))

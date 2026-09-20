@@ -22,19 +22,25 @@ async function isApprovedIdentity(email: string) {
     .maybeSingle()
   if (alias) return true
 
-  const { data: roster } = await supabaseAdmin
-    .from('whitelist')
-    .select('email')
-    .or(`email.eq.${email},personal_email.eq.${email},college_email.eq.${email}`)
-    .maybeSingle()
-  if (roster) return true
-
-  const { data: user } = await supabaseAdmin
-    .from('users')
-    .select('email')
-    .or(`email.eq.${email},personal_email.eq.${email},college_email.eq.${email}`)
-    .maybeSingle()
-  return Boolean(user)
+  // Keep the normalized email out of PostgREST's raw `.or()` expression
+  // grammar. Independent equality filters cannot be turned into another
+  // predicate by punctuation in an address.
+  const columns = ['email', 'personal_email', 'college_email'] as const
+  const [rosterMatches, userMatches] = await Promise.all([
+    Promise.all(columns.map((column) => supabaseAdmin
+      .from('whitelist')
+      .select('email')
+      .eq(column, email)
+      .limit(1)
+      .maybeSingle())),
+    Promise.all(columns.map((column) => supabaseAdmin
+      .from('users')
+      .select('email')
+      .eq(column, email)
+      .limit(1)
+      .maybeSingle())),
+  ])
+  return [...rosterMatches, ...userMatches].some(({ data }) => Boolean(data))
 }
 
 async function ensureAuthIdentity(email: string) {

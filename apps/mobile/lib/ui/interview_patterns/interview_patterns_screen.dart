@@ -120,8 +120,7 @@ class _InterviewPatternsScreenState extends State<InterviewPatternsScreen> {
                   child: ExpansionTile(
                     tilePadding:
                         const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-                    childrenPadding:
-                        const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                     backgroundColor: Colors.white,
                     collapsedBackgroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
@@ -136,8 +135,7 @@ class _InterviewPatternsScreenState extends State<InterviewPatternsScreen> {
                             fontSize: 12, fontWeight: FontWeight.w800)),
                     subtitle: Wrap(spacing: 6, runSpacing: 4, children: [
                       _PatternTag(label: _typeLabels[type] ?? type),
-                      if ((pattern['company_name'] as String?)
-                              ?.isNotEmpty ==
+                      if ((pattern['company_name'] as String?)?.isNotEmpty ==
                           true)
                         _PatternTag(label: pattern['company_name'].toString()),
                       if ((pattern['batch_year'] as String?)?.isNotEmpty ==
@@ -226,7 +224,9 @@ class _Section extends StatelessWidget {
     final body = Text(text,
         style: GoogleFonts.inter(
             fontSize: 11, height: 1.55, color: const Color(0xFF475569)));
-    if (label == null) return Align(alignment: Alignment.centerLeft, child: body);
+    if (label == null) {
+      return Align(alignment: Alignment.centerLeft, child: body);
+    }
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(12),

@@ -8,16 +8,19 @@ class NotificationListenerWrapper extends StatefulWidget {
   const NotificationListenerWrapper({super.key, required this.child});
 
   @override
-  State<NotificationListenerWrapper> createState() => _NotificationListenerWrapperState();
+  State<NotificationListenerWrapper> createState() =>
+      _NotificationListenerWrapperState();
 }
 
-class _NotificationListenerWrapperState extends State<NotificationListenerWrapper> {
+class _NotificationListenerWrapperState
+    extends State<NotificationListenerWrapper> {
   StreamSubscription? _subscription;
 
   @override
   void initState() {
     super.initState();
-    _subscription = NotificationService().notificationStream.listen(_showNotification);
+    _subscription =
+        NotificationService().notificationStream.listen(_showNotification);
   }
 
   @override

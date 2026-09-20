@@ -155,8 +155,7 @@ class AttendanceSummary {
       presentCount: data['present_count'] ?? 0,
       absentCount: data['absent_count'] ?? 0,
       totalWorkingDays: data['total_working_days'] ?? 0,
-      attendancePercentage:
-          (data['attendance_percentage'] ?? 0.0).toDouble(),
+      attendancePercentage: (data['attendance_percentage'] ?? 0.0).toDouble(),
     );
   }
 

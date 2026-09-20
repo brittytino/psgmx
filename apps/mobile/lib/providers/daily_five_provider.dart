@@ -42,7 +42,9 @@ class DailyFiveProvider with ChangeNotifier, SafeChangeNotifier {
 
       if (_streak == null || !_streak!.completedToday) {
         final questions = await _service.fetchDailyQuestions(userId);
-        _session = questions.isNotEmpty ? DailyFiveSession(questions: questions) : null;
+        _session = questions.isNotEmpty
+            ? DailyFiveSession(questions: questions)
+            : null;
         if (questions.isEmpty) _error = 'No questions available today.';
       } else {
         _session = null; // Already done
@@ -133,14 +135,19 @@ class DailyFiveProvider with ChangeNotifier, SafeChangeNotifier {
         final revealed = _session!.questions
             .map((q) => results.containsKey(q.id)
                 ? DailyFiveQuestion(
-                    id: q.id, questionText: q.questionText, options: q.options,
-                    correctOption: results[q.id], topic: q.topic,
-                    difficulty: q.difficulty, isActive: q.isActive)
+                    id: q.id,
+                    questionText: q.questionText,
+                    options: q.options,
+                    correctOption: results[q.id],
+                    topic: q.topic,
+                    difficulty: q.difficulty,
+                    isActive: q.isActive)
                 : q)
             .toList();
         _session = _session!.copyWith(questions: revealed);
       } catch (e) {
-        debugPrint('[DailyFiveProvider] Could not reveal results (likely offline/pending sync): $e');
+        debugPrint(
+            '[DailyFiveProvider] Could not reveal results (likely offline/pending sync): $e');
       }
     } catch (e) {
       _error = 'Failed to submit: $e';

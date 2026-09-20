@@ -197,7 +197,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
                   <img src="/logo.webp" alt="PSGMX Logo" className="w-8 h-8 object-contain" />
                   <h2 className="text-[15px] font-black text-text-main">Student Portal</h2>
                 </div>
-                <button onClick={() => setMobileMenuOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-page-bg text-text-muted">
+                <button type="button" aria-label="Close menu" onClick={() => setMobileMenuOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-page-bg text-text-muted">
                   <X className="w-4 h-4" />
                 </button>
               </div>
@@ -238,15 +238,15 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
       <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
 
         {/* Top Header */}
-        <header className="h-[88px] bg-page-bg flex items-center justify-between px-8 shrink-0 relative z-30 transition-colors duration-300">
+        <header className="h-[72px] sm:h-[88px] bg-page-bg flex items-center justify-between px-4 sm:px-6 lg:px-8 shrink-0 relative z-30 transition-colors duration-300">
           <div className="flex items-center gap-4">
-            <button onClick={() => setMobileMenuOpen(true)} className="w-10 h-10 flex lg:hidden items-center justify-center rounded-full bg-white border border-border-light shadow-sm text-text-muted">
+            <button type="button" aria-label="Open menu" onClick={() => setMobileMenuOpen(true)} className="w-10 h-10 flex lg:hidden items-center justify-center rounded-full bg-white border border-border-light shadow-sm text-text-muted">
               <Menu className="w-5 h-5" />
             </button>
             <StudentHeaderSearch />
           </div>
 
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2 sm:gap-6">
             {/* Notifications Bell */}
             <div className="relative">
               <button 
@@ -271,12 +271,12 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
 
             {/* Profile */}
             <div className="relative">
-              <div onClick={() => setProfileOpen(!profileOpen)} className={`flex items-center gap-3 cursor-pointer group bg-white border rounded-full pl-2 pr-4 py-1.5 shadow-sm transition-colors ${profileOpen ? 'border-primary-purple' : 'border-border-light hover:border-border-light'}`}>
+              <button type="button" aria-label="Open profile menu" aria-haspopup="menu" aria-expanded={profileOpen} onClick={() => setProfileOpen(!profileOpen)} className={`flex items-center gap-3 cursor-pointer group bg-white border rounded-full pl-2 pr-3 sm:pr-4 py-1.5 shadow-sm transition-colors ${profileOpen ? 'border-primary-purple' : 'border-border-light hover:border-border-light'}`}>
                 <div className="w-8 h-8 rounded-full bg-border-light overflow-hidden shrink-0 relative">
                   <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary-purple to-deep-violet text-white font-bold text-xs">{identity.name.charAt(0).toUpperCase()}</div>
                 </div>
                 <ChevronDown className={`w-4 h-4 transition-transform ${profileOpen ? 'rotate-180 text-primary-purple' : 'text-text-muted'}`} />
-              </div>
+              </button>
               <AnimatePresence>
                 {profileOpen && (
                   <>
@@ -309,7 +309,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
         </header>
 
         {/* Page Content */}
-        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar relative">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scrollbar relative">
           {children}
         </div>
       </main>

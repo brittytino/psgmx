@@ -17,7 +17,7 @@ class DailyInspirations {
     "You are capable of amazing things.",
     "Don't wait for the perfect moment. Take the moment and make it perfect.",
     "The harder you work, the luckier you get.",
-    
+
     // Week 3-4: Building Momentum
     "Champions keep playing until they get it right.",
     "Your future depends on what you do today.",
@@ -33,7 +33,7 @@ class DailyInspirations {
     "Great things never come from comfort zones.",
     "Doubt kills more dreams than failure ever will.",
     "Work hard in silence. Let success make the noise.",
-    
+
     // Week 5-6: Persistence
     "It does not matter how slowly you go as long as you do not stop.",
     "The only way to do great work is to love what you do.",
@@ -48,7 +48,7 @@ class DailyInspirations {
     "You are never too old to set another goal or dream a new dream.",
     "Opportunities don't happen. You create them.",
     "Success is walking from failure to failure without losing enthusiasm.",
-    
+
     // Week 7-8: Mindset
     "Your attitude determines your direction.",
     "Be the change you wish to see in the world.",
@@ -62,7 +62,7 @@ class DailyInspirations {
     "Whether you think you can or you think you can't, you're right.",
     "The only impossible journey is the one you never begin.",
     "If you want something you've never had, you must do something you've never done.",
-    
+
     // Week 9-10: Growth
     "Life begins at the end of your comfort zone.",
     "Your life does not get better by chance, it gets better by change.",
@@ -76,7 +76,7 @@ class DailyInspirations {
     "Be yourself; everyone else is already taken.",
     "Stars can't shine without darkness.",
     "Fall seven times, stand up eight.",
-    
+
     // Week 11-12: Focus & Discipline
     "Discipline is the bridge between goals and accomplishment.",
     "Focus on being productive instead of busy.",
@@ -90,7 +90,7 @@ class DailyInspirations {
     "What you focus on expands. Focus on the good.",
     "Mastery requires patience. Take one day at a time.",
     "Simplicity is the ultimate sophistication.",
-    
+
     // Week 13-14: Excellence
     "Excellence is not a destination but a continuous journey.",
     "Be a yardstick of quality. Some people aren't used to an environment where excellence is expected.",
@@ -104,7 +104,7 @@ class DailyInspirations {
     "Be passionate and bold. Always keep learning.",
     "Details create the big picture.",
     "If you are not willing to learn, no one can help you.",
-    
+
     // Week 15-16: Resilience
     "Tough times never last, but tough people do.",
     "The oak fought the wind and was broken. The willow bent when it must and survived.",
@@ -118,7 +118,7 @@ class DailyInspirations {
     "A river cuts through rock not because of its power but its persistence.",
     "What doesn't kill you makes you stronger.",
     "Storms make trees take deeper roots.",
-    
+
     // Week 17-18: Leadership & Teamwork
     "Alone we can do so little; together we can do so much.",
     "Coming together is a beginning, staying together is progress, working together is success.",
@@ -132,7 +132,7 @@ class DailyInspirations {
     "A successful team beats with one heart.",
     "Individually, we are one drop. Together, we are an ocean.",
     "Great things in business are never done by one person; they're done by a team.",
-    
+
     // Week 19-20: Innovation & Creativity
     "Innovation distinguishes between a leader and a follower.",
     "Creativity is intelligence having fun.",
@@ -146,7 +146,7 @@ class DailyInspirations {
     "You can't use up creativity. The more you use, the more you have.",
     "Curiosity about life is the secret of great creative people.",
     "Make it simple, but significant.",
-    
+
     // Week 21-22: Wisdom & Learning
     "An investment in knowledge pays the best interest.",
     "Live as if you were to die tomorrow. Learn as if you were to live forever.",
@@ -160,7 +160,7 @@ class DailyInspirations {
     "Wisdom is not a product of schooling but of the lifelong attempt to acquire it.",
     "In learning you will teach, and in teaching you will learn.",
     "Change is the end result of all true learning.",
-    
+
     // Final Days: Legacy & Purpose
     "The purpose of life is not to be happy. It is to be useful.",
     "The meaning of life is to find your gift. The purpose of life is to give it away.",

@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
 /// Responsive Helper for Web & Mobile layouts
-/// 
+///
 /// Provides utilities for determining screen sizes and platform.
 class ResponsiveHelper {
   /// Check if current platform is web

@@ -8,7 +8,7 @@
   
   <br>
 
-  [![Version](https://img.shields.io/badge/version-4.0.0-blue.svg)](pubspec.yaml)
+  [![Version](https://img.shields.io/badge/version-4.2.0-blue.svg)](pubspec.yaml)
   [![Flutter](https://img.shields.io/badge/Flutter-3.27+-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
   [![Supabase](https://img.shields.io/badge/Supabase-Production-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com)
   [![Firebase](https://img.shields.io/badge/Hosting-Firebase-FFCA28?logo=firebase&logoColor=white)](https://firebase.google.com)
@@ -26,10 +26,10 @@ Built with **Flutter** for a responsive cross-platform experience and **Supabase
 
 ---
 
-## ✨ Key Features (v4.0.0)
+## ✨ Key Features (v4.2.0)
 
 ### 🚀 **Dynamic Batch System**
-- **Zero Whitelists:** Students are automatically assigned to the correct academic batch based on their roll numbers upon first sign-in.
+- **Roster-backed access:** Only department-approved identities can request an OTP; eligible students are assigned to the correct academic batch from their register number on first sign-in.
 - **Automated Lifecycle:** Seamless transitions for graduating classes and onboarding juniors, retaining historical Placement Logs automatically.
 
 ### 📈 **Readiness Scoring & Attendance**
@@ -67,6 +67,7 @@ Built with **Flutter** for a responsive cross-platform experience and **Supabase
 
 ### Prerequisites
 *   [Flutter SDK](https://flutter.dev/docs/get-started/install) (3.27 or higher)
+*   Java 17 or 21 for Android builds
 *   A Supabase Project (Free Tier works)
 
 ### Installation
@@ -94,12 +95,18 @@ Built with **Flutter** for a responsive cross-platform experience and **Supabase
     eCampus shared, and external-platform secrets on the server only.
 
 4.  **Database Initialization**
-    Run the SQL scripts located in `database/` inside your Supabase SQL Editor to provision the schema, RLS policies, and triggers. Check `database/README.md` for execution order.
+    Apply the ordered SQL migrations in `../../supabase/migrations/` with the Supabase CLI (`supabase db push`) or your managed migration runner.
 
 5.  **Run the Application**
     ```bash
     flutter run --dart-define-from-file=.env.flutter
     ```
+
+6.  **Android release signing**
+    The production application ID is `tech.psgmx.app`. Release CI must provide
+    `ANDROID_KEYSTORE_PATH`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`, and
+    `ANDROID_STORE_PASSWORD`. Without them, Gradle intentionally creates an
+    unsigned release rather than silently using a debug key.
 
 ---
 

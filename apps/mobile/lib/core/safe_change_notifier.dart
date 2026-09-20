@@ -9,7 +9,8 @@ import 'package:flutter/scheduler.dart';
 mixin SafeChangeNotifier on ChangeNotifier {
   @override
   void notifyListeners() {
-    if (SchedulerBinding.instance.schedulerPhase == SchedulerPhase.persistentCallbacks) {
+    if (SchedulerBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
       SchedulerBinding.instance.addPostFrameCallback((_) {
         if (hasListeners) {
           super.notifyListeners();

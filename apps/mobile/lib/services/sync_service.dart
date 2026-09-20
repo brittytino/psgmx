@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
@@ -14,12 +15,24 @@ class SyncService {
   }
 
   void _init() {
-    Connectivity().onConnectivityChanged.listen((List<ConnectivityResult> results) {
+    Connectivity()
+        .onConnectivityChanged
+        .listen((List<ConnectivityResult> results) {
       final isOnline = results.any((r) => r != ConnectivityResult.none);
       if (isOnline) {
         _syncPendingActions();
       }
     });
+    // Pending submissions can survive a restart while the phone is already
+    // online. The connectivity stream does not guarantee an initial event.
+    unawaited(_syncIfAlreadyOnline());
+  }
+
+  Future<void> _syncIfAlreadyOnline() async {
+    final results = await Connectivity().checkConnectivity();
+    if (results.any((result) => result != ConnectivityResult.none)) {
+      await _syncPendingActions();
+    }
   }
 
   Future<void> _syncPendingActions() async {
@@ -33,12 +46,14 @@ class SyncService {
         return;
       }
 
-      debugPrint('[SyncService] Processing ${pendingActions.length} offline actions');
+      debugPrint(
+          '[SyncService] Processing ${pendingActions.length} offline actions');
 
       for (final action in pendingActions) {
         try {
-          final payload = jsonDecode(action.payloadJson) as Map<String, dynamic>;
-          
+          final payload =
+              jsonDecode(action.payloadJson) as Map<String, dynamic>;
+
           if (action.actionType == 'submit_daily_five') {
             // Matches the payload queued by DailyFiveService.submitSession()
             // ({'user_id', 'answers'}) and the server-side-grading RPC it
@@ -48,13 +63,19 @@ class SyncService {
               'p_user_id': payload['user_id'],
               'p_answers': payload['answers'],
             });
-            await (_db.delete(_db.syncQueue)..where((t) => t.id.equals(action.id))).go();
+            await (_db.delete(_db.syncQueue)
+                  ..where((t) => t.id.equals(action.id)))
+                .go();
           } else if (action.actionType == 'mark_attendance') {
             // Future implementation for attendance
-            await (_db.delete(_db.syncQueue)..where((t) => t.id.equals(action.id))).go();
+            await (_db.delete(_db.syncQueue)
+                  ..where((t) => t.id.equals(action.id)))
+                .go();
           } else {
             // Unknown action type, delete to prevent infinite loops
-            await (_db.delete(_db.syncQueue)..where((t) => t.id.equals(action.id))).go();
+            await (_db.delete(_db.syncQueue)
+                  ..where((t) => t.id.equals(action.id)))
+                .go();
           }
         } catch (e) {
           debugPrint('[SyncService] Failed to sync action ${action.id}: $e');

@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 import '../../services/update_service.dart';
 
 /// Emergency Block Screen
-/// 
+///
 /// Full-screen blocking UI when app is emergency blocked with modern engaging design.
 /// User CANNOT dismiss this screen.
 /// Only option is to update.
@@ -22,18 +22,18 @@ class _EmergencyBlockScreenState extends State<EmergencyBlockScreen> {
 
   Future<void> _handleUpdate() async {
     if (!mounted) return;
-    
+
     setState(() => _isDownloading = true);
-    
+
     final updateService = context.read<UpdateService>();
     await Future.delayed(const Duration(milliseconds: 800));
-    
+
     if (!mounted) return;
-    
+
     final success = await updateService.openUpdateUrl();
-    
+
     if (!mounted) return;
-    
+
     if (!success) {
       setState(() => _isDownloading = false);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -59,7 +59,7 @@ class _EmergencyBlockScreenState extends State<EmergencyBlockScreen> {
   Widget build(BuildContext context) {
     final updateService = Provider.of<UpdateService>(context);
     final config = updateService.config;
-    final message = config?.emergencyMessage ?? 
+    final message = config?.emergencyMessage ??
         'This app version has been temporarily disabled for security reasons. Please update to continue.';
 
     return PopScope(
@@ -85,7 +85,7 @@ class _EmergencyBlockScreenState extends State<EmergencyBlockScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Spacer(),
-                  
+
                   // Image — transparent PNG, no wrapper needed
                   Image.asset(
                     'assets/images/app_crash.png',
@@ -153,7 +153,8 @@ class _EmergencyBlockScreenState extends State<EmergencyBlockScreen> {
 
                   // Version Info Badge
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 10),
                     decoration: BoxDecoration(
                       color: Colors.grey[850],
                       borderRadius: BorderRadius.circular(24),
@@ -164,7 +165,8 @@ class _EmergencyBlockScreenState extends State<EmergencyBlockScreen> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.info_outline, size: 12, color: Colors.grey[400]),
+                        Icon(Icons.info_outline,
+                            size: 12, color: Colors.grey[400]),
                         const SizedBox(width: 8),
                         Text(
                           'Current: v${updateService.currentVersion ?? "Unknown"}',
@@ -189,7 +191,8 @@ class _EmergencyBlockScreenState extends State<EmergencyBlockScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.orange,
                         foregroundColor: Colors.white,
-                        disabledBackgroundColor: Colors.orange.withValues(alpha: 0.6),
+                        disabledBackgroundColor:
+                            Colors.orange.withValues(alpha: 0.6),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(18),
                         ),
@@ -205,7 +208,8 @@ class _EmergencyBlockScreenState extends State<EmergencyBlockScreen> {
                                   height: 20,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white),
                                   ),
                                 ),
                                 const SizedBox(width: 16),
@@ -249,7 +253,7 @@ class _EmergencyBlockScreenState extends State<EmergencyBlockScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  
+
                   // Footer warning
                   Container(
                     padding: const EdgeInsets.all(12),
@@ -260,8 +264,9 @@ class _EmergencyBlockScreenState extends State<EmergencyBlockScreen> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.warning_amber_rounded, 
-                          size: 12, 
+                        Icon(
+                          Icons.warning_amber_rounded,
+                          size: 12,
                           color: Colors.red[400],
                         ),
                         const SizedBox(width: 8),

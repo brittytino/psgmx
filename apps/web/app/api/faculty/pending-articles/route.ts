@@ -29,8 +29,7 @@ export async function GET(req: NextRequest) {
         company_name,
         batch_year,
         approval_status,
-        created_at,
-        placement_log_entry_id
+        created_at
       `)
       .eq('approval_status', 'pending')
       .order('created_at', { ascending: true })  // Oldest first — FIFO review
@@ -66,8 +65,9 @@ export async function PUT(req: NextRequest) {
       // @ts-ignore
       .update({
         approval_status: newStatus,
-        approved_by: faculty.id,
-        approved_at: new Date().toISOString(),
+        reviewed_by: faculty.id,
+        reviewed_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       } as any)
       .eq('id', articleId)
 
@@ -88,7 +88,8 @@ export async function PUT(req: NextRequest) {
           message: `"${(article as any).title}" has been approved and is now visible in the Knowledge Brain.`,
           notification_type: 'announcement',
           target_audience: 'user',
-          created_by: (article as any).author_id,
+          target_user_id: (article as any).author_id,
+          created_by: faculty.id,
         } as any)
         if (notifyError) console.error('Failed to notify article author:', notifyError)
       }

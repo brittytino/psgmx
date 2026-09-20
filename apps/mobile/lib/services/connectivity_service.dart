@@ -9,7 +9,8 @@ class ConnectivityService {
   ConnectivityService._internal();
 
   final Connectivity _connectivity = Connectivity();
-  final StreamController<bool> _connectionChangeController = StreamController<bool>.broadcast();
+  final StreamController<bool> _connectionChangeController =
+      StreamController<bool>.broadcast();
 
   Stream<bool> get connectionChange => _connectionChangeController.stream;
 
@@ -32,16 +33,16 @@ class ConnectivityService {
     final previousConnection = _hasConnection;
 
     result ??= await _connectivity.checkConnectivity();
-    
-    // logic: If list contains .none, or is empty -> false. 
-    // actually, if list contains ONLY .none -> false. 
+
+    // logic: If list contains .none, or is empty -> false.
+    // actually, if list contains ONLY .none -> false.
     // If it contains .mobile or .wifi or .ethernet -> true.
-    
+
     bool hasActiveInterface = false;
     for (var r in result) {
-      if (r == ConnectivityResult.mobile || 
-          r == ConnectivityResult.wifi || 
-          r == ConnectivityResult.ethernet || 
+      if (r == ConnectivityResult.mobile ||
+          r == ConnectivityResult.wifi ||
+          r == ConnectivityResult.ethernet ||
           r == ConnectivityResult.vpn) {
         hasActiveInterface = true;
         break;
@@ -56,7 +57,7 @@ class ConnectivityService {
 
     return _hasConnection;
   }
-  
+
   void dispose() {
     _connectionChangeController.close();
   }
@@ -80,7 +81,8 @@ class _OfflineBannerState extends State<OfflineBanner> {
     super.initState();
     ConnectivityService().init();
     _isOffline = !ConnectivityService().hasConnection;
-    _connectionSubscription = ConnectivityService().connectionChange.listen((isConnected) {
+    _connectionSubscription =
+        ConnectivityService().connectionChange.listen((isConnected) {
       setState(() {
         _isOffline = !isConnected;
       });

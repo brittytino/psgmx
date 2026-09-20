@@ -31,7 +31,6 @@ import 'providers/daily_five_provider.dart';
 import 'providers/batch_provider.dart';
 import 'services/auth_service.dart';
 import 'services/supabase_service.dart';
-import 'services/supabase_db_service.dart';
 import 'services/notification_service.dart';
 import 'services/birthday_notification_service.dart';
 import 'services/leetcode_auto_refresh_service.dart';
@@ -186,13 +185,11 @@ class PsgMxApp extends StatelessWidget {
   Widget build(BuildContext context) {
     // Services
     final supabaseService = SupabaseService();
-    final supabaseDbService = SupabaseDbService();
     final authService = AuthService(supabaseService);
 
     return MultiProvider(
       providers: [
         Provider<SupabaseService>.value(value: supabaseService),
-        Provider<SupabaseDbService>.value(value: supabaseDbService),
         Provider<AuthService>.value(value: authService),
         ChangeNotifierProvider<NotificationService>.value(
             value: NotificationService()),

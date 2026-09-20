@@ -81,8 +81,8 @@ class _BunkerScreenState extends State<BunkerScreen> {
                     child: _SummaryCard(attendance: provider.attendance!)),
                 if (provider.timetable != null)
                   SliverToBoxAdapter(
-                      child: _WeeklyTimetableCard(
-                          timetable: provider.timetable!)),
+                      child:
+                          _WeeklyTimetableCard(timetable: provider.timetable!)),
                 SliverPadding(
                   padding: const EdgeInsets.fromLTRB(20, 18, 20, 120),
                   sliver: SliverList.separated(

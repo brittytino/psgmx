@@ -4,7 +4,6 @@ import 'package:dicebear_core/dicebear_core.dart';
 import 'package:dicebear_styles/lorelei.dart';
 import 'package:dicebear_styles/micah.dart';
 
-
 class AvatarWidget extends StatelessWidget {
   final String? avatarUrl;
   final String name;

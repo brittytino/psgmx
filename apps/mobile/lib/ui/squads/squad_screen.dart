@@ -45,12 +45,16 @@ class _FeedEntry {
   final String memberName;
   final String questTitle;
   final DateTime completedAt;
-  const _FeedEntry({required this.memberName, required this.questTitle, required this.completedAt});
+  const _FeedEntry(
+      {required this.memberName,
+      required this.questTitle,
+      required this.completedAt});
 
   factory _FeedEntry.fromMap(Map<String, dynamic> map) => _FeedEntry(
         memberName: map['member_name']?.toString() ?? 'A member',
         questTitle: map['quest_title']?.toString() ?? 'a quest',
-        completedAt: DateTime.tryParse(map['completed_at']?.toString() ?? '') ?? DateTime.now(),
+        completedAt: DateTime.tryParse(map['completed_at']?.toString() ?? '') ??
+            DateTime.now(),
       );
 }
 
@@ -79,8 +83,7 @@ class _SquadScreenState extends State<SquadScreen> {
       // RLS on users/daily_five_streaks/code_submissions only ever granted
       // read access to the row's own owner or an admin role, never to a
       // squadmate, so this is the only path that actually returns teammates.
-      final result =
-          await Supabase.instance.client.rpc('get_my_squad') as Map?;
+      final result = await Supabase.instance.client.rpc('get_my_squad') as Map?;
       if (!mounted) return;
       if (result == null) {
         setState(() {
@@ -128,7 +131,8 @@ class _SquadScreenState extends State<SquadScreen> {
       body: RefreshIndicator(
         onRefresh: _load,
         child: _loading
-            ? const Center(child: CircularProgressIndicator(color: AppTheme.accentCoral))
+            ? const Center(
+                child: CircularProgressIndicator(color: AppTheme.accentCoral))
             : ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
@@ -148,7 +152,8 @@ class _SquadScreenState extends State<SquadScreen> {
                           Expanded(
                               child: Text(_error!,
                                   style: GoogleFonts.inter(fontSize: 11))),
-                          TextButton(onPressed: _load, child: const Text('Retry')),
+                          TextButton(
+                              onPressed: _load, child: const Text('Retry')),
                         ]),
                       ),
                     ),
@@ -183,7 +188,8 @@ class _SquadScreenState extends State<SquadScreen> {
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(color: const Color(0xFFFFD4BF))),
                         child: Row(children: [
-                          const Icon(LucideIcons.target, size: 18, color: AppTheme.accentCoral),
+                          const Icon(LucideIcons.target,
+                              size: 18, color: AppTheme.accentCoral),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Column(
@@ -197,7 +203,9 @@ class _SquadScreenState extends State<SquadScreen> {
                                         color: AppTheme.accentCoral)),
                                 const SizedBox(height: 3),
                                 Text(_objective!,
-                                    style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600)),
+                                    style: GoogleFonts.inter(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600)),
                               ],
                             ),
                           ),
@@ -287,17 +295,21 @@ class _SquadScreenState extends State<SquadScreen> {
                         )),
                     const SizedBox(height: 8),
                     Text('Activity signals',
-                        style: GoogleFonts.sora(fontSize: 15, fontWeight: FontWeight.w800)),
+                        style: GoogleFonts.sora(
+                            fontSize: 15, fontWeight: FontWeight.w800)),
                     const SizedBox(height: 10),
                     if (_feed.isEmpty)
                       Container(
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                            border: Border.all(color: AppTheme.cardBorder, style: BorderStyle.solid),
+                            border: Border.all(
+                                color: AppTheme.cardBorder,
+                                style: BorderStyle.solid),
                             borderRadius: BorderRadius.circular(14)),
                         child: Text(
                             'Verified squad activity from the last 7 days will appear here.',
-                            style: GoogleFonts.inter(fontSize: 11, color: AppTheme.mutedText)),
+                            style: GoogleFonts.inter(
+                                fontSize: 11, color: AppTheme.mutedText)),
                       )
                     else
                       ..._feed.map((f) => Padding(
@@ -306,20 +318,27 @@ class _SquadScreenState extends State<SquadScreen> {
                               padding: const EdgeInsets.all(12),
                               radius: AppRadius.card,
                               child: Row(children: [
-                                const Icon(LucideIcons.checkCircle2, size: 16, color: Color(0xFF16A34A)),
+                                const Icon(LucideIcons.checkCircle2,
+                                    size: 16, color: Color(0xFF16A34A)),
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: Text.rich(TextSpan(children: [
                                     TextSpan(
                                         text: f.memberName,
-                                        style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w800)),
+                                        style: GoogleFonts.inter(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w800)),
                                     TextSpan(
                                         text: ' verified "${f.questTitle}"',
-                                        style: GoogleFonts.inter(fontSize: 11, color: AppTheme.mutedText)),
+                                        style: GoogleFonts.inter(
+                                            fontSize: 11,
+                                            color: AppTheme.mutedText)),
                                   ])),
                                 ),
                                 Text(_relativeTime(f.completedAt),
-                                    style: GoogleFonts.inter(fontSize: 9, color: AppTheme.mutedText)),
+                                    style: GoogleFonts.inter(
+                                        fontSize: 9,
+                                        color: AppTheme.mutedText)),
                               ]),
                             ),
                           )),

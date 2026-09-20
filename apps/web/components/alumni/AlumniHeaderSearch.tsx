@@ -17,6 +17,7 @@ import {
   Command,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { normalizeSearchTerm } from '@/lib/search-input'
 
 interface SearchResultItem {
   id: string
@@ -38,7 +39,7 @@ export function AlumniHeaderSearch() {
 
   const performSearch = useCallback(
     async (searchTerm: string) => {
-      const q = searchTerm.trim()
+      const q = normalizeSearchTerm(searchTerm)
       if (!q) {
         setResults([])
         setSelectedIndex(-1)

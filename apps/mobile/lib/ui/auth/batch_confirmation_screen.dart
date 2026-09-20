@@ -13,7 +13,8 @@ class BatchConfirmationScreen extends StatefulWidget {
   const BatchConfirmationScreen({super.key});
 
   @override
-  State<BatchConfirmationScreen> createState() => _BatchConfirmationScreenState();
+  State<BatchConfirmationScreen> createState() =>
+      _BatchConfirmationScreenState();
 }
 
 class _BatchConfirmationScreenState extends State<BatchConfirmationScreen> {
@@ -23,25 +24,33 @@ class _BatchConfirmationScreenState extends State<BatchConfirmationScreen> {
     final note = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text('Flag a correction', style: GoogleFonts.sora(fontWeight: FontWeight.w800)),
+        title: Text('Flag a correction',
+            style: GoogleFonts.sora(fontWeight: FontWeight.w800)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('What looks wrong about your name, register number, or batch?',
-                style: GoogleFonts.inter(fontSize: 12, color: AppTheme.headingText.withValues(alpha: 0.7))),
+                style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: AppTheme.headingText.withValues(alpha: 0.7))),
             const SizedBox(height: 12),
             TextField(
               controller: controller,
               maxLines: 3,
-              decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'Describe the issue...'),
+              decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  hintText: 'Describe the issue...'),
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancel')),
           FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(controller.text.trim()),
+            onPressed: () =>
+                Navigator.of(dialogContext).pop(controller.text.trim()),
             child: const Text('Submit'),
           ),
         ],
@@ -66,7 +75,8 @@ class _BatchConfirmationScreenState extends State<BatchConfirmationScreen> {
     } catch (_) {
       if (!context0.mounted) return;
       ScaffoldMessenger.of(context0).showSnackBar(
-        const SnackBar(content: Text('Could not submit right now — try again shortly.')),
+        const SnackBar(
+            content: Text('Could not submit right now — try again shortly.')),
       );
     }
   }
@@ -283,18 +293,23 @@ class _BatchConfirmationScreenState extends State<BatchConfirmationScreen> {
                                   color: AppTheme.textMuted)),
                           const SizedBox(height: 10),
                           _DetailRow(label: 'Name', value: user?.name ?? '—'),
-                          _DetailRow(label: 'Register number', value: user?.regNo ?? '—'),
+                          _DetailRow(
+                              label: 'Register number',
+                              value: user?.regNo ?? '—'),
                           _DetailRow(label: 'Batch', value: batchCode),
                           _DetailRow(
                               label: 'Stage',
-                              value: user?.isActiveSenior == true ? 'Senior' : 'Junior'),
+                              value: user?.isActiveSenior == true
+                                  ? 'Senior'
+                                  : 'Junior'),
                           const SizedBox(height: 8),
                           Align(
                             alignment: Alignment.centerLeft,
                             child: TextButton.icon(
                               onPressed: () => _flagCorrection(context),
                               icon: const Icon(LucideIcons.flag, size: 14),
-                              label: const Text('Something wrong? Flag a correction'),
+                              label: const Text(
+                                  'Something wrong? Flag a correction'),
                             ),
                           ),
                         ],
@@ -377,10 +392,14 @@ class _DetailRow extends StatelessWidget {
             SizedBox(
                 width: 110,
                 child: Text(label,
-                    style: GoogleFonts.inter(fontSize: 11, color: AppTheme.textMuted))),
+                    style: GoogleFonts.inter(
+                        fontSize: 11, color: AppTheme.textMuted))),
             Expanded(
                 child: Text(value,
-                    style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: AppTheme.textMain))),
+                    style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.textMain))),
           ],
         ),
       );

@@ -6,7 +6,8 @@ class LeetCodeIdentity {
     final uri = Uri.tryParse(value);
     if (uri != null &&
         (uri.host == 'leetcode.com' || uri.host == 'www.leetcode.com')) {
-      final segments = uri.pathSegments.where((segment) => segment.isNotEmpty).toList();
+      final segments =
+          uri.pathSegments.where((segment) => segment.isNotEmpty).toList();
       if (segments.length >= 2 && segments.first == 'u') {
         value = segments[1];
       } else if (segments.isNotEmpty) {
@@ -16,7 +17,8 @@ class LeetCodeIdentity {
     return value.trim();
   }
 
-  static bool isValid(String input) => _usernamePattern.hasMatch(normalize(input));
+  static bool isValid(String input) =>
+      _usernamePattern.hasMatch(normalize(input));
 
   static String requireValid(String input) {
     final username = normalize(input);

@@ -19,6 +19,7 @@ import {
   BrainCircuit,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { normalizeSearchTerm } from '@/lib/search-input'
 
 interface SearchResultItem {
   id: string
@@ -40,7 +41,7 @@ export function StudentHeaderSearch() {
 
   const performSearch = useCallback(
     async (searchTerm: string) => {
-      const q = searchTerm.trim()
+      const q = normalizeSearchTerm(searchTerm)
       if (!q) {
         setResults([])
         setSelectedIndex(-1)
@@ -66,9 +67,9 @@ export function StudentHeaderSearch() {
             .limit(3),
           db
             .from('quests')
-            .select('id, title, difficulty, track_key')
-            .eq('is_active', true)
-            .or(`title.ilike.%${q}%,prompt.ilike.%${q}%`)
+            .select('id, title, difficulty, type')
+            .eq('status', 'published')
+            .or(`title.ilike.%${q}%,problem_md.ilike.%${q}%`)
             .limit(3),
           db
             .from('mock_exams')
@@ -99,7 +100,7 @@ export function StudentHeaderSearch() {
           ...((quests || []) as any[]).map((quest) => ({
             id: `quest-${quest.id}`,
             title: quest.title,
-            subtitle: `${quest.difficulty?.toUpperCase()} · CodeBox Task`,
+            subtitle: `Level ${quest.difficulty ?? 3} · ${quest.type ?? 'CodeBox task'}`,
             type: 'quest' as const,
             link: `/student/codebox/${quest.id}`,
           })),

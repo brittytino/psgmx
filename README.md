@@ -11,7 +11,7 @@
 
 <p align="center">
   <a href="https://flutter.dev"><img src="https://img.shields.io/badge/Flutter-3.24+-02569B?style=for-the-badge&logo=flutter&logoColor=white" alt="Flutter" /></a>
-  <a href="https://nextjs.org"><img src="https://img.shields.io/badge/Next.js-15-000000?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js 15" /></a>
+  <a href="https://nextjs.org"><img src="https://img.shields.io/badge/Next.js-16-000000?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js 16" /></a>
   <a href="https://supabase.com"><img src="https://img.shields.io/badge/Supabase-PostgreSQL-3FCF8E?style=for-the-badge&logo=supabase&logoColor=white" alt="Supabase" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge" alt="License" /></a>
 </p>
@@ -24,7 +24,7 @@
 
 The platform is structured as a unified monorepo consisting of:
 - **Mobile Companion (`apps/mobile`)**: Cross-platform Flutter application tailored for daily student readiness check-ins, mock tests, placement company updates, and attendance alerts.
-- **Web Platform (`apps/web`)**: Next.js 15 App Router web application providing student dashboards, alumni guidance networks, faculty batch management, HOD analytics, and placement rep controls.
+- **Web Platform (`apps/web`)**: Next.js 16 App Router web application providing student dashboards, alumni guidance networks, faculty batch management, HOD analytics, and placement rep controls.
 - **Backend & Database (`supabase`)**: PostgreSQL relational database with Row-Level Security (RLS), automated batch rotation, RAG-powered Knowledge Brain embeddings, and OTP authentication.
 
 ---
@@ -42,7 +42,7 @@ psgmx/
 │       ├── components/     # Reusable UI components & design system
 │       └── lib/            # Supabase clients, utilities, & RAG helpers
 ├── supabase/
-│   ├── migrations/         # Modular PostgreSQL SQL migrations (00..39)
+│   ├── migrations/         # Ordered PostgreSQL SQL migrations (00..54)
 │   └── scripts/            # Python seed generators & maintenance utilities
 ├── data/
 │   └── historical/         # Curated student & alumni rosters (19MX to 24MX)
@@ -58,6 +58,7 @@ psgmx/
 
 ### Prerequisites
 - **Flutter SDK**: `^3.24.0`
+- **Java**: 17 or 21 for Android builds (Java 25+ is not supported by the current Gradle toolchain)
 - **Node.js**: `^20.0.0` or `^22.0.0` (pnpm or npm)
 - **Python**: `^3.10` (for seed generator scripts)
 - **Supabase CLI**: Optional, for local database development
@@ -102,7 +103,7 @@ Supabase migrations are located in `supabase/migrations/`. To apply migrations t
 # Using Supabase CLI
 supabase db push
 
-# Or run migration scripts in order 00_reset.sql -> 40_private_progress_guardrails.sql
+# Or run migration scripts in filename order through 54_service_role_schema_privileges.sql
 ```
 
 ---

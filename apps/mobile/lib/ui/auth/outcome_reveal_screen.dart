@@ -28,7 +28,8 @@ const _focusMissions = {
   'communication': 'a 2-minute Communication Practice recording',
 };
 
-class _OutcomeRevealScreenState extends State<OutcomeRevealScreen> with SingleTickerProviderStateMixin {
+class _OutcomeRevealScreenState extends State<OutcomeRevealScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _sparkController;
   late Animation<double> _sparkJumpAnimation;
   int _finalScore = 45;
@@ -44,8 +45,14 @@ class _OutcomeRevealScreenState extends State<OutcomeRevealScreen> with SingleTi
     );
 
     _sparkJumpAnimation = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 0.0, end: -30.0).chain(CurveTween(curve: Curves.easeOut)), weight: 50),
-      TweenSequenceItem(tween: Tween(begin: -30.0, end: 0.0).chain(CurveTween(curve: Curves.bounceOut)), weight: 50),
+      TweenSequenceItem(
+          tween: Tween(begin: 0.0, end: -30.0)
+              .chain(CurveTween(curve: Curves.easeOut)),
+          weight: 50),
+      TweenSequenceItem(
+          tween: Tween(begin: -30.0, end: 0.0)
+              .chain(CurveTween(curve: Curves.bounceOut)),
+          weight: 50),
     ]).animate(_sparkController);
   }
 
@@ -55,13 +62,17 @@ class _OutcomeRevealScreenState extends State<OutcomeRevealScreen> with SingleTi
     final extra = GoRouterState.of(context).extra;
     if (extra is Map) {
       _calibration = Map<String, dynamic>.from(extra);
-      final confidence = Map<String, dynamic>.from(_calibration['confidence'] as Map? ?? const {});
+      final confidence = Map<String, dynamic>.from(
+          _calibration['confidence'] as Map? ?? const {});
       if (confidence.isNotEmpty) {
         // A friendly starting estimate from self-rated confidence (1-3 each,
         // scaled to 0-100) — purely a "day one" number for this screen. The
         // real readiness score is computed server-side from actual evidence
         // once the student starts producing it.
-        final avg = confidence.values.map((v) => (v as num).toDouble()).reduce((a, b) => a + b) / confidence.length;
+        final avg = confidence.values
+                .map((v) => (v as num).toDouble())
+                .reduce((a, b) => a + b) /
+            confidence.length;
         _finalScore = (avg / 3 * 60).round().clamp(20, 80);
       }
     } else if (extra is int) {
@@ -70,7 +81,8 @@ class _OutcomeRevealScreenState extends State<OutcomeRevealScreen> with SingleTi
   }
 
   Map<String, int> get _confidence =>
-      Map<String, int>.from((_calibration['confidence'] as Map? ?? const {}).map((k, v) => MapEntry(k.toString(), (v as num).toInt())));
+      Map<String, int>.from((_calibration['confidence'] as Map? ?? const {})
+          .map((k, v) => MapEntry(k.toString(), (v as num).toInt())));
 
   String? get _strengthKey {
     if (_confidence.isEmpty) return null;
@@ -112,15 +124,18 @@ class _OutcomeRevealScreenState extends State<OutcomeRevealScreen> with SingleTi
               painter: _ConfettiPainter(),
             ),
           ),
-          
+
           SafeArea(
             child: SingleChildScrollView(
               child: ConstrainedBox(
                 constraints: BoxConstraints(
-                  minHeight: MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top - MediaQuery.of(context).padding.bottom,
+                  minHeight: MediaQuery.of(context).size.height -
+                      MediaQuery.of(context).padding.top -
+                      MediaQuery.of(context).padding.bottom,
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 24.0, vertical: 16.0),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -134,28 +149,33 @@ class _OutcomeRevealScreenState extends State<OutcomeRevealScreen> with SingleTi
                             width: 20,
                             height: 6,
                             decoration: BoxDecoration(
-                              color: index == 2 ? AppTheme.accentCoral : AppTheme.illusGold.withValues(alpha: 0.3),
+                              color: index == 2
+                                  ? AppTheme.accentCoral
+                                  : AppTheme.illusGold.withValues(alpha: 0.3),
                               borderRadius: BorderRadius.circular(3),
                             ),
                           ),
                         ),
                       ),
-                      
+
                       const SizedBox(height: 32),
-                      
+
                       // Top Text Section
                       Column(
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
-                              color: AppTheme.accentCoral.withValues(alpha: 0.05),
+                              color:
+                                  AppTheme.accentCoral.withValues(alpha: 0.05),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(LucideIcons.star, color: AppTheme.accentCoral, size: 12),
+                                const Icon(LucideIcons.star,
+                                    color: AppTheme.accentCoral, size: 12),
                                 const SizedBox(width: 6),
                                 Text(
                                   'All set, $firstName!',
@@ -181,7 +201,10 @@ class _OutcomeRevealScreenState extends State<OutcomeRevealScreen> with SingleTi
                               ),
                               children: const [
                                 TextSpan(text: 'Here\'s your\n'),
-                                TextSpan(text: 'Starting Readiness', style: TextStyle(color: AppTheme.accentCoral)),
+                                TextSpan(
+                                    text: 'Starting Readiness',
+                                    style:
+                                        TextStyle(color: AppTheme.accentCoral)),
                               ],
                             ),
                           ),
@@ -190,15 +213,16 @@ class _OutcomeRevealScreenState extends State<OutcomeRevealScreen> with SingleTi
                             'Your personalized readiness score',
                             style: GoogleFonts.inter(
                               fontSize: 11,
-                              color: AppTheme.headingText.withValues(alpha: 0.6),
+                              color:
+                                  AppTheme.headingText.withValues(alpha: 0.6),
                               fontWeight: FontWeight.w500,
                             ),
                           ),
                         ],
                       ),
-                      
+
                       const SizedBox(height: 48),
-                      
+
                       // Circular Gauge
                       SizedBox(
                         width: 280,
@@ -212,7 +236,7 @@ class _OutcomeRevealScreenState extends State<OutcomeRevealScreen> with SingleTi
                               _hasJumped = true;
                               _sparkController.forward();
                             }
-                            
+
                             return Stack(
                               fit: StackFit.expand,
                               children: [
@@ -221,7 +245,8 @@ class _OutcomeRevealScreenState extends State<OutcomeRevealScreen> with SingleTi
                                     progress: value / 100,
                                     color: AppTheme.accentCoral,
                                     trackColor: Colors.white,
-                                    shadowColor: Colors.black.withValues(alpha: 0.04),
+                                    shadowColor:
+                                        Colors.black.withValues(alpha: 0.04),
                                   ),
                                 ),
                                 Column(
@@ -243,28 +268,34 @@ class _OutcomeRevealScreenState extends State<OutcomeRevealScreen> with SingleTi
                                       '/ 100',
                                       style: GoogleFonts.inter(
                                         fontSize: 11,
-                                        color: AppTheme.headingText.withValues(alpha: 0.5),
+                                        color: AppTheme.headingText
+                                            .withValues(alpha: 0.5),
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
                                     const SizedBox(height: 20),
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 12, vertical: 6),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFFE8F5E9), // Light green tint
+                                        color: const Color(
+                                            0xFFE8F5E9), // Light green tint
                                         borderRadius: BorderRadius.circular(20),
                                       ),
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          const Icon(LucideIcons.arrowUpRight, color: Color(0xFF4CAF50), size: 12),
+                                          const Icon(LucideIcons.arrowUpRight,
+                                              color: Color(0xFF4CAF50),
+                                              size: 12),
                                           const SizedBox(width: 4),
                                           Text(
                                             'Good Start!',
                                             style: GoogleFonts.inter(
                                               fontSize: 11,
                                               fontWeight: FontWeight.w600,
-                                              color: const Color(0xFF2E7D32), // Darker green
+                                              color: const Color(
+                                                  0xFF2E7D32), // Darker green
                                             ),
                                           ),
                                         ],
@@ -277,9 +308,9 @@ class _OutcomeRevealScreenState extends State<OutcomeRevealScreen> with SingleTi
                           },
                         ),
                       ),
-                      
+
                       const SizedBox(height: 32),
-                      
+
                       // Mascot and Speech Bubble
                       Stack(
                         clipBehavior: Clip.none,
@@ -291,18 +322,21 @@ class _OutcomeRevealScreenState extends State<OutcomeRevealScreen> with SingleTi
                                 child: Padding(
                                   padding: const EdgeInsets.only(left: 120.0),
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 20, vertical: 16),
                                     decoration: BoxDecoration(
                                       color: Colors.white,
                                       borderRadius: const BorderRadius.only(
                                         topLeft: Radius.circular(20),
                                         topRight: Radius.circular(20),
                                         bottomRight: Radius.circular(20),
-                                        bottomLeft: Radius.circular(4), // tail effect
+                                        bottomLeft:
+                                            Radius.circular(4), // tail effect
                                       ),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Colors.black.withValues(alpha: 0.04),
+                                          color: Colors.black
+                                              .withValues(alpha: 0.04),
                                           blurRadius: 16,
                                           offset: const Offset(0, 8),
                                         ),
@@ -312,7 +346,8 @@ class _OutcomeRevealScreenState extends State<OutcomeRevealScreen> with SingleTi
                                       children: [
                                         Expanded(
                                           child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
                                               Text(
                                                 _strengthKey == null
@@ -331,14 +366,17 @@ class _OutcomeRevealScreenState extends State<OutcomeRevealScreen> with SingleTi
                                                     : '${_dimensionLabels[_focusKey]} needs the most attention first.',
                                                 style: GoogleFonts.inter(
                                                   fontSize: 11,
-                                                  color: AppTheme.headingText.withValues(alpha: 0.7),
+                                                  color: AppTheme.headingText
+                                                      .withValues(alpha: 0.7),
                                                   height: 1.3,
                                                 ),
                                               ),
                                             ],
                                           ),
                                         ),
-                                        const Icon(LucideIcons.zap, color: AppTheme.illusGold, size: 16),
+                                        const Icon(LucideIcons.zap,
+                                            color: AppTheme.illusGold,
+                                            size: 16),
                                       ],
                                     ),
                                   ),
@@ -366,9 +404,9 @@ class _OutcomeRevealScreenState extends State<OutcomeRevealScreen> with SingleTi
                           ),
                         ],
                       ),
-                      
+
                       const SizedBox(height: 48),
-                      
+
                       // Bottom Text
                       Text(
                         _focusKey == null
@@ -377,14 +415,15 @@ class _OutcomeRevealScreenState extends State<OutcomeRevealScreen> with SingleTi
                         textAlign: TextAlign.center,
                         style: GoogleFonts.inter(
                           fontSize: 11,
-                          color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
+                          color: theme.textTheme.bodyMedium?.color
+                              ?.withValues(alpha: 0.6),
                           height: 1.5,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                      
+
                       const SizedBox(height: 24),
-                      
+
                       // CTA Button
                       SizedBox(
                         width: double.infinity,
@@ -402,7 +441,8 @@ class _OutcomeRevealScreenState extends State<OutcomeRevealScreen> with SingleTi
                             children: [
                               Text(
                                 'Enter PSGMX',
-                                style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600),
+                                style: GoogleFonts.inter(
+                                    fontSize: 12, fontWeight: FontWeight.w600),
                               ),
                               const SizedBox(width: 8),
                               const Icon(LucideIcons.arrowRight, size: 16),
@@ -410,16 +450,17 @@ class _OutcomeRevealScreenState extends State<OutcomeRevealScreen> with SingleTi
                           ),
                         ),
                       ),
-                      
+
                       const SizedBox(height: 16),
-                      
+
                       Column(
                         children: [
                           Text(
                             'Excited for what\'s ahead?',
                             style: GoogleFonts.inter(
                               fontSize: 9,
-                              color: AppTheme.headingText.withValues(alpha: 0.4),
+                              color:
+                                  AppTheme.headingText.withValues(alpha: 0.4),
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -449,7 +490,11 @@ class _GaugePainter extends CustomPainter {
   final Color trackColor;
   final Color shadowColor;
 
-  _GaugePainter({required this.progress, required this.color, required this.trackColor, required this.shadowColor});
+  _GaugePainter(
+      {required this.progress,
+      required this.color,
+      required this.trackColor,
+      required this.shadowColor});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -515,7 +560,7 @@ class _GaugePainter extends CustomPainter {
         final angle = startAngle + (i * 0.4);
         final innerRadius = radius + 30;
         final outerRadius = radius + 45;
-        
+
         final start = Offset(
           center.dx + innerRadius * math.cos(angle),
           center.dy + innerRadius * math.sin(angle),
@@ -542,24 +587,33 @@ class _ConfettiPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..style = PaintingStyle.fill;
-    
+
     void drawShape(double dx, double dy, Color color, double rotation) {
       canvas.save();
       canvas.translate(dx, dy);
       canvas.rotate(rotation);
       paint.color = color;
-      canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(-4, -8, 8, 16), const Radius.circular(2)), paint);
+      canvas.drawRRect(
+          RRect.fromRectAndRadius(
+              const Rect.fromLTWH(-4, -8, 8, 16), const Radius.circular(2)),
+          paint);
       canvas.restore();
     }
-    
+
     // Draw hardcoded background confetti pieces from s7
-    drawShape(size.width * 0.1, size.height * 0.15, AppTheme.accentCoral, math.pi / 4);
-    drawShape(size.width * 0.2, size.height * 0.1, AppTheme.illusGold, -math.pi / 6);
-    drawShape(size.width * 0.85, size.height * 0.12, AppTheme.illusGold, math.pi / 3);
-    drawShape(size.width * 0.9, size.height * 0.25, AppTheme.illusGold, -math.pi / 4);
-    
-    drawShape(size.width * 0.15, size.height * 0.25, AppTheme.illusSage, math.pi / 5);
-    drawShape(size.width * 0.8, size.height * 0.18, AppTheme.illusSage, -math.pi / 7);
+    drawShape(size.width * 0.1, size.height * 0.15, AppTheme.accentCoral,
+        math.pi / 4);
+    drawShape(
+        size.width * 0.2, size.height * 0.1, AppTheme.illusGold, -math.pi / 6);
+    drawShape(
+        size.width * 0.85, size.height * 0.12, AppTheme.illusGold, math.pi / 3);
+    drawShape(
+        size.width * 0.9, size.height * 0.25, AppTheme.illusGold, -math.pi / 4);
+
+    drawShape(
+        size.width * 0.15, size.height * 0.25, AppTheme.illusSage, math.pi / 5);
+    drawShape(
+        size.width * 0.8, size.height * 0.18, AppTheme.illusSage, -math.pi / 7);
   }
 
   @override

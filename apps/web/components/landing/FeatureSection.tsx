@@ -76,14 +76,14 @@ const features = [
     accentBg: 'bg-[#C47ED6]',
     accentLight: 'bg-[#F7EEFB]',
     accentColor: '#C47ED6',
-    metrics: ['Curated resources', 'Company-specific', 'Always updated'],
+    metrics: ['Curated resources', 'Company-specific', 'Review lifecycle'],
     photo: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
   },
 ];
 
 const whyPoints = [
-  { icon: <Zap className="w-5 h-5" />, title: 'Built for Speed', desc: 'Everything loads instantly. No bloat, no lag.' },
-  { icon: <Shield className="w-5 h-5" />, title: 'Secure by Design', desc: 'Row-level auth ensures your data stays private.' },
+  { icon: <Zap className="w-5 h-5" />, title: 'Focused by Design', desc: 'Daily practice and deeper work stay easy to find.' },
+  { icon: <Shield className="w-5 h-5" />, title: 'Private by Default', desc: 'Row-level policies keep named progress away from peer rankings.' },
   { icon: <Target className="w-5 h-5" />, title: 'PSG-Specific', desc: 'Engineered around PSG Tech MCA placement workflows.' },
 ];
 
@@ -121,6 +121,9 @@ export default function FeatureSection() {
             {features.map((f, i) => (
               <button
                 key={f.id}
+                type="button"
+                aria-label={`Show ${f.title}`}
+                aria-pressed={active === i}
                 onClick={() => setActive(i)}
                 className={`group flex items-center gap-4 p-4 rounded-2xl border transition-all text-left shrink-0 xl:shrink w-max xl:w-full ${
                   active === i

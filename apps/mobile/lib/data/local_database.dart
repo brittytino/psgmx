@@ -6,12 +6,12 @@ part 'local_database.g.dart';
 class DailyFiveCache extends Table {
   TextColumn get id => text()();
   TextColumn get questionText => text()();
-  TextColumn get optionsJson => text()(); 
+  TextColumn get optionsJson => text()();
   IntColumn get correctOption => integer()();
   TextColumn get topic => text()();
   TextColumn get difficulty => text()();
   BoolColumn get isActive => boolean().withDefault(const Constant(true))();
-  
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -32,8 +32,8 @@ class OfflineStreaks extends Table {
 
 class SyncQueue extends Table {
   IntColumn get id => integer().autoIncrement()();
-  TextColumn get actionType => text()(); 
-  TextColumn get payloadJson => text()(); 
+  TextColumn get actionType => text()();
+  TextColumn get payloadJson => text()();
   DateTimeColumn get queuedAt => dateTime().withDefault(currentDateAndTime)();
 }
 

@@ -12,6 +12,10 @@ describe('dual-email roster validation', () => {
     expect(normalizeEmail(' Student.Personal@Gmail.com ')).toBe('student.personal@gmail.com')
   })
 
+  it('rejects filter grammar disguised as an email address', () => {
+    expect(normalizeEmail('student),email.eq.other@example.com')).toBeNull()
+  })
+
   it('accepts a 26MX student with only personal email', () => {
     expect(normalizeRosterStudent({ name: 'Student One', reg_no: '26mx001', personal_email: 'one@example.com' }))
       .toMatchObject({ name: 'Student One', reg_no: '26MX001', personal_email: 'one@example.com' })

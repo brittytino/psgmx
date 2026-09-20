@@ -38,7 +38,7 @@ export default function ReportsPage() {
   const avg = (key: 'attendance'|'readiness') => rows.length ? Math.round(rows.reduce((sum, row) => sum + row[key], 0) / rows.length) : 0
   if (loading) return <p className="text-sm text-text-muted">Building batch report…</p>
   return <div className="max-w-6xl space-y-6">
-    <div className="flex items-end justify-between"><div><h1 className="text-2xl font-black">Reports & Audit</h1><p className="mt-1 text-sm text-text-muted">Own-batch outcomes and an accountable history of administrative changes.</p></div><button onClick={exportCsv} className="flex items-center gap-2 rounded-xl bg-primary-purple px-5 py-3 text-sm font-bold text-white"><Download className="h-4 w-4" />Export CSV</button></div>
+    <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-end sm:justify-between"><div><h1 className="text-2xl font-black">Reports & Audit</h1><p className="mt-1 text-sm text-text-muted">Own-batch outcomes and an accountable history of administrative changes.</p></div><button onClick={exportCsv} className="flex items-center gap-2 rounded-xl bg-primary-purple px-5 py-3 text-sm font-bold text-white"><Download className="h-4 w-4" />Export CSV</button></div>
     <div className="grid gap-4 sm:grid-cols-3">
       <Metric icon={<Users className="h-5 w-5" />} label="Students" value={rows.length} />
       <Metric icon={<TrendingUp className="h-5 w-5" />} label="Avg attendance" value={`${avg('attendance')}%`} />

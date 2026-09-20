@@ -14,7 +14,7 @@ class HelpSupportScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -194,40 +194,50 @@ class HelpSupportScreen extends StatelessWidget {
     final faqs = [
       {
         'q': 'How do I update my LeetCode username?',
-        'a': 'Go to You → Profile and edit your LeetCode username. Your stats sync automatically on a schedule and feed into your Coding readiness dimension.',
+        'a':
+            'Go to You → Profile and edit your LeetCode username. Your stats sync automatically on a schedule and feed into your Coding readiness dimension.',
       },
       {
         'q': 'How is my readiness score calculated?',
-        'a': 'Your score is computed server-side from six evidence-backed dimensions (like Coding, Core CS, and Communication) — never self-reported. Evidence ages over time, so staying consistent matters more than a single big push. See Progress for a breakdown per dimension.',
+        'a':
+            'Your score is computed server-side from six evidence-backed dimensions (like Coding, Core CS, and Communication) — never self-reported. Evidence ages over time, so staying consistent matters more than a single big push. See Progress for a breakdown per dimension.',
       },
       {
         'q': 'Why didn\'t my Daily Five streak update?',
-        'a': 'Streaks and XP are updated by the server once your submission is graded, not by opening the app. If you completed a session and it still doesn\'t show, pull to refresh on Today or Train, or reach out via Report Bug below.',
+        'a':
+            'Streaks and XP are updated by the server once your submission is graded, not by opening the app. If you completed a session and it still doesn\'t show, pull to refresh on Today or Train, or reach out via Report Bug below.',
       },
       {
         'q': 'How do I receive notifications?',
-        'a': 'Ensure notifications are enabled in your phone settings for the PSGMX app. You can customize which ones you receive from You → Settings → Notifications.',
+        'a':
+            'Ensure notifications are enabled in your phone settings for the PSGMX app. You can customize which ones you receive from You → Settings → Notifications.',
       },
       {
         'q': 'What\'s the difference between Student and Placement Rep access?',
-        'a': 'Every account is a Student account with full access to Today, Train, Progress, Community, and your profile. A Placement Rep additionally gets the Command Center — a batch-wide readiness pulse dashboard — but never sees another student\'s individual score.',
+        'a':
+            'Every account is a Student account with full access to Today, Train, Progress, Community, and your profile. A Placement Rep additionally gets the Command Center — a batch-wide readiness pulse dashboard — but never sees another student\'s individual score.',
       },
       {
         'q': 'How accurate is my Campus attendance?',
-        'a': 'Campus (Bunker) pulls your attendance and timetable directly from the college eCampus portal using your own eCampus credentials — it mirrors the official record, refreshed each time you open or pull to refresh the tab.',
+        'a':
+            'Campus (Bunker) pulls your attendance and timetable directly from the college eCampus portal using your own eCampus credentials — it mirrors the official record, refreshed each time you open or pull to refresh the tab.',
       },
       {
         'q': 'Why is my LeetCode data not showing?',
-        'a': 'Make sure your LeetCode username is correct in your profile and that your LeetCode profile is public, then wait for the next scheduled sync.',
+        'a':
+            'Make sure your LeetCode username is correct in your profile and that your LeetCode profile is public, then wait for the next scheduled sync.',
       },
     ];
 
     return Column(
-      children: faqs.map((faq) => _buildFAQItem(context, faq['q']!, faq['a']!, isDark)).toList(),
+      children: faqs
+          .map((faq) => _buildFAQItem(context, faq['q']!, faq['a']!, isDark))
+          .toList(),
     );
   }
 
-  Widget _buildFAQItem(BuildContext context, String question, String answer, bool isDark) {
+  Widget _buildFAQItem(
+      BuildContext context, String question, String answer, bool isDark) {
     return PremiumCard(
       padding: EdgeInsets.zero,
       child: ExpansionTile(
@@ -273,76 +283,87 @@ class HelpSupportScreen extends StatelessWidget {
       {
         'icon': Icons.dashboard_rounded,
         'title': 'Today',
-        'desc': 'One coherent morning brief — your best-next action, urgent items, and the Daily Five habit. Not a feed of widgets.',
+        'desc':
+            'One coherent morning brief — your best-next action, urgent items, and the Daily Five habit. Not a feed of widgets.',
       },
       {
         'icon': Icons.fitness_center_rounded,
         'title': 'Train',
-        'desc': 'Daily Five practice questions, timed Adaptive Sprints that escalate by mastery, and AI-evaluated Communication Practice recordings — all feeding your readiness score.',
+        'desc':
+            'Daily Five practice questions, timed Adaptive Sprints that escalate by mastery, and AI-evaluated Communication Practice recordings — all feeding your readiness score.',
       },
       {
         'icon': Icons.analytics_rounded,
         'title': 'Progress',
-        'desc': 'Your readiness score broken down by dimension, computed server-side from real evidence — never self-reported.',
+        'desc':
+            'Your readiness score broken down by dimension, computed server-side from real evidence — never self-reported.',
       },
       {
         'icon': Icons.groups_rounded,
         'title': 'Community',
-        'desc': 'Department announcements, Knowledge Brain articles, alumni Interview Patterns, the Community Board (projects, events, mentorship posts), your batch Squad, your MX lineage senior, and Ask AI Senior.',
+        'desc':
+            'Department announcements, Knowledge Brain articles, alumni Interview Patterns, the Community Board (projects, events, mentorship posts), your batch Squad, your MX lineage senior, and Ask AI Senior.',
       },
       {
         'icon': Icons.school_rounded,
         'title': 'Campus (Bunker)',
-        'desc': 'Your personal eCampus attendance and weekly timetable, synced directly from the college portal.',
+        'desc':
+            'Your personal eCampus attendance and weekly timetable, synced directly from the college portal.',
       },
       {
         'icon': Icons.notifications_rounded,
         'title': 'Notifications',
-        'desc': 'Receive push notifications for department announcements, reminders, and readiness nudges.',
+        'desc':
+            'Receive push notifications for department announcements, reminders, and readiness nudges.',
       },
     ];
 
     return Column(
-      children: features.map((f) => Padding(
-        padding: const EdgeInsets.only(bottom: 12),
-        child: PremiumCard(
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(f['icon'] as IconData, color: Theme.of(context).primaryColor),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      f['title'] as String,
-                      style: GoogleFonts.sora(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
+      children: features
+          .map((f) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: PremiumCard(
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context)
+                              .primaryColor
+                              .withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(f['icon'] as IconData,
+                            color: Theme.of(context).primaryColor),
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      f['desc'] as String,
-                      style: GoogleFonts.inter(
-                        fontSize: 9,
-                        color: AppTheme.mutedText,
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              f['title'] as String,
+                              style: GoogleFonts.sora(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              f['desc'] as String,
+                              style: GoogleFonts.inter(
+                                fontSize: 9,
+                                color: AppTheme.mutedText,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ),
-      )).toList(),
+              ))
+          .toList(),
     );
   }
 
@@ -370,56 +391,63 @@ class HelpSupportScreen extends StatelessWidget {
     ];
 
     return Column(
-      children: roles.map((r) => Padding(
-        padding: const EdgeInsets.only(bottom: 12),
-        child: PremiumCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: (r['color'] as Color).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: (r['color'] as Color).withValues(alpha: 0.3)),
-                    ),
-                    child: Text(
-                      r['role'] as String,
-                      style: GoogleFonts.sora(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: r['color'] as Color,
+      children: roles
+          .map((r) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: PremiumCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color:
+                                  (r['color'] as Color).withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                  color: (r['color'] as Color)
+                                      .withValues(alpha: 0.3)),
+                            ),
+                            child: Text(
+                              r['role'] as String,
+                              style: GoogleFonts.sora(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: r['color'] as Color,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
+                      const SizedBox(height: 12),
+                      ...((r['access'] as List<String>).map((access) => Padding(
+                            padding: const EdgeInsets.only(bottom: 6),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(Icons.check_circle,
+                                    color: r['color'] as Color, size: 12),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    access,
+                                    style: GoogleFonts.inter(
+                                      fontSize: 11,
+                                      color: AppTheme.mutedText,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ))),
+                    ],
                   ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              ...((r['access'] as List<String>).map((access) => Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(Icons.check_circle, color: r['color'] as Color, size: 12),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        access,
-                        style: GoogleFonts.inter(
-                          fontSize: 11,
-                          color: AppTheme.mutedText,
-                        ),
-                      ),
-                    ),
-                  ],
                 ),
-              ))),
-            ],
-          ),
-        ),
-      )).toList(),
+              ))
+          .toList(),
     );
   }
 
@@ -552,7 +580,8 @@ class HelpSupportScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _launchGitHubIssue(BuildContext context, {bool isBug = true}) async {
+  Future<void> _launchGitHubIssue(BuildContext context,
+      {bool isBug = true}) async {
     final String title = isBug ? 'Bug Report' : 'Feature Request';
     final String label = isBug ? 'bug' : 'enhancement';
     final Uri url = Uri.parse(
@@ -586,10 +615,11 @@ class HelpSupportScreen extends StatelessWidget {
       path: 'brittytino08@gmail.com',
       queryParameters: {
         'subject': 'PSGMX App Support',
-        'body': 'Hello,\n\nI need help with:\n\n[Describe your issue here]\n\nThank you.',
+        'body':
+            'Hello,\n\nI need help with:\n\n[Describe your issue here]\n\nThank you.',
       },
     );
-    
+
     try {
       if (!await launchUrl(emailUri)) {
         throw 'Could not launch email app';
@@ -597,7 +627,9 @@ class HelpSupportScreen extends StatelessWidget {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not open email app. Please email brittytino08@gmail.com directly.')),
+          const SnackBar(
+              content: Text(
+                  'Could not open email app. Please email brittytino08@gmail.com directly.')),
         );
       }
     }
@@ -611,7 +643,8 @@ class HelpSupportScreen extends StatelessWidget {
           children: [
             const Icon(Icons.bug_report, color: Colors.orange),
             const SizedBox(width: 10),
-            Text('Report a Bug', style: GoogleFonts.sora(fontWeight: FontWeight.bold)),
+            Text('Report a Bug',
+                style: GoogleFonts.sora(fontWeight: FontWeight.bold)),
           ],
         ),
         content: Column(
@@ -625,7 +658,8 @@ class HelpSupportScreen extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               'Please include:',
-              style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600),
+              style:
+                  GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
             Text(
@@ -662,7 +696,8 @@ class HelpSupportScreen extends StatelessWidget {
           children: [
             const Icon(Icons.lightbulb, color: Colors.green),
             const SizedBox(width: 10),
-            Text('Suggest a Feature', style: GoogleFonts.sora(fontWeight: FontWeight.bold)),
+            Text('Suggest a Feature',
+                style: GoogleFonts.sora(fontWeight: FontWeight.bold)),
           ],
         ),
         content: Column(
@@ -705,7 +740,8 @@ class HelpSupportScreen extends StatelessWidget {
           children: [
             const Icon(Icons.chat, color: Colors.green),
             const SizedBox(width: 10),
-            Text('WhatsApp Group', style: GoogleFonts.sora(fontWeight: FontWeight.bold)),
+            Text('WhatsApp Group',
+                style: GoogleFonts.sora(fontWeight: FontWeight.bold)),
           ],
         ),
         content: Text(
@@ -726,13 +762,12 @@ class HelpSupportScreen extends StatelessWidget {
     );
   }
 
-
-
   void _showPrivacyPolicy(BuildContext context) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Privacy Policy', style: GoogleFonts.sora(fontWeight: FontWeight.bold)),
+        title: Text('Privacy Policy',
+            style: GoogleFonts.sora(fontWeight: FontWeight.bold)),
         content: SingleChildScrollView(
           child: Text(
             'PSGMX Privacy Policy\n\n'
@@ -776,7 +811,8 @@ class HelpSupportScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Terms of Service', style: GoogleFonts.sora(fontWeight: FontWeight.bold)),
+        title: Text('Terms of Service',
+            style: GoogleFonts.sora(fontWeight: FontWeight.bold)),
         content: SingleChildScrollView(
           child: Text(
             'PSGMX Terms of Service\n\n'
@@ -851,14 +887,16 @@ class HelpSupportScreen extends StatelessWidget {
                     color: Colors.purple.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.support_agent_rounded, size: 16, color: Colors.purple),
+                  child: const Icon(Icons.support_agent_rounded,
+                      size: 16, color: Colors.purple),
                 ),
               ),
               const SizedBox(height: 16),
               Text(
                 'Placement Representative',
                 textAlign: TextAlign.center,
-                style: GoogleFonts.sora(fontSize: 12, fontWeight: FontWeight.bold),
+                style:
+                    GoogleFonts.sora(fontSize: 12, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               Text(
@@ -876,7 +914,8 @@ class HelpSupportScreen extends StatelessWidget {
               const _RepActionItem(
                 icon: Icons.chat_outlined,
                 text: 'Message in Group',
-                description: 'Tag them in the official WhatsApp group for queries',
+                description:
+                    'Tag them in the official WhatsApp group for queries',
               ),
               const SizedBox(height: 32),
               SizedBox(
@@ -887,7 +926,8 @@ class HelpSupportScreen extends StatelessWidget {
                     padding: const EdgeInsets.all(16),
                     backgroundColor: Colors.purple,
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
                   ),
                   child: const Text('Close'),
                 ),
@@ -940,18 +980,21 @@ class _ContactCard extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: GoogleFonts.sora(fontWeight: FontWeight.w600, fontSize: 11),
+                        style: GoogleFonts.sora(
+                            fontWeight: FontWeight.w600, fontSize: 11),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         subtitle,
-                        style: GoogleFonts.inter(fontSize: 9, color: AppTheme.mutedText),
+                        style: GoogleFonts.inter(
+                            fontSize: 9, color: AppTheme.mutedText),
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Icon(Icons.arrow_forward_ios, size: 12, color: Colors.grey),
+                const Icon(Icons.arrow_forward_ios,
+                    size: 12, color: Colors.grey),
               ],
             )
           : Column(
@@ -967,13 +1010,15 @@ class _ContactCard extends StatelessWidget {
                 const SizedBox(height: 12),
                 Text(
                   title,
-                  style: GoogleFonts.sora(fontWeight: FontWeight.w600, fontSize: 11),
+                  style: GoogleFonts.sora(
+                      fontWeight: FontWeight.w600, fontSize: 11),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.inter(fontSize: 9, color: AppTheme.mutedText),
+                  style:
+                      GoogleFonts.inter(fontSize: 9, color: AppTheme.mutedText),
                 ),
               ],
             ),
@@ -1005,12 +1050,14 @@ class _RepActionItem extends StatelessWidget {
               children: [
                 Text(
                   text,
-                  style: GoogleFonts.sora(fontWeight: FontWeight.w600, fontSize: 11),
+                  style: GoogleFonts.sora(
+                      fontWeight: FontWeight.w600, fontSize: 11),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   description,
-                  style: GoogleFonts.inter(fontSize: 9, color: AppTheme.mutedText),
+                  style:
+                      GoogleFonts.inter(fontSize: 9, color: AppTheme.mutedText),
                 ),
               ],
             ),

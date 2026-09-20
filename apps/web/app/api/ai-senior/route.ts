@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
   const conversation = requested ? await ownedConversation(requested, user.id) : null
   const [{ count: articleCount }, { count: patternCount }, { count: alumniCount }] = await Promise.all([
     db.from('knowledge_brain_articles').select('id', { count: 'exact', head: true }).eq('approval_status', 'approved'),
-    db.from('interview_patterns').select('id', { count: 'exact', head: true }).eq('status', 'approved'),
+    db.from('interview_patterns').select('id', { count: 'exact', head: true }).eq('approval_status', 'approved'),
     db.from('users').select('id', { count: 'exact', head: true }).eq('role_label', 'Alumni'),
   ])
 

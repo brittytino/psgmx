@@ -99,7 +99,7 @@ export default function PlacementRepLayout({ children }: { children: React.React
             >
               <div className="h-[72px] flex items-center justify-between px-6 shrink-0 border-b border-border-light">
                 <h2 className="text-[15px] font-black text-text-main">Placement Rep</h2>
-                <button onClick={() => setMobileMenuOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-page-bg text-text-muted">
+                <button type="button" aria-label="Close menu" onClick={() => setMobileMenuOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-page-bg text-text-muted">
                   <X className="w-4 h-4" />
                 </button>
               </div>
@@ -120,12 +120,12 @@ export default function PlacementRepLayout({ children }: { children: React.React
 
       <main className="flex-1 flex flex-col min-w-0 h-full overflow-y-auto">
         <header className="h-[72px] flex items-center px-6 lg:hidden shrink-0 border-b border-border-light bg-white">
-          <button onClick={() => setMobileMenuOpen(true)} className="w-10 h-10 flex items-center justify-center rounded-full bg-page-bg text-text-muted">
+          <button type="button" aria-label="Open menu" onClick={() => setMobileMenuOpen(true)} className="w-10 h-10 flex items-center justify-center rounded-full bg-page-bg text-text-muted">
             <Menu className="w-5 h-5" />
           </button>
           <h1 className="ml-4 text-[16px] font-black text-text-main">Placement Rep</h1>
         </header>
-        <div className="flex-1 p-6 lg:p-8">
+        <div className="flex-1 p-4 sm:p-6 lg:p-8">
           {children}
         </div>
       </main>

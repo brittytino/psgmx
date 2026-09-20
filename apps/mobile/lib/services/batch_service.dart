@@ -18,11 +18,8 @@ class BatchService {
   /// Returns the two currently active batches (senior + junior).
   Future<List<Batch>> fetchActiveBatches() async {
     try {
-      final response = await _supabase
-          .from('batches')
-          .select()
-          .inFilter('status', ['active_senior', 'active_junior'])
-          .order('start_year');
+      final response = await _supabase.from('batches').select().inFilter(
+          'status', ['active_senior', 'active_junior']).order('start_year');
       return (response as List).map((r) => Batch.fromMap(r)).toList();
     } catch (e) {
       debugPrint('[BatchService] fetchActiveBatches error: $e');
@@ -42,7 +39,8 @@ class BatchService {
   Future<Batch?> batchFromRollNumber(String rollNo) async {
     final code = Batch.parseBatchCodeFromRollNo(rollNo);
     if (code == null) {
-      debugPrint('[BatchService] Could not parse batch code from roll: $rollNo');
+      debugPrint(
+          '[BatchService] Could not parse batch code from roll: $rollNo');
       return null;
     }
     try {
@@ -116,17 +114,20 @@ class BatchService {
     if (studentList.isEmpty) return;
 
     final teamCount = (studentList.length / targetSize).ceil();
-    debugPrint('[BatchService] Creating $teamCount teams of ~$targetSize students');
+    debugPrint(
+        '[BatchService] Creating $teamCount teams of ~$targetSize students');
 
     // Delete existing teams for a clean redistribution
     await _supabase.from('teams').delete().eq('batch_id', batchId);
 
     // Create new teams
-    final teamInserts = List.generate(teamCount, (i) => {
-          'batch_id': batchId,
-          'team_name': 'Team ${i + 1}',
-          'target_size': targetSize,
-        });
+    final teamInserts = List.generate(
+        teamCount,
+        (i) => {
+              'batch_id': batchId,
+              'team_name': 'Team ${i + 1}',
+              'target_size': targetSize,
+            });
 
     final createdTeams =
         await _supabase.from('teams').insert(teamInserts).select();
@@ -138,8 +139,7 @@ class BatchService {
       updates.add(
         _supabase
             .from('users')
-            .update({'team_id': team['id']})
-            .eq('id', studentList[i]['id']),
+            .update({'team_id': team['id']}).eq('id', studentList[i]['id']),
       );
     }
     await Future.wait(updates);

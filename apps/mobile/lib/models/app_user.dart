@@ -142,7 +142,7 @@ class AppUser {
   bool get isCoordinator => roles.isCoordinator;
   bool get isPlacementRep => roles.isPlacementRep;
   bool get hasAdminAccess => roles.hasAnyAdminRole();
-  bool get isAlumni => roleLabel == 'Alumni';
+  bool get isAlumni => roleLabel.toLowerCase() == 'alumni';
   bool get isActiveSenior => batchStatus == 'active_senior';
   bool get isActiveJunior =>
       batchStatus == 'active_junior' || batchStatus == 'pending_onboarding';

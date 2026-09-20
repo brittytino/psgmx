@@ -10,8 +10,8 @@ interface Stats {
   activeProjects: number;
   completedProjects: number;
   avgProgress: number;
-  avgReadiness: number;
-  avgAttendance: number;
+  avgReadiness: number | null;
+  avgAttendance: number | null;
   leetcodeTotal: number;
   dailyFiveActive: number;
 }
@@ -20,8 +20,8 @@ interface StudentRow {
   id: string;
   name: string;
   reg_no: string;
-  readiness: number;
-  attendance: number;
+  readiness: number | null;
+  attendance: number | null;
   dailyFive: number;
 }
 
@@ -56,11 +56,11 @@ export default function FacultyAnalyticsDashboard() {
         { data: dailyRows },
       ] = await Promise.all([
         supabase.from('batches').select('batch_code').eq('id', batchId).single(),
-        supabase.from('users').select('id, name, reg_no').eq('batch_id', batchId).eq('role_label', 'Student').order('reg_no'),
+        supabase.from('users').select('id, name, reg_no, leetcode_username').eq('batch_id', batchId).eq('role_label', 'Student').order('reg_no'),
         (supabase as any).from('fyp_registrations').select('id, status').eq('batch_id', batchId),
         supabase.from('current_readiness_scores').select('user_id, score'),
         supabase.from('placement_attendance_summary').select('user_id, attendance_pct').eq('batch_id', batchId),
-        (supabase as any).from('leetcode_stats').select('user_id, total_solved'),
+        supabase.from('leetcode_stats').select('username, total_solved'),
         supabase.from('daily_five_attempts').select('user_id').gte('attempt_date', new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10)),
       ]);
 
@@ -68,15 +68,18 @@ export default function FacultyAnalyticsDashboard() {
 
       const scoreMap = new Map((scoreRows ?? []).map((r) => [r.user_id, Number(r.score ?? 0)]));
       const attendanceMap = new Map((attendanceRows ?? []).map((r) => [r.user_id, Number(r.attendance_pct ?? 0)]));
-      const leetMap = new Map((leetRows ?? []).map((r: any) => [r.user_id, Number(r.total_solved ?? 0)]));
+      const leetMap = new Map((leetRows ?? []).map((r) => [r.username.toLowerCase(), Number(r.total_solved ?? 0)]));
       const dailySet = new Set((dailyRows ?? []).map((r) => r.user_id));
 
       const activeStudents = userRows ?? [];
-      const allScores = activeStudents.map((u) => scoreMap.get(u.id) ?? 0);
-      const allAttendance = activeStudents.map((u) => attendanceMap.get(u.id) ?? 0);
-      const avgReadiness = allScores.length ? Math.round(allScores.reduce((a, b) => a + b, 0) / allScores.length) : 0;
-      const avgAttendance = allAttendance.length ? Math.round(allAttendance.reduce((a, b) => a + b, 0) / allAttendance.length) : 0;
-      const leetcodeTotal = (leetRows ?? []).reduce((acc: number, r: any) => acc + Number(r.total_solved ?? 0), 0);
+      const allScores = activeStudents.map((u) => scoreMap.get(u.id)).filter((value): value is number => value !== undefined);
+      const allAttendance = activeStudents.map((u) => attendanceMap.get(u.id)).filter((value): value is number => value !== undefined);
+      const avgReadiness = allScores.length ? Math.round(allScores.reduce((a, b) => a + b, 0) / allScores.length) : null;
+      const avgAttendance = allAttendance.length ? Math.round(allAttendance.reduce((a, b) => a + b, 0) / allAttendance.length) : null;
+      const leetcodeTotal = activeStudents.reduce((total, student) => {
+        const username = student.leetcode_username?.trim().toLowerCase();
+        return total + (username ? (leetMap.get(username) ?? 0) : 0);
+      }, 0);
       const activeProjects = (fypRows ?? []).filter((f: any) => ['active', 'registered'].includes(f.status ?? '')).length;
       const completedProjects = (fypRows ?? []).filter((f: any) => f.status === 'completed').length;
       const avgProgress = (fypRows ?? []).length > 0 ? Math.round(((completedProjects / (fypRows ?? []).length) * 100)) : 0;
@@ -86,8 +89,8 @@ export default function FacultyAnalyticsDashboard() {
 
       setStudents(activeStudents.map((u) => ({
         id: u.id, name: u.name || '—', reg_no: u.reg_no || '—',
-        readiness: scoreMap.get(u.id) ?? 0,
-        attendance: attendanceMap.get(u.id) ?? 0,
+        readiness: scoreMap.get(u.id) ?? null,
+        attendance: attendanceMap.get(u.id) ?? null,
         dailyFive: dailySet.has(u.id) ? 1 : 0,
       })));
     } catch (cause) {
@@ -102,7 +105,7 @@ export default function FacultyAnalyticsDashboard() {
   function exportCsv() {
     const csv = [
       ['reg_no', 'name', 'readiness_score', 'attendance_pct', 'daily_five_this_week'],
-      ...students.map((s) => [s.reg_no, s.name, s.readiness.toFixed(0), s.attendance.toFixed(0), s.dailyFive]),
+      ...students.map((s) => [s.reg_no, s.name, s.readiness?.toFixed(0) ?? '', s.attendance?.toFixed(0) ?? '', s.dailyFive]),
     ].map((r) => r.map(escapeCsv).join(',')).join('\n');
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
     const a = document.createElement('a'); a.href = url;
@@ -131,15 +134,15 @@ export default function FacultyAnalyticsDashboard() {
   const statCards = [
     { title: 'Active Students', value: stats.activeStudents, sub: batchCode, icon: Users, color: 'text-primary-purple' },
     { title: 'FYP Projects Active', value: stats.activeProjects, sub: `${stats.completedProjects} completed`, icon: FolderOpen, color: 'text-electric-blue' },
-    { title: 'Avg Readiness Score', value: `${stats.avgReadiness}%`, sub: 'Current batch average', icon: TrendingUp, color: 'text-illus-gold' },
-    { title: 'Avg Attendance', value: `${stats.avgAttendance}%`, sub: 'Preparation sessions', icon: CheckCircle2, color: 'text-success' },
+    { title: 'Avg Readiness Score', value: stats.avgReadiness === null ? '—' : `${stats.avgReadiness}%`, sub: 'Students with evidence', icon: TrendingUp, color: 'text-illus-gold' },
+    { title: 'Avg Attendance', value: stats.avgAttendance === null ? '—' : `${stats.avgAttendance}%`, sub: 'Students with recorded sessions', icon: CheckCircle2, color: 'text-success' },
     { title: 'LeetCode Solved', value: stats.leetcodeTotal, sub: 'Across batch (total)', icon: BarChart2, color: 'text-primary-purple' },
     { title: 'Daily Five Active', value: stats.dailyFiveActive, sub: 'Students active this week', icon: ShieldCheck, color: 'text-success' },
   ];
 
   return (
     <div className="max-w-[1400px] mx-auto space-y-8 pb-8">
-      <div className="flex items-end justify-between">
+      <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-[26px] font-bold text-text-main tracking-tight mb-0.5">Analytics</h1>
           <p className="text-[14px] text-text-muted">
@@ -192,12 +195,12 @@ export default function FacultyAnalyticsDashboard() {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <div className="h-1.5 w-20 overflow-hidden rounded-full bg-page-bg">
-                        <div className="h-full rounded-full bg-primary-purple" style={{ width: `${s.readiness}%` }} />
+                        <div className="h-full rounded-full bg-primary-purple" style={{ width: `${s.readiness ?? 0}%` }} />
                       </div>
-                      <span className="text-xs font-bold">{s.readiness.toFixed(0)}%</span>
+                      <span className="text-xs font-bold">{s.readiness === null ? '—' : `${s.readiness.toFixed(0)}%`}</span>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-xs font-bold text-text-main">{s.attendance.toFixed(0)}%</td>
+                  <td className="px-4 py-3 text-xs font-bold text-text-main">{s.attendance === null ? '—' : `${s.attendance.toFixed(0)}%`}</td>
                   <td className="px-4 py-3">
                     {s.dailyFive ? (
                       <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-black text-emerald-700 border border-emerald-200">

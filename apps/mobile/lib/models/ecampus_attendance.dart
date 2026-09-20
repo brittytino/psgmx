@@ -68,8 +68,7 @@ class AttendanceSummary {
       overallPercentage:
           (json['overall_percentage'] as num?)?.toDouble() ?? 0.0,
       overallCanBunk: (json['overall_can_bunk'] as num?)?.toInt() ?? 0,
-      overallNeedAttend:
-          (json['overall_need_attend'] as num?)?.toInt() ?? 0,
+      overallNeedAttend: (json['overall_need_attend'] as num?)?.toInt() ?? 0,
     );
   }
 }
@@ -132,9 +131,8 @@ class EcampusWeeklyTimetable {
           .map((value) => value.toString())
           .toList(),
       rows: (data['rows'] as List<dynamic>? ?? const [])
-          .map((row) => (row as List<dynamic>)
-              .map((value) => value.toString())
-              .toList())
+          .map((row) =>
+              (row as List<dynamic>).map((value) => value.toString()).toList())
           .toList(),
       syncedAt: DateTime.tryParse(row['synced_at'] as String? ?? '') ??
           DateTime.now(),

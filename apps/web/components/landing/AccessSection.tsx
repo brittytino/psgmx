@@ -3,8 +3,8 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import {
-  Monitor, Smartphone, Download, ArrowRight, ChevronRight,
-  ShieldCheck, Users, Clock, Check, Globe
+  Monitor, Smartphone, Download, ArrowRight,
+  ShieldCheck, UserRoundCheck, RefreshCw, Check, Globe
 } from 'lucide-react';
 
 const platforms = [
@@ -16,12 +16,12 @@ const platforms = [
     name: 'PSGMX Web',
     tag: 'For Desktop & Laptop',
     tagColor: '#FF6B4A',
-    desc: 'The full-power desktop experience. Deep analytics, multi-panel views, and keyboard-first navigation for maximum productivity.',
+    desc: 'The complete browser experience for students, representatives, faculty and alumni, with the workspace matched to each role.',
     cta: 'Open Web App',
     ctaHref: '/app',
     ctaStyle: 'bg-[#FF6B4A] text-white shadow-lg shadow-[#FF6B4A]/25 hover:bg-[#E4572E]',
     note: 'Best experience on desktop',
-    highlights: ['Full feature access', 'Multi-panel layout', 'Keyboard shortcuts'],
+    highlights: ['Role-aware access', 'Responsive layout', 'Shared progress data'],
     visual: (
       <div className="w-full bg-[#FBF6EE] rounded-2xl border border-[#EFE9E0] p-3 shadow-inner">
         {/* Browser chrome */}
@@ -61,12 +61,12 @@ const platforms = [
     name: 'PSGMX for iPhone',
     tag: 'Install as PWA',
     tagColor: '#221F1A',
-    desc: 'Add PSGMX to your iPhone home screen from Safari for a full app-like experience. No App Store needed—always up to date.',
+    desc: 'Add PSGMX to your iPhone home screen from Safari for a focused app-like experience without an App Store install.',
     cta: 'Open in Safari',
     ctaHref: '/app',
     ctaStyle: 'bg-[#221F1A] text-white shadow-lg shadow-black/20 hover:bg-black',
     note: 'Add to Home Screen from Safari',
-    highlights: ['PWA support', 'Offline mode', 'Push notifications'],
+    highlights: ['PWA support', 'Responsive screens', 'Shared account'],
     visual: (
       <div className="flex justify-center">
         <div className="relative w-28 h-52 bg-[#221F1A] rounded-[2.2rem] border-[3px] border-[#333] shadow-2xl overflow-hidden flex flex-col">
@@ -97,12 +97,12 @@ const platforms = [
     name: 'PSGMX for Android',
     tag: 'Native APK',
     tagColor: '#5A8A2E',
-    desc: 'Download the highly optimised Android application for a native, blazing-fast experience with hardware-level performance.',
+    desc: 'Install the Android application for the mobile companion, notifications and locally cached study activity.',
     cta: 'Download APK',
     ctaHref: 'https://github.com/brittytino/psgmx/releases',
     ctaStyle: 'bg-[#5A8A2E] text-white shadow-lg shadow-[#5A8A2E]/25 hover:bg-[#4A7225]',
     note: 'Latest release from GitHub',
-    highlights: ['Native performance', 'Background sync', 'Offline support'],
+    highlights: ['Native app', 'Background sync', 'Cached study work'],
     visual: (
       <div className="flex justify-center">
         <div className="relative w-28 h-52 bg-[#221F1A] rounded-[2.2rem] border-[3px] border-[#333] shadow-2xl overflow-hidden flex flex-col">
@@ -130,9 +130,9 @@ const platforms = [
 ];
 
 const trustItems = [
-  { icon: <ShieldCheck className="w-5 h-5" />, label: 'Secure & Trusted', sub: 'Row-level auth, zero data leaks', color: '#E8B84B' },
-  { icon: <Users className="w-5 h-5" />, label: '120+ Students', sub: 'Active on the platform', color: '#FF6B4A' },
-  { icon: <Clock className="w-5 h-5" />, label: '99% Uptime', sub: 'Always there when it counts', color: '#8FB996' },
+  { icon: <ShieldCheck className="w-5 h-5" />, label: 'Private Progress', sub: 'Named scores stay out of peer rankings', color: '#E8B84B' },
+  { icon: <UserRoundCheck className="w-5 h-5" />, label: 'Roster Access', sub: 'Department-approved identities only', color: '#FF6B4A' },
+  { icon: <RefreshCw className="w-5 h-5" />, label: 'Shared Data', sub: 'Web and mobile use the same profile', color: '#8FB996' },
 ];
 
 export default function AccessSection() {
@@ -158,7 +158,7 @@ export default function AccessSection() {
             <span className="text-[#FF6B4A]">Absolute Control.</span>
           </h2>
           <p className="text-[#716D64] text-[1.05rem] md:text-[1.1rem] font-medium leading-relaxed max-w-[520px] mx-auto">
-            Whether you're on desktop, iPhone, or Android—PSGMX is always at your fingertips, perfectly synced.
+            Use the same approved account on desktop, iPhone, or Android. Connected features read from the same department data source.
           </p>
         </div>
 
@@ -167,6 +167,8 @@ export default function AccessSection() {
           {platforms.map((p, i) => (
             <button
               key={p.id}
+              type="button"
+              aria-pressed={activePlatform === i}
               onClick={() => setActivePlatform(i)}
               className={`flex items-center gap-2.5 px-5 py-3 rounded-2xl border font-bold text-[14px] transition-all ${
                 activePlatform === i
@@ -223,6 +225,7 @@ export default function AccessSection() {
                 <Link
                   href={plat.ctaHref}
                   target={plat.id === 'android' ? '_blank' : undefined}
+                  rel={plat.id === 'android' ? 'noopener noreferrer' : undefined}
                   className={`inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl font-bold text-[15px] transition-all hover:-translate-y-0.5 group ${plat.ctaStyle}`}
                 >
                   {plat.cta}

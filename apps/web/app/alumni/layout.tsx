@@ -184,14 +184,14 @@ export default function AlumniLayout({ children }: { children: React.ReactNode }
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
         {/* Top Header */}
-        <header className="h-[88px] bg-page-bg flex items-center justify-between px-8 shrink-0 relative z-30">
+        <header className="h-[72px] sm:h-[88px] bg-page-bg flex items-center justify-between px-4 sm:px-6 lg:px-8 shrink-0 relative z-30">
           <div className="flex items-center gap-4">
             <button onClick={() => setMobileMenuOpen(true)} aria-label="Open menu" className="w-10 h-10 flex lg:hidden items-center justify-center rounded-full bg-white border border-border-light shadow-sm text-text-muted">
               <Menu className="w-5 h-5" />
             </button>
             <AlumniHeaderSearch />
           </div>
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2 sm:gap-6">
             {/* Notification Bell */}
             <div className="relative">
               <button
@@ -210,10 +210,10 @@ export default function AlumniLayout({ children }: { children: React.ReactNode }
 
             {/* Profile Dropdown */}
             <div className="relative">
-              <div onClick={() => setProfileOpen(!profileOpen)} className={`flex items-center gap-3 cursor-pointer bg-white border rounded-full pl-2 pr-4 py-1.5 shadow-sm transition-colors ${profileOpen ? 'border-primary-purple' : 'border-border-light hover:border-primary-purple/40'}`}>
+              <button type="button" aria-label="Open profile menu" aria-haspopup="menu" aria-expanded={profileOpen} onClick={() => setProfileOpen(!profileOpen)} className={`flex items-center gap-3 cursor-pointer bg-white border rounded-full pl-2 pr-3 sm:pr-4 py-1.5 shadow-sm transition-colors ${profileOpen ? 'border-primary-purple' : 'border-border-light hover:border-primary-purple/40'}`}>
                 <InitialsAvatar name={me?.name || '?'} size={32} />
                 <ChevronDown className={`w-4 h-4 transition-transform ${profileOpen ? 'rotate-180 text-primary-purple' : 'text-text-muted'}`} />
-              </div>
+              </button>
               <AnimatePresence>
                 {profileOpen && (
                   <>
@@ -245,7 +245,7 @@ export default function AlumniLayout({ children }: { children: React.ReactNode }
         />
 
         {/* Page Content */}
-        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar relative">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scrollbar relative">
           {children}
         </div>
       </main>

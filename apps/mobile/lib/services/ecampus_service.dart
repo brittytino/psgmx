@@ -58,9 +58,7 @@ class EcampusService {
         .select('reg_no, week_start, data, synced_at')
         .eq('reg_no', rollno)
         .maybeSingle();
-    return result == null
-        ? null
-        : EcampusWeeklyTimetable.fromSupabase(result);
+    return result == null ? null : EcampusWeeklyTimetable.fromSupabase(result);
   }
 
   Stream<EcampusAttendance?> attendanceStream(String rollno) {
@@ -71,7 +69,6 @@ class EcampusService {
         .map((rows) =>
             rows.isEmpty ? null : EcampusAttendance.fromSupabase(rows.first));
   }
-
 
   Stream<EcampusWeeklyTimetable?> timetableStream(String rollno) {
     return _supabase

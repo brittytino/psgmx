@@ -90,7 +90,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 const SizedBox(width: 8),
                 Consumer<NotificationService>(
                   builder: (context, service, _) {
-                    final unread = service.notifications.where((n) => n.isRead != true).length;
+                    final unread = service.notifications
+                        .where((n) => n.isRead != true)
+                        .length;
                     if (unread == 0) return const SizedBox.shrink();
                     return Container(
                       width: 8,
@@ -110,11 +112,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   'Stay updated, stay ahead.',
                   style: GoogleFonts.inter(
                     fontSize: 9,
-                    color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
+                    color: theme.textTheme.bodyMedium?.color
+                        ?.withValues(alpha: 0.6),
                   ),
                 ),
                 const SizedBox(width: 4),
-                const Icon(LucideIcons.sparkles, size: 12, color: AppTheme.illusGold),
+                const Icon(LucideIcons.sparkles,
+                    size: 12, color: AppTheme.illusGold),
               ],
             ),
           ],
@@ -122,7 +126,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         actions: [
           Consumer<NotificationService>(
             builder: (context, service, _) {
-              final hasUnread = service.notifications.any((n) => n.isRead != true);
+              final hasUnread =
+                  service.notifications.any((n) => n.isRead != true);
               return TextButton(
                 onPressed: hasUnread ? () => service.markAllAsRead() : null,
                 child: Text(
@@ -130,7 +135,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   style: GoogleFonts.inter(
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
-                    color: hasUnread ? AppTheme.accentCoral : theme.disabledColor,
+                    color:
+                        hasUnread ? AppTheme.accentCoral : theme.disabledColor,
                   ),
                 ),
               );
@@ -141,10 +147,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             decoration: BoxDecoration(
               color: Colors.white,
               shape: BoxShape.circle,
-              border: Border.all(color: theme.dividerColor.withValues(alpha: 0.3)),
+              border:
+                  Border.all(color: theme.dividerColor.withValues(alpha: 0.3)),
             ),
             child: IconButton(
-              icon: Icon(LucideIcons.settings, size: 12, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7)),
+              icon: Icon(LucideIcons.settings,
+                  size: 12,
+                  color: theme.textTheme.bodyMedium?.color
+                      ?.withValues(alpha: 0.7)),
               onPressed: () => context.push('/settings'),
             ),
           ),
@@ -153,7 +163,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       body: Consumer<NotificationService>(
         builder: (context, service, _) {
           if (service.isLoading && service.notifications.isEmpty) {
-            return const Center(child: CircularProgressIndicator(color: AppTheme.accentCoral));
+            return const Center(
+                child: CircularProgressIndicator(color: AppTheme.accentCoral));
           }
 
           if (_error != null && service.notifications.isEmpty) {
@@ -176,19 +187,23 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 children: [
                   if (buckets['unread']!.isNotEmpty) ...[
                     _buildSectionHeader('UNREAD', theme),
-                    ...buckets['unread']!.map((n) => _buildNotificationTile(n, theme, service)),
+                    ...buckets['unread']!
+                        .map((n) => _buildNotificationTile(n, theme, service)),
                   ],
                   if (buckets['today']!.isNotEmpty) ...[
                     _buildSectionHeader('TODAY', theme),
-                    ...buckets['today']!.map((n) => _buildNotificationTile(n, theme, service)),
+                    ...buckets['today']!
+                        .map((n) => _buildNotificationTile(n, theme, service)),
                   ],
                   if (buckets['week']!.isNotEmpty) ...[
                     _buildSectionHeader('THIS WEEK', theme),
-                    ...buckets['week']!.map((n) => _buildNotificationTile(n, theme, service)),
+                    ...buckets['week']!
+                        .map((n) => _buildNotificationTile(n, theme, service)),
                   ],
                   if (buckets['earlier']!.isNotEmpty) ...[
                     _buildSectionHeader('EARLIER', theme),
-                    ...buckets['earlier']!.map((n) => _buildNotificationTile(n, theme, service)),
+                    ...buckets['earlier']!
+                        .map((n) => _buildNotificationTile(n, theme, service)),
                   ],
                   const SizedBox(height: 24),
                   GestureDetector(
@@ -196,14 +211,18 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(LucideIcons.bell, size: 12, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5)),
+                        Icon(LucideIcons.bell,
+                            size: 12,
+                            color: theme.textTheme.bodyMedium?.color
+                                ?.withValues(alpha: 0.5)),
                         const SizedBox(width: 8),
                         Text(
                           'Manage notification preferences >',
                           style: GoogleFonts.inter(
                             fontSize: 9,
                             fontWeight: FontWeight.w600,
-                            color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
+                            color: theme.textTheme.bodyMedium?.color
+                                ?.withValues(alpha: 0.6),
                           ),
                         ),
                       ],
@@ -248,7 +267,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       }
     }
 
-    return {'unread': unread, 'today': todayList, 'week': week, 'earlier': earlier};
+    return {
+      'unread': unread,
+      'today': todayList,
+      'week': week,
+      'earlier': earlier
+    };
   }
 
   Widget _buildEmptyState(ThemeData theme) {
@@ -260,7 +284,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           child: const EmptyState(
             icon: LucideIcons.bellOff,
             title: "You're all caught up",
-            message: 'New announcements, reminders and streak updates will show up here.',
+            message:
+                'New announcements, reminders and streak updates will show up here.',
           ),
         ),
       ),
@@ -286,7 +311,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   Widget _buildSectionHeader(String title, ThemeData theme) {
     return Padding(
-      padding: const EdgeInsets.only(left: 24.0, right: 24.0, top: 24.0, bottom: 12.0),
+      padding: const EdgeInsets.only(
+          left: 24.0, right: 24.0, top: 24.0, bottom: 12.0),
       child: Text(
         title,
         style: GoogleFonts.inter(
@@ -299,7 +325,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  Widget _buildNotificationTile(AppNotification n, ThemeData theme, NotificationService service) {
+  Widget _buildNotificationTile(
+      AppNotification n, ThemeData theme, NotificationService service) {
     final isUnread = n.isRead != true;
     return Dismissible(
       key: Key(n.id),
@@ -323,7 +350,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             const SizedBox(height: 4),
             Text(
               'Dismiss',
-              style: GoogleFonts.inter(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+              style: GoogleFonts.inter(
+                  color: Colors.white,
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold),
             ),
           ],
         ),
@@ -342,13 +372,20 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: theme.dividerColor.withValues(alpha: 0.3)),
+                  border: Border.all(
+                      color: theme.dividerColor.withValues(alpha: 0.3)),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4, offset: const Offset(0, 2)),
+                    BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.02),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2)),
                   ],
                 ),
                 child: Center(
-                  child: Icon(_iconFor(n.type), size: 16, color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7)),
+                  child: Icon(_iconFor(n.type),
+                      size: 16,
+                      color: theme.textTheme.bodyMedium?.color
+                          ?.withValues(alpha: 0.7)),
                 ),
               ),
               const SizedBox(width: 16),
@@ -373,7 +410,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.inter(
                         fontSize: 9,
-                        color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7),
+                        color: theme.textTheme.bodyMedium?.color
+                            ?.withValues(alpha: 0.7),
                         height: 1.4,
                       ),
                     ),
@@ -388,7 +426,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     _formatTime(n.createdAt),
                     style: GoogleFonts.inter(
                       fontSize: 8,
-                      color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
+                      color: theme.textTheme.bodyMedium?.color
+                          ?.withValues(alpha: 0.5),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -396,7 +435,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     width: 6,
                     height: 6,
                     decoration: BoxDecoration(
-                      color: isUnread ? AppTheme.accentCoral : theme.dividerColor.withValues(alpha: 0.5),
+                      color: isUnread
+                          ? AppTheme.accentCoral
+                          : theme.dividerColor.withValues(alpha: 0.5),
                       shape: BoxShape.circle,
                     ),
                   ),

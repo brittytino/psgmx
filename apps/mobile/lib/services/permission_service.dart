@@ -24,11 +24,12 @@ class PermissionService {
 
       final Set<UserPermission> result = {};
       for (final row in response as List) {
-        final perm = UserPermissionExtension.fromDbKey(
-            row['permission_key'] as String);
+        final perm =
+            UserPermissionExtension.fromDbKey(row['permission_key'] as String);
         if (perm != null) result.add(perm);
       }
-      debugPrint('[PermissionService] Loaded ${result.length} permissions for $userId');
+      debugPrint(
+          '[PermissionService] Loaded ${result.length} permissions for $userId');
       return result;
     } catch (e) {
       debugPrint('[PermissionService] fetchUserPermissions error: $e');

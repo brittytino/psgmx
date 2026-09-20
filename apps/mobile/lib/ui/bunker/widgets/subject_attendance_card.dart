@@ -148,8 +148,7 @@ class SubjectAttendanceCard extends StatelessWidget {
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(6),
                           child: LinearProgressIndicator(
-                            value:
-                                (subject.percentage / 100).clamp(0.0, 1.0),
+                            value: (subject.percentage / 100).clamp(0.0, 1.0),
                             minHeight: 7,
                             backgroundColor: theme.colorScheme.onSurface
                                 .withValues(alpha: 0.08),

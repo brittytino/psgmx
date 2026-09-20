@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getUserFromRequest } from '@/lib/auth'
+import { normalizeSearchTerm } from '@/lib/search-input'
 
 export async function GET(req: NextRequest) {
   try {
@@ -15,7 +16,7 @@ export async function GET(req: NextRequest) {
     }
 
     const { searchParams } = new URL(req.url)
-    const query = searchParams.get('q')
+    const query = normalizeSearchTerm(searchParams.get('q'))
     const tag = searchParams.get('tag')
     const company = searchParams.get('company')
     const limit = Math.min(parseInt(searchParams.get('limit') ?? '50'), 100)

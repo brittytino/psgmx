@@ -16,7 +16,8 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _progressController;
 
   @override
@@ -51,7 +52,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
               fit: BoxFit.cover,
             ),
           ),
-          
+
           // Center Content (Mascot & Logo)
           Center(
             child: Column(
@@ -59,7 +60,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
               children: [
                 Image.asset(
                   'assets/images/splash/splash1.png',
-                  width: 300, 
+                  width: 300,
                 ),
               ],
             ),
@@ -80,7 +81,8 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                       borderRadius: BorderRadius.circular(10),
                       child: LinearProgressIndicator(
                         value: _progressController.value,
-                        backgroundColor: AppTheme.accentCoral.withValues(alpha: 0.2),
+                        backgroundColor:
+                            AppTheme.accentCoral.withValues(alpha: 0.2),
                         color: AppTheme.accentCoral,
                         minHeight: 4,
                       ),

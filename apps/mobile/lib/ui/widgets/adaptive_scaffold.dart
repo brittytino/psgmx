@@ -51,23 +51,30 @@ class AdaptiveNavigationScaffold extends StatelessWidget {
                   selectedIndex: selectedIndex,
                   onDestinationSelected: onDestinationSelected,
                   labelType: NavigationRailLabelType.all,
-                  leading: userProfile != null ? Padding(
-                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-                    child: CircleAvatar(child: Text(userProfile!.initials)),
-                  ) : null,
-                  trailing: action != null ? Expanded(
-                    child: Align(
-                      alignment: Alignment.bottomCenter,
-                      child: Padding(
-                        padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                        child: action,
-                      ),
-                    ),
-                  ) : null,
+                  leading: userProfile != null
+                      ? Padding(
+                          padding: const EdgeInsets.symmetric(
+                              vertical: AppSpacing.md),
+                          child:
+                              CircleAvatar(child: Text(userProfile!.initials)),
+                        )
+                      : null,
+                  trailing: action != null
+                      ? Expanded(
+                          child: Align(
+                            alignment: Alignment.bottomCenter,
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.only(bottom: AppSpacing.md),
+                              child: action,
+                            ),
+                          ),
+                        )
+                      : null,
                   destinations: destinations.map((d) {
                     return NavigationRailDestination(
-                      icon: d.icon, 
-                      selectedIcon: d.selectedIcon, 
+                      icon: d.icon,
+                      selectedIcon: d.selectedIcon,
                       label: Text(d.label),
                     );
                   }).toList(),
@@ -81,7 +88,8 @@ class AdaptiveNavigationScaffold extends StatelessWidget {
                       Expanded(
                         child: Center(
                           child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: AppSpacing.maxContentWidth),
+                            constraints: const BoxConstraints(
+                                maxWidth: AppSpacing.maxContentWidth),
                             child: body,
                           ),
                         ),

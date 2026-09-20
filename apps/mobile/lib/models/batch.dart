@@ -3,7 +3,7 @@
 /// At any point exactly two batches are active — one [activeSenior] going
 /// through placements and one [activeJunior] one year behind them.
 /// Graduated batches keep their data visible but lose login access.
-enum BatchStatus { activeSenior, activeJunior, graduated }
+enum BatchStatus { activeSenior, activeJunior, pendingOnboarding, graduated }
 
 extension BatchStatusExtension on BatchStatus {
   String get dbValue {
@@ -12,13 +12,17 @@ extension BatchStatusExtension on BatchStatus {
         return 'active_senior';
       case BatchStatus.activeJunior:
         return 'active_junior';
+      case BatchStatus.pendingOnboarding:
+        return 'pending_onboarding';
       case BatchStatus.graduated:
         return 'graduated';
     }
   }
 
   bool get isActive =>
-      this == BatchStatus.activeSenior || this == BatchStatus.activeJunior;
+      this == BatchStatus.activeSenior ||
+      this == BatchStatus.activeJunior ||
+      this == BatchStatus.pendingOnboarding;
 
   static BatchStatus fromDb(String value) {
     switch (value) {
@@ -26,6 +30,8 @@ extension BatchStatusExtension on BatchStatus {
         return BatchStatus.activeSenior;
       case 'active_junior':
         return BatchStatus.activeJunior;
+      case 'pending_onboarding':
+        return BatchStatus.pendingOnboarding;
       default:
         return BatchStatus.graduated;
     }
@@ -74,7 +80,9 @@ class Batch {
       };
 
   bool get isSenior => status == BatchStatus.activeSenior;
-  bool get isJunior => status == BatchStatus.activeJunior;
+  bool get isJunior =>
+      status == BatchStatus.activeJunior ||
+      status == BatchStatus.pendingOnboarding;
   bool get isGraduated => status == BatchStatus.graduated;
 
   /// Parses the batch code from a roll number string.

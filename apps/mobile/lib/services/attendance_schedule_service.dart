@@ -86,7 +86,8 @@ class AttendanceScheduleService {
             'session_datetime': '${dateString}T00:00:00Z',
             'scheduled_by': scheduledBy,
             'topic': notes ?? 'Scheduled Session',
-            'batch_id': '00000000-0000-0000-0000-000000000000', // Need proper batch resolution here, but UI doesn't provide it
+            'batch_id':
+                '00000000-0000-0000-0000-000000000000', // Need proper batch resolution here, but UI doesn't provide it
           })
           .select()
           .single();
@@ -111,7 +112,8 @@ class AttendanceScheduleService {
       };
 
       if (date != null) {
-        updates['session_datetime'] = '${date.toIso8601String().split('T')[0]}T00:00:00Z';
+        updates['session_datetime'] =
+            '${date.toIso8601String().split('T')[0]}T00:00:00Z';
       }
       if (notes != null) {
         updates['topic'] = notes;
@@ -152,7 +154,8 @@ class AttendanceScheduleService {
         endDate: thirtyDaysLater,
       );
     } catch (e) {
-      throw Exception('Failed to get upcoming scheduled dates: ${e.toString()}');
+      throw Exception(
+          'Failed to get upcoming scheduled dates: ${e.toString()}');
     }
   }
 

@@ -55,7 +55,9 @@ class _IOSInstallGuideState extends State<IOSInstallGuide> {
   @override
   Widget build(BuildContext context) {
     // Don't show if not iOS Safari or already dismissed or still loading
-    if (_isLoading || _isDismissed || !PlatformUtils.shouldShowIOSInstallGuide) {
+    if (_isLoading ||
+        _isDismissed ||
+        !PlatformUtils.shouldShowIOSInstallGuide) {
       return const SizedBox.shrink();
     }
 
@@ -106,16 +108,19 @@ class _IOSInstallGuideState extends State<IOSInstallGuide> {
                     children: [
                       Text(
                         'Install PSGMX App',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'Tap to see how to install on your iPhone',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                            ),
                       ),
                     ],
                   ),
@@ -145,19 +150,22 @@ class _InstallGuideBottomSheet extends StatelessWidget {
         number: 1,
         icon: Icons.share_outlined,
         title: 'Tap the Share button',
-        description: 'Look for the square with an arrow pointing up at the bottom of Safari',
+        description:
+            'Look for the square with an arrow pointing up at the bottom of Safari',
       ),
       const _InstallStep(
         number: 2,
         icon: Icons.add_box_outlined,
         title: 'Select "Add to Home Screen"',
-        description: 'Scroll down in the share menu and tap "Add to Home Screen"',
+        description:
+            'Scroll down in the share menu and tap "Add to Home Screen"',
       ),
       const _InstallStep(
         number: 3,
         icon: Icons.edit_outlined,
         title: 'Confirm the name',
-        description: 'The app will be named "PSGMX". Tap "Add" in the top right',
+        description:
+            'The app will be named "PSGMX". Tap "Add" in the top right',
       ),
       const _InstallStep(
         number: 4,
@@ -189,7 +197,7 @@ class _InstallGuideBottomSheet extends StatelessWidget {
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              
+
               // Header
               Padding(
                 padding: const EdgeInsets.all(24),
@@ -202,7 +210,10 @@ class _InstallGuideBottomSheet extends StatelessWidget {
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+                            color: Theme.of(context)
+                                .colorScheme
+                                .primary
+                                .withValues(alpha: 0.2),
                             blurRadius: 16,
                             offset: const Offset(0, 4),
                           ),
@@ -218,17 +229,19 @@ class _InstallGuideBottomSheet extends StatelessWidget {
                     const SizedBox(height: 16),
                     Text(
                       'Install PSGMX App',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style:
+                          Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'Get the full app experience with offline access and faster performance',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
                     ),
                   ],
                 ),
@@ -327,7 +340,7 @@ class _InstallStep extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 16),
-        
+
         // Step content
         Expanded(
           child: Column(
@@ -345,8 +358,8 @@ class _InstallStep extends StatelessWidget {
                     child: Text(
                       title,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                            fontWeight: FontWeight.bold,
+                          ),
                     ),
                   ),
                 ],
@@ -355,8 +368,8 @@ class _InstallStep extends StatelessWidget {
               Text(
                 description,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
               ),
             ],
           ),

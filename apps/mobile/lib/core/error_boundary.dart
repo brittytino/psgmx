@@ -11,18 +11,18 @@ class ErrorBoundary extends StatefulWidget {
 class _ErrorBoundaryState extends State<ErrorBoundary> {
   // ignore: prefer_final_fields
   bool _hasError = false; // Not final because we change it in onError
-  
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
   }
 
-  // Flutter doesn't have a direct "componentDidCatch" equivalent for widgets in the same way React does, 
+  // Flutter doesn't have a direct "componentDidCatch" equivalent for widgets in the same way React does,
   // but we can use ErrorWidget.builder globally.
-  // However, this widget can serve as a localized trap if we used a custom builder, 
+  // However, this widget can serve as a localized trap if we used a custom builder,
   // but for global hardening, we usually set FlutterError.onError.
   // Here, we'll provide a nice fallback UI if something lower crashes and we rebuild.
-  
+
   @override
   Widget build(BuildContext context) {
     if (_hasError) {
@@ -31,10 +31,11 @@ class _ErrorBoundaryState extends State<ErrorBoundary> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-               Icon(Icons.warning_amber_rounded, size: 64, color: Colors.orange),
-               SizedBox(height: 16),
-               Text("Something went wrong.", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-               Text("We've tracked the error and are working on it."),
+              Icon(Icons.warning_amber_rounded, size: 64, color: Colors.orange),
+              SizedBox(height: 16),
+              Text("Something went wrong.",
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              Text("We've tracked the error and are working on it."),
             ],
           ),
         ),

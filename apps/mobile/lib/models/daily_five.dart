@@ -11,8 +11,10 @@ library;
 class DailyFiveQuestion {
   final String id;
   final String questionText;
+
   /// Four answer choices (index 0–3 = A–D).
   final List<String> options;
+
   /// 0-based index of the correct answer. NEVER populated for questions
   /// fetched online pre-submission (get_daily_five_questions RPC strips
   /// it server-side) — only present for offline-cached questions or
@@ -20,6 +22,7 @@ class DailyFiveQuestion {
   final int? correctOption;
   final String topic;
   final String difficulty;
+
   /// Whether this question is active in the pool. Inactive questions are
   /// excluded from daily draws but retained for historical accuracy.
   final bool isActive;
@@ -75,8 +78,10 @@ class DailyFiveQuestion {
 /// After that it is discarded.
 class DailyFiveSession {
   final List<DailyFiveQuestion> questions;
+
   /// Index into [questions] of the question currently being shown.
   final int currentIndex;
+
   /// Answers given by the student so far. Null means not yet answered.
   final List<int?> selectedAnswers;
   final bool isComplete;
@@ -170,9 +175,11 @@ class DailyFiveStreak {
   final int currentStreak;
   final int longestStreak;
   final int freezesRemaining;
+
   /// The month (YYYY-MM) in which the current freeze quota was issued.
   final String freezesResetMonth;
   final DateTime? lastCompletedDate;
+
   /// Accuracy rate from the most recent session (0.0–1.0). Null if never played.
   final double? lastAccuracyRate;
   final DateTime updatedAt;
