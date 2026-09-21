@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
 
 export default function FirstLoginPage() {
   const router = useRouter();
@@ -72,17 +71,17 @@ export default function FirstLoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-950 p-4 font-sans text-slate-200">
-      <div className="w-full max-w-2xl rounded-2xl border border-slate-800 bg-slate-900/80 p-8 shadow-2xl backdrop-blur-xl">
+    <div className="flex min-h-screen items-center justify-center bg-[#FDF7F3] p-4 font-sans">
+      <div className="w-full max-w-2xl rounded-[32px] border border-[#F3E9E1] bg-white p-8 shadow-[0_30px_90px_-35px_rgba(16,24,40,.28)]">
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-white tracking-tight">Welcome to PSGMX</h1>
-          <p className="mt-2 text-sm text-slate-400">
+          <h1 className="text-3xl font-black tracking-tight text-[#101828]">Welcome to PSGMX</h1>
+          <p className="mt-2 text-sm text-[#667085]">
             Confirm your preparation profile. Your first real calibration happens in Daily Five using server-selected questions.
           </p>
         </div>
 
         {error && (
-          <div className="mb-6 rounded-lg bg-rose-500/10 p-4 text-sm text-rose-400 border border-rose-500/20">
+          <div className="mb-6 rounded-xl border border-red-100 bg-red-50 p-4 text-sm font-semibold text-red-700" role="alert">
             {error}
           </div>
         )}
@@ -90,24 +89,24 @@ export default function FirstLoginPage() {
         <form onSubmit={handleSubmit} className="space-y-8">
 
           <div className="space-y-5">
-            <h3 className="text-lg font-bold text-white border-b border-slate-800 pb-2">1. Professional Links</h3>
+            <h3 className="border-b border-[#F3E9E1] pb-2 text-lg font-black text-[#101828]">1. Professional Links</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-400 uppercase tracking-wider">GitHub URL</label>
+                <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-[#98A2B3]">GitHub URL</label>
                 <input
                   type="url"
                   placeholder="https://github.com/username"
-                  className="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-4 py-3 text-white placeholder-slate-500 focus:border-primary-purple focus:outline-none focus:ring-1 focus:ring-[#6C3DFF]"
+                  className="w-full rounded-xl border border-[#D0D5DD] bg-white px-4 py-3 text-[#101828] placeholder-[#98A2B3] outline-none transition focus:border-[#FF5A1F] focus:ring-4 focus:ring-[#FF5A1F]/10"
                   value={formData.github}
                   onChange={(e) => setFormData({ ...formData, github: e.target.value })}
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-400 uppercase tracking-wider">LinkedIn URL</label>
+                <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-[#98A2B3]">LinkedIn URL</label>
                 <input
                   type="url"
                   placeholder="https://linkedin.com/in/username"
-                  className="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-4 py-3 text-white placeholder-slate-500 focus:border-primary-purple focus:outline-none focus:ring-1 focus:ring-[#6C3DFF]"
+                  className="w-full rounded-xl border border-[#D0D5DD] bg-white px-4 py-3 text-[#101828] placeholder-[#98A2B3] outline-none transition focus:border-[#FF5A1F] focus:ring-4 focus:ring-[#FF5A1F]/10"
                   value={formData.linkedin}
                   onChange={(e) => setFormData({ ...formData, linkedin: e.target.value })}
                 />
@@ -116,23 +115,23 @@ export default function FirstLoginPage() {
           </div>
 
           <div className="space-y-5">
-            <h3 className="text-lg font-bold text-white border-b border-slate-800 pb-2">2. Technical Profile</h3>
+            <h3 className="border-b border-[#F3E9E1] pb-2 text-lg font-black text-[#101828]">2. Technical Profile</h3>
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-400 uppercase tracking-wider">Skills (Comma separated)</label>
+              <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-[#98A2B3]">Skills (Comma separated)</label>
               <input
                 type="text"
                 placeholder="React, Node.js, Python, MongoDB"
-                className="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-4 py-3 text-white placeholder-slate-500 focus:border-primary-purple focus:outline-none focus:ring-1 focus:ring-[#6C3DFF]"
+                className="w-full rounded-xl border border-[#D0D5DD] bg-white px-4 py-3 text-[#101828] placeholder-[#98A2B3] outline-none transition focus:border-[#FF5A1F] focus:ring-4 focus:ring-[#FF5A1F]/10"
                 value={formData.skills}
                 onChange={(e) => setFormData({ ...formData, skills: e.target.value })}
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-400 uppercase tracking-wider">Primary Interest</label>
+              <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-[#98A2B3]">Primary Interest</label>
               <input
                 type="text"
                 placeholder="e.g., Full Stack Development"
-                className="w-full rounded-lg border border-slate-700 bg-slate-800/50 px-4 py-3 text-white placeholder-slate-500 focus:border-primary-purple focus:outline-none focus:ring-1 focus:ring-[#6C3DFF]"
+                className="w-full rounded-xl border border-[#D0D5DD] bg-white px-4 py-3 text-[#101828] placeholder-[#98A2B3] outline-none transition focus:border-[#FF5A1F] focus:ring-4 focus:ring-[#FF5A1F]/10"
                 value={formData.interests}
                 onChange={(e) => setFormData({ ...formData, interests: e.target.value })}
               />
@@ -140,9 +139,9 @@ export default function FirstLoginPage() {
           </div>
 
           <div className="space-y-5">
-            <h3 className="text-lg font-bold text-white border-b border-slate-800 pb-2">3. Academic Profile</h3>
+            <h3 className="border-b border-[#F3E9E1] pb-2 text-lg font-black text-[#101828]">3. Academic Profile</h3>
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-300">Do you currently have arrears?</label>
+              <label className="mb-2 block text-sm font-bold text-[#344054]">Do you currently have arrears?</label>
               <div className="flex gap-4">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -151,9 +150,9 @@ export default function FirstLoginPage() {
                     value="no"
                     checked={formData.hasArrears === 'no'}
                     onChange={(e) => setFormData({ ...formData, hasArrears: e.target.value })}
-                    className="accent-[#6C3DFF]"
+                    className="accent-[#FF5A1F]"
                   />
-                  <span className="text-white">No</span>
+                  <span className="text-[#101828]">No</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
@@ -162,26 +161,26 @@ export default function FirstLoginPage() {
                     value="yes"
                     checked={formData.hasArrears === 'yes'}
                     onChange={(e) => setFormData({ ...formData, hasArrears: e.target.value, arrearSubjects: [] })}
-                    className="accent-[#6C3DFF]"
+                    className="accent-[#FF5A1F]"
                   />
-                  <span className="text-white">Yes</span>
+                  <span className="text-[#101828]">Yes</span>
                 </label>
               </div>
             </div>
 
             {formData.hasArrears === 'yes' && (
-              <div className="mt-4 p-4 rounded-xl border border-rose-500/20 bg-rose-500/5">
-                <p className="text-sm text-slate-300 mb-3">Select your arrear subjects to unlock the Recovery Hub:</p>
+              <div className="mt-4 p-4 rounded-xl border border-[#FFD9C2] bg-[#FFF8F3]">
+                <p className="text-sm text-[#667085] mb-3">Select your arrear subjects to unlock the Recovery Hub:</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {mcaSubjects.map((subject) => (
-                    <label key={subject} className="flex items-center gap-3 cursor-pointer p-2 rounded-lg hover:bg-slate-800/50 transition-colors">
+                    <label key={subject} className="flex items-center gap-3 cursor-pointer p-2 rounded-lg hover:bg-white transition-colors">
                       <input
                         type="checkbox"
                         checked={formData.arrearSubjects.includes(subject)}
                         onChange={() => handleSubjectToggle(subject)}
-                        className="w-4 h-4 rounded border-slate-700 text-primary-purple focus:ring-[#6C3DFF] bg-slate-800/50 accent-[#6C3DFF]"
+                        className="w-4 h-4 rounded border-[#D0D5DD] accent-[#FF5A1F]"
                       />
-                      <span className="text-sm text-slate-200">{subject}</span>
+                      <span className="text-sm text-[#344054]">{subject}</span>
                     </label>
                   ))}
                 </div>
@@ -192,7 +191,7 @@ export default function FirstLoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-primary-purple px-4 py-4 font-bold text-white transition-colors hover:bg-[#5b30e5] focus:outline-none focus:ring-2 focus:ring-[#6C3DFF] focus:ring-offset-2 focus:ring-offset-slate-900 disabled:opacity-50"
+            className="w-full rounded-xl bg-[#FF5A1F] px-4 py-4 font-black text-white shadow-[0_8px_24px_rgba(255,90,31,.25)] transition hover:-translate-y-0.5 hover:bg-[#E04812] focus:outline-none focus:ring-4 focus:ring-[#FF5A1F]/20 disabled:translate-y-0 disabled:opacity-50"
           >
             {loading ? 'Saving Profile...' : 'Complete Setup & Access Dashboard'}
           </button>

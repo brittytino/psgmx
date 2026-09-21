@@ -9,6 +9,7 @@ import '../../core/theme/app_dimens.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/user_provider.dart';
 import '../widgets/premium_card.dart';
+import '../widgets/empty_state.dart';
 
 class GraduationScreen extends StatefulWidget {
   const GraduationScreen({super.key});
@@ -19,6 +20,7 @@ class GraduationScreen extends StatefulWidget {
 
 class _GraduationScreenState extends State<GraduationScreen> {
   bool _isLoading = true;
+  bool _hasError = false;
   double _finalScore = 0.0;
   int _longestStreak = 0;
   int _leetcodeScore = 0;
@@ -85,8 +87,21 @@ class _GraduationScreenState extends State<GraduationScreen> {
       }
     } catch (e) {
       debugPrint('Error fetching graduation stats: $e');
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _hasError = true;
+        });
+      }
     }
+  }
+
+  void _retryFetchStats() {
+    setState(() {
+      _isLoading = true;
+      _hasError = false;
+    });
+    _fetchStats();
   }
 
   Future<void> _enterArchive() async {
@@ -110,6 +125,19 @@ class _GraduationScreenState extends State<GraduationScreen> {
       return const Scaffold(
         body: Center(
             child: CircularProgressIndicator(color: AppTheme.accentCoral)),
+      );
+    }
+
+    if (_hasError) {
+      return Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        body: EmptyState(
+          icon: LucideIcons.circleAlert,
+          title: 'Couldn\'t load your stats',
+          message:
+              'Something went wrong while fetching your graduation summary.',
+          onRetry: _retryFetchStats,
+        ),
       );
     }
 

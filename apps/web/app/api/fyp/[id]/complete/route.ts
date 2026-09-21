@@ -21,7 +21,7 @@ export async function POST(
 
     const { data: project, error: fetchErr } = await supabaseAdmin
       .from('fyp_projects')
-      .select('id, student_id')
+      .select('id, student_id, batch_id')
       .eq('id', projectId)
       .single()
 
@@ -29,7 +29,15 @@ export async function POST(
       return NextResponse.json({ error: 'Project not found' }, { status: 404 })
     }
 
-    if (project.student_id !== session.id && !['faculty', 'hod'].includes(session.roleLabel.toLowerCase())) {
+    const roleLabel = session.roleLabel.toLowerCase()
+    const isOwner = project.student_id === session.id
+    const isFacultyOrHod = ['faculty', 'hod'].includes(roleLabel)
+    if (!isOwner && !isFacultyOrHod) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+    // Faculty have department-scoped access limited to their own batch; hod
+    // has department-wide access per the product spec, so it skips this check.
+    if (!isOwner && roleLabel === 'faculty' && project.batch_id !== session.batch_id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 

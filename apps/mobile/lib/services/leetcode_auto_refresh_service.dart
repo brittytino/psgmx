@@ -11,7 +11,7 @@ class LeetCodeAutoRefreshService {
   final SupabaseService _supabaseService;
   Timer? _dailyTimer;
 
-  static const String _lastRefreshKey = 'leetcode_last_refresh_timestamp';
+  static const String _lastRefreshKeyPrefix = 'leetcode_last_refresh_timestamp';
 
   LeetCodeAutoRefreshService(this._leetCodeProvider, this._supabaseService);
 
@@ -41,8 +41,19 @@ class LeetCodeAutoRefreshService {
   /// Check if refresh is needed and execute
   Future<void> _checkAndRefreshIfNeeded() async {
     try {
-      // Get last refresh timestamp from local storage
-      final lastRefresh = await _getLastRefreshTimestamp();
+      // Check if user is logged in first — the cooldown key is namespaced
+      // per user, so we need the uid before we can even look it up.
+      final currentUser = _supabaseService.client.auth.currentUser;
+      if (currentUser == null) {
+        debugPrint('[AutoRefresh] No user logged in, skipping auto-refresh');
+        return;
+      }
+
+      // Get last refresh timestamp from local storage (per-user key — a
+      // second student on the same device must not inherit the first
+      // student's cooldown, mirroring the `calibrated_${uid}` pattern used
+      // elsewhere in the codebase).
+      final lastRefresh = await _getLastRefreshTimestamp(currentUser.id);
 
       final now = DateTime.now();
       if (lastRefresh == null || now.difference(lastRefresh).inHours >= 24) {
@@ -84,8 +95,8 @@ class LeetCodeAutoRefreshService {
 
       await _leetCodeProvider.fetchStats(username);
 
-      // Save the refresh timestamp
-      await _saveLastRefreshTimestamp(DateTime.now());
+      // Save the refresh timestamp (namespaced to this user)
+      await _saveLastRefreshTimestamp(currentUser.id, DateTime.now());
 
       debugPrint('[AutoRefresh] ✅ Auto-refresh completed successfully');
     } catch (e) {
@@ -93,11 +104,13 @@ class LeetCodeAutoRefreshService {
     }
   }
 
+  String _lastRefreshKeyFor(String userId) => '${_lastRefreshKeyPrefix}_$userId';
+
   /// Get last refresh timestamp from SharedPreferences
-  Future<DateTime?> _getLastRefreshTimestamp() async {
+  Future<DateTime?> _getLastRefreshTimestamp(String userId) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final timestamp = prefs.getString(_lastRefreshKey);
+      final timestamp = prefs.getString(_lastRefreshKeyFor(userId));
 
       if (timestamp != null) {
         return DateTime.parse(timestamp);
@@ -109,10 +122,12 @@ class LeetCodeAutoRefreshService {
   }
 
   /// Save last refresh timestamp to SharedPreferences
-  Future<void> _saveLastRefreshTimestamp(DateTime timestamp) async {
+  Future<void> _saveLastRefreshTimestamp(
+      String userId, DateTime timestamp) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_lastRefreshKey, timestamp.toIso8601String());
+      await prefs.setString(
+          _lastRefreshKeyFor(userId), timestamp.toIso8601String());
       debugPrint(
           '[AutoRefresh] Saved refresh timestamp: ${timestamp.toIso8601String()}');
     } catch (e) {

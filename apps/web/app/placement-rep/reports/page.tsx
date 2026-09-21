@@ -5,6 +5,9 @@ import { Download, ShieldCheck, TrendingUp, Users } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { getCurrentProfile } from '@/lib/current-profile'
 
+// `readiness` is intentionally internal-only: it feeds the batch-level
+// "Avg readiness" aggregate metric below and must never be rendered per-row
+// or exported per-student — PR can only ever see aggregate readiness.
 type ReportRow = { id: string; reg_no: string; name: string; email: string; attendance: number; readiness: number; dailyFive: number }
 type Audit = { id: string; action: string; entity_type: string; created_at: string; metadata: unknown }
 
@@ -32,7 +35,11 @@ export default function ReportsPage() {
   })() }, [supabase])
 
   function exportCsv() {
-    const csv = [['reg_no','name','email','preparation_participation_pct','readiness_score','daily_five_days_30d'], ...rows.map((r) => [r.reg_no,r.name,r.email,r.attendance,r.readiness,r.dailyFive])].map((r) => r.map(escapeCsv).join(',')).join('\n')
+    // PR-facing exports may never carry a per-student readiness_score — PR
+    // can only ever see the batch-level average (the "Avg readiness" metric
+    // below, computed from the same fetched rows). Only aggregated columns
+    // are exported here.
+    const csv = [['reg_no','name','email','preparation_participation_pct','daily_five_days_30d'], ...rows.map((r) => [r.reg_no,r.name,r.email,r.attendance,r.dailyFive])].map((r) => r.map(escapeCsv).join(',')).join('\n')
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); const a = document.createElement('a'); a.href = url; a.download = `psgmx-batch-report-${new Date().toISOString().slice(0,10)}.csv`; a.click(); URL.revokeObjectURL(url)
   }
   const avg = (key: 'attendance'|'readiness') => rows.length ? Math.round(rows.reduce((sum, row) => sum + row[key], 0) / rows.length) : 0
@@ -44,7 +51,7 @@ export default function ReportsPage() {
       <Metric icon={<TrendingUp className="h-5 w-5" />} label="Avg attendance" value={`${avg('attendance')}%`} />
       <Metric icon={<ShieldCheck className="h-5 w-5" />} label="Avg readiness" value={`${avg('readiness')}%`} />
     </div>
-    <div className="overflow-x-auto rounded-2xl border border-border-light bg-white"><table className="w-full min-w-[760px] text-left text-sm"><thead className="bg-page-bg text-xs uppercase text-text-muted"><tr><th className="p-4">Student</th><th>Attendance</th><th>Readiness</th><th>Daily Five / 30d</th></tr></thead><tbody className="divide-y divide-border-light">{rows.map((row) => <tr key={row.id}><td className="p-4"><p className="font-bold">{row.name}</p><p className="text-xs text-text-muted">{row.reg_no}</p></td><td>{row.attendance.toFixed(0)}%</td><td>{row.readiness.toFixed(0)}%</td><td>{row.dailyFive} days</td></tr>)}</tbody></table></div>
+    <div className="overflow-x-auto rounded-2xl border border-border-light bg-white"><table className="w-full min-w-[760px] text-left text-sm"><thead className="bg-page-bg text-xs uppercase text-text-muted"><tr><th className="p-4">Student</th><th>Attendance</th><th>Daily Five / 30d</th></tr></thead><tbody className="divide-y divide-border-light">{rows.map((row) => <tr key={row.id}><td className="p-4"><p className="font-bold">{row.name}</p><p className="text-xs text-text-muted">{row.reg_no}</p></td><td>{row.attendance.toFixed(0)}%</td><td>{row.dailyFive} days</td></tr>)}</tbody></table></div>
     <div className="rounded-2xl border border-border-light bg-white p-5"><h2 className="mb-4 font-black">Recent audit trail</h2><div className="space-y-3">{audits.map((audit) => <div key={audit.id} className="flex items-center justify-between border-b border-border-light pb-3 text-sm last:border-0"><div><p className="font-bold">{audit.action.replaceAll('_',' ')}</p><p className="text-xs text-text-muted">{audit.entity_type}</p></div><time className="text-xs text-text-muted">{new Date(audit.created_at).toLocaleString()}</time></div>)}{audits.length === 0 && <p className="text-sm text-text-muted">No batch administration events recorded yet.</p>}</div></div>
   </div>
 }

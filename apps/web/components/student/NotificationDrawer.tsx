@@ -303,10 +303,11 @@ export function NotificationDrawer({ isOpen, onClose, onUnreadCountChange }: Not
                   </div>
                 ) : (
                   filtered.map((item) => (
-                    <div
+                    <Link
                       key={item.id}
-                      onClick={() => void markAsRead(item.id)}
-                      className={`group relative p-4 rounded-2xl border transition-all duration-200 ${
+                      href={item.link}
+                      onClick={() => { void markAsRead(item.id); onClose(); }}
+                      className={`group relative block p-4 rounded-2xl border transition-all duration-200 ${
                         item.unread
                           ? 'bg-violet-50/40 border-primary-purple/30 shadow-sm'
                           : 'bg-white border-border-light hover:border-border-light/80 hover:bg-page-bg/40'
@@ -333,14 +334,10 @@ export function NotificationDrawer({ isOpen, onClose, onUnreadCountChange }: Not
                           </p>
 
                           <div className="mt-3 flex items-center justify-between">
-                            <Link
-                              href={item.link}
-                              onClick={onClose}
-                              className="inline-flex items-center gap-1.5 text-xs font-bold text-primary-purple group-hover:translate-x-0.5 transition-transform"
-                            >
+                            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-primary-purple group-hover:translate-x-0.5 transition-transform">
                               {item.actionLabel}
                               <ArrowRight className="w-3 h-3" />
-                            </Link>
+                            </span>
 
                             {item.unread && (
                               <span className="w-2 h-2 rounded-full bg-primary-purple animate-pulse" />
@@ -348,7 +345,7 @@ export function NotificationDrawer({ isOpen, onClose, onUnreadCountChange }: Not
                           </div>
                         </div>
                       </div>
-                    </div>
+                    </Link>
                   ))
                 )}
               </div>

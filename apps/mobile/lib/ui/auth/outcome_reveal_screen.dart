@@ -34,6 +34,7 @@ class _OutcomeRevealScreenState extends State<OutcomeRevealScreen>
   late Animation<double> _sparkJumpAnimation;
   int _finalScore = 45;
   bool _hasJumped = false;
+  bool _isEnteringApp = false;
   Map<String, dynamic> _calibration = const {};
 
   @override
@@ -101,10 +102,28 @@ class _OutcomeRevealScreenState extends State<OutcomeRevealScreen>
   }
 
   Future<void> _handleEnterApp() async {
-    final userProvider = context.read<UserProvider>();
-    await userProvider.completeCalibration(_calibration);
-    if (mounted) {
-      context.go('/');
+    if (_isEnteringApp) return; // Guard against double-tap.
+    setState(() => _isEnteringApp = true);
+    try {
+      final userProvider = context.read<UserProvider>();
+      await userProvider.completeCalibration(_calibration);
+      if (mounted) {
+        context.go('/');
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isEnteringApp = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+                'Something went wrong entering PSGMX. Please try again.'),
+            action: SnackBarAction(
+              label: 'Retry',
+              onPressed: _handleEnterApp,
+            ),
+          ),
+        );
+      }
     }
   }
 
@@ -428,7 +447,8 @@ class _OutcomeRevealScreenState extends State<OutcomeRevealScreen>
                       SizedBox(
                         width: double.infinity,
                         child: FilledButton(
-                          onPressed: _handleEnterApp,
+                          onPressed:
+                              _isEnteringApp ? null : _handleEnterApp,
                           style: FilledButton.styleFrom(
                             backgroundColor: AppTheme.accentCoral,
                             padding: const EdgeInsets.symmetric(vertical: 20),
@@ -436,18 +456,27 @@ class _OutcomeRevealScreenState extends State<OutcomeRevealScreen>
                               borderRadius: BorderRadius.circular(20),
                             ),
                           ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                'Enter PSGMX',
-                                style: GoogleFonts.inter(
-                                    fontSize: 12, fontWeight: FontWeight.w600),
-                              ),
-                              const SizedBox(width: 8),
-                              const Icon(LucideIcons.arrowRight, size: 16),
-                            ],
-                          ),
+                          child: _isEnteringApp
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2, color: Colors.white),
+                                )
+                              : Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      'Enter PSGMX',
+                                      style: GoogleFonts.inter(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    const Icon(LucideIcons.arrowRight,
+                                        size: 16),
+                                  ],
+                                ),
                         ),
                       ),
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest, isStudent } from '@/lib/auth'
+import { checkRateLimit } from '@/lib/limiter'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { executeOpenRouterPrompt } from '@/lib/ai/openrouter-free-chain'
 
@@ -40,6 +41,9 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const user = await getUserFromRequest(req)
   if (!user || !isStudent(user)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!checkRateLimit(`communication-evaluate:${user.id}`).success) {
+    return NextResponse.json({ error: 'Please wait before submitting another recording.' }, { status: 429 })
+  }
 
   const formData = await req.formData()
   const audio = formData.get('audio')

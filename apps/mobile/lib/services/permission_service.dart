@@ -43,7 +43,7 @@ class PermissionService {
       String batchId) async {
     final response = await _supabase
         .from('user_permissions')
-        .select('user_id, permission_key')
+        .select('user_id, permission_key, users!inner(batch_id)')
         .eq('users.batch_id', batchId);
 
     final result = <String, Set<UserPermission>>{};

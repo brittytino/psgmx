@@ -92,6 +92,23 @@ class AppNotification {
   final bool? isRead;
   final DateTime? readAt;
 
+  /// The specific recipient's user id for a personal notification (e.g.
+  /// POTD / task reminders inserted with `target_audience: 'user'`). Mirrors
+  /// the `target_user_id` column added in
+  /// supabase/migrations/21_companion_product_model.sql — used together with
+  /// [targetAudience] to decide whether a realtime notification is actually
+  /// meant for the current user.
+  final String? targetUserId;
+
+  /// Deep-link route for "tap this notification" navigation, mirrors the
+  /// `action_path` column.
+  final String? actionPath;
+
+  /// Notification category (`action_required`, `scheduled_reminder`,
+  /// `progress`, `community`, `announcement`, `system`), mirrors the
+  /// `category` column.
+  final String? category;
+
   AppNotification({
     required this.id,
     required this.title,
@@ -105,6 +122,9 @@ class AppNotification {
     this.isActive = true,
     this.isRead,
     this.readAt,
+    this.targetUserId,
+    this.actionPath,
+    this.category,
   }) : generatedAt = generatedAt ?? DateTime.now();
 
   factory AppNotification.fromMap(Map<String, dynamic> data) {
@@ -129,6 +149,9 @@ class AppNotification {
       isActive: data['is_active'] ?? true,
       isRead: data['is_read'],
       readAt: data['read_at'] != null ? DateTime.parse(data['read_at']) : null,
+      targetUserId: data['target_user_id'] as String?,
+      actionPath: data['action_path'] as String?,
+      category: data['category'] as String?,
     );
   }
 
@@ -144,6 +167,9 @@ class AppNotification {
       'valid_until': validUntil?.toIso8601String(),
       'created_by': createdBy,
       'is_active': isActive,
+      'target_user_id': targetUserId,
+      'action_path': actionPath,
+      'category': category,
     };
   }
 
@@ -170,6 +196,9 @@ class AppNotification {
     bool? isActive,
     bool? isRead,
     DateTime? readAt,
+    String? targetUserId,
+    String? actionPath,
+    String? category,
   }) {
     return AppNotification(
       id: id ?? this.id,
@@ -184,6 +213,9 @@ class AppNotification {
       isActive: isActive ?? this.isActive,
       isRead: isRead ?? this.isRead,
       readAt: readAt ?? this.readAt,
+      targetUserId: targetUserId ?? this.targetUserId,
+      actionPath: actionPath ?? this.actionPath,
+      category: category ?? this.category,
     );
   }
 }

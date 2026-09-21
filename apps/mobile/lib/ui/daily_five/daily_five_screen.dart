@@ -29,6 +29,7 @@ class _DailyFiveScreenState extends State<DailyFiveScreen>
   int? _selectedOption;
   int _warningCount = 0;
   bool _isWarningOpen = false;
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -171,20 +172,40 @@ class _DailyFiveScreenState extends State<DailyFiveScreen>
   }
 
   void _submitAnswer(int index) {
+    if (_isSubmitting) return; // Guard against double-submit.
     if (_timer != null) _timer!.cancel();
 
     final provider = context.read<DailyFiveProvider>();
     final auth = context.read<UserProvider>();
     if (auth.currentUser == null) return;
 
+    setState(() => _isSubmitting = true);
+
     provider
         .submitAnswer(userId: auth.currentUser!.uid, optionIndex: index)
         .then((_) {
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
       if (provider.sessionActive) {
         _startTimerForCurrentQuestion();
       } else if (provider.sessionFinished) {
         _unsecureScreen(); // Quiz over, unsecure
       }
+    }).catchError((Object e) {
+      debugPrint('[DailyFiveScreen] submitAnswer failed: $e');
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Failed to submit your answer.'),
+          action: SnackBarAction(
+            label: 'Retry',
+            onPressed: () => _submitAnswer(index),
+          ),
+        ),
+      );
+      // Give the student a live timer again instead of leaving them stuck.
+      _startTimerForCurrentQuestion();
     });
   }
 
@@ -424,7 +445,7 @@ class _DailyFiveScreenState extends State<DailyFiveScreen>
         child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: ElevatedButton(
-            onPressed: _selectedOption != null
+            onPressed: (_selectedOption != null && !_isSubmitting)
                 ? () => _submitAnswer(_selectedOption!)
                 : null,
             style: ElevatedButton.styleFrom(
@@ -437,11 +458,18 @@ class _DailyFiveScreenState extends State<DailyFiveScreen>
                   theme.colorScheme.surfaceContainerHighest,
               elevation: 0,
             ),
-            child: Text(
-              'Submit Answer',
-              style:
-                  GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.bold),
-            ),
+            child: _isSubmitting
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white),
+                  )
+                : Text(
+                    'Submit Answer',
+                    style: GoogleFonts.inter(
+                        fontSize: 15, fontWeight: FontWeight.bold),
+                  ),
           ),
         ),
       ),

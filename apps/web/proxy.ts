@@ -124,6 +124,22 @@ export async function proxy(request: NextRequest) {
     return supabaseResponse
   }
 
+  // Every /api/* route handler performs its own auth via getUserFromRequest()
+  // (apps/web/lib/auth.ts), which checks the Authorization: Bearer header first
+  // and falls back to the cookie session used above. The Flutter mobile app
+  // authenticates with a Bearer token only — it never sends Supabase auth
+  // cookies — so this proxy's cookie-only `user` lookup is always null for a
+  // legitimate mobile API request. Redirecting that request to /login (an HTML
+  // page) instead of letting the route handler run breaks every non-public
+  // mobile API call (eCampus sync, AI mentor, communication evaluation, etc.).
+  // ROLE_GUARDS above only match page-route prefixes ('/student', '/faculty', …)
+  // and never match an '/api/...' pathname, so this bypass does not skip any
+  // role check that previously applied — API routes gate role/capability
+  // themselves via requireRole()/requireAppRole().
+  if (pathname.startsWith('/api/')) {
+    return supabaseResponse
+  }
+
   // Development uses the same authentication boundary as production. This
   // prevents demo identities from hiding broken RLS or session flows.
   if (!user) {

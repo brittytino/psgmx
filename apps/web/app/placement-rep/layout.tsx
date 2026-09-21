@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Users, CalendarClock, LogOut, Menu, X, UserRoundCog, ClipboardCheck, ListTodo, Megaphone, LibraryBig, BarChart3, Activity, GraduationCap, Rocket } from 'lucide-react';
+import { LayoutDashboard, Users, CalendarClock, LogOut, Menu, X, UserRoundCog, ClipboardCheck, ListTodo, Megaphone, LibraryBig, BarChart3, Activity, GraduationCap, Rocket, Route, CheckSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
 
@@ -14,7 +14,9 @@ const sidebarLinks = [
   { name: 'Quest Studio', href: '/placement-rep/quest-studio', icon: ListTodo },
   { name: 'Programme Calendar', href: '/placement-rep/sessions', icon: CalendarClock },
   { name: 'Preparation Squads', href: '/placement-rep/squads', icon: Users },
+  { name: 'Preparation Tracks', href: '/placement-rep/tracks', icon: Route },
   { name: 'Question Bank', href: '/placement-rep/question-bank', icon: LibraryBig },
+  { name: 'Daily Tasks', href: '/placement-rep/tasks', icon: CheckSquare },
   { name: 'Participation', href: '/placement-rep/participation', icon: ClipboardCheck },
   { name: 'Communication', href: '/placement-rep/communication', icon: Megaphone },
   { name: 'Preparation Health', href: '/placement-rep/reports', icon: BarChart3 },

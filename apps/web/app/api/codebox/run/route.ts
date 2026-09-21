@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest, isStudent } from '@/lib/auth'
+import { checkRateLimit } from '@/lib/limiter'
 import { PISTON_LANGUAGE_VERSIONS } from '../pistonConfig'
 
 const PISTON_API_URL = process.env.PISTON_API_URL || 'https://emkc.org/api/v2/piston/execute'
@@ -14,6 +15,10 @@ export async function POST(req: NextRequest) {
   const user = await getUserFromRequest(req)
   if (!user || !isStudent(user)) {
     return NextResponse.json({ error: 'Student authentication is required.' }, { status: 401 })
+  }
+
+  if (!checkRateLimit(`codebox-run:${user.id}`).success) {
+    return NextResponse.json({ error: 'Please wait before running more code.' }, { status: 429 })
   }
 
   let body: { code?: unknown; language?: unknown; stdin?: unknown }

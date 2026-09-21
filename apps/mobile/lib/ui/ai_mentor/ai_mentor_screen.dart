@@ -22,8 +22,9 @@ class _Message {
   final String content;
   final bool isUser;
   final String time;
+  final bool isScripted;
 
-  _Message(this.content, this.isUser, this.time);
+  _Message(this.content, this.isUser, this.time, {this.isScripted = false});
 }
 
 class _AiMentorScreenState extends State<AiMentorScreen> {
@@ -202,6 +203,9 @@ class _AiMentorScreenState extends State<AiMentorScreen> {
   }
 
   Future<void> _sendMessage(String text, {bool isPredefined = false}) async {
+    if (_isLoading) return; // Guard against overlapping requests (e.g. from
+    // the TextField's onSubmitted firing repeatedly on Enter).
+
     final messageText = text.trim();
     if (messageText.isEmpty) return;
 
@@ -214,7 +218,8 @@ class _AiMentorScreenState extends State<AiMentorScreen> {
           _simpleGreetingReplies[random.nextInt(_simpleGreetingReplies.length)];
       setState(() {
         _messages.add(_Message(messageText, true, _getCurrentTime()));
-        _messages.add(_Message(instantReply, false, _getCurrentTime()));
+        _messages.add(_Message(instantReply, false, _getCurrentTime(),
+            isScripted: true));
       });
       _scrollToBottom();
       return;
@@ -721,6 +726,36 @@ class _AiMentorScreenState extends State<AiMentorScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    if (msg.isScripted) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.bolt,
+                                size: 10,
+                                color: theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.5)),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Quick reply',
+                              style: GoogleFonts.inter(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.5),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                    ],
                     if (isFirst) ...[
                       RichText(
                         text: TextSpan(

@@ -46,7 +46,7 @@ The status promotion from `active_junior` to `active_senior` happens inside the 
 
 ### Trigger
 
-The `batch-graduation` Edge Function runs on a CRON schedule: **midnight on June 1st** (`0 0 1 6 *`). It is also invocable manually (e.g., for testing).
+The production trigger is the `public.rotate_batch_status()` PostgreSQL function, called nightly by `.github/workflows/daily-maintenance.yml` via `apps/web/app/api/cron/daily-maintenance`. It idempotently derives every batch's status from `start_year`/`end_year` at the July 1 academic boundary — it does not depend on a specific graduation date being set, so it self-heals even if a nightly run is missed. The `batch-graduation` and `batch-lifecycle-check` Supabase Edge Functions both delegate to the same `rotate_batch_status()` RPC and are safe to invoke manually (e.g. for testing), but neither is the live scheduled trigger.
 
 ### Transaction Steps
 

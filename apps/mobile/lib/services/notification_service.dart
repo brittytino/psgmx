@@ -241,11 +241,22 @@ class NotificationService extends ChangeNotifier {
 
       final notification = AppNotification.fromMap(data);
 
-      // Audence check: Skip if not for this user
+      // Audience check: skip if not for this user.
+      // `targetAudience` is a category string ('all', 'user', 'students',
+      // etc.), never a UUID, so it can only ever equal `profileId` by
+      // coincidence — comparing it directly against the UUID silently
+      // dropped every personal notification (POTD / task reminders, sent
+      // with target_audience: 'user') for its own intended recipient. The
+      // actual recipient for a personal notification lives in the
+      // `target_user_id` column (see models/notification.dart /
+      // supabase/migrations/21_companion_product_model.sql).
       final audience = notification.targetAudience;
-      if (audience != 'all' && audience != profileId) {
-        // In a more complex system, we'd check roles (e.g., audience == 'coordinators')
-        // For now, we handle 'all' and specific user IDs
+      final isForThisUser =
+          audience == 'all' || notification.targetUserId == profileId;
+      if (!isForThisUser) {
+        // In a more complex system, we'd also check role-based audiences
+        // (e.g. audience == 'coordinators'); those already reach every
+        // client via 'all'-scoped realtime + RLS-scoped fetches today.
         return;
       }
 

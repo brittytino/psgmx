@@ -29,7 +29,10 @@ export async function POST(request: NextRequest) {
   const lockedUntil = attemptState?.locked_until ? new Date(attemptState.locked_until).getTime() : 0
   if (lockedUntil > now) {
     return NextResponse.json(
-      { error: 'Too many invalid codes. Try again after the 15-minute lockout.' },
+      {
+        error: 'Too many invalid codes. Try again after the 15-minute lockout.',
+        lockedUntil: new Date(lockedUntil).toISOString(),
+      },
       { status: 429 },
     )
   }
@@ -68,7 +71,10 @@ export async function POST(request: NextRequest) {
     })
     if (attemptWriteError) console.error('[POST /api/auth/verify] Lockout write failed:', attemptWriteError)
     return NextResponse.json(
-      { error: lock ? 'Too many invalid codes. Sign-in is locked for 15 minutes.' : 'Invalid or expired code. Request a new code and try again.' },
+      {
+        error: lock ? 'Too many invalid codes. Sign-in is locked for 15 minutes.' : 'Invalid or expired code. Request a new code and try again.',
+        ...(lock ? { lockedUntil: lock } : {}),
+      },
       { status: lock ? 429 : 401 },
     )
   }

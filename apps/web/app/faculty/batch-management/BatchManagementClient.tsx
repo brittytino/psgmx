@@ -56,6 +56,7 @@ export default function BatchManagementClient({ initialStudents, batches }: { in
           graduating_batch: outgoingBatch,
           incoming_batch: incomingBatch,
           new_pr: incomingPr,
+          outgoing_pr: outgoingPr,
           checklist,
         })
       });

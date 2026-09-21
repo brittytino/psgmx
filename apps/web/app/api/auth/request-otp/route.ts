@@ -72,12 +72,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Too many codes requested. Wait ten minutes and try again.' }, { status: 429 })
     }
 
+    // The response for an unapproved email must be byte-for-byte
+    // indistinguishable from a success response to an anonymous caller —
+    // otherwise this endpoint becomes a roster-membership oracle (email
+    // enumeration). No OTP is generated or sent on this path; only the
+    // response shape matches the success path below.
+    const genericSentResponse = () => NextResponse.json({
+      success: true,
+      message: 'If this email is eligible, a verification code has been sent.',
+    }, { headers: { 'x-request-id': traceId } })
+
     if (isStaffEmail(email)) await provisionStaffByEmail(email)
     if (!(await isApprovedIdentity(email))) {
-      return NextResponse.json(
-        { error: 'This email is not on the approved student, faculty, or alumni roster.' },
-        { status: 403 },
-      )
+      logEvent('info', 'otp_request_unapproved', { trace_id: traceId, email_domain: email.split('@')[1] })
+      return genericSentResponse()
     }
 
     await ensureAuthIdentity(email)
@@ -97,10 +105,10 @@ export async function POST(request: NextRequest) {
     await supabaseAdmin.from('otp_rate_log').insert({ email })
     logEvent('info', 'otp_issued', { trace_id: traceId, email_domain: email.split('@')[1] })
 
-    const response = NextResponse.json({
-      success: true,
-      message: `A six-digit verification code has been sent to ${email}.`,
-    }, { headers: { 'x-request-id': traceId } })
+    // Same message text as the unapproved-roster path above: response body
+    // must not be a signal an anonymous caller can use to test roster
+    // membership.
+    const response = genericSentResponse()
 
     if (isStaffEmail(email) && isStaticOtpEnabled()) {
       const signed = signOtpChallenge({

@@ -118,12 +118,4 @@ class ReadinessComponents {
         'daily_five_accuracy_pct': dailyFiveAccuracyPct,
         'leetcode_momentum_percentile': leetcodeMomentumPercentile,
       };
-
-  /// Recomputes the overall score from the components using the formula weights.
-  double get computedScore =>
-      (0.30 * placementAttendancePct) +
-      (0.20 * dailyFiveAdherencePct) +
-      (0.20 * taskCompletionRatePct) +
-      (0.15 * dailyFiveAccuracyPct) +
-      (0.15 * leetcodeMomentumPercentile);
 }

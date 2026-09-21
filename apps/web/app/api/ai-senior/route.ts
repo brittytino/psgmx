@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/auth'
+import { checkRateLimit } from '@/lib/limiter'
 import { buildRAGContext, formatRAGContextForPrompt } from '@/lib/ai/rag'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { AIUnavailableError, executeOpenRouterPrompt } from '@/lib/ai/openrouter-free-chain'
@@ -51,6 +52,9 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const user = await getUserFromRequest(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!checkRateLimit(`ai-senior:${user.id}`).success) {
+    return NextResponse.json({ error: 'Please wait before asking again.' }, { status: 429 })
+  }
 
   const body = await req.json().catch(() => null) as { query?: unknown; conversation_id?: unknown } | null
   const query = typeof body?.query === 'string' ? body.query.trim() : ''

@@ -5,8 +5,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/leetcode_stats.dart';
 import '../services/supabase_service.dart';
 import '../services/notification_service.dart';
+import '../services/trusted_api_response.dart';
 import '../models/notification.dart';
 import '../core/safe_change_notifier.dart';
+import '../core/supabase_config.dart';
 
 class LeetCodeProvider extends ChangeNotifier with SafeChangeNotifier {
   final SupabaseService _supabaseService;
@@ -103,8 +105,12 @@ class LeetCodeProvider extends ChangeNotifier with SafeChangeNotifier {
         }
       }
 
-      // 4. Fetch from LeetCode API (Network) - it will save to DB internally
-      final stats = await _fetchFromLeetCodeApi(username);
+      // 4. Sync fresh stats via the trusted server endpoint (Network) - it
+      // re-derives the caller's own leetcode_username, fetches from LeetCode
+      // itself, and writes to `leetcode_stats` with a privileged server key.
+      // The client never talks to leetcode.com/alfa-leetcode-api directly and
+      // never writes to `leetcode_stats` itself (RLS blocks that write now).
+      final stats = await _syncViaTrustedApi(username);
 
       // 5. Update Cache
       if (stats != null) {
@@ -124,168 +130,58 @@ class LeetCodeProvider extends ChangeNotifier with SafeChangeNotifier {
     }
   }
 
-  Future<LeetCodeStats?> _fetchFromLeetCodeApi(String username) async {
-    // Try official LeetCode GraphQL API first (even on Web, trying to use CORS bypass or proxy if available)
-    // Users requested to prioritize this over Alpha API to avoid rate limits
-    final stats = await _fetchFromOfficialApi(username);
-    if (stats != null) return stats;
-
-    // Fallback to Alpha API if official fails
-    return await _fetchFromAlphaApi(username);
-  }
-
-  Future<LeetCodeStats?> _fetchFromOfficialApi(String username) async {
+  /// Syncs the caller's own LeetCode stats via the trusted server endpoint.
+  ///
+  /// SECURITY: the client used to fetch straight from leetcode.com/graphql
+  /// and alfa-leetcode-api.onrender.com and then upsert the result into
+  /// `leetcode_stats` using the student's own anon-key session — a modified
+  /// client could write fabricated numbers to inflate its own readiness
+  /// score. `POST /api/user/leetcode-sync` re-derives the caller's own
+  /// `leetcode_username` server-side, fetches LeetCode stats itself, and
+  /// writes with a privileged server key; direct client INSERT/UPDATE on
+  /// `leetcode_stats` is now revoked at the RLS level (see
+  /// supabase/migrations/58_lock_down_leetcode_writes.sql), so this is the
+  /// only way stats can be refreshed.
+  Future<LeetCodeStats?> _syncViaTrustedApi(String username) async {
     try {
-      // Use official LeetCode GraphQL API with User's requested query
-      const url = 'https://leetcode.com/graphql';
-
-      const query = '''
-        query getUserProfile(\$username: String!) {
-          matchedUser(username: \$username) {
-            username
-            profile {
-              realName
-              aboutMe
-              userAvatar
-              ranking
-            }
-            submitStatsGlobal {
-              acSubmissionNum {
-                difficulty
-                count
-              }
-            }
-            languageProblemCount {
-              languageName
-              problemsSolved
-            }
-            userCalendar {
-              submissionCalendar
-            }
-          }
-        }
-      ''';
-
-      final response = await http
-          .post(
-            Uri.parse(url),
-            headers: {
-              'Content-Type': 'application/json',
-              'User-Agent':
-                  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-              'Referer': 'https://leetcode.com',
-              'Origin': 'https://leetcode.com',
-            },
-            body: jsonEncode({
-              'query': query,
-              'variables': {'username': username}
-            }),
-          )
-          .timeout(const Duration(seconds: 15));
-
-      if (response.statusCode == 200) {
-        final body = jsonDecode(response.body);
-
-        if (body['errors'] != null) {
-          debugPrint(
-              '[LeetCode] ⚠️  GraphQL Error for $username: ${body['errors'][0]['message']}');
-          return null;
-        }
-
-        final matchedUser = body['data']?['matchedUser'];
-        if (matchedUser == null) {
-          debugPrint(
-              '[LeetCode] ⚠️  User not found in official API: $username');
-          return null;
-        }
-
-        // Parse stats
-        final submitStats =
-            matchedUser['submitStatsGlobal']['acSubmissionNum'] as List;
-        int totalSolved = 0;
-        int easySolved = 0;
-        int mediumSolved = 0;
-        int hardSolved = 0;
-
-        for (var stat in submitStats) {
-          final difficulty = stat['difficulty'] as String;
-          final count = stat['count'] as int;
-
-          switch (difficulty) {
-            case 'All':
-              totalSolved = count;
-              break;
-            case 'Easy':
-              easySolved = count;
-              break;
-            case 'Medium':
-              mediumSolved = count;
-              break;
-            case 'Hard':
-              hardSolved = count;
-              break;
-          }
-        }
-
-        final ranking = matchedUser['profile']['ranking'] as int? ?? 0;
-        final profilePicture = matchedUser['profile']['userAvatar'] as String?;
-
-        // Calculate weekly score
-        int weeklyScore = 0;
-        // User query structure has submissionCalendar inside userCalendar
-        final submissionCalendarStr =
-            matchedUser['userCalendar']?['submissionCalendar'] as String?;
-
-        if (submissionCalendarStr != null && submissionCalendarStr.isNotEmpty) {
-          try {
-            final submissionCalendar =
-                jsonDecode(submissionCalendarStr) as Map<String, dynamic>;
-            final now = DateTime.now();
-            final sevenDaysAgo = now.subtract(const Duration(days: 7));
-
-            submissionCalendar.forEach((timestampStr, count) {
-              try {
-                final timestamp = int.tryParse(timestampStr);
-                if (timestamp != null) {
-                  final date =
-                      DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
-                  if (date.isAfter(sevenDaysAgo)) {
-                    weeklyScore += (count as int? ?? 0);
-                  }
-                }
-              } catch (e) {
-                // Skip
-              }
-            });
-          } catch (e) {
-            debugPrint('[LeetCode] ⚠️  Calendar parse error for $username');
-          }
-        }
-
-        debugPrint(
-            '[LeetCode] ✅ [Official API] $username: $totalSolved problems (E:$easySolved M:$mediumSolved H:$hardSolved)');
-
-        final stats = LeetCodeStats(
-          username: username,
-          profilePicture: profilePicture,
-          totalSolved: totalSolved,
-          easySolved: easySolved,
-          mediumSolved: mediumSolved,
-          hardSolved: hardSolved,
-          ranking: ranking,
-          weeklyScore: weeklyScore,
-          lastUpdated: DateTime.now(),
-        );
-
-        await _saveToDatabase(stats);
-        return stats;
-      } else {
-        debugPrint(
-            '[LeetCode] ⚠️  Official API returned ${response.statusCode}');
+      final token = _supabaseService.client.auth.currentSession?.accessToken;
+      if (token == null) {
+        debugPrint('[LeetCode] ⚠️  No session, skipping sync for $username');
         return null;
       }
+
+      final response = await http.post(
+        Uri.parse('${SupabaseConfig.appApiUrl}/api/user/leetcode-sync'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      ).timeout(const Duration(seconds: 30));
+
+      final decoded = decodeTrustedJson(
+        response,
+        fallbackMessage: 'LeetCode stats could not be refreshed.',
+      );
+
+      final rawStats = decoded['stats'];
+      if (rawStats is! Map) {
+        debugPrint('[LeetCode] ⚠️  Sync response missing stats for $username');
+        return null;
+      }
+
+      final statsMap = Map<String, dynamic>.from(rawStats);
+      statsMap['username'] = username;
+      final stats = LeetCodeStats.fromMap(statsMap);
+
+      debugPrint(
+          '[LeetCode] ✅ [Trusted sync] $username: ${stats.totalSolved} problems (E:${stats.easySolved} M:${stats.mediumSolved} H:${stats.hardSolved})');
+
+      return stats;
+    } on TrustedApiException catch (e) {
+      debugPrint('[LeetCode] ⚠️  Trusted sync failed for $username: $e');
+      return null;
     } catch (e) {
-      debugPrint('[LeetCode] ⚠️  Official API Exception: $e');
+      debugPrint('[LeetCode] ⚠️  Trusted sync exception for $username: $e');
       return null;
     }
   }
@@ -385,97 +281,13 @@ class LeetCodeProvider extends ChangeNotifier with SafeChangeNotifier {
     }
   }
 
-  Future<LeetCodeStats?> _fetchFromAlphaApi(String username) async {
-    try {
-      // Fallback to Alpha API
-      final alphaUrl =
-          'https://alfa-leetcode-api.onrender.com/userProfile/$username';
-
-      final response = await http.get(
-        Uri.parse(alphaUrl),
-        headers: {
-          'User-Agent': 'Mozilla/5.0',
-          'Accept': 'application/json',
-        },
-      ).timeout(const Duration(seconds: 15));
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-
-        if (data['errors'] != null || data['status'] == 'error') {
-          debugPrint('[LeetCode] ❌ User not found: $username');
-          return null;
-        }
-
-        final totalSolved = data['totalSolved'] as int? ?? 0;
-        final easySolved = data['easySolved'] as int? ?? 0;
-        final mediumSolved = data['mediumSolved'] as int? ?? 0;
-        final hardSolved = data['hardSolved'] as int? ?? 0;
-        final ranking = data['ranking'] as int? ?? 0;
-
-        // Calculate weekly score
-        int weeklyScore = 0;
-        final submissionCalendar = data['submissionCalendar'];
-        if (submissionCalendar != null && submissionCalendar is Map) {
-          final now = DateTime.now();
-          final sevenDaysAgo = now.subtract(const Duration(days: 7));
-
-          submissionCalendar.forEach((timestampStr, count) {
-            try {
-              final timestamp = int.tryParse(timestampStr.toString());
-              if (timestamp != null) {
-                final date =
-                    DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
-                if (date.isAfter(sevenDaysAgo)) {
-                  weeklyScore += (count as int? ?? 0);
-                }
-              }
-            } catch (e) {
-              // Skip
-            }
-          });
-        }
-
-        debugPrint('[LeetCode] ✅ [Alpha API] $username: $totalSolved problems');
-
-        final stats = LeetCodeStats(
-          username: username,
-          totalSolved: totalSolved,
-          easySolved: easySolved,
-          mediumSolved: mediumSolved,
-          hardSolved: hardSolved,
-          ranking: ranking,
-          weeklyScore: weeklyScore,
-          lastUpdated: DateTime.now(),
-        );
-
-        // Save to database
-        await _saveToDatabase(stats);
-        return stats;
-      } else if (response.statusCode == 429) {
-        debugPrint('[LeetCode] ⏳ Alpha API Rate Limit 429 for $username');
-        // If specific 429, we should propagate this signal ideally, but returning null
-        // with the error log allows the background loop to catch failures and backoff.
-        return null;
-      } else {
-        debugPrint('[LeetCode] ❌ Alpha API returned ${response.statusCode}');
-        return null;
-      }
-    } catch (e) {
-      debugPrint('[LeetCode] ❌ Alpha API Exception: $e');
-      return null;
-    }
-  }
-
-  Future<void> _saveToDatabase(LeetCodeStats stats) async {
-    try {
-      await _supabaseService.client
-          .from('leetcode_stats')
-          .upsert(stats.toMap());
-      debugPrint('[LeetCode] 💾 Saved ${stats.username} to database');
-    } catch (e) {
-      debugPrint('[LeetCode] ❌ Failed to save ${stats.username} to DB: $e');
-      rethrow; // Let caller handle
-    }
+  /// Resets all cached LeetCode state. Called on sign-out so a second
+  /// student on the same device never sees the previous student's cached
+  /// stats before their own sync completes.
+  void resetForSignOut() {
+    _statsCache.clear();
+    _pendingRequests.clear();
+    _isLoading = false;
+    notifyListeners();
   }
 }

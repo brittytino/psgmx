@@ -32,12 +32,19 @@ export async function GET(req: NextRequest) {
         created_at,
         updated_at,
         student_id,
+        batch_id,
         users (
           name,
           reg_no
         )
       `)
       .order('created_at', { ascending: false })
+
+    // Mirrors the batch scoping in GET /api/insights: faculty only see their
+    // own batch's projects, hod has department-wide access.
+    if (session.roleLabel.toLowerCase() === 'faculty' && session.batch_id) {
+      query = query.eq('batch_id', session.batch_id)
+    }
 
     if (statusFilter && ['proposal', 'in_progress', 'completed', 'archived'].includes(statusFilter)) {
       query = query.eq('status', statusFilter as 'proposal' | 'in_progress' | 'completed' | 'archived')
