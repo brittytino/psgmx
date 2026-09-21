@@ -22,9 +22,31 @@ class SupabaseConfig {
 
   /// All privileged integrations are brokered by the trusted web backend.
   /// No shared eCampus or AI secret is ever compiled into the mobile app.
-  static String get appApiUrl => _envAppApiUrl.isNotEmpty
-      ? _envAppApiUrl.replaceAll(RegExp(r'/$'), '')
-      : 'https://www.psgmx.tech';
+  static String get appApiUrl => normalizeAppApiUrl(_envAppApiUrl);
+
+  /// Normalises the public API origin used by mobile builds.
+  ///
+  /// `app.psgmx.tech` and the Firebase hosting domain serve the Flutter web
+  /// shell. Requests such as `/api/communication/evaluate` therefore return
+  /// `index.html`, which used to surface as an "Unexpected character" JSON
+  /// error. Privileged API routes live on the trusted Next.js origin.
+  static String normalizeAppApiUrl(String rawValue) {
+    final value = rawValue.trim();
+    if (value.isEmpty) return 'https://www.psgmx.tech';
+
+    final uri = Uri.tryParse(value);
+    final host = uri?.host.toLowerCase();
+    const frontendOnlyHosts = {
+      'app.psgmx.tech',
+      'psgmxians.web.app',
+      'psgmxians.firebaseapp.com',
+    };
+    if (host == 'psgmx.tech' || frontendOnlyHosts.contains(host)) {
+      return 'https://www.psgmx.tech';
+    }
+
+    return value.replaceAll(RegExp(r'/+$'), '');
+  }
 
   /// Returns true if the minimum required config for app startup is present.
   static bool get isConfigured =>

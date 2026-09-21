@@ -12,6 +12,7 @@ import '../../providers/daily_five_provider.dart';
 import '../../providers/navigation_provider.dart';
 import '../../providers/user_provider.dart';
 import '../widgets/premium_card.dart';
+import '../widgets/companion_page_header.dart';
 
 class TodayScreen extends StatefulWidget {
   const TodayScreen({super.key});
@@ -109,35 +110,28 @@ class _TodayScreenState extends State<TodayScreen> {
                 SliverToBoxAdapter(
                     child: Padding(
                         padding: const EdgeInsets.fromLTRB(20, 22, 20, 12),
-                        child: Row(children: [
-                          Expanded(
-                              child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                Text(greeting,
-                                    style: GoogleFonts.inter(
-                                        fontSize: 13,
-                                        color: AppTheme.mutedText)),
-                                Text(user.name.split(' ').first,
+                        child: CompanionPageHeader(
+                          eyebrow: '$greeting 👋',
+                          title: user.name.trim().split(RegExp(r'\s+')).first,
+                          subtitle: user.isActiveSenior
+                              ? 'Ready to turn preparation into proof?'
+                              : 'Let\'s build one strong step today.',
+                          actions: [
+                            Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 7),
+                                decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(99),
+                                    border:
+                                        Border.all(color: AppTheme.cardBorder)),
+                                child: Text(batchCode,
                                     style: GoogleFonts.sora(
-                                        fontSize: 28,
-                                        fontWeight: FontWeight.w900,
-                                        color: const Color(0xFF17132D)))
-                              ])),
-                          Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 11, vertical: 7),
-                              decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(99),
-                                  border:
-                                      Border.all(color: AppTheme.cardBorder)),
-                              child: Text(batchCode,
-                                  style: GoogleFonts.sora(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w800,
-                                      color: AppTheme.accentCoral)))
-                        ]))),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w800,
+                                        color: AppTheme.accentCoral))),
+                          ],
+                        ))),
                 SliverToBoxAdapter(
                     child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20),

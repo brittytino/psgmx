@@ -9,6 +9,7 @@ import '../../core/theme/app_dimens.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/user_provider.dart';
 import '../widgets/premium_card.dart';
+import '../widgets/companion_page_header.dart';
 
 class ProgressScreen extends StatefulWidget {
   const ProgressScreen({super.key});
@@ -262,15 +263,10 @@ class _ProgressScreenState extends State<ProgressScreen> {
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
             children: [
-              Text('Progress',
-                  style: GoogleFonts.sora(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w900,
-                      color: const Color(0xFF17132D))),
-              const SizedBox(height: 5),
-              Text('Evidence, freshness and your next useful move.',
-                  style: GoogleFonts.inter(
-                      fontSize: 13, color: AppTheme.mutedText)),
+              const CompanionPageHeader(
+                title: 'Progress',
+                subtitle: 'Evidence, freshness and your next useful move.',
+              ),
               const SizedBox(height: 18),
               if (_loading)
                 const LinearProgressIndicator(minHeight: 3)

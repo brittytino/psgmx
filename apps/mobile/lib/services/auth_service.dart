@@ -7,6 +7,7 @@ import '../core/supabase_config.dart';
 import 'supabase_service.dart';
 import '../models/app_user.dart';
 import '../core/logical_identity.dart';
+import 'trusted_api_response.dart';
 
 /// AuthService: Secure OTP-based authentication using Supabase Auth
 ///
@@ -67,26 +68,13 @@ class AuthService {
             .timeout(const Duration(seconds: 15));
       }
 
-      final bodyStr = response.body;
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        debugPrint(
-            '[AuthService] ✅ OTP issued via Resend API (notifications@psgmx.tech)');
-        return true;
-      }
-
-      if (bodyStr.isNotEmpty) {
-        try {
-          final payload = jsonDecode(bodyStr) as Map<String, dynamic>;
-          if (payload['error'] != null) {
-            throw Exception(payload['error']);
-          }
-        } on FormatException {
-          // HTML or unexpected non-JSON response from server
-        }
-      }
-
-      throw Exception(
-          'Could not reach the Resend login service (${response.statusCode}). Please try again.');
+      decodeTrustedJson(
+        response,
+        fallbackMessage: 'Could not reach the login service. Please try again.',
+      );
+      debugPrint(
+          '[AuthService] ✅ OTP issued via Resend API (notifications@psgmx.tech)');
+      return true;
     } on AuthException catch (e) {
       if (e.message.contains('rate limit')) {
         throw Exception('Too many requests. Please wait a moment.');
@@ -132,11 +120,10 @@ class AuthService {
             body: jsonEncode({'email': email, 'token': otp}),
           )
           .timeout(const Duration(seconds: 20));
-      final payload = jsonDecode(response.body) as Map<String, dynamic>;
-      if (response.statusCode < 200 || response.statusCode >= 300) {
-        throw Exception(
-            payload['error'] ?? 'Verification failed. Please try again.');
-      }
+      final payload = decodeTrustedJson(
+        response,
+        fallbackMessage: 'Verification failed. Please try again.',
+      );
       final session = payload['session'];
       if (session is! Map ||
           session['refresh_token'] is! String ||
@@ -156,7 +143,11 @@ class AuthService {
       debugPrint('[AuthService] User authenticated');
     } catch (e) {
       debugPrint('[AuthService] Unexpected error: $e');
-      throw e.toString().replaceFirst('Exception: ', '');
+      throw trustedApiErrorMessage(
+        e,
+        fallbackMessage:
+            e is String ? e : 'Verification failed. Please request a new code.',
+      );
     }
   }
 

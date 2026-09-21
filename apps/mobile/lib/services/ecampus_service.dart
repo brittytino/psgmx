@@ -1,12 +1,11 @@
 import 'dart:async';
-import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../core/supabase_config.dart';
 import '../models/ecampus_attendance.dart';
+import 'trusted_api_response.dart';
 
 /// Attendance-only eCampus access. The mobile build contains no integration
 /// secret; refresh requests are authenticated with the student's Supabase
@@ -28,14 +27,10 @@ class EcampusService {
         'Content-Type': 'application/json',
       },
     ).timeout(const Duration(seconds: 95));
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      try {
-        final data = jsonDecode(response.body) as Map<String, dynamic>;
-        throw Exception(data['error'] ?? 'Attendance could not be refreshed.');
-      } on FormatException {
-        throw Exception('Attendance could not be refreshed.');
-      }
-    }
+    decodeTrustedJson(
+      response,
+      fallbackMessage: 'Attendance could not be refreshed.',
+    );
   }
 
   Future<EcampusAttendance?> getAttendance(String rollno) async {

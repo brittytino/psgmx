@@ -17,6 +17,7 @@ class DailyFiveProvider with ChangeNotifier, SafeChangeNotifier {
   bool _isLoading = false;
   bool _isSubmitting = false;
   String? _error;
+  Future<void>? _loadFuture;
 
   // ── Getters ────────────────────────────────────────────────────────────────
 
@@ -34,7 +35,18 @@ class DailyFiveProvider with ChangeNotifier, SafeChangeNotifier {
 
   /// Loads the streak for [userId] and (if not completed today) starts
   /// fetching questions so the quiz is ready to display.
-  Future<void> loadState(String userId) async {
+  Future<void> loadState(String userId) {
+    final activeLoad = _loadFuture;
+    if (activeLoad != null) return activeLoad;
+
+    final request = _loadState(userId);
+    _loadFuture = request;
+    return request.whenComplete(() {
+      if (identical(_loadFuture, request)) _loadFuture = null;
+    });
+  }
+
+  Future<void> _loadState(String userId) async {
     _setLoading(true);
     _error = null;
     try {
@@ -50,11 +62,31 @@ class DailyFiveProvider with ChangeNotifier, SafeChangeNotifier {
         _session = null; // Already done
       }
     } catch (e) {
-      _error = e.toString();
+      _error = _friendlyLoadError(e);
       debugPrint('[DailyFiveProvider] loadState error: $e');
     } finally {
       _setLoading(false);
     }
+  }
+
+  String _friendlyLoadError(Object error) {
+    final value = error.toString().toLowerCase();
+    if (value.contains('already completed')) {
+      return 'Today\'s Daily Five is already complete. Refresh to see your result.';
+    }
+    if (value.contains('not authenticated') || value.contains('jwt')) {
+      return 'Your session has expired. Sign in again to continue.';
+    }
+    if (value.contains('offline') ||
+        value.contains('network') ||
+        value.contains('socket') ||
+        value.contains('clientexception')) {
+      return 'Daily Five could not connect. Reconnect and tap retry.';
+    }
+    if (value.contains('active question')) {
+      return 'Today\'s question set is being prepared. Please retry shortly.';
+    }
+    return 'Daily Five could not load right now. Your streak is safe; tap retry.';
   }
 
   /// Records the user's answer for the current question and advances the
@@ -150,7 +182,8 @@ class DailyFiveProvider with ChangeNotifier, SafeChangeNotifier {
             '[DailyFiveProvider] Could not reveal results (likely offline/pending sync): $e');
       }
     } catch (e) {
-      _error = 'Failed to submit: $e';
+      _error =
+          'Your answers could not be confirmed. Your progress is safe; tap retry.';
       debugPrint('[DailyFiveProvider] finalizeSession error: $e');
     } finally {
       _isSubmitting = false;

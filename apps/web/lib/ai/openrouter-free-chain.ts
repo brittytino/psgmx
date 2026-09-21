@@ -18,18 +18,15 @@ interface ModelConfig {
 }
 
 const PROGRAMMING_MODELS: ModelConfig[] = [
-  { id: 'nvidia/nemotron-3-ultra-550b-a55b:free', maxTokens: 1600, temperature: 0.15 },
-  { id: 'minimax/minimax-m3:free', maxTokens: 1600, temperature: 0.15 },
+  { id: 'cohere/north-mini-code:free', maxTokens: 1600, temperature: 0.15 },
   { id: 'poolside/laguna-s-2.1:free', maxTokens: 1600, temperature: 0.15 },
   { id: 'nvidia/nemotron-3.5-lightning:free', maxTokens: 1400, temperature: 0.15 },
-  { id: 'nvidia/nemotron-3-super-120b-a12b:free', maxTokens: 1400, temperature: 0.15 },
   { id: 'openrouter/free', maxTokens: 1400, temperature: 0.15 },
 ]
 
 const THINKING_MODELS: ModelConfig[] = [
-  { id: 'thinkingmachines/inkling:free', maxTokens: 1400, temperature: 0.3 },
-  { id: 'minimax/minimax-m2.7:free', maxTokens: 1400, temperature: 0.3 },
   { id: 'inclusionai/ling-3.0-flash-fin:free', maxTokens: 1400, temperature: 0.3 },
+  { id: 'qwen/qwen3.8-27b:free', maxTokens: 1400, temperature: 0.3 },
   { id: 'google/gemma-4-31b-it:free', maxTokens: 1400, temperature: 0.3 },
   { id: 'google/gemma-4-26b-a4b-it:free', maxTokens: 1400, temperature: 0.3 },
   { id: 'openrouter/free', maxTokens: 1400, temperature: 0.3 },
@@ -63,27 +60,15 @@ export async function executeOpenRouterPrompt(
   systemPrompt?: string,
   maxTokensOverride?: number,
 ): Promise<AICallResponse> {
-  const geminiResult = await executeGeminiPrompt(prompt, systemPrompt)
-  if (geminiResult) {
-    return {
-      text: geminiResult.text,
-      modelUsed: geminiResult.modelUsed,
-      isFallback: false,
-      attempts: 1,
-    }
-  }
-
   const apiKey = process.env.OPENROUTER_API_KEY?.trim()
-  if (!apiKey) throw new AIUnavailableError(0)
-
   const mode = modeForTask(taskType)
   const chain = mode === 'programming' ? PROGRAMMING_MODELS : THINKING_MODELS
   let attempts = 0
 
-  for (const model of chain) {
+  for (const model of apiKey ? chain : []) {
     attempts += 1
     const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 15_000)
+    const timeout = setTimeout(() => controller.abort(), 12_000)
 
     try {
       const messages: Array<{ role: 'system' | 'user'; content: string }> = []
@@ -103,6 +88,7 @@ export async function executeOpenRouterPrompt(
           messages,
           max_tokens: maxTokensOverride ? Math.max(100, Math.min(maxTokensOverride, model.maxTokens)) : model.maxTokens,
           temperature: model.temperature,
+          reasoning: { effort: 'low', exclude: true },
         }),
         signal: controller.signal,
       })
@@ -123,6 +109,19 @@ export async function executeOpenRouterPrompt(
       // to the next configured model. Prompt or provider bodies are not logged.
     } finally {
       clearTimeout(timeout)
+    }
+  }
+
+  // OpenRouter is the configured primary provider. Gemini is retained only as
+  // a server-side continuity fallback; neither provider secret is shipped to
+  // the browser or mobile application.
+  const geminiResult = await executeGeminiPrompt(prompt, systemPrompt)
+  if (geminiResult) {
+    return {
+      text: geminiResult.text,
+      modelUsed: geminiResult.modelUsed,
+      isFallback: true,
+      attempts: attempts + 1,
     }
   }
 

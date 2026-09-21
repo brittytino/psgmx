@@ -13,7 +13,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { AIUnavailableError } from '@/lib/ai/openrouter-free-chain'
+import { AIUnavailableError, OPENROUTER_MODEL_CHAINS } from '@/lib/ai/openrouter-free-chain'
 
 // ─── Prompt builder (mirrors lib/ai logic) ──────────────────────────────────
 
@@ -172,5 +172,13 @@ describe('AI Hub: OpenRouter key absence guard', () => {
   it('PASS: executeOpenRouterPrompt throws AIUnavailableError when no keys configured', async () => {
     const { executeOpenRouterPrompt } = await import('@/lib/ai/openrouter-free-chain')
     await expect(executeOpenRouterPrompt('test query')).rejects.toBeInstanceOf(AIUnavailableError)
+  })
+})
+
+describe('AI Hub: production OpenRouter chain', () => {
+  it('uses a chat-completion model first and excludes agent-harness-only models', () => {
+    expect(OPENROUTER_MODEL_CHAINS.thinking[0]).toBe('inclusionai/ling-3.0-flash-fin:free')
+    expect(OPENROUTER_MODEL_CHAINS.thinking).not.toContain('thinkingmachines/inkling:free')
+    expect(OPENROUTER_MODEL_CHAINS.programming).toContain('poolside/laguna-s-2.1:free')
   })
 })

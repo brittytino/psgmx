@@ -47,7 +47,7 @@ jobs:
         run: |
           APP_API_URL="${APP_API_URL:-https://www.psgmx.tech}"
           APP_API_URL="${APP_API_URL%/}"
-          if [ "$APP_API_URL" = "https://psgmx.tech" ]; then APP_API_URL="https://www.psgmx.tech"; fi
+          if [ "$APP_API_URL" = "https://psgmx.tech" ] || [ "$APP_API_URL" = "https://app.psgmx.tech" ] || [ "$APP_API_URL" = "https://psgmxians.web.app" ] || [ "$APP_API_URL" = "https://psgmxians.firebaseapp.com" ]; then APP_API_URL="https://www.psgmx.tech"; fi
           umask 077
           printf 'SUPABASE_URL=%s\nSUPABASE_ANON_KEY=%s\nAPP_API_URL=%s\n' \
             "$SUPABASE_URL" "$SUPABASE_ANON_KEY" "$APP_API_URL" > .env.flutter

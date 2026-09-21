@@ -4,6 +4,8 @@ import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/supabase_config.dart';
 import '../models/daily_five.dart';
+import 'offline_companion.dart';
+import 'trusted_api_response.dart';
 
 /// The AI Mentor service — wraps OpenRouter with a fallback model chain.
 ///
@@ -17,6 +19,10 @@ import '../models/daily_five.dart';
 /// the AI layer is never visibly the reason something breaks.
 class AiMentorService {
   AiMentorService();
+
+  String? _conversationId;
+
+  void resetConversation() => _conversationId = null;
 
   // ── Core: OpenRouter call with fallback chain ──────────────────────────────
 
@@ -45,8 +51,8 @@ class AiMentorService {
             }),
           )
           .timeout(const Duration(seconds: 22));
-      if (response.statusCode != 200) return null;
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final data = decodeTrustedJson(response,
+          fallbackMessage: 'AI Senior is temporarily unavailable.');
       return (data['answer'] as String?)?.trim();
     } catch (error) {
       debugPrint('[AiMentor] Trusted API call failed: $error');
@@ -139,15 +145,47 @@ class AiMentorService {
     required String message,
     required List<Map<String, String>> history,
     bool isResumeFeedback = false,
+    OfflineCompanionContext offlineContext = const OfflineCompanionContext(),
   }) async {
-    final aiResponse = await _callOpenRouter(
-      intent: isResumeFeedback ? 'resume_feedback' : 'companion_chat',
-      userMessage: message,
-      maxTokens: 400,
-    );
+    if (isResumeFeedback) {
+      final aiResponse = await _callOpenRouter(
+        intent: 'resume_feedback',
+        userMessage: message,
+        maxTokens: 400,
+      );
+      return aiResponse ??
+          OfflineCompanion.answer(message, context: offlineContext);
+    }
 
-    return aiResponse ??
-        'I\'m having trouble connecting right now. Please try again in a moment! '
-            'In the meantime, try explaining your answer out loud — it\'s great practice.';
+    final token = Supabase.instance.client.auth.currentSession?.accessToken;
+    if (token != null) {
+      try {
+        final response = await http
+            .post(
+              Uri.parse('${SupabaseConfig.appApiUrl}/api/ai-senior'),
+              headers: {
+                'Authorization': 'Bearer $token',
+                'Content-Type': 'application/json',
+              },
+              body: jsonEncode({
+                'query': message,
+                if (_conversationId != null) 'conversation_id': _conversationId,
+              }),
+            )
+            .timeout(const Duration(seconds: 45));
+        final data = decodeTrustedJson(response,
+            fallbackMessage: 'AI Senior is temporarily unavailable.');
+        final answer = data['answer']?.toString().trim();
+        final conversationId = data['conversation_id']?.toString().trim();
+        if (conversationId?.isNotEmpty == true) {
+          _conversationId = conversationId;
+        }
+        if (answer?.isNotEmpty == true) return answer!;
+      } catch (error) {
+        debugPrint('[AiMentor] Personalised AI request failed: $error');
+      }
+    }
+
+    return OfflineCompanion.answer(message, context: offlineContext);
   }
 }

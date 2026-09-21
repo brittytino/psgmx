@@ -9,6 +9,7 @@ import '../../core/theme/app_theme.dart';
 import '../../providers/daily_five_provider.dart';
 import '../../providers/user_provider.dart';
 import '../widgets/premium_card.dart';
+import '../widgets/companion_page_header.dart';
 
 class TrainHubScreen extends StatefulWidget {
   const TrainHubScreen({super.key});
@@ -45,18 +46,11 @@ class _TrainHubScreenState extends State<TrainHubScreen> {
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
             children: [
-              Text('Train',
-                  style: GoogleFonts.sora(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w900,
-                      color: const Color(0xFF17132D))),
-              const SizedBox(height: 5),
-              Text(
-                user?.isActiveSenior == true
+              CompanionPageHeader(
+                title: 'Train',
+                subtitle: user?.isActiveSenior == true
                     ? 'Turn preparation into interview-ready proof.'
                     : 'Small, focused practice that compounds every day.',
-                style:
-                    GoogleFonts.inter(fontSize: 13, color: AppTheme.mutedText),
               ),
               const SizedBox(height: 18),
               _DailyFiveHero(

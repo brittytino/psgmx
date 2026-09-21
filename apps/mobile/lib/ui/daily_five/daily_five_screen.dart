@@ -36,10 +36,19 @@ class _DailyFiveScreenState extends State<DailyFiveScreen>
     WidgetsBinding.instance.addObserver(this);
     _secureScreen();
 
-    // Start initial timer after first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _startTimerForCurrentQuestion();
+      _initialiseSession();
     });
+  }
+
+  Future<void> _initialiseSession() async {
+    final provider = context.read<DailyFiveProvider>();
+    final user = context.read<UserProvider>().currentUser;
+    if (user == null) return;
+    if (provider.session == null && !provider.completedToday) {
+      await provider.loadState(user.uid);
+    }
+    if (mounted) _startTimerForCurrentQuestion();
   }
 
   Future<void> _secureScreen() async {
@@ -197,12 +206,33 @@ class _DailyFiveScreenState extends State<DailyFiveScreen>
     }
 
     if (provider.session == null) {
+      final user = context.read<UserProvider>().currentUser;
       return Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,
         appBar: AppBar(leading: const BackButton()),
         body: Center(
-          child: Text('No questions available today.',
-              style: GoogleFonts.inter(fontSize: 11)),
+          child: Padding(
+            padding: const EdgeInsets.all(28),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              const Icon(LucideIcons.circleAlert,
+                  size: 36, color: AppTheme.accentCoral),
+              const SizedBox(height: 14),
+              Text(provider.error ?? 'No questions are available today.',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(fontSize: 15, height: 1.45)),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: user == null
+                    ? null
+                    : () async {
+                        await provider.loadState(user.uid);
+                        if (mounted) _startTimerForCurrentQuestion();
+                      },
+                icon: const Icon(LucideIcons.refreshCw, size: 18),
+                label: const Text('Retry Daily Five'),
+              ),
+            ]),
+          ),
         ),
       );
     }
@@ -227,12 +257,12 @@ class _DailyFiveScreenState extends State<DailyFiveScreen>
                       Row(
                         children: [
                           const Icon(LucideIcons.target,
-                              size: 12, color: AppTheme.accentCoral),
+                              size: 18, color: AppTheme.accentCoral),
                           const SizedBox(width: 8),
                           Text(
                             'Daily Five',
                             style: GoogleFonts.inter(
-                              fontSize: 9,
+                              fontSize: 15,
                               fontWeight: FontWeight.w600,
                               color: theme.colorScheme.onSurface,
                             ),
@@ -242,7 +272,7 @@ class _DailyFiveScreenState extends State<DailyFiveScreen>
                       RichText(
                         text: TextSpan(
                           style: GoogleFonts.inter(
-                            fontSize: 9,
+                            fontSize: 14,
                             fontWeight: FontWeight.bold,
                             color: AppTheme.accentCoral,
                           ),
@@ -304,7 +334,7 @@ class _DailyFiveScreenState extends State<DailyFiveScreen>
                               Text(
                                 '$_timeLeft',
                                 style: GoogleFonts.sora(
-                                  fontSize: 16,
+                                  fontSize: 24,
                                   fontWeight: FontWeight.bold,
                                   color: AppTheme.accentCoral,
                                   height: 1.0,
@@ -313,7 +343,7 @@ class _DailyFiveScreenState extends State<DailyFiveScreen>
                               Text(
                                 'sec',
                                 style: GoogleFonts.inter(
-                                  fontSize: 9,
+                                  fontSize: 12,
                                   color: theme.textTheme.bodyMedium?.color
                                       ?.withValues(alpha: 0.5),
                                   fontWeight: FontWeight.w600,
@@ -340,7 +370,7 @@ class _DailyFiveScreenState extends State<DailyFiveScreen>
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           const Icon(LucideIcons.lightbulb,
-                              size: 12, color: AppTheme.accentCoral),
+                              size: 16, color: AppTheme.accentCoral),
                           const SizedBox(width: 6),
                           Flexible(
                             child: Text(
@@ -348,7 +378,7 @@ class _DailyFiveScreenState extends State<DailyFiveScreen>
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: GoogleFonts.inter(
-                                fontSize: 9,
+                                fontSize: 12,
                                 fontWeight: FontWeight.w600,
                                 color: AppTheme.accentCoral,
                               ),
@@ -364,7 +394,7 @@ class _DailyFiveScreenState extends State<DailyFiveScreen>
                       question.questionText,
                       textAlign: TextAlign.center,
                       style: GoogleFonts.sora(
-                        fontSize: 11,
+                        fontSize: 19,
                         fontWeight: FontWeight.w800,
                         color: theme.colorScheme.onSurface,
                         height: 1.3,
@@ -410,7 +440,7 @@ class _DailyFiveScreenState extends State<DailyFiveScreen>
             child: Text(
               'Submit Answer',
               style:
-                  GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.bold),
+                  GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.bold),
             ),
           ),
         ),
@@ -461,7 +491,7 @@ class _DailyFiveScreenState extends State<DailyFiveScreen>
                 child: Text(
                   letter,
                   style: GoogleFonts.sora(
-                    fontSize: 9,
+                    fontSize: 14,
                     fontWeight: FontWeight.bold,
                     color: isSelected
                         ? AppTheme.accentCoral
@@ -475,7 +505,7 @@ class _DailyFiveScreenState extends State<DailyFiveScreen>
               child: Text(
                 text,
                 style: GoogleFonts.inter(
-                  fontSize: 9,
+                  fontSize: 14,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                   color:
                       isSelected ? Colors.white : theme.colorScheme.onSurface,
@@ -545,7 +575,7 @@ class _DailyFiveScreenState extends State<DailyFiveScreen>
                           Text(
                             'Daily Five Completed!',
                             style: GoogleFonts.sora(
-                                fontSize: 11,
+                                fontSize: 23,
                                 fontWeight: FontWeight.bold,
                                 color: AppTheme.headingText),
                             textAlign: TextAlign.center,
@@ -558,7 +588,9 @@ class _DailyFiveScreenState extends State<DailyFiveScreen>
                                 ? 'Saving your score and updating readiness...'
                                 : 'Great job! You\'ve completed your daily questions.',
                             style: GoogleFonts.inter(
-                                fontSize: 9, color: AppTheme.mutedText),
+                                fontSize: 14,
+                                height: 1.4,
+                                color: AppTheme.mutedText),
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 32),
@@ -613,6 +645,30 @@ class _DailyFiveScreenState extends State<DailyFiveScreen>
                           ),
                           const SizedBox(height: 24),
 
+                          if (provider.error != null) ...[
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(15),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFF4ED),
+                                borderRadius: BorderRadius.circular(16),
+                                border:
+                                    Border.all(color: const Color(0xFFFFD4BF)),
+                              ),
+                              child: Row(children: [
+                                const Icon(LucideIcons.cloudOff,
+                                    color: AppTheme.accentCoral, size: 20),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(provider.error!,
+                                      style: GoogleFonts.inter(
+                                          fontSize: 13, height: 1.4)),
+                                ),
+                              ]),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+
                           // Consistency Banner
                           Container(
                             padding: const EdgeInsets.all(16),
@@ -640,13 +696,13 @@ class _DailyFiveScreenState extends State<DailyFiveScreen>
                                     children: [
                                       Text('Consistency is your superpower.',
                                           style: GoogleFonts.inter(
-                                              fontSize: 9,
+                                              fontSize: 14,
                                               fontWeight: FontWeight.w600,
                                               color: const Color(0xFF3F6212))),
                                       const SizedBox(height: 2),
                                       Text('Keep going, keep growing!',
                                           style: GoogleFonts.inter(
-                                              fontSize: 9,
+                                              fontSize: 13,
                                               color: const Color(0xFF4D7C0F))),
                                     ],
                                   ),
@@ -684,7 +740,7 @@ class _DailyFiveScreenState extends State<DailyFiveScreen>
                               children: [
                                 Text('Back to Dashboard',
                                     style: GoogleFonts.inter(
-                                        fontSize: 9,
+                                        fontSize: 15,
                                         fontWeight: FontWeight.bold)),
                                 const SizedBox(width: 8),
                                 const Icon(LucideIcons.arrowRight, size: 12),
@@ -729,12 +785,12 @@ class _DailyFiveScreenState extends State<DailyFiveScreen>
         const SizedBox(height: 8),
         Text(value,
             style: GoogleFonts.sora(
-                fontSize: 9, fontWeight: FontWeight.bold, color: color)),
+                fontSize: 17, fontWeight: FontWeight.bold, color: color)),
         const SizedBox(height: 2),
         Text(label,
             textAlign: TextAlign.center,
             style: GoogleFonts.inter(
-                fontSize: 9,
+                fontSize: 12,
                 color: theme.colorScheme.onSurface,
                 fontWeight: FontWeight.w500)),
       ],

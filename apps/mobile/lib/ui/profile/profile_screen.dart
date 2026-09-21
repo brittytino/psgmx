@@ -8,6 +8,7 @@ import '../../core/theme/app_dimens.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/user_provider.dart';
 import '../widgets/avatar_widget.dart';
+import '../widgets/companion_page_header.dart';
 import '../widgets/premium_card.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -35,57 +36,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // ── Header ────────────────────────────────────────────
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('You',
-                          style: GoogleFonts.sora(
-                              fontSize: 26,
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.headingText,
-                              letterSpacing: -0.5)),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Text('Your profile, your journey.',
-                              style: GoogleFonts.inter(
-                                  fontSize: 13, color: AppTheme.mutedText)),
-                          const SizedBox(width: 4),
-                          const Icon(LucideIcons.sparkles,
-                              size: 12, color: AppTheme.illusGold),
-                        ],
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      // Settings icon
-                      GestureDetector(
-                        onTap: () => context.push('/settings'),
-                        child: Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: AppTheme.cardBorder),
-                            boxShadow: [
-                              BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.04),
-                                  blurRadius: 8)
-                            ],
-                          ),
-                          child: const Center(
-                              child: Icon(LucideIcons.settings,
-                                  size: 18, color: AppTheme.headingText)),
-                        ),
-                      ),
-                    ],
+              CompanionPageHeader(
+                title: 'You',
+                subtitle: 'Your profile, your journey.',
+                actions: [
+                  IconButton(
+                    tooltip: 'Settings',
+                    onPressed: () => context.push('/settings'),
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      fixedSize: const Size(44, 44),
+                      side: const BorderSide(color: AppTheme.cardBorder),
+                    ),
+                    icon: const Icon(LucideIcons.settings,
+                        size: 20, color: AppTheme.headingText),
                   ),
                 ],
               ),

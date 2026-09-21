@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -14,6 +12,7 @@ import '../../core/theme/app_theme.dart';
 import '../../providers/announcement_provider.dart';
 import '../../providers/attendance_provider.dart';
 import '../../providers/user_provider.dart';
+import '../../services/trusted_api_response.dart';
 import '../widgets/premium_card.dart';
 
 class CommandCenterScreen extends StatefulWidget {
@@ -42,17 +41,17 @@ class _CommandCenterScreenState extends State<CommandCenterScreen> {
     try {
       final token = Supabase.instance.client.auth.currentSession?.accessToken;
       if (token == null) {
-        throw const FormatException('Your session has expired.');
+        throw const TrustedApiException(
+            'Your session has expired. Sign in again to continue.');
       }
       final response = await http.get(
         Uri.parse('${SupabaseConfig.appApiUrl}/api/placement-rep/pulse'),
         headers: {'Authorization': 'Bearer $token'},
       ).timeout(const Duration(seconds: 20));
-      final body = jsonDecode(response.body) as Map<String, dynamic>;
-      if (response.statusCode != 200) {
-        throw FormatException(
-            body['error']?.toString() ?? 'Could not load readiness.');
-      }
+      final body = decodeTrustedJson(
+        response,
+        fallbackMessage: 'Could not load the live batch pulse.',
+      );
       if (!mounted) return;
       setState(() {
         _pulse = body;
@@ -62,9 +61,8 @@ class _CommandCenterScreenState extends State<CommandCenterScreen> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = error is FormatException
-            ? error.message
-            : 'The live batch pulse could not be refreshed.';
+        _error = trustedApiErrorMessage(error,
+            fallbackMessage: 'The live batch pulse could not be refreshed.');
       });
     }
   }

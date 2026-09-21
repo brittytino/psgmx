@@ -21,12 +21,25 @@ class NotificationBellIcon extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      margin: const EdgeInsets.only(right: 4),
+      width: 44,
+      height: 44,
       decoration: BoxDecoration(
         color: isDark
             ? colorScheme.surfaceContainerHighest.withValues(alpha: 0.3)
-            : colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(12),
+            : Colors.white,
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: isDark
+              ? colorScheme.outline.withValues(alpha: .25)
+              : const Color(0xFFE8E6EC),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: .04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: IconButton(
         onPressed: onTap ??
@@ -39,7 +52,7 @@ class NotificationBellIcon extends StatelessWidget {
             Icon(
               Icons.notifications_rounded,
               color: colorScheme.onSurface,
-              size: 16,
+              size: 21,
             ),
             if (unreadCount > 0)
               Positioned(
@@ -84,7 +97,7 @@ class NotificationBellIcon extends StatelessWidget {
         tooltip: unreadCount > 0
             ? '$unreadCount new notifications'
             : 'Notifications',
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.all(10),
         visualDensity: VisualDensity.compact,
       ),
     );

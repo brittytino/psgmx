@@ -11,6 +11,7 @@ import '../../providers/announcement_provider.dart';
 import '../../providers/user_provider.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/premium_card.dart';
+import '../widgets/companion_page_header.dart';
 
 class CommunityScreen extends StatefulWidget {
   const CommunityScreen({super.key});
@@ -177,26 +178,10 @@ class _CommunityScreenState extends State<CommunityScreen> {
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
             children: [
-              Row(children: [
-                Expanded(
-                    child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                      Text('Community',
-                          style: GoogleFonts.sora(
-                              fontSize: 28,
-                              fontWeight: FontWeight.w900,
-                              color: const Color(0xFF17132D))),
-                      const SizedBox(height: 5),
-                      Text('Learn from MX, then leave it stronger.',
-                          style: GoogleFonts.inter(
-                              fontSize: 13, color: AppTheme.mutedText)),
-                    ])),
-                IconButton.filledTonal(
-                    tooltip: 'Open inbox',
-                    onPressed: () => context.push('/notifications'),
-                    icon: const Icon(LucideIcons.bell, size: 20)),
-              ]),
+              const CompanionPageHeader(
+                title: 'Community',
+                subtitle: 'Learn from MX, then leave it stronger.',
+              ),
               if (_loading) ...[
                 const SizedBox(height: 16),
                 const LinearProgressIndicator(minHeight: 3),

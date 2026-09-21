@@ -216,12 +216,14 @@ class DailyFiveService {
       }
     }
 
+    final previousStreak = await fetchStreak(userId);
+
     // Server-side grading — see submit_daily_five_answers() in
     // supabase/migrations/10_sprint2_anticheat.sql. It grades, updates
     // daily_five_attempts, flags impossibly-fast completions, calls
     // increment_daily_five_streak() internally, and writes the audit log
     // itself, so none of that is duplicated here anymore.
-    await _supabase.rpc('submit_daily_five_answers', params: {
+    final grading = await _supabase.rpc('submit_daily_five_answers', params: {
       'p_user_id': userId,
       'p_answers': answersByQuestionId,
     });
@@ -257,7 +259,30 @@ class DailyFiveService {
       }
     }
 
-    return updated!;
+    if (updated != null) return updated;
+
+    // The grading transaction has already succeeded. A brief follow-up read
+    // failure must not crash the completion screen or invite a duplicate
+    // submission. Preserve a truthful local result until the next refresh.
+    final gradingMap = grading is Map
+        ? Map<String, dynamic>.from(grading)
+        : const <String, dynamic>{};
+    final accuracy =
+        double.tryParse(gradingMap['accuracy_rate']?.toString() ?? '');
+    final nextStreak = (previousStreak?.completedToday ?? false)
+        ? previousStreak!.currentStreak
+        : (previousStreak?.currentStreak ?? 0) + 1;
+    return DailyFiveStreak(
+      userId: userId,
+      currentStreak: nextStreak,
+      longestStreak: max(previousStreak?.longestStreak ?? 0, nextStreak),
+      freezesRemaining: previousStreak?.freezesRemaining ?? 2,
+      freezesResetMonth: previousStreak?.freezesResetMonth ??
+          '${DateTime.now().year}-${DateTime.now().month.toString().padLeft(2, '0')}',
+      lastCompletedDate: DateTime.now(),
+      lastAccuracyRate: accuracy,
+      updatedAt: DateTime.now(),
+    );
   }
 
   /// Reveals correct_option for today's already-submitted attempt only —

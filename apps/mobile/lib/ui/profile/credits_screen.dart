@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+
 import '../../core/theme/app_theme.dart';
 
 class CreditsScreen extends StatelessWidget {
@@ -11,226 +12,364 @@ class CreditsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
+      backgroundColor: const Color(0xFFF7F8FA),
       appBar: AppBar(
+        backgroundColor: const Color(0xFFF7F8FA),
+        elevation: 0,
         leading: IconButton(
+          tooltip: 'Back',
           icon: const Icon(LucideIcons.chevronLeft),
           onPressed: () => context.pop(),
         ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+        title: Text('About PSGMX',
+            style: GoogleFonts.sora(fontSize: 18, fontWeight: FontWeight.w800)),
       ),
-      extendBodyBehindAppBar: true,
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.only(
-            left: 24.0, right: 24.0, top: 80.0, bottom: 48.0),
-        child: Column(
-          children: [
-            const Icon(LucideIcons.heart,
-                color: AppTheme.accentCoral, size: 16),
-            const SizedBox(height: 24),
-            Text(
-              'Thanks for being\npart of the journey.',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.sora(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.onSurface,
-                height: 1.3,
-                letterSpacing: -0.5,
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
+        children: [
+          Container(
+            padding: const EdgeInsets.all(22),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF20163D), Color(0xFF613390)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
+              borderRadius: BorderRadius.circular(26),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF5B2A86).withValues(alpha: .2),
+                  blurRadius: 22,
+                  offset: const Offset(0, 10),
+                ),
+              ],
             ),
-            const SizedBox(height: 32),
-
-            Text(
-              'PSGMX was born from a simple belief —\nthat every student deserves clarity, support,\nand the right opportunities to grow.',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
-                  fontSize: 11,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
-                  height: 1.6),
-            ),
-            const SizedBox(height: 24),
-
-            Text(
-              'Built by someone who\'s been there.\nFor students, by students.\nTo make placements less stressful\nand a little more human.',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
-                  fontSize: 11,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
-                  height: 1.6),
-            ),
-            const SizedBox(height: 32),
-
-            Text(
-              'Here\'s to your journey ahead.',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
-                  fontSize: 11,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.8)),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Row(children: [
+                  Container(
+                    width: 58,
+                    height: 58,
+                    padding: const EdgeInsets.all(7),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: .14),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: Image.asset(
+                      'assets/images/mascot.png',
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => const Icon(
+                          LucideIcons.sparkles,
+                          color: Colors.white,
+                          size: 28),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('PSGMX',
+                            style: GoogleFonts.sora(
+                                fontSize: 26,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.white)),
+                        Text('Placement preparation, made human.',
+                            style: GoogleFonts.inter(
+                                fontSize: 13, color: Colors.white70)),
+                      ],
+                    ),
+                  ),
+                ]),
+                const SizedBox(height: 20),
                 Text(
-                  'You\'ve got this!',
+                  'A continuing companion for PSG Tech MCA students — from first foundations to placement-ready proof.',
                   style: GoogleFonts.inter(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onSurface),
-                ),
-                const SizedBox(width: 8),
-                const Icon(LucideIcons.sparkles,
-                    color: AppTheme.illusGold, size: 16),
-              ],
-            ),
-            const SizedBox(height: 24),
-
-            FutureBuilder<PackageInfo>(
-              future: PackageInfo.fromPlatform(),
-              builder: (context, snapshot) => Text(
-                snapshot.hasData
-                    ? 'Version ${snapshot.data!.version} (${snapshot.data!.buildNumber})'
-                    : 'Checking installed version…',
-                style: GoogleFonts.inter(
-                    fontSize: 9,
-                    color: theme.textTheme.bodyMedium?.color
-                        ?.withValues(alpha: 0.5)),
-              ),
-            ),
-            const SizedBox(height: 48),
-
-            // Mascot & Signature
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Image.asset(
-                  'assets/images/mascot.png',
-                  width: 100,
-                  height: 100,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    width: 100,
-                    height: 100,
-                    decoration: const BoxDecoration(
-                        color: AppTheme.accentCoral, shape: BoxShape.circle),
-                    child: const Icon(LucideIcons.flame,
-                        color: Colors.white, size: 16),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Flexible(
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: 16.0),
-                    child: Text(
-                      'built by Tino <3',
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.caveat(
-                        fontSize: 16,
-                        color:
-                            theme.colorScheme.onSurface.withValues(alpha: 0.8),
-                      ),
-                    ),
-                  ),
+                      fontSize: 15,
+                      height: 1.55,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600),
                 ),
               ],
             ),
-            const SizedBox(height: 48),
-
-            // Contribution Card
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFF8F5), // Light coral tint
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                    color: AppTheme.accentCoral.withValues(alpha: 0.1)),
+          ),
+          const SizedBox(height: 24),
+          const _SectionTitle(
+              title: 'Built for every stage',
+              subtitle: 'The experience adapts as each batch moves forward.'),
+          const SizedBox(height: 12),
+          const Row(children: [
+            Expanded(
+              child: _JourneyCard(
+                label: '25MX',
+                title: 'Senior journey',
+                message: 'Turn preparation into verified interview evidence.',
+                icon: LucideIcons.briefcaseBusiness,
+                color: Color(0xFFFF6547),
               ),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'You can also contribute to this app',
+            ),
+            SizedBox(width: 10),
+            Expanded(
+              child: _JourneyCard(
+                label: '26MX',
+                title: 'Junior journey',
+                message: 'Build strong daily foundations without the noise.',
+                icon: LucideIcons.sprout,
+                color: Color(0xFF7C3AED),
+              ),
+            ),
+          ]),
+          const SizedBox(height: 24),
+          const _SectionTitle(
+              title: 'One connected preparation loop',
+              subtitle: 'Practice, reflect, and take the next useful step.'),
+          const SizedBox(height: 12),
+          const _FeatureTile(
+            icon: LucideIcons.target,
+            title: 'Daily Five',
+            message: 'Five targeted questions that reveal where to focus next.',
+          ),
+          const SizedBox(height: 10),
+          const _FeatureTile(
+            icon: LucideIcons.bot,
+            title: 'AI Senior · Spark',
+            message:
+                'Personalised online coaching with useful offline guidance.',
+          ),
+          const SizedBox(height: 10),
+          const _FeatureTile(
+            icon: LucideIcons.activity,
+            title: 'Progress that means something',
+            message:
+                'Readiness is supported by fresh evidence, not empty points.',
+          ),
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.all(17),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF4ED),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFFFD4BF)),
+            ),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Icon(LucideIcons.shieldCheck,
+                  color: AppTheme.accentCoral, size: 22),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Clear and responsible',
                         style: GoogleFonts.inter(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: theme.colorScheme.onSurface),
-                      ),
-                      const SizedBox(width: 6),
-                      const Icon(LucideIcons.sparkles,
-                          color: AppTheme.illusGold, size: 12),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Found a bug? Have an idea? Help make PSGMX better for everyone.',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
-                        fontSize: 9,
-                        color: theme.textTheme.bodyMedium?.color
-                            ?.withValues(alpha: 0.6),
-                        height: 1.4),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // GitHub Button
-                  OutlinedButton.icon(
-                    onPressed: () => launchUrl(
-                      Uri.parse(
-                          'https://github.com/brittytino/psgmx-flutter/issues'),
-                      mode: LaunchMode.externalApplication,
+                            fontSize: 14, fontWeight: FontWeight.w800)),
+                    const SizedBox(height: 4),
+                    Text(
+                      'PSGMX supports preparation. NEO PAT remains the official source for drives, eligibility, shortlists, and offers.',
+                      style: GoogleFonts.inter(
+                          fontSize: 13,
+                          height: 1.45,
+                          color: const Color(0xFF7C5B4A)),
                     ),
-                    icon: const Icon(Icons.code, size: 16),
-                    label: const Text('Report an issue on GitHub'),
-                  ),
-                  const SizedBox(height: 32),
-                  Text(
-                    'Contributions are reviewed in the public repository so fixes remain traceable and safe for future MX batches.',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
-                        fontSize: 9,
-                        height: 1.5,
-                        color: theme.textTheme.bodyMedium?.color
-                            ?.withValues(alpha: 0.65)),
-                  ),
-                ],
+                  ],
+                ),
               ),
+            ]),
+          ),
+          const SizedBox(height: 24),
+          FutureBuilder<PackageInfo>(
+            future: PackageInfo.fromPlatform(),
+            builder: (context, snapshot) {
+              final version = snapshot.hasData
+                  ? '${snapshot.data!.version} (${snapshot.data!.buildNumber})'
+                  : 'Checking…';
+              return _InfoRow(
+                icon: LucideIcons.badgeInfo,
+                label: 'Installed version',
+                value: version,
+              );
+            },
+          ),
+          const SizedBox(height: 10),
+          _InfoRow(
+            icon: LucideIcons.bug,
+            label: 'Found a problem?',
+            value: 'Report it on GitHub',
+            onTap: () => launchUrl(
+              Uri.parse('https://github.com/brittytino/psgmx/issues'),
+              mode: LaunchMode.externalApplication,
             ),
-            const SizedBox(height: 48),
-
-            // Footer
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text('Made with ',
-                    style: GoogleFonts.inter(
-                        fontSize: 9,
-                        color: theme.textTheme.bodyMedium?.color
-                            ?.withValues(alpha: 0.6))),
-                const Icon(Icons.favorite,
-                    color: AppTheme.accentCoral, size: 12),
-                Text(' for dreamers and doers.',
-                    style: GoogleFonts.inter(
-                        fontSize: 9,
-                        color: theme.textTheme.bodyMedium?.color
-                            ?.withValues(alpha: 0.6))),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Text('Keep pushing. We\'re cheering for you!',
-                style: GoogleFonts.inter(
-                    fontSize: 9,
-                    color: theme.textTheme.bodyMedium?.color
-                        ?.withValues(alpha: 0.6))),
-          ],
-        ),
+          ),
+          const SizedBox(height: 28),
+          Text('Built with care for MX students, seniors, and alumni.',
+              textAlign: TextAlign.center,
+              style:
+                  GoogleFonts.inter(fontSize: 12, color: AppTheme.mutedText)),
+        ],
       ),
     );
   }
+}
+
+class _SectionTitle extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  const _SectionTitle({required this.title, required this.subtitle});
+
+  @override
+  Widget build(BuildContext context) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title,
+              style:
+                  GoogleFonts.sora(fontSize: 18, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 4),
+          Text(subtitle,
+              style: GoogleFonts.inter(
+                  fontSize: 13, height: 1.4, color: AppTheme.mutedText)),
+        ],
+      );
+}
+
+class _JourneyCard extends StatelessWidget {
+  final String label;
+  final String title;
+  final String message;
+  final IconData icon;
+  final Color color;
+  const _JourneyCard({
+    required this.label,
+    required this.title,
+    required this.message,
+    required this.icon,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) => Container(
+        constraints: const BoxConstraints(minHeight: 188),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(21),
+          border: Border.all(color: AppTheme.cardBorder),
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                  color: color.withValues(alpha: .1),
+                  borderRadius: BorderRadius.circular(12)),
+              child: Icon(icon, color: color, size: 20),
+            ),
+            const Spacer(),
+            Text(label,
+                style: GoogleFonts.sora(
+                    fontSize: 12, fontWeight: FontWeight.w900, color: color)),
+          ]),
+          const SizedBox(height: 16),
+          Text(title,
+              style:
+                  GoogleFonts.sora(fontSize: 14, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 6),
+          Text(message,
+              style: GoogleFonts.inter(
+                  fontSize: 12, height: 1.45, color: AppTheme.mutedText)),
+        ]),
+      );
+}
+
+class _FeatureTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String message;
+  const _FeatureTile(
+      {required this.icon, required this.title, required this.message});
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(19),
+          border: Border.all(color: AppTheme.cardBorder),
+        ),
+        child: Row(children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: AppTheme.accentCoral.withValues(alpha: .09),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(icon, color: AppTheme.accentCoral, size: 21),
+          ),
+          const SizedBox(width: 13),
+          Expanded(
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(title,
+                  style: GoogleFonts.inter(
+                      fontSize: 14, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 3),
+              Text(message,
+                  style: GoogleFonts.inter(
+                      fontSize: 12, height: 1.4, color: AppTheme.mutedText)),
+            ]),
+          ),
+        ]),
+      );
+}
+
+class _InfoRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final VoidCallback? onTap;
+  const _InfoRow(
+      {required this.icon,
+      required this.label,
+      required this.value,
+      this.onTap});
+
+  @override
+  Widget build(BuildContext context) => Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(17),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(17),
+          child: Container(
+            padding: const EdgeInsets.all(15),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(17),
+              border: Border.all(color: AppTheme.cardBorder),
+            ),
+            child: Row(children: [
+              Icon(icon, size: 20, color: AppTheme.accentCoral),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(label,
+                    style: GoogleFonts.inter(
+                        fontSize: 13, fontWeight: FontWeight.w700)),
+              ),
+              Text(value,
+                  style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: onTap == null
+                          ? AppTheme.mutedText
+                          : AppTheme.accentCoral)),
+              if (onTap != null) ...[
+                const SizedBox(width: 5),
+                const Icon(LucideIcons.externalLink,
+                    size: 15, color: AppTheme.accentCoral),
+              ],
+            ]),
+          ),
+        ),
+      );
 }

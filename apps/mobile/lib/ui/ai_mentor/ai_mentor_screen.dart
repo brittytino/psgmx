@@ -3,10 +3,13 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:provider/provider.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../providers/user_provider.dart';
 import '../widgets/rive_placeholder.dart';
 import '../../services/ai_mentor_service.dart';
+import '../../services/offline_companion.dart';
 
 class AiMentorScreen extends StatefulWidget {
   const AiMentorScreen({super.key});
@@ -36,10 +39,10 @@ class _AiMentorScreenState extends State<AiMentorScreen> {
 
   static const List<String> _thinkingSteps = [
     'Thinking...',
-    'Grinding...',
-    'Looking RAG model...',
-    'Synthesizing response...',
-    'Polishing advice...',
+    'Checking your progress...',
+    'Finding useful evidence...',
+    'Building your next steps...',
+    'Polishing the answer...',
   ];
 
   static const List<String> _simpleGreetingReplies = [
@@ -122,6 +125,7 @@ class _AiMentorScreenState extends State<AiMentorScreen> {
   }
 
   void _clearChat() {
+    _service.resetConversation();
     setState(() {
       _messages.clear();
       _messages.add(_Message(
@@ -180,6 +184,20 @@ class _AiMentorScreenState extends State<AiMentorScreen> {
                 'content': message.content,
               })
           .toList(),
+      offlineContext: _offlineContext,
+    );
+  }
+
+  OfflineCompanionContext get _offlineContext {
+    final user = context.read<UserProvider>().currentUser;
+    final firstName = user?.name.trim().split(RegExp(r'\s+')).firstOrNull;
+    final batchCode = user == null
+        ? null
+        : RegExp(r'\d{2}MX').firstMatch(user.regNo)?.group(0);
+    return OfflineCompanionContext(
+      firstName: firstName,
+      batchCode: batchCode,
+      isSenior: user?.isActiveSenior ?? false,
     );
   }
 
@@ -232,6 +250,7 @@ class _AiMentorScreenState extends State<AiMentorScreen> {
           message: messageText,
           history: history,
           isResumeFeedback: false,
+          offlineContext: _offlineContext,
         );
       }
 
@@ -252,8 +271,10 @@ class _AiMentorScreenState extends State<AiMentorScreen> {
       if (mounted) {
         _stopThinkingAnimation();
         setState(() {
-          _messages.add(_Message('Error connecting to AI. Please try again.',
-              false, _getCurrentTime()));
+          _messages.add(_Message(
+              OfflineCompanion.answer(messageText, context: _offlineContext),
+              false,
+              _getCurrentTime()));
           _isLoading = false;
         });
         _scrollToBottom();
@@ -315,10 +336,10 @@ class _AiMentorScreenState extends State<AiMentorScreen> {
                           children: [
                             Flexible(
                               child: Text(
-                                'AI Mentor',
+                                'AI Senior',
                                 overflow: TextOverflow.ellipsis,
                                 style: GoogleFonts.sora(
-                                  fontSize: 15,
+                                  fontSize: 18,
                                   fontWeight: FontWeight.bold,
                                   color: theme.colorScheme.onSurface,
                                   letterSpacing: -0.3,
@@ -342,7 +363,7 @@ class _AiMentorScreenState extends State<AiMentorScreen> {
                                   Text(
                                     'Spark',
                                     style: GoogleFonts.inter(
-                                      fontSize: 8,
+                                      fontSize: 10,
                                       fontWeight: FontWeight.bold,
                                       color: AppTheme.illusGold,
                                     ),
@@ -354,9 +375,9 @@ class _AiMentorScreenState extends State<AiMentorScreen> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          'Your companion for placements & tech growth',
+                          'Personal online · helpful offline',
                           style: GoogleFonts.inter(
-                            fontSize: 10,
+                            fontSize: 12,
                             color: theme.textTheme.bodyMedium?.color
                                 ?.withValues(alpha: 0.6),
                           ),
@@ -389,7 +410,7 @@ class _AiMentorScreenState extends State<AiMentorScreen> {
                             Text(
                               'Reset',
                               style: GoogleFonts.inter(
-                                fontSize: 10,
+                                fontSize: 12,
                                 fontWeight: FontWeight.w600,
                                 color: theme.colorScheme.onSurface
                                     .withValues(alpha: 0.7),
@@ -488,7 +509,7 @@ class _AiMentorScreenState extends State<AiMentorScreen> {
                             decoration: InputDecoration(
                               hintText: 'Ask Spark anything...',
                               hintStyle: GoogleFonts.inter(
-                                  fontSize: 11,
+                                  fontSize: 14,
                                   color: Theme.of(context)
                                       .textTheme
                                       .bodyMedium
@@ -496,7 +517,7 @@ class _AiMentorScreenState extends State<AiMentorScreen> {
                                       ?.withValues(alpha: 0.5)),
                               border: InputBorder.none,
                             ),
-                            style: GoogleFonts.inter(fontSize: 11),
+                            style: GoogleFonts.inter(fontSize: 14),
                             onSubmitted: (val) => _sendMessage(val),
                           ),
                         ),
@@ -537,7 +558,7 @@ class _AiMentorScreenState extends State<AiMentorScreen> {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: GoogleFonts.inter(
-                              fontSize: 9.5,
+                              fontSize: 11,
                               color: Theme.of(context)
                                   .textTheme
                                   .bodyMedium
@@ -641,7 +662,7 @@ class _AiMentorScreenState extends State<AiMentorScreen> {
           child: Text(
             msg.content,
             style: GoogleFonts.inter(
-                color: Colors.white, fontSize: 11, height: 1.4),
+                color: Colors.white, fontSize: 14, height: 1.45),
           ),
         ),
         const SizedBox(height: 4),
@@ -662,7 +683,7 @@ class _AiMentorScreenState extends State<AiMentorScreen> {
     final theme = Theme.of(context);
     final baseStyle = GoogleFonts.inter(
       color: theme.colorScheme.onSurface,
-      fontSize: 11,
+      fontSize: 14,
       height: 1.45,
     );
 
@@ -704,7 +725,7 @@ class _AiMentorScreenState extends State<AiMentorScreen> {
                       RichText(
                         text: TextSpan(
                           style: GoogleFonts.inter(
-                              fontSize: 11, color: theme.colorScheme.onSurface),
+                              fontSize: 14, color: theme.colorScheme.onSurface),
                           children: [
                             const TextSpan(text: 'Hi! I\'m '),
                             TextSpan(

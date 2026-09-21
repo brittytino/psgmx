@@ -30,7 +30,7 @@ export async function executeGeminiPrompt(
       }
     }
   } catch (err) {
-    console.warn('[Gemini AI] Gemini execution failed, falling back to OpenRouter:', err instanceof Error ? err.message : String(err))
+    console.warn('[Gemini AI] Continuity fallback failed:', err instanceof Error ? err.message : String(err))
   }
 
   return null

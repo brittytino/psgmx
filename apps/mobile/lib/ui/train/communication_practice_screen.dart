@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -14,6 +12,7 @@ import '../../core/supabase_config.dart';
 import '../../core/theme/app_dimens.dart';
 import '../../core/theme/app_theme.dart';
 import '../../services/recorded_audio_bytes.dart';
+import '../../services/trusted_api_response.dart';
 import '../widgets/premium_card.dart';
 
 class CommunicationPracticeScreen extends StatefulWidget {
@@ -69,10 +68,10 @@ class _CommunicationPracticeScreenState
         Uri.parse('${SupabaseConfig.appApiUrl}/api/communication/evaluate'),
         headers: {'Authorization': 'Bearer $token'},
       ).timeout(const Duration(seconds: 20));
-      final body = jsonDecode(response.body) as Map<String, dynamic>;
-      if (response.statusCode != 200) {
-        throw Exception(body['error'] ?? 'Unable to load practice prompts.');
-      }
+      final body = decodeTrustedJson(
+        response,
+        fallbackMessage: 'Unable to load practice prompts right now.',
+      );
       final prompts = (body['prompts'] as List? ?? const [])
           .whereType<Map>()
           .map((item) => Map<String, dynamic>.from(item))
@@ -94,7 +93,9 @@ class _CommunicationPracticeScreenState
         _loading = false;
         _error = error is TimeoutException
             ? 'The practice service took too long to respond.'
-            : error.toString().replaceFirst('Exception: ', '');
+            : trustedApiErrorMessage(error,
+                fallbackMessage:
+                    'Communication practice could not load. Pull down to retry.');
       });
     }
   }
@@ -204,11 +205,10 @@ class _CommunicationPracticeScreenState
       final streamed =
           await request.send().timeout(const Duration(seconds: 60));
       final response = await http.Response.fromStream(streamed);
-      final body = jsonDecode(response.body) as Map<String, dynamic>;
-      if (response.statusCode != 200) {
-        throw Exception(
-            body['error'] ?? 'Evaluation is temporarily unavailable.');
-      }
+      final body = decodeTrustedJson(
+        response,
+        fallbackMessage: 'Evaluation is temporarily unavailable.',
+      );
       if (!mounted) return;
       setState(() {
         _result = body;
@@ -222,7 +222,9 @@ class _CommunicationPracticeScreenState
         _evaluating = false;
         _error = error is TimeoutException
             ? 'Evaluation timed out. Your clip was not retained; please retry.'
-            : error.toString().replaceFirst('Exception: ', '');
+            : trustedApiErrorMessage(error,
+                fallbackMessage:
+                    'Your answer could not be evaluated. Please retry.');
       });
     }
   }
