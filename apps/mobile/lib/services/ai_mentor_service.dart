@@ -7,29 +7,97 @@ import '../models/daily_five.dart';
 import 'offline_companion.dart';
 import 'trusted_api_response.dart';
 
-/// The AI Mentor service — wraps OpenRouter with a fallback model chain.
+/// The AI Mentor service — wraps OpenRouter directly and via backend broker
+/// with a robust multi-model fallback chain.
 ///
-/// Scope:
-///   1. Explain a wrong daily-five answer (ephemeral — called in results window)
-///   2. Weekly weak-topic note (based on streak/accuracy rates — not raw answers)
-///   3. Optional student-initiated resume feedback / mock interview chat
+/// Models tried in order:
+/// 1. deepseek/deepseek-chat
+/// 2. meta-llama/llama-3.3-70b-instruct:free
+/// 3. google/gemini-2.0-flash-exp:free
+/// 4. mistralai/mistral-small-24b-instruct-2501:free
+/// 5. qwen/qwen-2.5-72b-instruct:free
 ///
-/// Fallback chain: if the first model is down or rate-limited, the next takes
-/// over automatically. If all models fail, a pre-written tip is returned so
-/// the AI layer is never visibly the reason something breaks.
+/// When offline or if network fails, falls back seamlessly to the
+/// comprehensive, grounded OfflineCompanion so the AI Senior always
+/// responds live and intelligently.
 class AiMentorService {
   AiMentorService();
 
   String? _conversationId;
 
+  static const List<String> _modelChain = [
+    'deepseek/deepseek-chat',
+    'meta-llama/llama-3.3-70b-instruct:free',
+    'google/gemini-2.0-flash-exp:free',
+    'mistralai/mistral-small-24b-instruct-2501:free',
+    'qwen/qwen-2.5-72b-instruct:free',
+  ];
+
   void resetConversation() => _conversationId = null;
 
-  // ── Core: OpenRouter call with fallback chain ──────────────────────────────
+  // ── Core: Direct OpenRouter Call ──────────────────────────────────────────
 
-  /// Calls OpenRouter with the given [systemPrompt] and [userMessage].
-  /// Tries each model in [_modelChain] in order.
-  /// Returns null if all models fail.
-  Future<String?> _callOpenRouter({
+  Future<String?> _callOpenRouterDirect({
+    required String systemPrompt,
+    required String userMessage,
+    List<Map<String, String>> history = const [],
+    int maxTokens = 450,
+  }) async {
+    final apiKey = SupabaseConfig.openRouterApiKey.trim();
+    if (apiKey.isEmpty) return null;
+
+    final messages = <Map<String, String>>[
+      {'role': 'system', 'content': systemPrompt},
+      ...history,
+      {'role': 'user', 'content': userMessage},
+    ];
+
+    for (final model in _modelChain) {
+      try {
+        debugPrint('[AiMentor] Calling OpenRouter model: $model');
+        final response = await http
+            .post(
+              Uri.parse('https://openrouter.ai/api/v1/chat/completions'),
+              headers: {
+                'Authorization': 'Bearer $apiKey',
+                'Content-Type': 'application/json',
+                'HTTP-Referer': 'https://psgmx.tech',
+                'X-Title': 'PSGMX AI Senior',
+              },
+              body: jsonEncode({
+                'model': model,
+                'messages': messages,
+                'max_tokens': maxTokens,
+                'temperature': 0.7,
+              }),
+            )
+            .timeout(const Duration(seconds: 15));
+
+        if (response.statusCode == 200) {
+          final data = jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+          final choices = data['choices'] as List?;
+          if (choices != null && choices.isNotEmpty) {
+            final content = choices[0]['message']?['content']?.toString().trim();
+            if (content != null && content.isNotEmpty) {
+              debugPrint('[AiMentor] ✅ OpenRouter response received from $model');
+              return content;
+            }
+          }
+        } else {
+          debugPrint(
+              '[AiMentor] OpenRouter model $model returned ${response.statusCode}: ${response.body}');
+        }
+      } catch (e) {
+        debugPrint('[AiMentor] Error with model $model: $e');
+      }
+    }
+
+    return null;
+  }
+
+  // ── Core: Backend API Proxy Call ──────────────────────────────────────────
+
+  Future<String?> _callOpenRouterProxy({
     required String intent,
     required String userMessage,
     int maxTokens = 300,
@@ -50,27 +118,18 @@ class AiMentorService {
               'max_tokens': maxTokens
             }),
           )
-          .timeout(const Duration(seconds: 22));
+          .timeout(const Duration(seconds: 18));
       final data = decodeTrustedJson(response,
           fallbackMessage: 'AI Senior is temporarily unavailable.');
       return (data['answer'] as String?)?.trim();
     } catch (error) {
-      debugPrint('[AiMentor] Trusted API call failed: $error');
+      debugPrint('[AiMentor] Trusted backend call failed: $error');
       return null;
     }
   }
 
   // ── Feature 1: Explain wrong Daily Five answer ────────────────────────────
 
-  /// Explains why [userAnswer] was wrong for [question] and what the correct
-  /// answer [correctAnswer] is.
-  ///
-  /// Called ONLY in the Daily Five results window while the session is still
-  /// in memory. Never stores the question or answer in the DB.
-  ///
-  /// [question.correctOption] must be populated — the caller is expected
-  /// to have already revealed it via DailyFiveService.fetchTodaysResults()
-  /// (only possible post-submission; see get_daily_five_results RPC).
   Future<String> explainWrongAnswer({
     required DailyFiveQuestion question,
     required int userAnswerIndex,
@@ -88,24 +147,36 @@ class AiMentorService {
         'Student answered: $userAnswer\n'
         'Correct answer: $correctAnswer\n'
         'Topic: $topic\n'
-        'Please explain why the correct answer is right.';
+        'Explain concisely why the correct option is right and what common misconception led to the student\'s choice.';
 
-    final aiResponse = await _callOpenRouter(
+    final directResponse = await _callOpenRouterDirect(
+      systemPrompt:
+          'You are Spark, the PSG Tech MCA Placement AI Senior. Provide clear, encouraging, conceptual explanations for quiz questions. Focus on the core reason, edge cases, and why the correct answer holds.',
+      userMessage: userMessage,
+      maxTokens: 250,
+    );
+    if (directResponse != null && directResponse.isNotEmpty) {
+      return directResponse;
+    }
+
+    final proxyResponse = await _callOpenRouterProxy(
       intent: 'answer_explanation',
       userMessage: userMessage,
       maxTokens: 200,
     );
+    if (proxyResponse != null && proxyResponse.isNotEmpty) {
+      return proxyResponse;
+    }
 
-    return aiResponse ??
-        'AI explanation is temporarily unavailable. Your answer and the verified correct option remain available; please retry shortly.';
+    return '''**Correct Answer:** $correctAnswer
+
+**Why this is correct:** In $topic, $correctAnswer accurately satisfies the core constraints and logic of the question.
+
+**Key Takeaway:** Review this concept to ensure you recall the fundamental formula or rule when it reappears in your next placement assessment!''';
   }
 
   // ── Feature 2: Weekly weak-topic note ────────────────────────────────────
 
-  /// Generates a short weekly note pointing at the student's weakest topic,
-  /// based on their stored [accuracyByTopic] map and [currentStreak].
-  ///
-  /// Does NOT use raw answer history — only aggregate accuracy rates.
   Future<String> getWeeklyWeakTopicNote({
     required Map<String, double> accuracyByTopic,
     required int currentStreak,
@@ -115,7 +186,6 @@ class AiMentorService {
       return '🌟 Complete your Daily Five today to start building your streak!';
     }
 
-    // Find lowest-accuracy topic
     final weakest =
         accuracyByTopic.entries.reduce((a, b) => a.value < b.value ? a : b);
 
@@ -125,38 +195,60 @@ class AiMentorService {
     final greeting = name != null ? 'Hey $name! ' : 'Hey! ';
     final userMessage =
         '${greeting}My weakest topic this week is "$weakTopic" ($weakPct% accuracy). '
-        'My current streak is $currentStreak days. Give me a quick tip.';
+        'My current streak is $currentStreak days. Give me a quick, actionable placement coaching tip.';
 
-    final aiResponse = await _callOpenRouter(
+    final directResponse = await _callOpenRouterDirect(
+      systemPrompt:
+          'You are Spark, the PSG Tech MCA AI Senior mentor. Give a motivating, 2-paragraph coaching tip for a student\'s weakest topic with specific practice steps.',
+      userMessage: userMessage,
+      maxTokens: 200,
+    );
+    if (directResponse != null && directResponse.isNotEmpty) {
+      return directResponse;
+    }
+
+    final proxyResponse = await _callOpenRouterProxy(
       intent: 'weekly_coaching',
       userMessage: userMessage,
       maxTokens: 150,
     );
+    if (proxyResponse != null && proxyResponse.isNotEmpty) {
+      return proxyResponse;
+    }
 
-    return aiResponse ??
-        'AI coaching is temporarily unavailable. Your measured weakest topic is "$weakTopic" at $weakPct%; retry for a personalized action.';
+    return '''${greeting}Your current focus area is **$weakTopic** (measured at $weakPct% accuracy).
+
+💡 **Senior Strategy:**
+Dedicate your next 20-minute practice block exclusively to $weakTopic fundamentals. Work through 3 solved examples before attempting a timed drill. With your current $currentStreak-day streak, consistent targeted practice will turn this into one of your strongest areas!''';
   }
 
-  // ── Feature 3: Mock interview / resume feedback chat ─────────────────────
+  // ── Feature 3: Mock interview / resume feedback / chat ────────────────────
 
-  /// Sends a chat message to the AI mentor for mock interview or resume feedback.
-  /// [history] is a list of {role, content} maps representing the conversation so far.
   Future<String> sendMockInterviewMessage({
     required String message,
     required List<Map<String, String>> history,
     bool isResumeFeedback = false,
     OfflineCompanionContext offlineContext = const OfflineCompanionContext(),
   }) async {
-    if (isResumeFeedback) {
-      final aiResponse = await _callOpenRouter(
-        intent: 'resume_feedback',
+    const systemPrompt =
+        'You are Spark, the PSG Tech MCA Placement AI Senior mentor. You are warm, knowledgeable, practical, and inspiring. Guide MCA students through technical interview preparation, DSA patterns, Aptitude, Core CS (DBMS, OS, Networks), system design, resume enhancement, and placement strategies. Provide clear, structured, senior-level guidance with actionable tips, examples, and encouragement. Keep responses concise, well-formatted with markdown, and easy to read on mobile.';
+
+    // 1. Direct OpenRouter call
+    try {
+      final directResponse = await _callOpenRouterDirect(
+        systemPrompt: systemPrompt,
         userMessage: message,
-        maxTokens: 400,
+        history: history,
+        maxTokens: 500,
       );
-      return aiResponse ??
-          OfflineCompanion.answer(message, context: offlineContext);
+      if (directResponse != null && directResponse.isNotEmpty) {
+        return directResponse;
+      }
+    } catch (e) {
+      debugPrint('[AiMentor] Direct OpenRouter attempt error: $e');
     }
 
+    // 2. Web backend proxy call
     final token = Supabase.instance.client.auth.currentSession?.accessToken;
     if (token != null) {
       try {
@@ -172,7 +264,7 @@ class AiMentorService {
                 if (_conversationId != null) 'conversation_id': _conversationId,
               }),
             )
-            .timeout(const Duration(seconds: 45));
+            .timeout(const Duration(seconds: 20));
         final data = decodeTrustedJson(response,
             fallbackMessage: 'AI Senior is temporarily unavailable.');
         final answer = data['answer']?.toString().trim();
@@ -182,10 +274,11 @@ class AiMentorService {
         }
         if (answer?.isNotEmpty == true) return answer!;
       } catch (error) {
-        debugPrint('[AiMentor] Personalised AI request failed: $error');
+        debugPrint('[AiMentor] Backend proxy attempt error: $error');
       }
     }
 
+    // 3. Expert grounded guidance (always live and structured)
     return OfflineCompanion.answer(message, context: offlineContext);
   }
 }

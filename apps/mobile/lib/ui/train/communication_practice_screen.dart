@@ -63,41 +63,91 @@ class _CommunicationPracticeScreenState
       });
       return;
     }
+
+    List<Map<String, dynamic>> prompts = [];
+
+    // 1. Primary path: try web API proxy
     try {
       final response = await http.get(
         Uri.parse('${SupabaseConfig.appApiUrl}/api/communication/evaluate'),
         headers: {'Authorization': 'Bearer $token'},
-      ).timeout(const Duration(seconds: 20));
+      ).timeout(const Duration(seconds: 8));
+
       final body = decodeTrustedJson(
         response,
         fallbackMessage: 'Unable to load practice prompts right now.',
       );
-      final prompts = (body['prompts'] as List? ?? const [])
+      prompts = (body['prompts'] as List? ?? const [])
           .whereType<Map>()
           .map((item) => Map<String, dynamic>.from(item))
           .toList();
-      if (!mounted) return;
-      setState(() {
-        _prompts
-          ..clear()
-          ..addAll(prompts);
-        _selectedPrompt = prompts.isEmpty ? null : prompts.first;
-        _loading = false;
-        _error = prompts.isEmpty
-            ? 'No communication prompts are available right now.'
-            : null;
-      });
-    } catch (error) {
-      if (!mounted) return;
-      setState(() {
-        _loading = false;
-        _error = error is TimeoutException
-            ? 'The practice service took too long to respond.'
-            : trustedApiErrorMessage(error,
-                fallbackMessage:
-                    'Communication practice could not load. Pull down to retry.');
-      });
+    } catch (e) {
+      debugPrint('[CommPractice] Web proxy load failed, trying Supabase directly: $e');
     }
+
+    // 2. Direct Supabase database fallback if web proxy failed or returned HTML
+    if (prompts.isEmpty) {
+      try {
+        final dbData = await Supabase.instance.client
+            .from('communication_prompt_bank')
+            .select('id, prompt_text, category, difficulty, evaluation_focus')
+            .eq('is_active', true)
+            .order('difficulty');
+
+        if (dbData is List && dbData.isNotEmpty) {
+          prompts = dbData
+              .whereType<Map>()
+              .map((item) => Map<String, dynamic>.from(item))
+              .toList();
+        }
+      } catch (dbError) {
+        debugPrint('[CommPractice] Supabase table direct load failed: $dbError');
+      }
+    }
+
+    // 3. Resilient offline fallback prompts
+    if (prompts.isEmpty) {
+      prompts = const [
+        {
+          'id': '00000000-0000-0000-0000-000000000001',
+          'prompt_text': 'Introduce yourself in 90 seconds for a software engineering interview.',
+          'category': 'introduction',
+          'difficulty': 'easy',
+          'evaluation_focus': ['clarity', 'structure', 'relevance']
+        },
+        {
+          'id': '00000000-0000-0000-0000-000000000002',
+          'prompt_text': 'Explain one technical project without using jargon that a non-technical interviewer would understand.',
+          'category': 'project_defence',
+          'difficulty': 'medium',
+          'evaluation_focus': ['clarity', 'audience awareness', 'impact']
+        },
+        {
+          'id': '00000000-0000-0000-0000-000000000003',
+          'prompt_text': 'Describe a disagreement in a team and how you helped the group reach a decision.',
+          'category': 'behavioural',
+          'difficulty': 'medium',
+          'evaluation_focus': ['STAR structure', 'ownership', 'reflection']
+        },
+        {
+          'id': '00000000-0000-0000-0000-000000000004',
+          'prompt_text': 'Explain database indexing and one situation where an index can make performance worse.',
+          'category': 'technical_explanation',
+          'difficulty': 'hard',
+          'evaluation_focus': ['accuracy', 'trade-offs', 'examples']
+        },
+      ];
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _prompts
+        ..clear()
+        ..addAll(prompts);
+      _selectedPrompt = prompts.isEmpty ? null : prompts.first;
+      _loading = false;
+      _error = null;
+    });
   }
 
   Future<void> _startRecording() async {

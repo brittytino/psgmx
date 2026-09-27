@@ -305,32 +305,34 @@ class NotificationService extends ChangeNotifier {
       return;
     }
 
-    // PRD Ch. 13.4: "Low-priority notifications are bundled into a single
-    // push per day." Routine types (motivation/reminder/leetcode/birthday)
-    // don't interrupt with an individual OS push — they still land in the
-    // in-app inbox instantly. `alert` and `announcement` are always
-    // genuinely urgent (announcements only ever reach this table when
-    // explicitly marked priority — see AnnouncementProvider.createAnnouncement)
-    // so those still push immediately.
-    const lowPriorityTypes = {
-      NotificationType.motivation,
-      NotificationType.reminder,
-      NotificationType.leetcode,
-      NotificationType.birthday,
-    };
-    if (lowPriorityTypes.contains(notification.notificationType)) {
+    final isBirthday = notification.notificationType == NotificationType.birthday;
+    final isUrgentOrImportant = notification.notificationType == NotificationType.announcement ||
+        notification.notificationType == NotificationType.alert ||
+        notification.category == 'action_required' ||
+        notification.category == 'announcement' ||
+        notification.category == 'system';
+
+    // Routine background types (motivation only) are quieted to prevent notification spam
+    if (!isBirthday && !isUrgentOrImportant && notification.notificationType == NotificationType.motivation) {
       debugPrint(
-          '[Notification] Low-priority type — in-app delivery only, no individual push');
+          '[Notification] Routine motivation — in-app delivery only, no individual push');
       return;
     }
 
+    final channelId = isBirthday ? 'psgmx_birthday' : 'psgmx_channel_main';
+    final channelName = isBirthday ? 'Birthday Wishes' : 'PSGMX Notifications';
+    final channelDescription = isBirthday
+        ? 'Birthday celebrations for you and your batchmates'
+        : 'Important updates and announcements from PSGMX';
+    final accentColor = isBirthday ? const Color(0xFF9333EA) : const Color(0xFFFF6600);
+
     final androidDetails = AndroidNotificationDetails(
-      'psgmx_channel_main',
-      'PSGMX Notifications',
-      channelDescription: 'Important updates and announcements from PSGMX',
+      channelId,
+      channelName,
+      channelDescription: channelDescription,
       importance: Importance.max,
       priority: Priority.high,
-      color: const Color(0xFFFF6600),
+      color: accentColor,
       playSound: true,
       enableVibration: true,
       styleInformation: BigTextStyleInformation(
@@ -1068,6 +1070,135 @@ class NotificationService extends ChangeNotifier {
   Future<void> cancelBirthdayNotification() async {
     if (kIsWeb) return;
     await _notifications.cancel(id: 200);
+  }
+
+  /// Checks for today's birthdays and sends both in-app toasts and push notifications.
+  Future<void> checkAndSendBirthdayNotifications() async {
+    try {
+      final now = DateTime.now();
+      final todayMonth = now.month;
+      final todayDay = now.day;
+
+      final shouldSend = await shouldSendNotification('birthday');
+      if (!shouldSend) {
+        debugPrint('[Notification] Birthday notifications disabled in preferences');
+        return;
+      }
+
+      final profileId = await LogicalIdentity.currentUserId(_supabase);
+      if (profileId == null) return;
+
+      // 1. Check current logged-in user's birthday
+      final me = await _supabase
+          .from('users')
+          .select('id, name, dob, batch_id')
+          .eq('id', profileId)
+          .maybeSingle();
+
+      if (me != null && me['dob'] != null) {
+        final dob = DateTime.tryParse(me['dob'].toString());
+        if (dob != null && dob.month == todayMonth && dob.day == todayDay) {
+          final firstName = (me['name']?.toString() ?? 'Student').split(' ').first;
+          final notif = AppNotification(
+            id: 'bday_self_${profileId}_${now.year}',
+            title: '🎂 Happy Birthday, $firstName!',
+            message: 'Wishing you a fantastic year ahead filled with success, top placement offers, and joy! 🎉',
+            notificationType: NotificationType.announcement,
+            tone: NotificationTone.celebratory,
+            targetAudience: 'user',
+            generatedAt: now,
+            isActive: true,
+            createdBy: 'system',
+            isRead: false,
+          );
+
+          // Emit to in-app stream immediately for toast
+          _streamController.add(notif);
+          _cachedNotifications.insert(0, notif);
+          notifyListeners();
+
+          // Native push notification
+          await showNotification(
+            id: 201,
+            title: '🎂 Happy Birthday, $firstName!',
+            body: 'Wishing you an amazing year ahead filled with placement success! 🎉',
+            type: NotificationType.announcement,
+            channel: 'psgmx_birthday',
+            uniqueKey: 'bday_self_${now.year}_$todayMonth-$todayDay',
+          );
+        }
+      }
+
+      // 2. Check batchmates' birthdays
+      if (me != null && me['batch_id'] != null) {
+        final batchId = me['batch_id'];
+        final batchMates = await _supabase
+            .from('users')
+            .select('id, name, dob')
+            .eq('batch_id', batchId)
+            .neq('id', profileId);
+
+        if (batchMates is List) {
+          for (final mate in batchMates) {
+            if (mate['dob'] != null) {
+              final mateDob = DateTime.tryParse(mate['dob'].toString());
+              if (mateDob != null &&
+                  mateDob.month == todayMonth &&
+                  mateDob.day == todayDay) {
+                final mateName = mate['name']?.toString() ?? 'A batchmate';
+                final notif = AppNotification(
+                  id: 'bday_mate_${mate['id']}_${now.year}',
+                  title: '🎂 Birthday Celebration!',
+                  message: 'Today is $mateName\'s birthday! Celebrate and wish your batchmate a great year ahead! 🎉',
+                  notificationType: NotificationType.announcement,
+                  tone: NotificationTone.celebratory,
+                  targetAudience: 'batch',
+                  generatedAt: now,
+                  isActive: true,
+                  createdBy: 'system',
+                  isRead: false,
+                );
+
+                _streamController.add(notif);
+                _cachedNotifications.insert(0, notif);
+                notifyListeners();
+                break; // Limit batchmate toasts to prevent flooding
+              }
+            }
+          }
+        }
+      }
+
+      // 3. Also check Daily Five status for evening reminder
+      if (now.hour >= 18) {
+        final streak = await _supabase
+            .from('daily_five_streaks')
+            .select('last_completed_date')
+            .eq('user_id', profileId)
+            .maybeSingle();
+
+        final todayStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+        final lastCompleted = streak?['last_completed_date']?.toString().split('T')[0];
+
+        if (lastCompleted != todayStr) {
+          final reminderNotif = AppNotification(
+            id: 'd5_reminder_${now.year}_${now.month}_${now.day}',
+            title: '🔥 Daily Five Reminder',
+            message: 'Keep your streak alive! 5 quick questions are waiting to test your skills today.',
+            notificationType: NotificationType.reminder,
+            tone: NotificationTone.friendly,
+            targetAudience: 'user',
+            generatedAt: now,
+            isActive: true,
+            createdBy: 'system',
+            isRead: false,
+          );
+          _streamController.add(reminderNotif);
+        }
+      }
+    } catch (e) {
+      debugPrint('[Notification] Error in checkAndSendBirthdayNotifications: $e');
+    }
   }
 
   Future<void> _scheduleDaily({

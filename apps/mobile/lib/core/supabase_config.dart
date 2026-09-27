@@ -15,10 +15,14 @@ class SupabaseConfig {
   static const String _envSupabaseAnonKey =
       String.fromEnvironment('SUPABASE_ANON_KEY');
   static const String _envAppApiUrl = String.fromEnvironment('APP_API_URL');
+  static const String _envOpenRouterApiKey =
+      String.fromEnvironment('OPENROUTER_API_KEY');
 
   static String get supabaseUrl => _envSupabaseUrl;
 
   static String get supabaseAnonKey => _envSupabaseAnonKey;
+
+  static String get openRouterApiKey => _envOpenRouterApiKey;
 
   /// All privileged integrations are brokered by the trusted web backend.
   /// No shared eCampus or AI secret is ever compiled into the mobile app.

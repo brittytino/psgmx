@@ -32,30 +32,65 @@ class _NotificationListenerWrapperState
   void _showNotification(AppNotification notification) {
     if (!mounted) return;
 
+    final isBirthday = notification.title.contains('🎂') ||
+        notification.tone == NotificationTone.celebratory;
+    final isReminder = notification.notificationType == NotificationType.reminder;
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(16),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
+        backgroundColor: isBirthday
+            ? const Color(0xFF6B21A8) // Festive royal purple
+            : isReminder
+                ? const Color(0xFFC2410C) // Warning amber/coral
+                : const Color(0xFF1E1B4B), // Dark navy
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        content: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              notification.title,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+            Padding(
+              padding: const EdgeInsets.only(top: 2, right: 10),
+              child: Text(
+                isBirthday ? '🎂' : isReminder ? '🔥' : '📢',
+                style: const TextStyle(fontSize: 20),
+              ),
             ),
-            const SizedBox(height: 4),
-            Text(notification.message),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    notification.title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 14,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    notification.message,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      height: 1.35,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
         action: SnackBarAction(
-          label: 'DISMISS',
-          textColor: Colors.white,
+          label: 'OK',
+          textColor: Colors.amberAccent,
           onPressed: () {
             ScaffoldMessenger.of(context).hideCurrentSnackBar();
           },
         ),
-        duration: const Duration(seconds: 4),
+        duration: const Duration(seconds: 5),
       ),
     );
   }

@@ -124,3 +124,18 @@ scripts/service-account.json
 *.zip
 *.tar.gz
 *.rar
+
+# Private Seed Data & Institutional Records (Never commit to public Git)
+*.private.sql
+*.seed.private.sql
+supabase/private_seeds/
+**/private_seeds/
+supabase/seeds_private/
+supabase/migrations_archive/
+**/migrations_archive/
+data/historical/
+**/data/historical/
+*.xlsx
+
+
+

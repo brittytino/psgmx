@@ -84,6 +84,13 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/download', request.url))
   }
 
+  // All /api/* endpoints handle their own authentication and authorization
+  // via getUserFromRequest() (supporting Bearer JWT tokens from mobile and cookie sessions).
+  // They must NEVER be redirected to /login (which returns HTML and breaks mobile API clients).
+  if (pathname.startsWith('/api/')) {
+    return NextResponse.next({ request })
+  }
+
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient<Database>(

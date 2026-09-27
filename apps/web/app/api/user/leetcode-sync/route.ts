@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Could not reach LeetCode right now. Try again shortly.' }, { status: 502 })
   }
 
-  const { data: baseline } = await supabaseAdmin
+  const { data: baseline } = await (supabaseAdmin as any)
     .from('leetcode_stat_snapshots')
     .select('total_solved')
     .eq('username', username)
@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
     .maybeSingle()
 
   const weeklyScore = baseline
-    ? Math.max(0, stats.total_solved - Number(baseline.total_solved || 0))
+    ? Math.max(0, stats.total_solved - Number((baseline as any).total_solved || 0))
     : Number(previous?.weekly_score || 0)
   const now = new Date().toISOString()
 
@@ -117,7 +117,7 @@ export async function POST(req: NextRequest) {
   )
   if (error) return NextResponse.json({ error: 'Sync could not be saved.' }, { status: 500 })
 
-  await supabaseAdmin.from('leetcode_stat_snapshots').upsert(
+  await (supabaseAdmin as any).from('leetcode_stat_snapshots').upsert(
     {
       username,
       snapshot_date: now.slice(0, 10),

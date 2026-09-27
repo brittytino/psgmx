@@ -62,8 +62,18 @@ class DailyFiveProvider with ChangeNotifier, SafeChangeNotifier {
         _session = null; // Already done
       }
     } catch (e) {
-      _error = _friendlyLoadError(e);
       debugPrint('[DailyFiveProvider] loadState error: $e');
+      if (_session == null && (_streak == null || !_streak!.completedToday)) {
+        try {
+          final fallbackSession = await _service.fetchTodaysSession(userId);
+          _session = fallbackSession;
+          _error = null;
+        } catch (_) {
+          _error = _friendlyLoadError(e);
+        }
+      } else {
+        _error = _friendlyLoadError(e);
+      }
     } finally {
       _setLoading(false);
     }
