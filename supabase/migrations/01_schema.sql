@@ -175,15 +175,19 @@ CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at DE
 -- ── 6. Remote Application Config ─────────────────────────────
 CREATE TABLE IF NOT EXISTS app_config (
     id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    min_required_version  TEXT NOT NULL DEFAULT '1.0.0',
-    latest_version        TEXT NOT NULL DEFAULT '1.0.0',
-    force_update          BOOLEAN NOT NULL DEFAULT false,
-    update_message        TEXT DEFAULT 'A new version of PSGMX is available.',
-    github_release_url    TEXT DEFAULT 'https://github.com/psgmx/psgmx-flutter/releases/latest',
+    min_required_version  TEXT     NOT NULL DEFAULT '1.0.0',
+    latest_version        TEXT     NOT NULL DEFAULT '1.0.0',
+    force_update          BOOLEAN  NOT NULL DEFAULT false,
+    update_message        TEXT     DEFAULT 'A new version of PSGMX is available.',
+    github_release_url    TEXT     DEFAULT 'https://github.com/brittytino/psgmx/releases/latest',
     android_download_url  TEXT,
     ios_download_url      TEXT,
-    emergency_block       BOOLEAN NOT NULL DEFAULT false,
-    emergency_message     TEXT DEFAULT 'App temporarily unavailable.',
+    emergency_block       BOOLEAN  NOT NULL DEFAULT false,
+    emergency_message     TEXT     DEFAULT 'App temporarily unavailable.',
+    rollout_stage         TEXT     NOT NULL DEFAULT 'full'
+                              CHECK (rollout_stage IN ('internal', 'batch', 'full')),
+    enabled_batch_ids     TEXT[]   NOT NULL DEFAULT '{}',
+    pilot_user_ids        TEXT[]   NOT NULL DEFAULT '{}',
     created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_by            TEXT

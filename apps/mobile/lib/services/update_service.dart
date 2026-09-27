@@ -8,15 +8,17 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/app_config.dart';
+import '../models/release_note.dart';
 import '../core/utils/version_comparator.dart';
 
 /// Update Service for PSGMX App
 ///
-/// Handles:
-/// - Fetching remote app configuration
-/// - Version comparison
-/// - Update enforcement logic
-/// - Session-based caching to prevent popup spam
+/// Responsibilities:
+/// - Fetch [AppConfig] from `app_config` Supabase table
+/// - Fetch [ReleaseNote] entries from `app_release_notes` table
+/// - Determine update status (up-to-date / optional / force / emergency)
+/// - Persist "last seen version" so What's New screen shows once per version
+/// - Open platform download URLs
 class UpdateService extends ChangeNotifier {
   static final UpdateService _instance = UpdateService._internal();
   factory UpdateService() => _instance;
@@ -24,9 +26,9 @@ class UpdateService extends ChangeNotifier {
 
   final SupabaseClient _supabase = Supabase.instance.client;
 
-  // ========================================
+  // ─────────────────────────────────────────────────────────────────────────
   // STATE
-  // ========================================
+  // ─────────────────────────────────────────────────────────────────────────
 
   AppConfig? _config;
   String? _currentVersion;
@@ -36,19 +38,30 @@ class UpdateService extends ChangeNotifier {
   bool _isInitialized = false;
   DateTime? _lastCheckTime;
 
-  // Cache key for emergency block state
-  static const String _emergencyBlockCacheKey = 'psgmx_emergency_block_cached';
+  /// Release notes fetched for the current version (shown in What's New)
+  List<ReleaseNote> _pendingReleaseNotes = [];
 
-  // ========================================
+  /// Whether What's New screen should appear (new version installed)
+  bool _shouldShowWhatsNew = false;
+
+  // SharedPreferences keys
+  static const String _emergencyBlockCacheKey = 'psgmx_emergency_block_cached';
+  static const String _lastSeenVersionKey = 'psgmx_last_seen_version';
+
+  // ─────────────────────────────────────────────────────────────────────────
   // GETTERS
-  // ========================================
+  // ─────────────────────────────────────────────────────────────────────────
 
   AppConfig? get config => _config;
   String? get currentVersion => _currentVersion;
   UpdateStatus? get updateStatus => _updateStatus;
   bool get isInitialized => _isInitialized;
+  List<ReleaseNote> get pendingReleaseNotes => List.unmodifiable(_pendingReleaseNotes);
 
-  /// Whether we should show the optional update dialog
+  /// True when the app has been updated and the user hasn't seen the new release notes yet.
+  bool get shouldShowWhatsNew => _shouldShowWhatsNew;
+
+  /// Whether we should show the optional update dialog (once per session)
   bool get shouldShowOptionalUpdate =>
       _updateStatus == UpdateStatus.optionalUpdateAvailable &&
       !_hasShownOptionalUpdateThisSession;
@@ -61,20 +74,16 @@ class UpdateService extends ChangeNotifier {
   bool get shouldShowEmergencyBlock =>
       _updateStatus == UpdateStatus.emergencyBlocked;
 
-  /// Check if app needs any update intervention
+  /// Check if app needs any blocking update intervention
   bool get needsUpdateIntervention =>
       shouldShowEmergencyBlock || shouldShowForceUpdate;
 
-  /// Feature rollout eligibility. Empty targeting lists intentionally fail
-  /// open so a freshly migrated production app is never accidentally locked.
+  /// Feature rollout eligibility. Empty targeting lists fail-open so a
+  /// freshly migrated production app is never accidentally locked out.
   bool isRolloutEnabledFor({required String userId, String? batchId}) {
     final value = _config;
-    if (value == null || value.rolloutStage == 'full') {
-      return true;
-    }
-    if (value.pilotUserIds.contains(userId)) {
-      return true;
-    }
+    if (value == null || value.rolloutStage == 'full') return true;
+    if (value.pilotUserIds.contains(userId)) return true;
     if (value.rolloutStage == 'batch' &&
         batchId != null &&
         value.enabledBatchIds.contains(batchId)) {
@@ -83,28 +92,28 @@ class UpdateService extends ChangeNotifier {
     return value.pilotUserIds.isEmpty && value.enabledBatchIds.isEmpty;
   }
 
-  // ========================================
+  // ─────────────────────────────────────────────────────────────────────────
   // INITIALIZATION
-  // ========================================
+  // ─────────────────────────────────────────────────────────────────────────
 
-  /// Initialize the update service
-  /// Should be called early in app startup, after Supabase init
+  /// Initialise the update service.
+  /// Call once early in app startup, after Supabase is ready.
   Future<void> initialize() async {
     if (_isInitialized) return;
 
     try {
-      // Get current app version
       final packageInfo = await PackageInfo.fromPlatform();
       _currentVersion = packageInfo.version;
-      debugPrint('📱 [UpdateService] Current app version: $_currentVersion');
+      debugPrint('📱 [UpdateService] Current version: $_currentVersion');
 
-      // Check for updates
-      await checkForUpdates();
+      await Future.wait([
+        checkForUpdates(),
+        _checkAndLoadReleaseNotes(),
+      ]);
 
       _isInitialized = true;
     } catch (e) {
       debugPrint('❌ [UpdateService] Initialization error: $e');
-      // On error, allow app to continue (fail-open)
       _updateStatus = UpdateStatus.upToDate;
       _isInitialized = true;
     }
@@ -112,60 +121,50 @@ class UpdateService extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ========================================
-  // UPDATE CHECK LOGIC
-  // ========================================
+  // ─────────────────────────────────────────────────────────────────────────
+  // UPDATE CHECK
+  // ─────────────────────────────────────────────────────────────────────────
 
-  /// Check for updates from Supabase
-  ///
-  /// This fetches the app_config and determines update status
+  /// Fetch [AppConfig] from Supabase and resolve [UpdateStatus].
+  /// Respects a 5-minute minimum interval between checks (unless [forceCheck]).
   Future<UpdateStatus> checkForUpdates({bool forceCheck = false}) async {
-    // Prevent excessive checks (minimum 5 minutes between checks)
     if (!forceCheck &&
         _hasCheckedThisSession &&
         _lastCheckTime != null &&
-        DateTime.now().difference(_lastCheckTime!) <
-            const Duration(minutes: 5)) {
+        DateTime.now().difference(_lastCheckTime!) < const Duration(minutes: 5)) {
       return _updateStatus ?? UpdateStatus.upToDate;
     }
 
     try {
       debugPrint('🔍 [UpdateService] Checking for updates...');
 
-      // Fetch config from Supabase
       final response =
           await _supabase.from('app_config').select().limit(1).maybeSingle();
 
       if (response != null) {
         _config = AppConfig.fromMap(response);
-        debugPrint('📦 [UpdateService] Config loaded: $_config');
-
-        // Cache emergency block state
+        debugPrint('📦 [UpdateService] Config: $_config');
         if (_config!.emergencyBlock) {
           await _cacheEmergencyBlockState(true);
         }
       } else {
-        // No config in DB, use defaults
         _config = AppConfig.defaultConfig();
-        debugPrint('⚠️ [UpdateService] No config found, using defaults');
+        debugPrint('⚠️ [UpdateService] No config in DB, using defaults');
       }
 
-      // Determine update status
       _updateStatus = _determineUpdateStatus();
       _hasCheckedThisSession = true;
       _lastCheckTime = DateTime.now();
 
-      debugPrint('📊 [UpdateService] Update status: $_updateStatus');
+      debugPrint('📊 [UpdateService] Status: $_updateStatus');
     } catch (e) {
       debugPrint('❌ [UpdateService] Error fetching config: $e');
 
-      // Check if we have cached emergency block
       final cachedEmergency = await _getCachedEmergencyBlockState();
       if (cachedEmergency) {
         _updateStatus = UpdateStatus.emergencyBlocked;
         _config = AppConfig.defaultConfig();
       } else {
-        // Fail-open: allow app to continue if fetch fails
         _updateStatus = UpdateStatus.upToDate;
         _config = AppConfig.defaultConfig();
       }
@@ -175,12 +174,10 @@ class UpdateService extends ChangeNotifier {
     return _updateStatus ?? UpdateStatus.upToDate;
   }
 
-  /// Determine update status based on config and current version
   UpdateStatus _determineUpdateStatus() {
     if (_config == null || _currentVersion == null) {
       return UpdateStatus.upToDate;
     }
-
     return VersionComparator.getUpdateStatus(
       currentVersion: _currentVersion!,
       minRequiredVersion: _config!.minRequiredVersion,
@@ -190,9 +187,92 @@ class UpdateService extends ChangeNotifier {
     );
   }
 
-  // ========================================
+  // ─────────────────────────────────────────────────────────────────────────
+  // WHAT'S NEW / RELEASE NOTES
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /// Compares current version with last-seen version stored in prefs.
+  /// If the app has been updated, loads release notes and sets [shouldShowWhatsNew].
+  Future<void> _checkAndLoadReleaseNotes() async {
+    if (_currentVersion == null) return;
+
+    try {
+      final lastSeen = await _getLastSeenVersion();
+
+      // First install — nothing to show; just persist current version
+      if (lastSeen == null) {
+        await _persistCurrentVersion();
+        return;
+      }
+
+      // Same version — nothing new
+      if (lastSeen == _currentVersion) return;
+
+      // Version changed — fetch release notes between lastSeen and current
+      final notes = await _fetchReleaseNotes(
+        sinceVersion: lastSeen,
+        upToVersion: _currentVersion!,
+      );
+
+      if (notes.isNotEmpty) {
+        _pendingReleaseNotes = notes;
+        _shouldShowWhatsNew = true;
+        debugPrint(
+            '🎉 [UpdateService] ${notes.length} release note(s) to show for $_currentVersion');
+      }
+    } catch (e) {
+      debugPrint('⚠️ [UpdateService] Could not load release notes: $e');
+      // Fail silently — don't block the app
+    }
+  }
+
+  /// Fetch release notes from Supabase newer than [sinceVersion].
+  Future<List<ReleaseNote>> _fetchReleaseNotes({
+    required String sinceVersion,
+    required String upToVersion,
+  }) async {
+    final response = await _supabase
+        .from('app_release_notes')
+        .select()
+        .eq('is_published', true)
+        .inFilter('platform', ['all', _currentPlatform()])
+        .order('release_date', ascending: false);
+
+    final allNotes = (response as List)
+        .map((r) => ReleaseNote.fromMap(r as Map<String, dynamic>))
+        .toList();
+
+    // Show notes for versions newer than what user last saw, up to current
+    final since = SemanticVersion.tryParse(sinceVersion);
+    final current = SemanticVersion.tryParse(upToVersion);
+
+    if (since == null || current == null) return allNotes.take(3).toList();
+
+    return allNotes.where((note) {
+      final v = SemanticVersion.tryParse(note.version);
+      if (v == null) return false;
+      return v > since && v <= current;
+    }).toList();
+  }
+
+  String _currentPlatform() {
+    if (kIsWeb) return 'all';
+    if (Platform.isAndroid) return 'android';
+    if (Platform.isIOS) return 'ios';
+    return 'all';
+  }
+
+  /// Dismiss the What's New screen and persist current version.
+  Future<void> dismissWhatsNew() async {
+    _shouldShowWhatsNew = false;
+    _pendingReleaseNotes = [];
+    await _persistCurrentVersion();
+    notifyListeners();
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
   // USER ACTIONS
-  // ========================================
+  // ─────────────────────────────────────────────────────────────────────────
 
   /// Mark optional update as dismissed for this session
   void dismissOptionalUpdate() {
@@ -200,13 +280,12 @@ class UpdateService extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Open the GitHub releases page for update
+  /// Open the download/store URL for the current platform
   Future<bool> openUpdateUrl() async {
     if (_config == null) return false;
 
     String? url;
 
-    // Platform-specific URLs if available (not on web)
     if (!kIsWeb) {
       if (Platform.isAndroid && _config!.androidDownloadUrl != null) {
         url = _config!.androidDownloadUrl;
@@ -215,32 +294,21 @@ class UpdateService extends ChangeNotifier {
       }
     }
 
-    // Fallback to GitHub releases
     if (url == null || url.isEmpty) {
       url = _config!.githubReleaseUrl;
     }
 
     if (url.isEmpty) {
-      url = 'https://github.com/brittytino/psgmx-flutter/releases/latest';
+      url = 'https://github.com/brittytino/psgmx/releases/latest';
     }
 
     try {
       final uri = Uri.parse(url);
-
-      // Try external application first (preferred for APK downloads)
-      bool launched =
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
-
-      if (!launched) {
-        // Fallback to platform default
-        launched = await launchUrl(uri);
-      }
-
+      bool launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!launched) launched = await launchUrl(uri);
       return launched;
     } catch (e) {
       debugPrint('❌ [UpdateService] Error opening URL: $e');
-
-      // Final attempt using launchUrlString if uri fails
       try {
         return await launchUrl(Uri.parse(url));
       } catch (_) {
@@ -249,9 +317,9 @@ class UpdateService extends ChangeNotifier {
     }
   }
 
-  // ========================================
-  // CACHING (for emergency block persistence)
-  // ========================================
+  // ─────────────────────────────────────────────────────────────────────────
+  // PERSISTENCE
+  // ─────────────────────────────────────────────────────────────────────────
 
   Future<void> _cacheEmergencyBlockState(bool blocked) async {
     try {
@@ -266,12 +334,12 @@ class UpdateService extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       return prefs.getBool(_emergencyBlockCacheKey) ?? false;
-    } catch (e) {
+    } catch (_) {
       return false;
     }
   }
 
-  /// Clear emergency block cache (call when block is lifted)
+  /// Clear emergency block cache (call when block is lifted in DB)
   Future<void> clearEmergencyBlockCache() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -281,11 +349,29 @@ class UpdateService extends ChangeNotifier {
     }
   }
 
-  // ========================================
-  // RESET (for testing/development)
-  // ========================================
+  Future<String?> _getLastSeenVersion() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString(_lastSeenVersionKey);
+    } catch (_) {
+      return null;
+    }
+  }
 
-  /// Reset session state (for testing)
+  Future<void> _persistCurrentVersion() async {
+    try {
+      if (_currentVersion == null) return;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_lastSeenVersionKey, _currentVersion!);
+    } catch (e) {
+      debugPrint('⚠️ [UpdateService] Error persisting version: $e');
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // RESET (testing / development)
+  // ─────────────────────────────────────────────────────────────────────────
+
   void resetSession() {
     _hasCheckedThisSession = false;
     _hasShownOptionalUpdateThisSession = false;
@@ -293,9 +379,17 @@ class UpdateService extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Force refresh (ignore cache)
   Future<void> forceRefresh() async {
     _hasCheckedThisSession = false;
     await checkForUpdates(forceCheck: true);
+  }
+
+  /// Debug helper: clear last-seen version so What's New triggers next launch
+  Future<void> debugResetWhatsNew() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_lastSeenVersionKey);
+    _shouldShowWhatsNew = false;
+    _pendingReleaseNotes = [];
+    notifyListeners();
   }
 }
