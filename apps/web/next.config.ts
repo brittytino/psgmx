@@ -1,13 +1,12 @@
 import type { NextConfig } from "next";
-import path from "path";
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  // Note: 'standalone' output is intentionally NOT set here.
+  // Vercel has its own serverless bundling system that is incompatible with
+  // Next.js standalone mode. Firebase Hosting (server-side) uses standalone
+  // via the Dockerfile, which is handled separately in the firebase workflow.
   poweredByHeader: false,
   allowedDevOrigins: ['127.0.0.1'],
-  turbopack: {
-    root: path.resolve(__dirname),
-  },
 
   async headers() {
     return [
@@ -24,8 +23,7 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     optimizePackageImports: ['lucide-react', 'framer-motion', 'recharts'],
-    // Next 16.3 enables the CLI parser by default. The compiler API is more
-    // reliable across npm/CI environments and still performs full type checks.
+    // The compiler API is more reliable across npm/CI environments.
     useTypeScriptCli: false,
   },
 };

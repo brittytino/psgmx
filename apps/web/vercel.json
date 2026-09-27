@@ -1,4 +1,9 @@
 {
+  "framework": "nextjs",
+  "rootDirectory": "apps/web",
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "installCommand": "npm install",
   "crons": [
     {
       "path": "/api/cron/community-health",
