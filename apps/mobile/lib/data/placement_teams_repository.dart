@@ -131,27 +131,25 @@ class PlacementTeamsRepository {
             .eq('batch_id', batchId)
             .order('team_code');
 
-        if (teamsData is List && teamsData.isNotEmpty) {
+        if (teamsData.isNotEmpty) {
           final usersData = await Supabase.instance.client
               .from('users')
               .select('id, name, reg_no, team_uuid, roles');
 
           final membersByTeamUuid = <String, List<PlacementTeamMember>>{};
-          if (usersData is List) {
-            for (final u in usersData) {
-              final teamUuid = u['team_uuid']?.toString();
-              if (teamUuid != null) {
-                final roles = u['roles'] as Map?;
-                membersByTeamUuid.putIfAbsent(teamUuid, () => []).add(
-                  PlacementTeamMember(
-                    sNo: (membersByTeamUuid[teamUuid]?.length ?? 0) + 1,
-                    id: u['id']?.toString() ?? '',
-                    rollNo: u['reg_no']?.toString() ?? '',
-                    name: u['name']?.toString() ?? '',
-                    isLeader: roles?['isTeamLeader'] == true,
-                  ),
-                );
-              }
+          for (final u in usersData) {
+            final teamUuid = u['team_uuid']?.toString();
+            if (teamUuid != null) {
+              final roles = u['roles'] as Map?;
+              membersByTeamUuid.putIfAbsent(teamUuid, () => []).add(
+                PlacementTeamMember(
+                  sNo: (membersByTeamUuid[teamUuid]?.length ?? 0) + 1,
+                  id: u['id']?.toString() ?? '',
+                  rollNo: u['reg_no']?.toString() ?? '',
+                  name: u['name']?.toString() ?? '',
+                  isLeader: roles?['isTeamLeader'] == true,
+                ),
+              );
             }
           }
 

@@ -110,9 +110,9 @@ class DailyFiveService {
                 .eq('is_active', true)
                 .limit(25);
 
-            if (directRows is List && directRows.isNotEmpty) {
+            if (directRows.isNotEmpty) {
               final questions = directRows
-                  .map((r) => DailyFiveQuestion.fromMap(r as Map<String, dynamic>))
+                  .map((r) => DailyFiveQuestion.fromMap(r))
                   .toList();
               questions.shuffle(_rng);
               final selected = questions.take(5).toList();

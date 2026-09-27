@@ -33,7 +33,7 @@ class _NotificationListenerWrapperState
     if (!mounted) return;
 
     final isBirthday = notification.title.contains('🎂') ||
-        notification.tone == NotificationTone.celebratory;
+        notification.title.toLowerCase().contains('birthday');
     final isReminder = notification.notificationType == NotificationType.reminder;
 
     ScaffoldMessenger.of(context).showSnackBar(

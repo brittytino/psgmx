@@ -94,7 +94,7 @@ class _CommunicationPracticeScreenState
             .eq('is_active', true)
             .order('difficulty');
 
-        if (dbData is List && dbData.isNotEmpty) {
+        if (dbData.isNotEmpty) {
           prompts = dbData
               .whereType<Map>()
               .map((item) => Map<String, dynamic>.from(item))
