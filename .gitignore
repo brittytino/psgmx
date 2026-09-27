@@ -137,5 +137,10 @@ data/historical/
 **/data/historical/
 *.xlsx
 
+# Generated outputs (student rosters, exports, reports) — never commit publicly
+outputs/
+**/outputs/
+
+
 
 
