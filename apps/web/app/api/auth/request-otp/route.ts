@@ -89,7 +89,19 @@ export async function POST(request: NextRequest) {
     }
 
     await ensureAuthIdentity(email)
-    const redirectTo = `${process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin}/login`
+
+    // Resolve the app origin: prefer the explicit env var when it is set and
+    // points to a real deployment (not localhost). Fall back to the request
+    // origin so this works correctly on Vercel preview deployments and on
+    // Firebase Hosting without any extra configuration.
+    const envAppUrl = process.env.NEXT_PUBLIC_APP_URL
+    const isRealProductionUrl = envAppUrl &&
+      !envAppUrl.includes('localhost') &&
+      !envAppUrl.includes('127.0.0.1') &&
+      envAppUrl.startsWith('https://')
+    const appOrigin = isRealProductionUrl ? envAppUrl : request.nextUrl.origin
+    const redirectTo = `${appOrigin}/login`
+
     const { data, error } = await supabaseAdmin.auth.admin.generateLink({
       type: 'magiclink',
       email,
@@ -120,7 +132,10 @@ export async function POST(request: NextRequest) {
         response.cookies.set('psgmx_otp_challenge', signed, {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
-          sameSite: 'strict',
+          // 'lax' is required for iOS PWA (standalone mode) — 'strict' causes
+          // cookies to be dropped when the PWA navigates between the OTP
+          // request and verify endpoints, breaking login on iOS home screen apps.
+          sameSite: 'lax',
           path: '/api/auth',
           maxAge: 10 * 60,
         })

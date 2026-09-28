@@ -109,6 +109,8 @@ export async function POST(request: NextRequest) {
   cookiesToSet.forEach(({ name, value, options }) => {
     response.cookies.set(name, value, options as Parameters<typeof response.cookies.set>[2])
   })
-  response.cookies.set('psgmx_otp_challenge', '', { path: '/api/auth', maxAge: 0 })
+  // Clear the OTP challenge cookie with the same sameSite policy it was set with ('lax')
+  // so it is correctly cleared on iOS PWA standalone mode.
+  response.cookies.set('psgmx_otp_challenge', '', { path: '/api/auth', maxAge: 0, sameSite: 'lax' })
   return response
 }
