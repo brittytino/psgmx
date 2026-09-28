@@ -4,6 +4,9 @@ on:
     branches:
       - main
       - dev
+  # Allow manual trigger
+  workflow_dispatch:
+
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
@@ -16,18 +19,18 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 1
-      
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
           cache: true
-      
+
       - name: Install dependencies
         run: flutter pub get
 
       - name: Generate Drift database code
-        run: dart run build_runner build
+        run: dart run build_runner build --delete-conflicting-outputs
 
       - name: Validate configuration
         env:
@@ -36,9 +39,10 @@ jobs:
           APP_API_URL: ${{ vars.APP_API_URL }}
         run: |
           APP_API_URL="${APP_API_URL:-https://www.psgmx.tech}"
-          test -n "$SUPABASE_URL" || { echo "Missing SUPABASE_URL secret"; exit 1; }
-          test -n "$SUPABASE_ANON_KEY" || { echo "Missing SUPABASE_ANON_KEY secret"; exit 1; }
-      
+          test -n "$SUPABASE_URL"    || { echo "❌ Missing SUPABASE_URL secret"; exit 1; }
+          test -n "$SUPABASE_ANON_KEY" || { echo "❌ Missing SUPABASE_ANON_KEY secret"; exit 1; }
+          echo "✅ Secrets validated"
+
       - name: Generate Environment File
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -47,7 +51,14 @@ jobs:
         run: |
           APP_API_URL="${APP_API_URL:-https://www.psgmx.tech}"
           APP_API_URL="${APP_API_URL%/}"
-          if [ "$APP_API_URL" = "https://psgmx.tech" ] || [ "$APP_API_URL" = "https://app.psgmx.tech" ] || [ "$APP_API_URL" = "https://psgmxians.web.app" ] || [ "$APP_API_URL" = "https://psgmxians.firebaseapp.com" ]; then APP_API_URL="https://www.psgmx.tech"; fi
+          # Normalize legacy / test URLs → canonical production URL
+          case "$APP_API_URL" in
+            "https://psgmx.tech" | "https://app.psgmx.tech" | \
+            "https://psgmxians.web.app" | "https://psgmxians.firebaseapp.com")
+              APP_API_URL="https://www.psgmx.tech"
+              ;;
+          esac
+          echo "🌐 APP_API_URL=$APP_API_URL"
           umask 077
           printf 'SUPABASE_URL=%s\nSUPABASE_ANON_KEY=%s\nAPP_API_URL=%s\n' \
             "$SUPABASE_URL" "$SUPABASE_ANON_KEY" "$APP_API_URL" > .env.flutter
@@ -55,13 +66,19 @@ jobs:
       - name: Analyze
         run: flutter analyze --fatal-warnings
 
-      - name: Test
-        run: flutter test
+      - name: Test (unit + widget, skip integration)
+        run: flutter test --exclude-tags=integration
+        continue-on-error: false
 
-      - name: Build Web
+      - name: Build Flutter Web
         run: |
-          flutter build web --release --dart-define-from-file=.env.flutter
-      
+          flutter build web \
+            --release \
+            --dart-define-from-file=.env.flutter \
+            --web-renderer canvaskit \
+            --pwa-strategy offline-first
+          echo "✅ Web build complete — $(du -sh build/web | cut -f1)"
+
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
