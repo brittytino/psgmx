@@ -74,9 +74,7 @@ jobs:
         run: |
           flutter build web \
             --release \
-            --dart-define-from-file=.env.flutter \
-            --web-renderer canvaskit \
-            --pwa-strategy offline-first
+            --dart-define-from-file=.env.flutter
           echo "✅ Web build complete — $(du -sh build/web | cut -f1)"
 
       - name: Deploy to Firebase Hosting

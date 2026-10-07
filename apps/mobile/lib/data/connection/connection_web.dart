@@ -8,7 +8,6 @@ QueryExecutor openConnection() {
         databaseName: 'psgmx_local',
         sqlite3Uri: Uri.parse('sqlite3.wasm'),
         driftWorkerUri: Uri.parse('drift_worker.js'),
-        moveExistingIndexedDbToOpfs: true,
       );
       return result.resolvedExecutor;
     }),

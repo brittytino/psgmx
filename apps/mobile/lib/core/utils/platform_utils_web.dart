@@ -20,6 +20,10 @@ class PlatformUtils {
   /// Check if the app is running in standalone mode (already installed as PWA)
   static bool get isStandalone {
     try {
+      final nav = html.window.navigator as dynamic;
+      if (nav.standalone == true) {
+        return true;
+      }
       final display = html.window.matchMedia('(display-mode: standalone)');
       return display.matches;
     } catch (e) {
