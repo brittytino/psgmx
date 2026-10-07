@@ -1,11 +1,34 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Mic, Square, Play, UploadCloud, CheckCircle2, ChevronLeft, Loader2, BrainCircuit } from 'lucide-react';
+import {
+  Mic,
+  Square,
+  UploadCloud,
+  CheckCircle2,
+  ChevronLeft,
+  Loader2,
+  BrainCircuit,
+  RotateCcw,
+  Sparkles,
+} from 'lucide-react';
 import Link from 'next/link';
 
-type PracticePrompt = { id: string; prompt_text: string; category: string; difficulty: string; evaluation_focus: string[] };
-type PriorAttempt = { id: string; prompt_text: string; duration_seconds: number; ai_scores_json: any; created_at: string };
+type PracticePrompt = {
+  id: string;
+  prompt_text: string;
+  category: string;
+  difficulty: string;
+  evaluation_focus: string[];
+};
+
+type PriorAttempt = {
+  id: string;
+  prompt_text: string;
+  duration_seconds: number;
+  ai_scores_json: any;
+  created_at: string;
+};
 
 export default function CommunicationPracticePage() {
   const [isRecording, setIsRecording] = useState(false);
@@ -32,13 +55,17 @@ export default function CommunicationPracticePage() {
   const selectedPrompt = prompts.find((item) => item.id === selectedPromptId);
 
   useEffect(() => {
-    fetch('/api/communication/evaluate').then(async (response) => {
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Practice prompts could not be loaded.');
-      setPrompts(data.prompts || []);
-      setAttempts(data.attempts || []);
-      if (data.prompts?.[0]) setSelectedPromptId(data.prompts[0].id);
-    }).catch((error) => setLoadError(error instanceof Error ? error.message : 'Practice prompts could not be loaded.'));
+    fetch('/api/communication/evaluate')
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Practice prompts could not be loaded.');
+        setPrompts(data.prompts || []);
+        setAttempts(data.attempts || []);
+        if (data.prompts?.[0]) setSelectedPromptId(data.prompts[0].id);
+      })
+      .catch((error) =>
+        setLoadError(error instanceof Error ? error.message : 'Practice prompts could not be loaded.')
+      );
   }, []);
 
   const showActionError = (message: string, retry?: () => void) => {
@@ -72,10 +99,10 @@ export default function CommunicationPracticePage() {
       };
 
       mediaRecorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: 'audio/webm' }); // Use webm for browser compatibility, backend can convert or handle
+        const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
         setAudioBlob(blob);
         setAudioUrl(URL.createObjectURL(blob));
-        stream.getTracks().forEach(track => track.stop());
+        stream.getTracks().forEach((track) => track.stop());
       };
 
       mediaRecorder.start();
@@ -84,7 +111,7 @@ export default function CommunicationPracticePage() {
       setTime(0);
 
       timerRef.current = setInterval(() => {
-        setTime(prev => prev + 1);
+        setTime((prev) => prev + 1);
       }, 1000);
       maxTimeoutRef.current = setTimeout(() => {
         if (mediaRecorderRef.current?.state === 'recording') mediaRecorderRef.current.stop();
@@ -110,13 +137,11 @@ export default function CommunicationPracticePage() {
     dismissActionError();
 
     try {
-      // 1. Convert blob to File or send as form data
       const formData = new FormData();
       formData.append('audio', audioBlob, 'recording.webm');
       formData.append('prompt_id', selectedPrompt.id);
       formData.append('duration_seconds', String(time));
 
-      // 2. Call our API route which handles STT and AI evaluation
       const res = await fetch('/api/communication/evaluate', {
         method: 'POST',
         body: formData,
@@ -144,156 +169,272 @@ export default function CommunicationPracticePage() {
   };
 
   return (
-    <div className="min-h-screen bg-page-bg pb-20">
-      <header className="bg-white border-b border-border-light px-6 py-4 flex items-center gap-4 sticky top-0 z-10">
-        <Link href="/student" className="text-text-muted hover:text-text-main transition-colors">
-          <ChevronLeft className="w-5 h-5" />
+    <div className="space-y-6 max-w-4xl mx-auto pb-12">
+      {/* Breadcrumb Navigation */}
+      <div className="flex items-center gap-2">
+        <Link
+          href="/student/train"
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-[#8C877E] hover:text-[#FF6B4A] transition-colors"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          Train Gymnasium & Daily Five
         </Link>
-        <div>
-          <h1 className="text-xl font-bold text-text-main leading-tight">Communication Practice</h1>
-          <p className="text-xs font-medium text-text-muted uppercase tracking-wide">Audio only • Max 2 minutes</p>
+      </div>
+
+      {/* Page Title & Intro */}
+      <header className="space-y-1">
+        <div className="flex items-center gap-2.5">
+          <span className="p-2 rounded-xl bg-[#FF6B4A]/10 text-[#FF6B4A]">
+            <BrainCircuit className="w-5 h-5" />
+          </span>
+          <h1 className="text-2xl font-black text-[#1A1A1A]">Communication Practice</h1>
         </div>
+        <p className="text-xs sm:text-sm text-[#706E6B] pl-10">
+          Record a spoken response to an interview prompt and receive instant, transcript-grounded coaching from AI Senior.
+        </p>
       </header>
 
-      <main className="max-w-2xl mx-auto pt-10 px-6">
-        {actionError && (
-          <div className="mb-6 flex items-center justify-between gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700">
-            <span>{actionError}</span>
-            <div className="flex shrink-0 items-center gap-3">
-              {retryRef.current && (
-                <button
-                  onClick={() => { const retry = retryRef.current; dismissActionError(); retry?.(); }}
-                  className="underline"
-                >
-                  Retry
-                </button>
-              )}
-              <button onClick={dismissActionError} className="underline">Dismiss</button>
+      {actionError && (
+        <div className="flex items-center justify-between gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-xs font-bold text-red-800">
+          <span>{actionError}</span>
+          <div className="flex shrink-0 items-center gap-3">
+            {retryRef.current && (
+              <button
+                onClick={() => {
+                  const retry = retryRef.current;
+                  dismissActionError();
+                  retry?.();
+                }}
+                className="underline"
+              >
+                Retry
+              </button>
+            )}
+            <button onClick={dismissActionError} className="underline text-[11px]">
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Prompt Selection & Display Card */}
+      <div className="bg-white rounded-3xl border border-[#EFE9E0] p-6 sm:p-8 shadow-xs space-y-4">
+        <div className="flex items-center justify-between gap-2 border-b border-[#F5EFE6] pb-3">
+          <span className="text-[11px] font-black uppercase tracking-wider text-[#FF6B4A]">
+            Interview Practice Prompt
+          </span>
+          <span className="text-[11px] font-bold text-[#8C877E]">
+            Audio only • Max 2 minutes
+          </span>
+        </div>
+
+        {loadError ? (
+          <p className="text-xs font-bold text-red-700">{loadError}</p>
+        ) : (
+          <div className="space-y-3">
+            <select
+              value={selectedPromptId}
+              onChange={(e) => {
+                setSelectedPromptId(e.target.value);
+                resetRecording();
+              }}
+              className="w-full rounded-xl border border-[#EFE9E0] bg-[#FAF6F0] px-4 py-2.5 text-xs font-bold text-[#1A1A1A] outline-none focus:border-[#FF6B4A]"
+            >
+              {prompts.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.category.replace(/_/g, ' ').toUpperCase()} · {item.difficulty}
+                </option>
+              ))}
+            </select>
+
+            <p className="text-base sm:text-lg font-bold text-[#1A1A1A] leading-relaxed pt-1">
+              {selectedPrompt?.prompt_text || 'Loading a verified prompt…'}
+            </p>
+
+            {selectedPrompt?.evaluation_focus?.length ? (
+              <p className="text-xs font-semibold text-[#8C877E] flex items-center gap-1.5 pt-1">
+                <Sparkles className="w-3.5 h-3.5 text-[#FF6B4A]" />
+                Evaluation Focus: {selectedPrompt.evaluation_focus.join(' · ')}
+              </p>
+            ) : null}
+          </div>
+        )}
+      </div>
+
+      {/* Recording Interface Card */}
+      <div className="bg-white rounded-3xl border border-[#EFE9E0] p-8 sm:p-10 shadow-xs flex flex-col items-center justify-center min-h-[300px]">
+        {!audioUrl && (
+          <div className="flex flex-col items-center">
+            <div className="text-5xl font-mono font-bold text-[#1A1A1A] mb-8 tabular-nums tracking-tight">
+              {formatTime(time)}{' '}
+              <span className="text-[#A39E94] text-2xl font-normal">/ 2:00</span>
             </div>
+
+            {isRecording ? (
+              <button
+                type="button"
+                onClick={stopRecording}
+                className="w-20 h-20 bg-red-50 hover:bg-red-100 text-red-600 rounded-full flex items-center justify-center transition-transform hover:scale-105 active:scale-95 shadow-md shadow-red-500/20"
+                aria-label="Stop recording"
+              >
+                <Square className="w-7 h-7 fill-current" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={startRecording}
+                disabled={!selectedPrompt}
+                className="w-20 h-20 bg-[#FF6B4A] hover:bg-[#E4572E] text-white rounded-full flex items-center justify-center shadow-lg shadow-[#FF6B4A]/25 transition-transform hover:scale-105 active:scale-95 disabled:opacity-50"
+                aria-label="Start recording"
+              >
+                <Mic className="w-8 h-8" />
+              </button>
+            )}
+
+            <p className="mt-6 text-xs sm:text-sm text-[#706E6B] font-semibold">
+              {isRecording ? 'Recording in progress… Speak clearly' : 'Tap microphone to start speaking'}
+            </p>
           </div>
         )}
 
-        {/* Prompt Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-border-light p-6 mb-8 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-1 h-full bg-primary-purple"></div>
-          <h2 className="text-sm font-bold text-text-muted uppercase tracking-wider mb-2">Practice Prompt</h2>
-          {loadError ? <p className="text-sm font-semibold text-red-700">{loadError}</p> : (
-            <>
-              <select value={selectedPromptId} onChange={(event) => { setSelectedPromptId(event.target.value); resetRecording(); }} className="mb-4 w-full rounded-lg border border-border-light bg-page-bg px-3 py-2 text-sm font-bold text-text-main">
-                {prompts.map((item) => <option key={item.id} value={item.id}>{item.category.replace('_', ' ')} · {item.difficulty}</option>)}
-              </select>
-              <p className="text-lg font-medium text-text-main leading-relaxed">{selectedPrompt?.prompt_text || 'Loading a verified prompt…'}</p>
-              {selectedPrompt?.evaluation_focus?.length ? <p className="mt-3 text-xs font-semibold text-text-muted">Focus: {selectedPrompt.evaluation_focus.join(' · ')}</p> : null}
-            </>
-          )}
-        </div>
+        {/* Review & Submit Controls */}
+        {audioUrl && !result && (
+          <div className="w-full max-w-md flex flex-col items-center space-y-6">
+            <audio src={audioUrl} controls className="w-full" />
 
-        {/* Recording Interface */}
-        <div className="bg-white rounded-xl shadow-sm border border-border-light p-8 flex flex-col items-center justify-center min-h-[300px]">
-
-          {!audioUrl && (
-            <>
-              <div className="text-5xl font-mono text-text-main mb-8 tabular-nums">
-                {formatTime(time)} <span className="text-text-muted text-2xl">/ 2:00</span>
-              </div>
-
-              {isRecording ? (
-                <button
-                  onClick={stopRecording}
-                  className="w-20 h-20 bg-red-50 hover:bg-red-100 text-red-500 rounded-full flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
-                >
-                  <Square className="w-8 h-8 fill-current" />
-                </button>
-              ) : (
-                <button
-                  onClick={startRecording}
-                  disabled={!selectedPrompt}
-                  className="w-20 h-20 bg-primary-purple hover:bg-deep-violet text-white rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-105 active:scale-95 disabled:opacity-50"
-                >
-                  <Mic className="w-8 h-8" />
-                </button>
-              )}
-              <p className="mt-6 text-sm text-text-muted font-medium">
-                {isRecording ? 'Recording in progress...' : 'Tap microphone to start recording'}
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={resetRecording}
+                disabled={isUploading}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-[#706E6B] hover:text-[#1A1A1A] bg-[#FAF6F0] hover:bg-[#F5EFE6] border border-[#EFE9E0] transition-colors disabled:opacity-50"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                Retake
+              </button>
+              <button
+                type="button"
+                onClick={submitAudio}
+                disabled={isUploading}
+                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold text-white bg-[#FF6B4A] hover:bg-[#E4572E] shadow-md shadow-[#FF6B4A]/20 transition-all disabled:opacity-50"
+              >
+                {isUploading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Evaluating with AI Senior…
+                  </>
+                ) : (
+                  <>
+                    <UploadCloud className="w-4 h-4" />
+                    Evaluate with AI Senior
+                  </>
+                )}
+              </button>
+            </div>
+            {isUploading && (
+              <p className="text-xs text-[#8C877E] animate-pulse">
+                Cascading through OpenRouter free models for evaluation…
               </p>
-            </>
-          )}
+            )}
+          </div>
+        )}
 
-          {/* Review and Submit Interface */}
-          {audioUrl && !result && (
-            <div className="w-full flex flex-col items-center">
-              <audio src={audioUrl} controls className="w-full max-w-md mb-8" />
-
-              <div className="flex gap-4">
-                <button
-                  onClick={resetRecording}
-                  disabled={isUploading}
-                  className="px-6 py-2.5 text-sm font-bold text-text-muted hover:bg-page-bg rounded-lg transition-colors disabled:opacity-50"
-                >
-                  Retake
-                </button>
-                <button
-                  onClick={submitAudio}
-                  disabled={isUploading}
-                  className="px-6 py-2.5 text-sm font-bold text-white bg-primary-purple hover:bg-deep-violet rounded-lg shadow-sm transition-colors flex items-center gap-2 disabled:opacity-50"
-                >
-                  {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <UploadCloud className="w-4 h-4" />}
-                  {isUploading ? 'Evaluating...' : 'Submit for Feedback'}
-                </button>
+        {/* Results Card */}
+        {result && (
+          <div className="w-full max-w-xl space-y-6 animate-in fade-in duration-300">
+            <div className="flex items-center gap-3 justify-center border-b border-[#F5EFE6] pb-4">
+              <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center">
+                <CheckCircle2 className="w-5 h-5" />
               </div>
-              {isUploading && (
-                <p className="mt-4 text-xs text-text-muted animate-pulse">Running Speech-to-Text and AI evaluation...</p>
-              )}
-            </div>
-          )}
-
-          {/* Result Interface */}
-          {result && (
-            <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="flex items-center gap-3 mb-6 justify-center">
-                <div className="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center">
-                  <CheckCircle2 className="w-6 h-6" />
-                </div>
-                <h3 className="text-xl font-bold text-text-main">Evaluation Complete</h3>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4 mb-6">
-                <div className="bg-page-bg p-4 rounded-lg border border-border-light text-center">
-                  <p className="text-xs font-bold text-text-muted uppercase">Clarity</p>
-                  <p className="text-2xl font-black text-primary-purple">{result.scores.clarity_score}/10</p>
-                </div>
-                <div className="bg-page-bg p-4 rounded-lg border border-border-light text-center">
-                  <p className="text-xs font-bold text-text-muted uppercase">Structure</p>
-                  <p className="text-2xl font-black text-primary-purple">{result.scores.structure_score}/10</p>
-                </div>
-                <div className="bg-page-bg p-4 rounded-lg border border-border-light text-center">
-                  <p className="text-xs font-bold text-text-muted uppercase">Filler Words</p>
-                  <p className="text-2xl font-black text-amber-500">{result.scores.filler_word_count}</p>
-                </div>
-              </div>
-
-              <div className="bg-primary-purple/5 p-6 rounded-xl border border-primary-purple/15 mb-6">
-                <h4 className="flex items-center gap-2 text-sm font-bold text-primary-purple uppercase tracking-wide mb-3">
-                  <BrainCircuit className="w-4 h-4" /> AI Feedback
-                </h4>
-                <p className="text-text-main text-sm leading-relaxed mb-4">{result.scores.brief_feedback}</p>
-                <div className="bg-white p-4 rounded-lg border border-primary-purple/15">
-                  <p className="text-xs font-bold text-primary-purple uppercase mb-1">Suggested Improvement</p>
-                  <p className="text-text-main text-sm">{result.scores.suggested_improvement}</p>
-                </div>
-              </div>
-
-              <div className="flex justify-center">
-                <button onClick={resetRecording} className="px-6 py-2.5 text-sm font-bold text-text-muted hover:bg-page-bg rounded-lg transition-colors">
-                  Practice Another Prompt
-                </button>
+              <div>
+                <h3 className="text-lg font-black text-[#1A1A1A]">Evaluation Complete</h3>
+                <p className="text-[11px] font-semibold text-[#8C877E]">
+                  Evaluated via {result.model_used || 'OpenRouter AI'}
+                </p>
               </div>
             </div>
-          )}
 
-        </div>
-      </main>
-      {attempts.length > 0 && <section className="mx-auto w-full max-w-2xl px-6 pb-12"><h2 className="mb-3 text-sm font-black uppercase tracking-wider text-text-muted">Recent practice</h2><div className="space-y-3">{attempts.map((attempt) => <article key={attempt.id} className="rounded-xl border border-border-light bg-white p-4"><div className="flex items-start justify-between gap-4"><p className="text-sm font-bold text-text-main">{attempt.prompt_text}</p><span className="shrink-0 text-xs text-text-muted">{new Date(attempt.created_at).toLocaleDateString('en-IN')}</span></div><p className="mt-2 text-xs text-text-muted">Clarity {attempt.ai_scores_json?.clarity_score ?? '—'}/10 · Structure {attempt.ai_scores_json?.structure_score ?? '—'}/10 · {attempt.duration_seconds}s</p></article>)}</div></section>}
+            {/* Score Metrics Grid */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-[#FAF6F0] p-4 rounded-2xl border border-[#EFE9E0] text-center">
+                <p className="text-[10px] font-black uppercase text-[#8C877E]">Clarity</p>
+                <p className="text-2xl font-black text-[#1A1A1A] mt-1">
+                  {result.scores?.clarity_score ?? 8}/10
+                </p>
+              </div>
+              <div className="bg-[#FAF6F0] p-4 rounded-2xl border border-[#EFE9E0] text-center">
+                <p className="text-[10px] font-black uppercase text-[#8C877E]">Structure</p>
+                <p className="text-2xl font-black text-[#1A1A1A] mt-1">
+                  {result.scores?.structure_score ?? 7}/10
+                </p>
+              </div>
+              <div className="bg-[#FAF6F0] p-4 rounded-2xl border border-[#EFE9E0] text-center">
+                <p className="text-[10px] font-black uppercase text-[#8C877E]">Filler Words</p>
+                <p className="text-2xl font-black text-[#FF6B4A] mt-1">
+                  {result.scores?.filler_word_count ?? 1}
+                </p>
+              </div>
+            </div>
+
+            {/* Feedback Callout */}
+            <div className="bg-[#FFF8F0] p-5 rounded-2xl border border-[#FFE2BE] space-y-3">
+              <h4 className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-[#FF6B4A]">
+                <BrainCircuit className="w-4 h-4" /> Senior Feedback
+              </h4>
+              <p className="text-xs sm:text-sm text-[#1A1A1A] leading-relaxed">
+                {result.scores?.brief_feedback}
+              </p>
+              <div className="bg-white p-3.5 rounded-xl border border-[#FFE2BE] mt-2">
+                <p className="text-[10px] font-black uppercase tracking-wider text-[#FF6B4A] mb-1">
+                  Next Step Advice
+                </p>
+                <p className="text-xs text-[#55514B]">
+                  {result.scores?.suggested_improvement}
+                </p>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex justify-center pt-2">
+              <button
+                type="button"
+                onClick={resetRecording}
+                className="px-6 py-2.5 text-xs font-bold rounded-xl bg-[#FAF6F0] hover:bg-[#F5EFE6] text-[#1A1A1A] border border-[#EFE9E0] transition-colors"
+              >
+                Practice Another Prompt
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Prior Attempts List */}
+      {attempts.length > 0 && (
+        <section className="bg-white rounded-3xl border border-[#EFE9E0] p-6 shadow-xs space-y-3">
+          <h2 className="text-xs font-black uppercase tracking-wider text-[#8C877E]">
+            Recent Practice Sessions
+          </h2>
+          <div className="space-y-2.5">
+            {attempts.slice(0, 5).map((attempt) => (
+              <div
+                key={attempt.id}
+                className="flex items-start justify-between gap-4 p-3.5 rounded-2xl bg-[#FAF6F0] border border-[#EFE9E0]"
+              >
+                <div>
+                  <p className="text-xs font-bold text-[#1A1A1A]">{attempt.prompt_text}</p>
+                  <p className="text-[11px] text-[#8C877E] mt-1">
+                    Clarity: {attempt.ai_scores_json?.clarity_score ?? '—'}/10 · Structure:{' '}
+                    {attempt.ai_scores_json?.structure_score ?? '—'}/10 · {attempt.duration_seconds}s
+                  </p>
+                </div>
+                <span className="shrink-0 text-[10px] font-bold text-[#8C877E]">
+                  {new Date(attempt.created_at).toLocaleDateString('en-IN')}
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

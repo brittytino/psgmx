@@ -1,5 +1,8 @@
-// Server-only OpenRouter routing. Model order is intentionally centralized so
-// every AI feature uses the same free-tier fallback and telemetry contract.
+// Server-only OpenRouter routing using exclusively verified free-tier models.
+// Allows Placement Reps to dynamically customize the main model and fallback chain.
+
+import fs from 'node:fs'
+import path from 'node:path'
 
 export type AITaskType =
   | 'code_evaluation'
@@ -9,33 +12,86 @@ export type AITaskType =
   | 'fyp_explanation'
   | 'general'
 
-type ModelMode = 'programming' | 'thinking'
+export const FREE_MODELS_CATALOG: string[] = [
+  'nvidia/nemotron-3-ultra-550b-a55b:free',
+  'poolside/laguna-s-2.1:free',
+  'nvidia/nemotron-3.5-lightning:free',
+  'nvidia/nemotron-3-super-120b-a12b:free',
+  'dots-studio/dots-3-note-preview:free',
+  'thinkingmachines/inkling:free',
+  'poolside/laguna-xs-2.1:free',
+  'google/gemma-4-26b-a4b-it:free',
+  'google/gemma-4-31b-it:free',
+  'fish-audio/s2.1-pro-free:free',
+]
 
-interface ModelConfig {
-  id: string
-  maxTokens: number
-  temperature: number
+export interface AIModelConfig {
+  mainModel: string
+  fallbackModels: string[]
 }
 
-const PROGRAMMING_MODELS: ModelConfig[] = [
-  { id: 'cohere/north-mini-code:free', maxTokens: 1600, temperature: 0.15 },
-  { id: 'poolside/laguna-s-2.1:free', maxTokens: 1600, temperature: 0.15 },
-  { id: 'nvidia/nemotron-3.5-lightning:free', maxTokens: 1400, temperature: 0.15 },
-  { id: 'openrouter/free', maxTokens: 1400, temperature: 0.15 },
-]
+const DEFAULT_CONFIG: AIModelConfig = {
+  mainModel: 'nvidia/nemotron-3-ultra-550b-a55b:free',
+  fallbackModels: [
+    'poolside/laguna-s-2.1:free',
+    'nvidia/nemotron-3.5-lightning:free',
+    'nvidia/nemotron-3-super-120b-a12b:free',
+    'dots-studio/dots-3-note-preview:free',
+    'thinkingmachines/inkling:free',
+    'poolside/laguna-xs-2.1:free',
+    'google/gemma-4-26b-a4b-it:free',
+    'google/gemma-4-31b-it:free',
+    'fish-audio/s2.1-pro-free:free',
+  ],
+}
 
-const THINKING_MODELS: ModelConfig[] = [
-  { id: 'inclusionai/ling-3.0-flash-fin:free', maxTokens: 1400, temperature: 0.3 },
-  { id: 'qwen/qwen3.8-27b:free', maxTokens: 1400, temperature: 0.3 },
-  { id: 'google/gemma-4-31b-it:free', maxTokens: 1400, temperature: 0.3 },
-  { id: 'google/gemma-4-26b-a4b-it:free', maxTokens: 1400, temperature: 0.3 },
-  { id: 'openrouter/free', maxTokens: 1400, temperature: 0.3 },
-]
+// In-memory runtime cache
+let runtimeConfig: AIModelConfig = { ...DEFAULT_CONFIG }
 
-function modeForTask(taskType: AITaskType): ModelMode {
-  return taskType === 'code_evaluation' || taskType === 'fyp_explanation'
-    ? 'programming'
-    : 'thinking'
+// Config file path
+const CONFIG_FILE = path.join(process.cwd(), 'lib', 'ai', 'ai-models-config.json')
+
+function loadPersistedConfig(): AIModelConfig {
+  try {
+    if (fs.existsSync(CONFIG_FILE)) {
+      const raw = fs.readFileSync(CONFIG_FILE, 'utf-8')
+      const parsed = JSON.parse(raw)
+      if (parsed?.mainModel && Array.isArray(parsed?.fallbackModels)) {
+        return parsed
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return DEFAULT_CONFIG
+}
+
+export function getAIModelConfig(): AIModelConfig {
+  if (!runtimeConfig.mainModel) {
+    runtimeConfig = loadPersistedConfig()
+  }
+  return runtimeConfig
+}
+
+export function updateAIModelConfig(newConfig: Partial<AIModelConfig>): AIModelConfig {
+  const updated: AIModelConfig = {
+    mainModel: newConfig.mainModel || runtimeConfig.mainModel || DEFAULT_CONFIG.mainModel,
+    fallbackModels: Array.isArray(newConfig.fallbackModels) && newConfig.fallbackModels.length > 0
+      ? newConfig.fallbackModels
+      : runtimeConfig.fallbackModels || DEFAULT_CONFIG.fallbackModels,
+  }
+
+  runtimeConfig = updated
+
+  try {
+    const dir = path.dirname(CONFIG_FILE)
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
+    fs.writeFileSync(CONFIG_FILE, JSON.stringify(updated, null, 2), 'utf-8')
+  } catch (err) {
+    console.warn('Could not persist ai-models-config.json:', err)
+  }
+
+  return runtimeConfig
 }
 
 export interface AICallResponse {
@@ -52,23 +108,31 @@ export class AIUnavailableError extends Error {
   }
 }
 
-import { executeGeminiPrompt } from './gemini'
-
 export async function executeOpenRouterPrompt(
   prompt: string,
   taskType: AITaskType = 'general',
   systemPrompt?: string,
   maxTokensOverride?: number,
+  modelOverride?: string,
 ): Promise<AICallResponse> {
   const apiKey = process.env.OPENROUTER_API_KEY?.trim()
-  const mode = modeForTask(taskType)
-  const chain = mode === 'programming' ? PROGRAMMING_MODELS : THINKING_MODELS
-  let attempts = 0
+  if (!apiKey) {
+    throw new AIUnavailableError(0)
+  }
 
-  for (const model of apiKey ? chain : []) {
+  const config = getAIModelConfig()
+  // Chain: if modelOverride is provided, try that first then fallbacks
+  const modelChain = modelOverride
+    ? [modelOverride, ...config.fallbackModels.filter((m) => m !== modelOverride)]
+    : [config.mainModel, ...config.fallbackModels.filter((m) => m !== config.mainModel)]
+
+  let attempts = 0
+  let lastError = 'Unknown error'
+
+  for (const modelId of modelChain) {
     attempts += 1
     const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 12_000)
+    const timeout = setTimeout(() => controller.abort(), 10_000)
 
     try {
       const messages: Array<{ role: 'system' | 'user'; content: string }> = []
@@ -84,52 +148,53 @@ export async function executeOpenRouterPrompt(
           'X-Title': 'PSGMX Placement Preparation Companion',
         },
         body: JSON.stringify({
-          model: model.id,
+          model: modelId,
           messages,
-          max_tokens: maxTokensOverride ? Math.max(100, Math.min(maxTokensOverride, model.maxTokens)) : model.maxTokens,
-          temperature: model.temperature,
-          reasoning: { effort: 'low', exclude: true },
+          max_tokens: maxTokensOverride || 1200,
+          temperature: 0.25,
         }),
         signal: controller.signal,
       })
 
-      if (!response.ok) continue
+      if (!response.ok) {
+        lastError = `Model ${modelId} HTTP ${response.status}`
+        continue
+      }
+
       const data = await response.json()
       const content = data?.choices?.[0]?.message?.content
       if (typeof content === 'string' && content.trim()) {
         return {
           text: content.trim(),
-          modelUsed: data?.model || model.id,
+          modelUsed: data?.model || modelId,
           isFallback: attempts > 1,
           attempts,
         }
       }
-    } catch {
-      // A timeout, transient network failure, or unavailable free model advances
-      // to the next configured model. Prompt or provider bodies are not logged.
+      lastError = `Model ${modelId} returned empty content`
+    } catch (err) {
+      lastError = err instanceof Error ? err.message : String(err)
     } finally {
       clearTimeout(timeout)
     }
   }
 
-  // OpenRouter is the configured primary provider. Gemini is retained only as
-  // a server-side continuity fallback; neither provider secret is shipped to
-  // the browser or mobile application.
-  const geminiResult = await executeGeminiPrompt(prompt, systemPrompt)
-  if (geminiResult) {
-    return {
-      text: geminiResult.text,
-      modelUsed: geminiResult.modelUsed,
-      isFallback: true,
-      attempts: attempts + 1,
-    }
-  }
-
+  console.warn(`All ${attempts} OpenRouter free models failed. Last error: ${lastError}`)
   throw new AIUnavailableError(attempts)
 }
 
 export const OPENROUTER_MODEL_CHAINS = {
-  programming: PROGRAMMING_MODELS.map((model) => model.id),
-  thinking: THINKING_MODELS.map((model) => model.id),
+  programming: [
+    'poolside/laguna-s-2.1:free',
+    'nvidia/nemotron-3.5-lightning:free',
+    'openrouter/free',
+  ],
+  thinking: [
+    'inclusionai/ling-3.0-flash-fin:free',
+    'nvidia/nemotron-3-ultra-550b-a55b:free',
+    'google/gemma-4-31b-it:free',
+    'openrouter/free',
+  ],
   textToSpeech: ['deepgram/flux-tts:free'],
 } as const
+

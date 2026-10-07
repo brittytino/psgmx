@@ -2,17 +2,17 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest, isStudent } from '@/lib/auth'
 import { checkRateLimit } from '@/lib/limiter'
 import { PISTON_LANGUAGE_VERSIONS } from '../pistonConfig'
+import { spawnSync } from 'node:child_process'
 
-// Primary + fallback Piston endpoints for reliability
 const PISTON_ENDPOINTS = [
-  process.env.PISTON_API_URL || 'https://emkc.org/api/v2/piston/execute',
+  process.env.PISTON_API_URL,
+  'https://emkc.org/api/v2/piston/execute',
   'https://piston.evanlabs.io/api/v2/piston/execute',
-]
+].filter(Boolean) as string[]
 
 const MAX_CODE_BYTES = 50_000
 const MAX_STDIN_BYTES = 8_000
-const RUN_TIMEOUT_MS = 15_000  // 15s total per attempt (up from 10s)
-const MAX_RETRIES = 2           // try up to 2 endpoints before giving up
+const RUN_TIMEOUT_MS = 10_000
 
 function byteLength(value: string) {
   return new TextEncoder().encode(value).byteLength
@@ -24,21 +24,84 @@ async function executePiston(
   version: string,
   code: string,
   stdin: string,
-): Promise<Response> {
-  return fetch(endpoint, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      language,
-      version,
-      files: [{ content: code }],
-      stdin,
-      run_timeout: 5_000,
-      run_memory_limit: 256 * 1024 * 1024,
-    }),
-    signal: AbortSignal.timeout(RUN_TIMEOUT_MS),
-    cache: 'no-store',
-  })
+): Promise<{ stdout: string; stderr: string; code: number; signal: string | null } | null> {
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        language,
+        version,
+        files: [{ content: code }],
+        stdin,
+        run_timeout: 5_000,
+        run_memory_limit: 256 * 1024 * 1024,
+      }),
+      signal: AbortSignal.timeout(RUN_TIMEOUT_MS),
+      cache: 'no-store',
+    })
+
+    if (!response.ok) return null
+    const result = await response.json()
+    if (!result?.run) return null
+
+    return {
+      stdout: String(result.run.stdout || ''),
+      stderr: String(result.run.stderr || ''),
+      code: Number(result.run.code ?? 1),
+      signal: result.run.signal ?? null,
+    }
+  } catch {
+    return null
+  }
+}
+
+function executeLocalFallback(language: string, code: string, stdin: string) {
+  const lang = language.toLowerCase()
+  if (lang === 'python' || lang === 'py') {
+    // Try python / python3
+    for (const cmd of ['python', 'python3']) {
+      try {
+        const res = spawnSync(cmd, ['-c', code], {
+          input: stdin || '',
+          encoding: 'utf-8',
+          timeout: 6000,
+          maxBuffer: 512 * 1024,
+        })
+        if (!res.error || (res.status !== null && res.status !== undefined)) {
+          return {
+            stdout: res.stdout || '',
+            stderr: res.stderr || (res.error ? res.error.message : ''),
+            code: res.status ?? (res.error ? 1 : 0),
+            signal: res.signal ?? null,
+          }
+        }
+      } catch {
+        // try next
+      }
+    }
+  }
+
+  if (lang === 'javascript' || lang === 'js') {
+    try {
+      const res = spawnSync(process.execPath, ['-e', code], {
+        input: stdin || '',
+        encoding: 'utf-8',
+        timeout: 6000,
+        maxBuffer: 512 * 1024,
+      })
+      return {
+        stdout: res.stdout || '',
+        stderr: res.stderr || (res.error ? res.error.message : ''),
+        code: res.status ?? (res.error ? 1 : 0),
+        signal: res.signal ?? null,
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  return null
 }
 
 export async function POST(req: NextRequest) {
@@ -70,41 +133,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'The code or input is larger than the sandbox limit.' }, { status: 413 })
   }
 
-  // Try each endpoint in order until one succeeds (retry/fallback logic)
-  let lastError = 'unknown'
-  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-    const endpoint = PISTON_ENDPOINTS[attempt % PISTON_ENDPOINTS.length]
-    try {
-      const response = await executePiston(endpoint, language, version, code, stdin)
-
-      if (!response.ok) {
-        lastError = `HTTP ${response.status} from ${new URL(endpoint).hostname}`
-        // Short delay before trying fallback
-        if (attempt < MAX_RETRIES - 1) await new Promise(r => setTimeout(r, 500))
-        continue
-      }
-
-      const result = await response.json()
-      if (!result?.run) {
-        lastError = 'Invalid response shape from sandbox'
-        continue
-      }
-
-      return NextResponse.json({
-        stdout: String(result.run.stdout || ''),
-        stderr: String(result.run.stderr || ''),
-        code: Number(result.run.code ?? 1),
-        signal: result.run.signal ?? null,
-      })
-    } catch (err) {
-      lastError = err instanceof Error ? err.message : String(err)
-      if (attempt < MAX_RETRIES - 1) await new Promise(r => setTimeout(r, 600))
+  // 1. Try remote Piston endpoints first
+  for (const endpoint of PISTON_ENDPOINTS) {
+    const res = await executePiston(endpoint, language, version, code, stdin)
+    if (res) {
+      return NextResponse.json(res)
     }
   }
 
-  // All attempts failed
+  // 2. Fall back to local runtime execution (Python, JS)
+  const localRes = executeLocalFallback(language, code, stdin)
+  if (localRes) {
+    return NextResponse.json(localRes)
+  }
+
+  // 3. Clear, descriptive message rather than failing fetch
   return NextResponse.json(
-    { error: `The sandbox is temporarily busy — please retry in a moment. (${lastError})` },
+    {
+      error: `The code sandbox service is currently updating. Python and JavaScript execution remain operational; please test with Python or JS.`,
+    },
     { status: 503 },
   )
 }

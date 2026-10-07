@@ -1,134 +1,161 @@
 'use client';
 
-import React from 'react';
-import Link from 'next/link';
+import React, { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Users, CalendarClock, LogOut, Menu, X, UserRoundCog, ClipboardCheck, ListTodo, Megaphone, LibraryBig, BarChart3, Activity, GraduationCap, Rocket, Route, CheckSquare } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import {
+  LayoutDashboard,
+  Users,
+  CalendarClock,
+  UserRoundCog,
+  ClipboardCheck,
+  ListTodo,
+  Megaphone,
+  LibraryBig,
+  BarChart3,
+  Activity,
+  Rocket,
+  Route,
+  CheckSquare,
+} from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { getCurrentProfile } from '@/lib/current-profile';
+import PortalSidebar, { NavGroup } from '@/components/platform/PortalSidebar';
+import DiceBearAvatar from '@/components/basic/DiceBearAvatar';
 
-const sidebarLinks = [
-  { name: 'Command Center', href: '/placement-rep', icon: LayoutDashboard },
-  { name: 'Roster & Members', href: '/placement-rep/members', icon: UserRoundCog },
-  { name: 'Readiness Pulse', href: '/placement-rep/pulse', icon: Activity },
-  { name: 'Quest Studio', href: '/placement-rep/quest-studio', icon: ListTodo },
-  { name: 'Programme Calendar', href: '/placement-rep/sessions', icon: CalendarClock },
-  { name: 'Preparation Squads', href: '/placement-rep/squads', icon: Users },
-  { name: 'Preparation Tracks', href: '/placement-rep/tracks', icon: Route },
-  { name: 'Question Bank', href: '/placement-rep/question-bank', icon: LibraryBig },
-  { name: 'Daily Tasks', href: '/placement-rep/tasks', icon: CheckSquare },
-  { name: 'Participation', href: '/placement-rep/participation', icon: ClipboardCheck },
-  { name: 'Communication', href: '/placement-rep/communication', icon: Megaphone },
-  { name: 'Preparation Health', href: '/placement-rep/reports', icon: BarChart3 },
-  { name: 'Rollout', href: '/placement-rep/rollout', icon: Rocket },
+const prNavGroups: NavGroup[] = [
+  {
+    groupTitle: 'Pulse & Reports',
+    items: [
+      { name: 'Command Center', href: '/placement-rep', icon: LayoutDashboard },
+      { name: 'Readiness Pulse', href: '/placement-rep/pulse', icon: Activity },
+      { name: 'Preparation Health', href: '/placement-rep/reports', icon: BarChart3 },
+    ],
+  },
+  {
+    groupTitle: 'Cohort Operations',
+    items: [
+      { name: 'Roster & Members', href: '/placement-rep/members', icon: UserRoundCog },
+      { name: 'Daily Tasks', href: '/placement-rep/tasks', icon: CheckSquare },
+      { name: 'Participation', href: '/placement-rep/participation', icon: ClipboardCheck },
+      { name: 'Preparation Squads', href: '/placement-rep/squads', icon: Users },
+    ],
+  },
+  {
+    groupTitle: 'Curriculum & Sessions',
+    items: [
+      { name: 'Quest Studio', href: '/placement-rep/quest-studio', icon: ListTodo },
+      { name: 'Question Bank', href: '/placement-rep/question-bank', icon: LibraryBig },
+      { name: 'Programme Calendar', href: '/placement-rep/sessions', icon: CalendarClock },
+      { name: 'Preparation Tracks', href: '/placement-rep/tracks', icon: Route },
+      { name: 'Communication', href: '/placement-rep/communication', icon: Megaphone },
+      { name: 'Rollout', href: '/placement-rep/rollout', icon: Rocket },
+    ],
+  },
 ];
-
-function NavLinks({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
-  return (
-    <>
-      {sidebarLinks.map((link) => {
-        const isActive = pathname === link.href;
-        return (
-          <Link
-            key={link.name}
-            href={link.href}
-            onClick={onNavigate}
-            className={`flex items-center gap-3.5 px-4 py-3 rounded-[12px] transition-all duration-200 ${
-              isActive
-                ? 'bg-primary-purple text-white shadow-md shadow-primary-purple/10'
-                : 'text-text-muted hover:bg-page-bg hover:text-text-main font-semibold'
-            }`}
-          >
-            <link.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-text-muted'}`} />
-            <span className={`text-[14px] ${isActive ? 'font-bold' : 'font-semibold'}`}>{link.name}</span>
-          </Link>
-        );
-      })}
-    </>
-  );
-}
 
 export default function PlacementRepLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+
+  const [identity, setIdentity] = useState({
+    name: 'Placement Rep',
+    regNo: '',
+    batchCode: '25MX · 26MX',
+    avatarUrl: null as string | null,
+  });
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const supabase = createClient();
+        const me = await getCurrentProfile(supabase);
+        if (!me) return;
+        let batchCode = '25MX · 26MX';
+        if (me.batch_id) {
+          const { data: batch } = await supabase
+            .from('batches')
+            .select('batch_code')
+            .eq('id', me.batch_id)
+            .maybeSingle();
+          if ((batch as any)?.batch_code) batchCode = (batch as any).batch_code;
+        }
+        setIdentity({
+          name: me.name ?? 'Placement Rep',
+          regNo: me.reg_no ?? '',
+          batchCode,
+          avatarUrl: me.avatar_url ?? null,
+        });
+      } catch {
+        // ignore
+      }
+    })();
+  }, []);
 
   const handleLogout = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push('/login');
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch {}
+    router.replace('/login');
+    router.refresh();
   };
 
   return (
-    <div className="flex h-screen bg-page-bg text-text-main font-sans overflow-hidden">
-      <aside className="w-[260px] h-full bg-white flex-col shrink-0 border-r border-border-light shadow-[4px_0_24px_rgba(0,0,0,0.02)] hidden lg:flex">
-        <div className="h-[88px] flex items-center px-8 shrink-0">
-          <div>
-            <h2 className="text-[17px] font-black tracking-tight text-text-main leading-tight">Readiness Representative</h2>
-            <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Preparation Console</p>
+    <div className="flex h-screen bg-[#FBF6EE] text-[#1A1A1A] font-sans overflow-hidden selection:bg-[#FF6B4A]/20">
+      {/* Reference-Styled Collapsible Cream Sidebar */}
+      <PortalSidebar
+        portalTitle="Placement Rep"
+        portalSubtitle={`${identity.batchCode} Console`}
+        logoSrc="/logo.png"
+        navGroups={prNavGroups}
+        user={{
+          name: identity.name,
+          emailOrReg: identity.regNo || identity.batchCode,
+          batchOrRole: 'Placement Lead',
+          avatarUrl: identity.avatarUrl,
+          isPlacementRep: true,
+          portalType: 'placement-rep',
+        }}
+        onLogout={handleLogout}
+      />
+
+      {/* Main Content Area */}
+      <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-[#FBF6EE]">
+        {/* Top Header */}
+        <header className="h-[76px] bg-white/80 backdrop-blur-md border-b border-[#EFE9E0] flex items-center justify-between px-6 lg:px-8 shrink-0 relative z-30 transition-colors">
+          <div className="flex items-center gap-3">
+            <div>
+              <h1 className="text-base font-black text-[#1A1A1A] leading-tight">
+                Placement Representative Console
+              </h1>
+              <p className="text-[10px] font-bold text-[#8C877E] uppercase tracking-wider">
+                Cohort Readiness · 25MX & 26MX Department OS
+              </p>
+            </div>
           </div>
-        </div>
-        <nav className="flex-1 px-4 py-4 space-y-1.5">
-          <NavLinks pathname={pathname} />
-        </nav>
-        <div className="p-4 shrink-0">
-          <Link
-            href="/student"
-            className="mb-1 flex w-full items-center gap-3 rounded-[12px] border border-primary-purple/20 bg-primary-purple/5 px-4 py-3 text-[14px] font-bold text-primary-purple transition-colors hover:bg-primary-purple/10"
-          >
-            <GraduationCap className="h-5 w-5" /> Student Companion
-          </Link>
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-[12px] text-text-muted hover:bg-page-bg hover:text-deep-violet font-semibold text-[14px] transition-colors"
-          >
-            <LogOut className="w-5 h-5" /> Log out
-          </button>
-        </div>
-      </aside>
 
-      <AnimatePresence>
-        {mobileMenuOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => setMobileMenuOpen(false)}
-              className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          <div className="flex items-center gap-2.5">
+            <DiceBearAvatar
+              name={identity.name}
+              avatarUrl={identity.avatarUrl}
+              size={36}
+              className="rounded-xl shadow-2xs"
             />
-            <motion.aside
-              initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }} transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed top-0 left-0 w-[260px] h-full bg-white flex flex-col z-50 shadow-2xl lg:hidden"
-            >
-              <div className="h-[72px] flex items-center justify-between px-6 shrink-0 border-b border-border-light">
-                <h2 className="text-[15px] font-black text-text-main">Placement Rep</h2>
-                <button type="button" aria-label="Close menu" onClick={() => setMobileMenuOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-page-bg text-text-muted">
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-              <nav className="flex-1 px-4 py-4 space-y-1.5">
-                <NavLinks pathname={pathname} onNavigate={() => setMobileMenuOpen(false)} />
-                <Link
-                  href="/student"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="mt-4 flex items-center gap-3.5 rounded-[12px] border border-primary-purple/20 bg-primary-purple/5 px-4 py-3 text-[14px] font-bold text-primary-purple"
-                >
-                  <GraduationCap className="h-5 w-5" /> Student Companion
-                </Link>
-              </nav>
-            </motion.aside>
-          </>
-        )}
-      </AnimatePresence>
-
-      <main className="flex-1 flex flex-col min-w-0 h-full overflow-y-auto">
-        <header className="h-[72px] flex items-center px-6 lg:hidden shrink-0 border-b border-border-light bg-white">
-          <button type="button" aria-label="Open menu" onClick={() => setMobileMenuOpen(true)} className="w-10 h-10 flex items-center justify-center rounded-full bg-page-bg text-text-muted">
-            <Menu className="w-5 h-5" />
-          </button>
-          <h1 className="ml-4 text-[16px] font-black text-text-main">Placement Rep</h1>
+            <div className="hidden sm:block text-left">
+              <p className="text-xs font-black text-[#1A1A1A] leading-tight truncate max-w-[120px]">
+                {identity.name}
+              </p>
+              <p className="text-[10px] font-semibold text-[#8C877E] truncate">
+                {identity.batchCode}
+              </p>
+            </div>
+          </div>
         </header>
-        <div className="flex-1 p-4 sm:p-6 lg:p-8">
-          {children}
+
+        {/* Scrollable Canvas: Unified Layout & Smooth Scrolling */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 lg:p-8">
+          <div className="max-w-7xl mx-auto w-full space-y-6 sm:space-y-8">
+            {children}
+          </div>
         </div>
       </main>
     </div>

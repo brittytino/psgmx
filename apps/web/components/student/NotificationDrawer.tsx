@@ -204,24 +204,24 @@ export function NotificationDrawer({ isOpen, onClose, onUnreadCountChange }: Not
           />
 
           {/* Right Slide-Over Panel */}
-          <div className="fixed inset-y-0 right-0 flex max-w-full pl-10">
+          <div className="fixed inset-y-0 right-0 flex max-w-full pl-6 sm:pl-10 z-50">
             <motion.div
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 28, stiffness: 260 }}
-              className="w-screen max-w-md bg-white shadow-2xl flex flex-col border-l border-border-light"
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              className="w-screen max-w-md h-full bg-white shadow-2xl flex flex-col border-l border-[#EFE9E0] overflow-hidden"
             >
               {/* Drawer Header */}
-              <div className="p-6 border-b border-border-light bg-page-bg/50 shrink-0">
+              <div className="p-5 border-b border-[#EFE9E0] bg-[#FAF6F0] shrink-0">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-violet-100 flex items-center justify-center text-primary-purple">
+                    <div className="w-10 h-10 rounded-2xl bg-[#FF6B4A]/10 flex items-center justify-center text-[#FF6B4A] shadow-2xs">
                       <Bell className="w-5 h-5" />
                     </div>
                     <div>
-                      <h2 className="text-lg font-black text-text-main leading-tight">Notifications</h2>
-                      <p className="text-xs font-semibold text-text-muted">
+                      <h2 className="text-base font-black text-[#1A1A1A] leading-tight">Notifications</h2>
+                      <p className="text-xs font-semibold text-[#8C877E]">
                         {unreadCount > 0 ? `${unreadCount} unread update${unreadCount === 1 ? '' : 's'}` : 'All caught up'}
                       </p>
                     </div>
@@ -231,41 +231,44 @@ export function NotificationDrawer({ isOpen, onClose, onUnreadCountChange }: Not
                     type="button"
                     aria-label="Close notifications"
                     onClick={onClose}
-                    className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-gray-200/70 text-text-muted hover:text-text-main transition-colors"
+                    className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-[#F5EFE6] text-[#8C877E] hover:text-[#1A1A1A] transition-colors cursor-pointer"
                   >
-                    <X className="w-5 h-5" />
+                    <X className="w-4 h-4" />
                   </button>
                 </div>
 
                 {/* Filter Tabs & Mark as read */}
-                <div className="mt-5 flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex items-center gap-1 overflow-x-auto bg-white p-1 rounded-xl border border-border-light">
+                <div className="mt-4 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-[#EFE9E0] shadow-2xs">
                     <button
+                      type="button"
                       onClick={() => setActiveTab('all')}
-                      className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${
+                      className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                         activeTab === 'all'
-                          ? 'bg-primary-purple text-white shadow-sm'
-                          : 'text-text-muted hover:text-text-main'
+                          ? 'bg-[#FF6B4A] text-white shadow-2xs'
+                          : 'text-[#706E6B] hover:text-[#1A1A1A]'
                       }`}
                     >
                       All
                     </button>
                     <button
+                      type="button"
                       onClick={() => setActiveTab('announcement')}
-                      className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${
+                      className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                         activeTab === 'announcement'
-                          ? 'bg-primary-purple text-white shadow-sm'
-                          : 'text-text-muted hover:text-text-main'
+                          ? 'bg-[#FF6B4A] text-white shadow-2xs'
+                          : 'text-[#706E6B] hover:text-[#1A1A1A]'
                       }`}
                     >
                       Notices
                     </button>
                     <button
+                      type="button"
                       onClick={() => setActiveTab('quest')}
-                      className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${
+                      className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                         activeTab === 'quest'
-                          ? 'bg-primary-purple text-white shadow-sm'
-                          : 'text-text-muted hover:text-text-main'
+                          ? 'bg-[#FF6B4A] text-white shadow-2xs'
+                          : 'text-[#706E6B] hover:text-[#1A1A1A]'
                       }`}
                     >
                       Quests
@@ -274,8 +277,9 @@ export function NotificationDrawer({ isOpen, onClose, onUnreadCountChange }: Not
 
                   {unreadCount > 0 && (
                     <button
+                      type="button"
                       onClick={() => void markAllAsRead()}
-                      className="self-end text-xs font-bold text-primary-purple hover:underline flex items-center gap-1"
+                      className="text-xs font-bold text-[#FF6B4A] hover:text-[#E4572E] hover:underline flex items-center gap-1 cursor-pointer"
                     >
                       <CheckCheck className="w-3.5 h-3.5" /> Mark read
                     </button>
@@ -283,21 +287,21 @@ export function NotificationDrawer({ isOpen, onClose, onUnreadCountChange }: Not
                 </div>
               </div>
 
-              {/* Drawer Content Body */}
-              <div className="flex-1 overflow-y-auto p-6 space-y-3 custom-scrollbar">
+              {/* Drawer Content Body: min-h-0 prevents overflow/clipping */}
+              <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5 space-y-2.5 custom-scrollbar">
                 {loading ? (
-                  <div className="grid min-h-48 place-items-center"><Loader2 className="h-6 w-6 animate-spin text-primary-purple" /></div>
+                  <div className="grid min-h-48 place-items-center"><Loader2 className="h-6 w-6 animate-spin text-[#FF6B4A]" /></div>
                 ) : loadError ? (
                   <div className="rounded-2xl bg-red-50 p-4 text-center text-xs font-bold text-red-700">
-                    {loadError} <button onClick={() => void loadNotifications()} className="underline">Retry</button>
+                    {loadError} <button onClick={() => void loadNotifications()} className="underline cursor-pointer">Retry</button>
                   </div>
                 ) : filtered.length === 0 ? (
                   <div className="text-center py-16 space-y-3">
-                    <div className="w-14 h-14 rounded-full bg-page-bg flex items-center justify-center mx-auto text-text-muted">
+                    <div className="w-14 h-14 rounded-full bg-[#FAF6F0] border border-[#EFE9E0] flex items-center justify-center mx-auto text-[#8C877E] shadow-2xs">
                       <Bell className="w-6 h-6" />
                     </div>
-                    <p className="font-bold text-text-main text-sm">No notifications found</p>
-                    <p className="text-xs text-text-muted max-w-xs mx-auto">
+                    <p className="font-bold text-[#1A1A1A] text-sm">No notifications found</p>
+                    <p className="text-xs text-[#8C877E] max-w-xs mx-auto">
                       All new department broadcasts, mock tests, and daily streaks will appear right here.
                     </p>
                   </div>
@@ -307,40 +311,40 @@ export function NotificationDrawer({ isOpen, onClose, onUnreadCountChange }: Not
                       key={item.id}
                       href={item.link}
                       onClick={() => { void markAsRead(item.id); onClose(); }}
-                      className={`group relative block p-4 rounded-2xl border transition-all duration-200 ${
+                      className={`group relative block p-3.5 rounded-2xl border transition-all cursor-pointer ${
                         item.unread
-                          ? 'bg-violet-50/40 border-primary-purple/30 shadow-sm'
-                          : 'bg-white border-border-light hover:border-border-light/80 hover:bg-page-bg/40'
+                          ? 'bg-[#FFF9F6] border-[#FF6B4A]/30 border-l-4 border-l-[#FF6B4A] shadow-2xs'
+                          : 'bg-white border-[#EFE9E0] hover:border-[#E2D8C9] hover:bg-[#FAF6F0]'
                       }`}
                     >
-                      <div className="flex items-start gap-3.5">
-                        <div className="w-8 h-8 rounded-xl bg-white border border-border-light flex items-center justify-center shrink-0 shadow-sm mt-0.5">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-xl bg-white border border-[#EFE9E0] flex items-center justify-center shrink-0 shadow-2xs mt-0.5">
                           {getIcon(item.type)}
                         </div>
 
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-2">
-                            <h3 className={`text-xs font-bold truncate ${item.unread ? 'text-primary-purple' : 'text-text-main'}`}>
+                            <h3 className={`text-xs font-bold truncate ${item.unread ? 'text-[#FF6B4A]' : 'text-[#1A1A1A]'}`}>
                               {item.title}
                             </h3>
-                            <span className="text-[10px] font-medium text-text-muted shrink-0 flex items-center gap-1">
+                            <span className="text-[10px] font-medium text-[#8C877E] shrink-0 flex items-center gap-1">
                               <Clock className="w-2.5 h-2.5" />
                               {item.timeAgo}
                             </span>
                           </div>
 
-                          <p className="mt-1 text-xs text-text-muted leading-relaxed line-clamp-2">
+                          <p className="mt-1 text-xs text-[#706E6B] leading-relaxed line-clamp-2">
                             {item.description}
                           </p>
 
-                          <div className="mt-3 flex items-center justify-between">
-                            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-primary-purple group-hover:translate-x-0.5 transition-transform">
+                          <div className="mt-2.5 flex items-center justify-between">
+                            <span className="inline-flex items-center gap-1 text-xs font-bold text-[#FF6B4A] group-hover:translate-x-0.5 transition-transform">
                               {item.actionLabel}
                               <ArrowRight className="w-3 h-3" />
                             </span>
 
                             {item.unread && (
-                              <span className="w-2 h-2 rounded-full bg-primary-purple animate-pulse" />
+                              <span className="w-2 h-2 rounded-full bg-[#FF6B4A] animate-pulse" />
                             )}
                           </div>
                         </div>
@@ -351,24 +355,24 @@ export function NotificationDrawer({ isOpen, onClose, onUnreadCountChange }: Not
               </div>
 
               {/* Drawer Footer Actions */}
-              <div className="p-5 border-t border-border-light bg-page-bg/40 shrink-0 space-y-2">
+              <div className="p-4 border-t border-[#EFE9E0] bg-[#FAF6F0] shrink-0 space-y-2">
                 <Link
                   href="/student/announcements"
                   onClick={onClose}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-white border border-border-light text-xs font-bold text-text-main hover:bg-page-bg transition-colors shadow-sm"
+                  className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-white hover:bg-[#F5EFE6] border border-[#EFE9E0] text-xs font-bold text-[#1A1A1A] transition-colors shadow-2xs cursor-pointer"
                 >
-                  <Megaphone className="w-3.5 h-3.5 text-primary-purple" />
+                  <Megaphone className="w-3.5 h-3.5 text-[#FF6B4A]" />
                   View Full Department Announcements
                 </Link>
 
-                <div className="flex items-center justify-between px-2 pt-1 text-[11px] text-text-muted">
-                  <span className="flex items-center gap-1">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Real-Time Live Feed
+                <div className="flex items-center justify-between px-2 pt-1 text-[11px] text-[#8C877E]">
+                  <span className="flex items-center gap-1.5 font-medium">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Real-Time Live Feed
                   </span>
                   <Link
                     href="/student/settings"
                     onClick={onClose}
-                    className="hover:underline font-semibold"
+                    className="hover:underline font-semibold hover:text-[#1A1A1A]"
                   >
                     Manage Alerts
                   </Link>

@@ -160,9 +160,13 @@ class DailyFiveService {
 
     // 3. Guaranteed built-in offline session
     debugPrint('[DailyFiveService] Using default question set');
-    final fallbackList = List<DailyFiveQuestion>.from(_kDefaultDailyQuestions)..shuffle(_rng);
-    _cacheQuestionsInDrift(fallbackList);
-    return DailyFiveSession(questions: fallbackList.take(5).toList());
+    try {
+      final fallbackList = List<DailyFiveQuestion>.from(_kDefaultDailyQuestions)..shuffle(_rng);
+      try { _cacheQuestionsInDrift(fallbackList); } catch (_) {}
+      return DailyFiveSession(questions: fallbackList.take(5).toList());
+    } catch (_) {
+      return DailyFiveSession(questions: _kDefaultDailyQuestions.take(5).toList());
+    }
   }
 
   Future<void> _cacheQuestionsInDrift(List<DailyFiveQuestion> questions) async {

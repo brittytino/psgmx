@@ -1,267 +1,161 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   Home,
-  BrainCircuit,
-  BookOpen,
-  ClipboardList,
-  Award,
-  Users,
-  Folder,
-  Building2,
-  Megaphone,
-  Settings,
-  Bell,
-  Menu,
-  X,
-  LogOut,
-  ChevronDown,
-  GraduationCap,
   Zap,
   Code2,
+  Award,
+  BrainCircuit,
+  ClipboardList,
+  BookOpen,
+  Users,
+  GraduationCap,
+  Megaphone,
+  Folder,
+  Building2,
   ShieldCheck,
-  Inbox
+  Inbox,
+  Bell,
+  Search,
+  Settings,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
 import { getCurrentProfile } from '@/lib/current-profile';
 import { NotificationDrawer } from '@/components/student/NotificationDrawer';
 import { StudentHeaderSearch } from '@/components/student/StudentHeaderSearch';
+import PortalSidebar, { NavGroup } from '@/components/platform/PortalSidebar';
+import DiceBearAvatar from '@/components/basic/DiceBearAvatar';
 
-const sidebarLinks = [
-  { name: 'Today', href: '/student', icon: Home },
-  { name: 'Train Gymnasium', href: '/student/train', icon: Zap },
-  { name: 'CodeBox Tasks', href: '/student/codebox', icon: Code2 },
-  { name: 'Readiness & Progress', href: '/student/progress', icon: Award },
-  { name: 'AI Senior', href: '/student/ai-senior', icon: BrainCircuit },
-  { name: 'Mock Assessments', href: '/student/exams', icon: ClipboardList },
-  { name: 'Knowledge Brain', href: '/student/knowledge-brain', icon: BookOpen },
-  { name: 'Peer Squads', href: '/student/squads', icon: Users },
-  { name: 'Lineage Mentors', href: '/student/lineage', icon: GraduationCap },
-  { name: 'Community Board', href: '/student/community-board', icon: Megaphone },
-  { name: 'FYP Portfolio', href: '/student/fyp', icon: Folder },
-  { name: 'Interview Patterns', href: '/student/interview-patterns', icon: Building2 },
-  { name: 'Recovery Support', href: '/student/recovery-hub', icon: ShieldCheck },
-  { name: 'Unified Inbox', href: '/student/inbox', icon: Inbox },
-  { name: 'Account Settings', href: '/student/settings', icon: Settings },
+const studentNavGroups: NavGroup[] = [
+  {
+    groupTitle: 'Routine & Practice',
+    items: [
+      { name: 'Today', href: '/student', icon: Home, shortcut: '⌘1' },
+      { name: 'Train Gymnasium', href: '/student/train', icon: Zap, shortcut: '⌘2' },
+      { name: 'CodeBox Tasks', href: '/student/codebox', icon: Code2, shortcut: '⌘3' },
+      { name: 'Readiness & Progress', href: '/student/progress', icon: Award },
+    ],
+  },
+  {
+    groupTitle: 'AI & Mock Exams',
+    items: [
+      { name: 'AI Senior', href: '/student/ai-senior', icon: BrainCircuit },
+      { name: 'Mock Assessments', href: '/student/exams', icon: ClipboardList },
+      { name: 'Interview Patterns', href: '/student/interview-patterns', icon: Building2 },
+      { name: 'Recovery Support', href: '/student/recovery-hub', icon: ShieldCheck },
+    ],
+  },
+  {
+    groupTitle: 'Community & Projects',
+    items: [
+      { name: 'Knowledge Brain', href: '/student/knowledge-brain', icon: BookOpen },
+      { name: 'Peer Squads', href: '/student/squads', icon: Users },
+      { name: 'Lineage Mentors', href: '/student/lineage', icon: GraduationCap },
+      { name: 'Community Board', href: '/student/community-board', icon: Megaphone },
+      { name: 'FYP Portfolio', href: '/student/fyp', icon: Folder },
+      { name: 'Unified Inbox', href: '/student/inbox', icon: Inbox },
+    ],
+  },
 ];
-
-const getSidebarCardContent = (pathname: string) => {
-  if (pathname.includes('/ai-senior')) {
-    return { title: 'Ask anything. The AI Senior knows your department.', desc: 'Grounded in real placement experiences.', icon: BrainCircuit };
-  }
-  if (pathname.includes('/knowledge-brain')) {
-    return { title: 'Every article you read sharpens your edge.', desc: 'Written by seniors who walked this path.', icon: BookOpen };
-  }
-  if (pathname.includes('/exams')) {
-    return { title: 'Simulate the real thing. Exams build instincts.', desc: 'Proctored mock exams that predict placement performance.', icon: ClipboardList };
-  }
-  if (pathname.includes('/readiness') || pathname.includes('/progress')) {
-    return { title: 'Your score is a mirror. Improve the inputs.', desc: 'Four dimensions. One honest number.', icon: Award };
-  }
-  if (pathname.includes('/lineage')) {
-    return { title: 'Your seniors walked this path. Learn from them.', desc: 'Real mentors, real experience, real guidance.', icon: Users };
-  }
-  if (pathname.includes('/fyp')) {
-    return { title: 'Document your progress. Every step counts.', desc: 'Your project journey, logged and tracked.', icon: Folder };
-  }
-  if (pathname.includes('/placement-log') || pathname.includes('/interview-patterns')) {
-    return { title: 'Practise patterns, not company rumours.', desc: 'Reviewed historical insight for reusable preparation.', icon: Building2 };
-  }
-  if (pathname.includes('/announcements')) {
-    return { title: 'Stay in the loop. Never miss what matters.', desc: 'Department updates and important notices.', icon: Megaphone };
-  }
-  if (pathname.includes('/community-board')) {
-    return { title: 'Build together, across batches.', desc: 'Projects, opportunities, and mentoring — not official drives.', icon: Megaphone };
-  }
-  if (pathname.includes('/settings')) {
-    return { title: 'Your profile, your identity.', desc: 'Manage your preferences and account.', icon: Settings };
-  }
-  return { title: 'Consistency beats talent. Show up every day.', desc: 'Your placement readiness, built one day at a time.', icon: GraduationCap };
-};
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
-  const [profileOpen, setProfileOpen] = React.useState(false);
+
   const [notificationsOpen, setNotificationsOpen] = React.useState(false);
   const [unreadNotifications, setUnreadNotifications] = React.useState(0);
-  const [identity, setIdentity] = React.useState({ name: 'Student', regNo: '', batchCode: 'MCA' });
+  const [identity, setIdentity] = React.useState({
+    name: 'Student',
+    regNo: '',
+    batchCode: 'MCA',
+    avatarUrl: null as string | null,
+  });
   const [isPlacementRep, setIsPlacementRep] = React.useState(false);
-  const cardContent = getSidebarCardContent(pathname);
 
-  React.useEffect(() => { void (async () => {
-    try {
-      const supabase = createClient();
-      const me = await getCurrentProfile(supabase);
-      if (!me) return;
-      setIsPlacementRep(me.roles?.isPlacementRep === true);
-      let batchCode = 'MCA';
-      if (me.batch_id) {
-        const { data: batch } = await supabase.from('batches').select('batch_code').eq('id', me.batch_id).maybeSingle();
-        batchCode = (batch as any)?.batch_code ?? batchCode;
+  React.useEffect(() => {
+    void (async () => {
+      try {
+        const supabase = createClient();
+        const me = await getCurrentProfile(supabase);
+        if (!me) return;
+        setIsPlacementRep(me.roles?.isPlacementRep === true);
+        let batchCode = 'MCA';
+        if (me.batch_id) {
+          const { data: batch } = await supabase
+            .from('batches')
+            .select('batch_code')
+            .eq('id', me.batch_id)
+            .maybeSingle();
+          batchCode = (batch as any)?.batch_code ?? batchCode;
+        }
+        setIdentity({
+          name: me.name ?? 'Student',
+          regNo: me.reg_no ?? '',
+          batchCode,
+          avatarUrl: me.avatar_url ?? null,
+        });
+      } catch {
+        /* Route protection handles an unavailable session. */
       }
-      setIdentity({ name: me.name ?? 'Student', regNo: me.reg_no ?? '', batchCode });
-    } catch { /* Route protection handles an unavailable session. */ }
-  })() }, []);
+    })();
+  }, []);
 
   const handleLogout = async () => {
-    try { await fetch('/api/auth/logout', { method: 'POST' }); } catch {}
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch {}
     router.replace('/login');
     router.refresh();
   };
 
   return (
-    <div className="flex h-screen bg-page-bg text-text-main font-sans overflow-hidden transition-colors duration-300">
+    <div className="flex h-screen bg-[#FBF6EE] text-[#1A1A1A] font-sans overflow-hidden selection:bg-[#FF6B4A]/20">
+      {/* Reference-Styled Collapsible Cream Sidebar */}
+      <PortalSidebar
+        portalTitle="Student Portal"
+        portalSubtitle={`${identity.batchCode} · MCA`}
+        logoSrc="/logo.png"
+        navGroups={studentNavGroups}
+        user={{
+          name: identity.name,
+          emailOrReg: identity.regNo || '25MX/26MX',
+          batchOrRole: identity.batchCode,
+          avatarUrl: identity.avatarUrl,
+          isPlacementRep,
+          portalType: 'student',
+        }}
+        onLogout={handleLogout}
+      />
 
-      {/* Sidebar */}
-      <aside className="w-[280px] h-full bg-white flex flex-col shrink-0 border-r border-border-light shadow-[4px_0_24px_rgba(0,0,0,0.02)] hidden lg:flex relative z-40 transition-colors duration-300">
-
-        {/* Logo */}
-        <div className="h-[88px] flex items-center px-8 shrink-0">
-          <Link href="/student" className="flex items-center gap-3">
-            <img src="/logo.webp" alt="PSGMX Logo" className="w-10 h-10 object-contain drop-shadow-sm" />
-            <div>
-              <h2 className="text-[17px] font-black tracking-tight text-text-main leading-tight">Student Portal</h2>
-              <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider">MCA Department</p>
-            </div>
-          </Link>
-        </div>
-
-        {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto px-4 py-4 space-y-1.5 custom-scrollbar">
-          {sidebarLinks.map((link) => {
-            const isActive = pathname === link.href;
-            return (
-              <Link
-                key={link.name}
-                href={link.href}
-                className={`flex items-center justify-between px-4 py-3 rounded-[12px] transition-all duration-200 group ${
-                  isActive
-                    ? 'bg-primary-purple text-white shadow-md shadow-primary-purple/10'
-                    : 'text-text-muted hover:bg-page-bg hover:text-text-main font-semibold'
-                }`}
-              >
-                <div className="flex items-center gap-3.5">
-                  <link.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-text-muted group-hover:text-primary-purple'}`} />
-                  <span className={`text-[14px] ${isActive ? 'font-bold' : 'font-semibold'}`}>{link.name}</span>
-                </div>
-              </Link>
-            );
-          })}
-          {isPlacementRep && (
-            <Link
-              href="/placement-rep"
-              className="mt-4 flex items-center gap-3.5 rounded-[12px] border border-primary-purple/20 bg-primary-purple/5 px-4 py-3 text-primary-purple transition-colors hover:bg-primary-purple/10"
-            >
-              <ShieldCheck className="h-5 w-5" />
-              <span className="text-[14px] font-bold">PR Console</span>
-            </Link>
-          )}
-        </nav>
-
-        {/* Dynamic Callout Card */}
-        <div className="p-6 shrink-0">
-          <div className="bg-white/40 backdrop-blur-md border border-white/20 rounded-2xl p-5 relative overflow-hidden h-[180px] flex flex-col justify-between transition-colors duration-300">
-            <div className="relative z-10">
-              <h4 className="text-primary-purple font-bold text-[14px] leading-snug mb-1">{cardContent.title}</h4>
-              {cardContent.desc && <p className="text-text-muted text-[11px] leading-relaxed pr-2">{cardContent.desc}</p>}
-            </div>
-            <div className="absolute -bottom-4 -right-4 w-32 h-32 bg-white/40 rounded-full blur-2xl"></div>
-            <div className="relative z-10 mt-auto flex justify-center opacity-80">
-              <cardContent.icon className="w-16 h-16 text-primary-purple/20" />
-            </div>
-          </div>
-        </div>
-      </aside>
-
-      {/* Mobile Sidebar Overlay */}
-      <AnimatePresence>
-        {mobileMenuOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => setMobileMenuOpen(false)}
-              className="fixed inset-0 bg-rich-black/60 backdrop-blur-sm z-40 lg:hidden"
-            />
-            <motion.aside
-              initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }} transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed top-0 left-0 w-[280px] h-full bg-white flex flex-col z-50 shadow-2xl lg:hidden"
-            >
-              <div className="h-[88px] flex items-center justify-between px-6 shrink-0 border-b border-border-light">
-                <div className="flex items-center gap-3">
-                  <img src="/logo.webp" alt="PSGMX Logo" className="w-8 h-8 object-contain" />
-                  <h2 className="text-[15px] font-black text-text-main">Student Portal</h2>
-                </div>
-                <button type="button" aria-label="Close menu" onClick={() => setMobileMenuOpen(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-page-bg text-text-muted">
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-              <nav className="flex-1 overflow-y-auto px-4 py-4 space-y-1.5 custom-scrollbar">
-                {sidebarLinks.map((link) => {
-                  const isActive = pathname === link.href;
-                  return (
-                    <Link
-                      key={link.name}
-                      href={link.href}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className={`flex items-center justify-between px-4 py-3 rounded-[12px] transition-all duration-200 ${isActive ? 'bg-primary-purple text-white' : 'text-text-muted hover:bg-page-bg font-semibold'}`}
-                    >
-                      <div className="flex items-center gap-3.5">
-                        <link.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-text-muted'}`} />
-                        <span className={`text-[14px] ${isActive ? 'font-bold' : 'font-semibold'}`}>{link.name}</span>
-                      </div>
-                    </Link>
-                  );
-                })}
-                {isPlacementRep && (
-                  <Link
-                    href="/placement-rep"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="mt-4 flex items-center gap-3.5 rounded-[12px] border border-primary-purple/20 bg-primary-purple/5 px-4 py-3 text-primary-purple"
-                  >
-                    <ShieldCheck className="h-5 w-5" />
-                    <span className="text-[14px] font-bold">PR Console</span>
-                  </Link>
-                )}
-              </nav>
-            </motion.aside>
-          </>
-        )}
-      </AnimatePresence>
-
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
-
+      {/* Main Content Area */}
+      <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-[#FBF6EE]">
         {/* Top Header */}
-        <header className="h-[72px] sm:h-[88px] bg-page-bg flex items-center justify-between px-4 sm:px-6 lg:px-8 shrink-0 relative z-30 transition-colors duration-300">
-          <div className="flex items-center gap-4">
-            <button type="button" aria-label="Open menu" onClick={() => setMobileMenuOpen(true)} className="w-10 h-10 flex lg:hidden items-center justify-center rounded-full bg-white border border-border-light shadow-sm text-text-muted">
-              <Menu className="w-5 h-5" />
-            </button>
+        <header className="h-[76px] bg-white/80 backdrop-blur-md border-b border-[#EFE9E0] flex items-center justify-between px-6 lg:px-8 shrink-0 relative z-30 transition-colors">
+          {/* Breadcrumb / Search Bar */}
+          <div className="flex items-center gap-4 flex-1 max-w-xl">
             <StudentHeaderSearch />
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-6">
+          {/* Right Header Controls */}
+          <div className="flex items-center gap-3">
             {/* Notifications Bell */}
-            <div className="relative">
-              <button 
-                onClick={() => setNotificationsOpen(true)} 
-                className={`relative w-10 h-10 flex items-center justify-center rounded-full bg-white border border-border-light shadow-sm transition-colors ${notificationsOpen ? 'text-primary-purple border-primary-purple' : 'text-text-muted hover:text-text-main'}`}
-                aria-label="Open Notifications"
-              >
-                <Bell className="w-5 h-5" />
-                {unreadNotifications > 0 && (
-                  <span className="absolute -top-1 -right-1 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-primary-purple px-1 text-[10px] font-black text-white shadow-sm">
-                    {unreadNotifications > 99 ? '99+' : unreadNotifications}
-                  </span>
-                )}
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => setNotificationsOpen(true)}
+              aria-label="Open notifications"
+              className={`relative w-10 h-10 flex items-center justify-center rounded-xl bg-[#FAF6F0] hover:bg-[#F5EFE6] border border-[#EFE9E0] transition-colors shadow-2xs cursor-pointer ${
+                notificationsOpen ? 'text-[#FF6B4A] border-[#FF6B4A]' : 'text-[#706E6B] hover:text-[#1A1A1A]'
+              }`}
+            >
+              <Bell className="w-4 h-4" />
+              {unreadNotifications > 0 && (
+                <span className="absolute -top-1 -right-1 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-[#FF6B4A] px-1 text-[10px] font-black text-white shadow-2xs">
+                  {unreadNotifications > 99 ? '99+' : unreadNotifications}
+                </span>
+              )}
+            </button>
 
             <NotificationDrawer
               isOpen={notificationsOpen}
@@ -269,48 +163,31 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
               onUnreadCountChange={setUnreadNotifications}
             />
 
-            {/* Profile */}
-            <div className="relative">
-              <button type="button" aria-label="Open profile menu" aria-haspopup="menu" aria-expanded={profileOpen} onClick={() => setProfileOpen(!profileOpen)} className={`flex items-center gap-3 cursor-pointer group bg-white border rounded-full pl-2 pr-3 sm:pr-4 py-1.5 shadow-sm transition-colors ${profileOpen ? 'border-primary-purple' : 'border-border-light hover:border-border-light'}`}>
-                <div className="w-8 h-8 rounded-full bg-border-light overflow-hidden shrink-0 relative">
-                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary-purple to-deep-violet text-white font-bold text-xs">{identity.name.charAt(0).toUpperCase()}</div>
-                </div>
-                <ChevronDown className={`w-4 h-4 transition-transform ${profileOpen ? 'rotate-180 text-primary-purple' : 'text-text-muted'}`} />
-              </button>
-              <AnimatePresence>
-                {profileOpen && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setProfileOpen(false)}></div>
-                    <motion.div initial={{ opacity: 0, y: 10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.95 }} className="absolute right-0 top-12 w-56 bg-white rounded-2xl shadow-xl border border-border-light z-50 overflow-hidden">
-                      <div className="p-4 border-b border-border-light">
-                        <p className="text-[14px] font-bold text-text-main">{identity.name}</p>
-                        <p className="text-[12px] text-text-muted">{identity.regNo || 'Register pending'} · {identity.batchCode}</p>
-                      </div>
-                      <div className="p-2">
-                        {isPlacementRep && (
-                          <Link href="/placement-rep" onClick={() => setProfileOpen(false)} className="flex items-center gap-2 w-full p-2 text-[13px] font-semibold text-primary-purple hover:bg-page-bg rounded-xl transition-colors">
-                            <ShieldCheck className="w-4 h-4" /> Open PR Console
-                          </Link>
-                        )}
-                        <Link href="/student/settings" onClick={() => setProfileOpen(false)} className="flex items-center gap-2 w-full p-2 text-[13px] font-semibold text-text-muted hover:bg-page-bg hover:text-text-main rounded-xl transition-colors">
-                          <Settings className="w-4 h-4" /> Account Settings
-                        </Link>
-                        <div className="h-px bg-page-bg my-1"></div>
-                        <button onClick={handleLogout} className="flex items-center gap-2 w-full p-2 text-[13px] font-semibold text-deep-violet hover:bg-page-bg rounded-xl transition-colors">
-                          <LogOut className="w-4 h-4" /> Sign out
-                        </button>
-                      </div>
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
+            {/* Profile Avatar Pill with DiceBear Clay Avatar */}
+            <div className="flex items-center gap-2.5 pl-2">
+              <DiceBearAvatar
+                name={identity.name}
+                avatarUrl={identity.avatarUrl}
+                size={36}
+                className="rounded-xl shadow-2xs"
+              />
+              <div className="hidden sm:block text-left">
+                <p className="text-xs font-black text-[#1A1A1A] leading-tight truncate max-w-[120px]">
+                  {identity.name}
+                </p>
+                <p className="text-[10px] font-semibold text-[#8C877E] truncate">
+                  {identity.regNo || identity.batchCode}
+                </p>
+              </div>
             </div>
           </div>
         </header>
 
-        {/* Page Content */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scrollbar relative">
-          {children}
+        {/* Scrollable Canvas: Unified Layout & Smooth Scrolling */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 lg:p-8">
+          <div className="max-w-7xl mx-auto w-full space-y-6 sm:space-y-8">
+            {children}
+          </div>
         </div>
       </main>
     </div>

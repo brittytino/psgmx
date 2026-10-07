@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai'
+import { executeOpenRouterPrompt } from './openrouter-free-chain'
 
 export interface GeminiResponse {
   text: string
@@ -9,29 +9,14 @@ export async function executeGeminiPrompt(
   prompt: string,
   systemPrompt?: string,
 ): Promise<GeminiResponse | null> {
-  const apiKey = process.env.GEMINI_API_KEY?.trim()
-  if (!apiKey || apiKey.startsWith('your-')) return null
-
   try {
-    const genAI = new GoogleGenerativeAI(apiKey)
-    const modelName = process.env.GEMINI_MODEL?.trim() || 'gemini-1.5-flash'
-    const model = genAI.getGenerativeModel({
-      model: modelName,
-      systemInstruction: systemPrompt?.trim() || undefined,
-    })
-
-    const result = await model.generateContent(prompt)
-    const response = await result.response
-    const text = response.text()
-    if (typeof text === 'string' && text.trim()) {
-      return {
-        text: text.trim(),
-        modelUsed: modelName,
-      }
+    const res = await executeOpenRouterPrompt(prompt, 'general', systemPrompt)
+    return {
+      text: res.text,
+      modelUsed: res.modelUsed,
     }
   } catch (err) {
-    console.warn('[Gemini AI] Continuity fallback failed:', err instanceof Error ? err.message : String(err))
+    console.warn('[AI Model Engine] OpenRouter fallback call failed:', err instanceof Error ? err.message : String(err))
+    return null
   }
-
-  return null
 }

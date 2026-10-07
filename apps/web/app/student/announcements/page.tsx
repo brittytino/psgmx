@@ -47,12 +47,63 @@ export default function AnnouncementsPage() {
 
   const filtered = rows.filter((row) => filter === 'unread' ? !readIds.has(row.id) : filter === 'priority' ? row.is_priority : true)
   const unread = rows.filter((row) => !readIds.has(row.id)).length
-  if (loading) return <div className="grid min-h-64 place-items-center"><Loader2 className="h-6 w-6 animate-spin text-primary-purple" /></div>
+  if (loading) return <div className="grid min-h-64 place-items-center"><Loader2 className="h-6 w-6 animate-spin text-[#FF6B4A]" /></div>
 
-  return <div className="mx-auto max-w-4xl space-y-7 pb-10">
-    <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><h1 className="flex items-center gap-2 text-2xl font-black"><Megaphone className="h-6 w-6 text-primary-purple" />Department announcements</h1><p className="mt-1 text-sm text-text-muted">{unread ? `${unread} unread update${unread === 1 ? '' : 's'}` : 'You are caught up.'}</p></div>{unread > 0 && <button onClick={() => void remember(rows.map((row) => row.id))} className="text-xs font-black text-primary-purple">Mark all as read</button>}</header>
-    {error && <div className="rounded-xl bg-red-50 p-4 text-sm font-bold text-red-700">{error} <button onClick={() => void load()} className="underline">Retry</button></div>}
-    <div className="flex gap-2">{(['all','unread','priority'] as const).map((value) => <button key={value} onClick={() => setFilter(value)} className={`rounded-xl px-4 py-2 text-xs font-bold capitalize ${filter === value ? 'bg-primary-purple text-white' : 'border border-border-light bg-white text-text-muted'}`}>{value}</button>)}</div>
-    <div className="space-y-3">{filtered.map((row) => { const read = readIds.has(row.id); const open = expanded === row.id; return <button key={row.id} onClick={() => { setExpanded(open ? null : row.id); void remember([row.id]) }} className={`w-full rounded-2xl border bg-white p-5 text-left ${read ? 'border-border-light' : 'border-primary-purple/40 shadow-sm'}`}><div className="flex items-start gap-4"><div className={`grid h-10 w-10 place-items-center rounded-xl ${row.is_priority ? 'bg-amber-50 text-amber-700' : 'bg-violet-50 text-primary-purple'}`}>{row.is_priority ? <AlertTriangle className="h-5 w-5" /> : <Bell className="h-5 w-5" />}</div><div className="min-w-0 flex-1"><div className="flex items-center gap-2">{row.is_priority && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-black text-amber-800">Priority</span>}{read && <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700"><CheckCircle2 className="h-3 w-3" />Read</span>}</div><h2 className="mt-2 font-black">{row.title}</h2><p className="mt-1 text-xs text-text-muted">{new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(row.created_at))}</p><p className={`mt-3 text-sm leading-6 text-text-muted ${open ? 'whitespace-pre-wrap' : 'line-clamp-2'}`}>{row.message}</p></div></div></button> })}{!filtered.length && <div className="rounded-3xl border border-dashed border-border-light bg-white p-10 text-center text-sm text-text-muted">No announcements in this view.</div>}</div>
+  return <div className="mx-auto max-w-4xl space-y-7 pb-10 font-sans">
+    <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <h1 className="flex items-center gap-2 text-2xl font-black text-[#1A1A1A]">
+          <Megaphone className="h-6 w-6 text-[#FF6B4A]" />
+          Department Announcements
+        </h1>
+        <p className="mt-1 text-sm text-[#706E6B]">{unread ? `${unread} unread update${unread === 1 ? '' : 's'}` : 'You are all caught up.'}</p>
+      </div>
+      {unread > 0 && <button onClick={() => void remember(rows.map((row) => row.id))} className="text-xs font-black text-[#FF6B4A] hover:underline cursor-pointer">Mark all as read</button>}
+    </header>
+    {error && <div className="rounded-xl bg-red-50 p-4 text-sm font-bold text-red-700">{error} <button onClick={() => void load()} className="underline cursor-pointer">Retry</button></div>}
+    <div className="flex gap-2">
+      {(['all','unread','priority'] as const).map((value) => (
+        <button
+          key={value}
+          onClick={() => setFilter(value)}
+          className={`rounded-xl px-4 py-2 text-xs font-bold capitalize transition-all cursor-pointer ${
+            filter === value ? 'bg-[#FF6B4A] text-white shadow-2xs' : 'border border-[#EFE9E0] bg-white text-[#706E6B] hover:text-[#1A1A1A] hover:bg-[#FAF6F0]'
+          }`}
+        >
+          {value}
+        </button>
+      ))}
+    </div>
+    <div className="space-y-3">
+      {filtered.map((row) => {
+        const read = readIds.has(row.id);
+        const open = expanded === row.id;
+        return (
+          <button
+            key={row.id}
+            onClick={() => { setExpanded(open ? null : row.id); void remember([row.id]) }}
+            className={`w-full rounded-2xl border bg-white p-5 text-left transition-all cursor-pointer ${
+              read ? 'border-[#EFE9E0] hover:border-[#E2D8C9]' : 'border-[#FF6B4A]/40 bg-[#FFF9F6] shadow-2xs'
+            }`}
+          >
+            <div className="flex items-start gap-4">
+              <div className={`grid h-10 w-10 place-items-center rounded-xl shrink-0 shadow-2xs ${row.is_priority ? 'bg-amber-50 text-amber-600 border border-amber-200' : 'bg-[#FF6B4A]/10 text-[#FF6B4A]'}`}>
+                {row.is_priority ? <AlertTriangle className="h-5 w-5" /> : <Bell className="h-5 w-5" />}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  {row.is_priority && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-black text-amber-800">Priority</span>}
+                  {read && <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700"><CheckCircle2 className="h-3 w-3" />Read</span>}
+                </div>
+                <h2 className="mt-1 font-black text-[#1A1A1A] text-base">{row.title}</h2>
+                <p className="mt-1 text-xs text-[#8C877E]">{new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(row.created_at))}</p>
+                <p className={`mt-3 text-sm leading-6 text-[#706E6B] ${open ? 'whitespace-pre-wrap' : 'line-clamp-2'}`}>{row.message}</p>
+              </div>
+            </div>
+          </button>
+        )
+      })}
+      {!filtered.length && <div className="rounded-3xl border border-dashed border-[#EFE9E0] bg-white p-10 text-center text-sm text-[#8C877E]">No announcements in this view.</div>}
+    </div>
   </div>
 }

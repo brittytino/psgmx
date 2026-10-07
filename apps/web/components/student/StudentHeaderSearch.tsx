@@ -138,6 +138,8 @@ export function StudentHeaderSearch() {
     [supabase]
   )
 
+  const inputRef = useRef<HTMLInputElement>(null)
+
   // Debounced search on input change
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -150,6 +152,28 @@ export function StudentHeaderSearch() {
     }, 150)
     return () => clearTimeout(timer)
   }, [query, performSearch])
+
+  // Global Ctrl+K / Cmd+K and custom event listener
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        setIsOpen(true)
+        setTimeout(() => inputRef.current?.focus(), 50)
+      }
+    }
+    const handleCustomOpen = () => {
+      setIsOpen(true)
+      setTimeout(() => inputRef.current?.focus(), 50)
+    }
+
+    window.addEventListener('keydown', handleGlobalKeyDown)
+    window.addEventListener('open-global-search', handleCustomOpen)
+    return () => {
+      window.removeEventListener('keydown', handleGlobalKeyDown)
+      window.removeEventListener('open-global-search', handleCustomOpen)
+    }
+  }, [])
 
   // Handle click outside to close dropdown
   useEffect(() => {
@@ -228,6 +252,7 @@ export function StudentHeaderSearch() {
       >
         <Search className="w-4 h-4 text-text-muted mr-3 shrink-0" />
         <input
+          ref={inputRef}
           type="text"
           value={query}
           onFocus={() => setIsOpen(true)}

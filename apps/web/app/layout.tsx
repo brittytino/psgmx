@@ -7,6 +7,7 @@ import RouteLoadingOverlay from "@/components/basic/RouteLoadingOverlay";
 import { Suspense } from "react";
 import { UIProvider } from "@/components/providers/ui-provider";
 import IOSInstallModal from "@/components/platform/IOSInstallModal";
+import DesktopOnlyRouteGuard from "@/components/platform/DesktopOnlyRouteGuard";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://psgmx.tech"),
@@ -46,6 +47,7 @@ export default function RootLayout({
             <LoadingBar />
             <RouteLoadingOverlay />
           </Suspense>
+          <DesktopOnlyRouteGuard />
           {children}
         </UIProvider>
         {/* iOS "Add to Home Screen" install guide — client-side only, no-op on non-iOS */}

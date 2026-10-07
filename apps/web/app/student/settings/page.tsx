@@ -5,6 +5,7 @@ import { Bell, Github, Linkedin, Loader2, LogOut, Save, Settings, ShieldCheck, U
 import { createClient } from '@/lib/supabase/client'
 import { getCurrentProfile } from '@/lib/current-profile'
 import { useRouter } from 'next/navigation'
+import DiceBearAvatar from '@/components/basic/DiceBearAvatar'
 
 export default function StudentSettingsPage() {
   const supabase = React.useMemo(() => createClient(), [])
@@ -34,6 +35,7 @@ export default function StudentSettingsPage() {
             ...me,
             name: me.name || '', email: me.email || '', reg_no: me.reg_no || '',
             batch: me.batch || '', role_label: me.role_label || '',
+            avatar_url: me.avatar_url || null,
             linkedin_url: me.linkedin_url || me.linkedin || '',
             github_url: me.github_url || me.github || '',
             leetcode_username: me.leetcode_username || '', skills: me.skills || '',
@@ -90,7 +92,7 @@ export default function StudentSettingsPage() {
   if (loading) {
     return (
       <div className="flex min-h-64 items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-primary-purple"/>
+        <Loader2 className="h-6 w-6 animate-spin text-[#FF6B4A]"/>
       </div>
     )
   }
@@ -99,68 +101,71 @@ export default function StudentSettingsPage() {
     <div className="mx-auto max-w-4xl space-y-7 pb-12 font-sans">
       {/* Header */}
       <div>
-        <h1 className="flex items-center gap-2.5 text-2xl font-black text-text-main">
-          <Settings className="h-6 w-6 text-primary-purple"/>
+        <h1 className="flex items-center gap-2.5 text-2xl font-black text-[#1A1A1A]">
+          <Settings className="h-6 w-6 text-[#FF6B4A]"/>
           Account Settings & Platform Controls
         </h1>
-        <p className="mt-1 text-sm text-text-muted">
+        <p className="mt-1 text-sm text-[#706E6B]">
           Configure your student profile, preparation portfolio links, and application preferences.
         </p>
       </div>
 
       {/* Profile Overview Card */}
-      <section className="rounded-3xl border border-border-light bg-white p-6 sm:p-8 shadow-sm">
+      <section className="rounded-3xl border border-[#EFE9E0] bg-white p-6 sm:p-8 shadow-sm">
         <div className="flex items-center gap-4">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-purple to-deep-violet text-2xl font-black text-white shadow-sm">
-            {profile.name?.charAt(0).toUpperCase() || 'S'}
-          </div>
+          <DiceBearAvatar
+            name={profile.name}
+            avatarUrl={profile.avatar_url}
+            size={68}
+            className="rounded-2xl shadow-sm border border-[#EAE3D6]"
+          />
           <div>
-            <h2 className="text-xl font-black text-text-main">{profile.name}</h2>
-            <p className="text-sm text-text-muted">{profile.email}</p>
+            <h2 className="text-xl font-black text-[#1A1A1A]">{profile.name}</h2>
+            <p className="text-sm text-[#706E6B]">{profile.email}</p>
           </div>
         </div>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
-          <div className="rounded-2xl bg-page-bg p-4 border border-border-light">
-            <p className="text-[10px] font-black uppercase tracking-wider text-text-muted">Register Number</p>
-            <p className="mt-1 font-black text-text-main text-base">{profile.reg_no || '—'}</p>
+          <div className="rounded-2xl bg-[#FAF6F0] p-4 border border-[#EFE9E0]">
+            <p className="text-[10px] font-black uppercase tracking-wider text-[#8C877E]">Register Number</p>
+            <p className="mt-1 font-black text-[#1A1A1A] text-base">{profile.reg_no || '—'}</p>
           </div>
-          <div className="rounded-2xl bg-page-bg p-4 border border-border-light">
-            <p className="text-[10px] font-black uppercase tracking-wider text-text-muted">Assigned Batch</p>
-            <p className="mt-1 font-black text-text-main text-base">{profile.batch || '—'}</p>
+          <div className="rounded-2xl bg-[#FAF6F0] p-4 border border-[#EFE9E0]">
+            <p className="text-[10px] font-black uppercase tracking-wider text-[#8C877E]">Assigned Batch</p>
+            <p className="mt-1 font-black text-[#1A1A1A] text-base">{profile.batch || '—'}</p>
           </div>
-          <div className="rounded-2xl bg-page-bg p-4 border border-border-light">
-            <p className="text-[10px] font-black uppercase tracking-wider text-text-muted">Role & Permission</p>
-            <p className="mt-1 font-black text-primary-purple text-base">{profile.role_label || '—'}</p>
+          <div className="rounded-2xl bg-[#FAF6F0] p-4 border border-[#EFE9E0]">
+            <p className="text-[10px] font-black uppercase tracking-wider text-[#8C877E]">Role & Permission</p>
+            <p className="mt-1 font-black text-[#FF6B4A] text-base">{profile.role_label || '—'}</p>
           </div>
         </div>
 
-        <p className="mt-4 flex items-center gap-2 text-xs text-text-muted">
+        <p className="mt-4 flex items-center gap-2 text-xs text-[#706E6B]">
           <ShieldCheck className="h-4 w-4 text-emerald-600"/>
           Identity is verified with PSG College of Technology domain authentication.
         </p>
       </section>
 
       {/* Public Preparation & Technical Profile */}
-      <section className="rounded-3xl border border-border-light bg-white p-6 sm:p-8 shadow-sm space-y-5">
+      <section className="rounded-3xl border border-[#EFE9E0] bg-white p-6 sm:p-8 shadow-sm space-y-5">
         <div className="flex items-center gap-2">
-          <UserRound className="h-5 w-5 text-primary-purple"/>
-          <h2 className="font-black text-text-main text-lg">Public Preparation Profile</h2>
+          <UserRound className="h-5 w-5 text-[#FF6B4A]"/>
+          <h2 className="font-black text-[#1A1A1A] text-lg">Public Preparation Profile</h2>
         </div>
 
         <div className="space-y-4">
           <div>
-            <label className="text-xs font-bold text-text-muted">Display Name</label>
+            <label className="text-xs font-bold text-[#8C877E]">Display Name</label>
             <input 
               value={profile.name} 
               onChange={(e) => setProfile({ ...profile, name: e.target.value })} 
-              className="mt-1.5 w-full rounded-xl border border-border-light bg-page-bg px-4 py-3 text-sm outline-none focus:border-primary-purple font-medium text-text-main"
+              className="mt-1.5 w-full rounded-xl border border-[#EFE9E0] bg-[#FAF6F0] px-4 py-3 text-sm outline-none focus:border-[#FF6B4A] font-medium text-[#1A1A1A] transition-colors"
             />
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="text-xs font-bold text-text-muted flex items-center gap-1.5">
+              <label className="text-xs font-bold text-[#8C877E] flex items-center gap-1.5">
                 <Linkedin className="h-3.5 w-3.5 text-blue-600"/> LinkedIn Profile URL
               </label>
               <input 
@@ -168,44 +173,44 @@ export default function StudentSettingsPage() {
                 value={profile.linkedin_url ?? ''} 
                 onChange={(e) => setProfile({ ...profile, linkedin_url: e.target.value })} 
                 placeholder="https://linkedin.com/in/username" 
-                className="mt-1.5 w-full rounded-xl border border-border-light bg-page-bg px-4 py-3 text-sm outline-none focus:border-primary-purple font-medium text-text-main"
+                className="mt-1.5 w-full rounded-xl border border-[#EFE9E0] bg-[#FAF6F0] px-4 py-3 text-sm outline-none focus:border-[#FF6B4A] font-medium text-[#1A1A1A] transition-colors"
               />
             </div>
             <div>
-              <label className="text-xs font-bold text-text-muted flex items-center gap-1.5">
-                <Github className="h-3.5 w-3.5 text-gray-800"/> GitHub Profile URL
+              <label className="text-xs font-bold text-[#8C877E] flex items-center gap-1.5">
+                <Github className="h-3.5 w-3.5 text-[#1A1A1A]"/> GitHub Profile URL
               </label>
               <input 
                 type="url"
                 value={profile.github_url ?? ''} 
                 onChange={(e) => setProfile({ ...profile, github_url: e.target.value })} 
                 placeholder="https://github.com/username" 
-                className="mt-1.5 w-full rounded-xl border border-border-light bg-page-bg px-4 py-3 text-sm outline-none focus:border-primary-purple font-medium text-text-main"
+                className="mt-1.5 w-full rounded-xl border border-[#EFE9E0] bg-[#FAF6F0] px-4 py-3 text-sm outline-none focus:border-[#FF6B4A] font-medium text-[#1A1A1A] transition-colors"
               />
             </div>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="text-xs font-bold text-text-muted flex items-center gap-1.5">
+              <label className="text-xs font-bold text-[#8C877E] flex items-center gap-1.5">
                 <Code2 className="h-3.5 w-3.5 text-amber-600"/> LeetCode Username
               </label>
               <input 
                 value={profile.leetcode_username ?? ''} 
                 onChange={(e) => setProfile({ ...profile, leetcode_username: e.target.value })} 
-                placeholder="leetcode_handle" 
-                className="mt-1.5 w-full rounded-xl border border-border-light bg-page-bg px-4 py-3 text-sm outline-none focus:border-primary-purple font-medium text-text-main"
+                placeholder="tinobritty" 
+                className="mt-1.5 w-full rounded-xl border border-[#EFE9E0] bg-[#FAF6F0] px-4 py-3 text-sm outline-none focus:border-[#FF6B4A] font-medium text-[#1A1A1A] transition-colors"
               />
             </div>
             <div>
-              <label className="text-xs font-bold text-text-muted flex items-center gap-1.5">
-                <Sparkles className="h-3.5 w-3.5 text-primary-purple"/> Skills & Technical Tags
+              <label className="text-xs font-bold text-[#8C877E] flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5 text-[#FF6B4A]"/> Skills & Technical Tags
               </label>
               <input 
                 value={profile.skills ?? ''} 
                 onChange={(e) => setProfile({ ...profile, skills: e.target.value })} 
                 placeholder="Python, Java, React, Next.js, PostgreSQL" 
-                className="mt-1.5 w-full rounded-xl border border-border-light bg-page-bg px-4 py-3 text-sm outline-none focus:border-primary-purple font-medium text-text-main"
+                className="mt-1.5 w-full rounded-xl border border-[#EFE9E0] bg-[#FAF6F0] px-4 py-3 text-sm outline-none focus:border-[#FF6B4A] font-medium text-[#1A1A1A] transition-colors"
               />
             </div>
           </div>
@@ -213,62 +218,62 @@ export default function StudentSettingsPage() {
       </section>
 
       {/* Platform & Notification Controls */}
-      <section className="rounded-3xl border border-border-light bg-white p-6 sm:p-8 shadow-sm space-y-5">
+      <section className="rounded-3xl border border-[#EFE9E0] bg-white p-6 sm:p-8 shadow-sm space-y-5">
         <div className="flex items-center gap-2">
-          <Sliders className="h-5 w-5 text-primary-purple"/>
-          <h2 className="font-black text-text-main text-lg">Application & Notification Controls</h2>
+          <Sliders className="h-5 w-5 text-[#FF6B4A]"/>
+          <h2 className="font-black text-[#1A1A1A] text-lg">Application & Notification Controls</h2>
         </div>
 
         <div className="space-y-3">
-          <div className="flex items-center justify-between p-4 rounded-2xl bg-page-bg border border-border-light">
+          <div className="flex items-center justify-between p-4 rounded-2xl bg-[#FAF6F0] border border-[#EFE9E0]">
             <div>
-              <p className="text-sm font-bold text-text-main">Daily Gym Quest Reminders</p>
-              <p className="text-xs text-text-muted">Receive alerts when your Daily Five placement loop is open.</p>
+              <p className="text-sm font-bold text-[#1A1A1A]">Daily Gym Quest Reminders</p>
+              <p className="text-xs text-[#706E6B]">Receive alerts when your Daily Five placement loop is open.</p>
             </div>
             <input 
               type="checkbox" 
               checked={profile.task_reminders_enabled ?? true} 
               onChange={(e) => setProfile({ ...profile, task_reminders_enabled: e.target.checked })} 
-              className="h-5 w-5 rounded accent-primary-purple cursor-pointer"
+              className="h-5 w-5 rounded accent-[#FF6B4A] cursor-pointer"
             />
           </div>
 
-          <div className="flex items-center justify-between p-4 rounded-2xl bg-page-bg border border-border-light">
+          <div className="flex items-center justify-between p-4 rounded-2xl bg-[#FAF6F0] border border-[#EFE9E0]">
             <div>
-              <p className="text-sm font-bold text-text-main">Placement Attendance & Session Alerts</p>
-              <p className="text-xs text-text-muted">Get notified regarding scheduled preparation and company sessions.</p>
+              <p className="text-sm font-bold text-[#1A1A1A]">Placement Attendance & Session Alerts</p>
+              <p className="text-xs text-[#706E6B]">Get notified regarding scheduled preparation and company sessions.</p>
             </div>
             <input 
               type="checkbox" 
               checked={profile.attendance_alerts_enabled ?? true} 
               onChange={(e) => setProfile({ ...profile, attendance_alerts_enabled: e.target.checked })} 
-              className="h-5 w-5 rounded accent-primary-purple cursor-pointer"
+              className="h-5 w-5 rounded accent-[#FF6B4A] cursor-pointer"
             />
           </div>
 
-          <div className="flex items-center justify-between p-4 rounded-2xl bg-page-bg border border-border-light">
+          <div className="flex items-center justify-between p-4 rounded-2xl bg-[#FAF6F0] border border-[#EFE9E0]">
             <div>
-              <p className="text-sm font-bold text-text-main">Department Announcements</p>
-              <p className="text-xs text-text-muted">Broadcast messages from Placement Reps and HOD.</p>
+              <p className="text-sm font-bold text-[#1A1A1A]">Department Announcements</p>
+              <p className="text-xs text-[#706E6B]">Broadcast messages from Placement Reps and HOD.</p>
             </div>
             <input 
               type="checkbox" 
               checked={profile.announcements_enabled ?? true} 
               onChange={(e) => setProfile({ ...profile, announcements_enabled: e.target.checked })} 
-              className="h-5 w-5 rounded accent-primary-purple cursor-pointer"
+              className="h-5 w-5 rounded accent-[#FF6B4A] cursor-pointer"
             />
           </div>
 
-          <div className="flex items-center justify-between p-4 rounded-2xl bg-page-bg border border-border-light">
+          <div className="flex items-center justify-between p-4 rounded-2xl bg-[#FAF6F0] border border-[#EFE9E0]">
             <div>
-              <p className="text-sm font-bold text-text-main">Open to Peer Lineage Guidance</p>
-              <p className="text-xs text-text-muted">Allow batch juniors to view your shared interview patterns.</p>
+              <p className="text-sm font-bold text-[#1A1A1A]">Open to Peer Lineage Guidance</p>
+              <p className="text-xs text-[#706E6B]">Allow batch juniors to view your shared interview patterns.</p>
             </div>
             <input 
               type="checkbox" 
               checked={profile.mentorship_open ?? true} 
               onChange={(e) => setProfile({ ...profile, mentorship_open: e.target.checked })} 
-              className="h-5 w-5 rounded accent-primary-purple cursor-pointer"
+              className="h-5 w-5 rounded accent-[#FF6B4A] cursor-pointer"
             />
           </div>
         </div>
@@ -287,7 +292,7 @@ export default function StudentSettingsPage() {
         <button 
           onClick={handleSave} 
           disabled={saving || !profile.name?.trim()} 
-          className="flex items-center justify-center gap-2 rounded-xl bg-primary-purple px-8 py-3.5 text-sm font-bold text-white hover:bg-violet-700 disabled:opacity-50 transition-colors shadow-sm"
+          className="flex items-center justify-center gap-2 rounded-xl bg-[#FF6B4A] hover:bg-[#E4572E] px-8 py-3.5 text-sm font-bold text-white disabled:opacity-50 transition-colors shadow-xs cursor-pointer disabled:cursor-not-allowed"
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin"/> : <Save className="h-4 w-4"/>}
           {saving ? 'Saving Changes…' : 'Save All Preferences'}

@@ -54,10 +54,12 @@ class DailyFiveProvider with ChangeNotifier, SafeChangeNotifier {
 
       if (_streak == null || !_streak!.completedToday) {
         final questions = await _service.fetchDailyQuestions(userId);
-        _session = questions.isNotEmpty
-            ? DailyFiveSession(questions: questions)
-            : null;
-        if (questions.isEmpty) _error = 'No questions available today.';
+        if (questions.isNotEmpty) {
+          _session = DailyFiveSession(questions: questions);
+        } else {
+          final fallback = await _service.fetchTodaysSession(userId);
+          _session = fallback;
+        }
       } else {
         _session = null; // Already done
       }

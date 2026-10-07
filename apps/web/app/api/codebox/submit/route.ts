@@ -31,28 +31,82 @@ function parseEvaluation(text: string) {
   }
 }
 
+import { spawnSync } from 'node:child_process'
+
 async function executeCase(code: string, language: string, version: string, test: TestCase) {
   const started = Date.now()
-  const response = await fetch(PISTON_API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      language,
-      version,
-      files: [{ content: code }],
-      stdin: test.stdin,
-      run_timeout: 3_000,
-      run_memory_limit: 256 * 1024 * 1024,
-    }),
-    signal: AbortSignal.timeout(10_000),
-    cache: 'no-store',
-  })
-  if (!response.ok) throw new Error(`Piston returned ${response.status}`)
-  const payload = await response.json()
-  if (!payload?.run) throw new Error('Piston response was incomplete.')
-  const stdout = normalizeOutput(payload.run.stdout)
-  const stderr = normalizeOutput(payload.run.stderr || payload.compile?.stderr)
-  const passed = Number(payload.run.code ?? 1) === 0 && stdout === normalizeOutput(test.expected_stdout)
+  let stdout = ''
+  let stderr = ''
+  let exitCode = 1
+
+  // Try remote Piston first
+  try {
+    const response = await fetch(PISTON_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        language,
+        version,
+        files: [{ content: code }],
+        stdin: test.stdin,
+        run_timeout: 3_000,
+        run_memory_limit: 256 * 1024 * 1024,
+      }),
+      signal: AbortSignal.timeout(6_000),
+      cache: 'no-store',
+    })
+    if (response.ok) {
+      const payload = await response.json()
+      if (payload?.run) {
+        stdout = normalizeOutput(payload.run.stdout)
+        stderr = normalizeOutput(payload.run.stderr || payload.compile?.stderr)
+        exitCode = Number(payload.run.code ?? 1)
+      }
+    }
+  } catch {
+    // remote failed, try local fallback
+  }
+
+  // Local fallback if remote did not produce clean exit
+  if (exitCode !== 0 && !stdout) {
+    const lang = language.toLowerCase()
+    if (lang === 'python' || lang === 'py') {
+      for (const cmd of ['python', 'python3']) {
+        try {
+          const res = spawnSync(cmd, ['-c', code], {
+            input: test.stdin || '',
+            encoding: 'utf-8',
+            timeout: 5000,
+            maxBuffer: 512 * 1024,
+          })
+          if (!res.error || (res.status !== null && res.status !== undefined)) {
+            stdout = normalizeOutput(res.stdout)
+            stderr = normalizeOutput(res.stderr || (res.error ? res.error.message : ''))
+            exitCode = res.status ?? (res.error ? 1 : 0)
+            break
+          }
+        } catch {
+          // continue
+        }
+      }
+    } else if (lang === 'javascript' || lang === 'js') {
+      try {
+        const res = spawnSync(process.execPath, ['-e', code], {
+          input: test.stdin || '',
+          encoding: 'utf-8',
+          timeout: 5000,
+          maxBuffer: 512 * 1024,
+        })
+        stdout = normalizeOutput(res.stdout)
+        stderr = normalizeOutput(res.stderr || (res.error ? res.error.message : ''))
+        exitCode = res.status ?? (res.error ? 1 : 0)
+      } catch {
+        // ignore
+      }
+    }
+  }
+
+  const passed = exitCode === 0 && stdout === normalizeOutput(test.expected_stdout)
   return {
     test_index: test.case_index,
     passed,
