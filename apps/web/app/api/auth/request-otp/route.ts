@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { normalizeEmail } from '@/lib/auth-input'
+import { normalizeEmail, registerNumberFromCollegeEmail } from '@/lib/auth-input'
 import { checkRateLimit } from '@/lib/limiter'
 import { isStaffEmail, isStaticOtpEnabled } from '@/lib/staff-auth'
 import { provisionStaffByEmail } from '@/lib/staff-provision'
@@ -7,6 +7,19 @@ import { supabaseAdmin } from '@/lib/supabase/admin'
 import { logEvent, requestId } from '@/lib/observability'
 import { sendOtpEmail } from '@/lib/email/resend'
 import { signOtpChallenge } from '@/lib/auth/otp-challenge'
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-client-info, apikey, x-request-id',
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: corsHeaders,
+  })
+}
 
 function requestIp(request: NextRequest) {
   return request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
@@ -40,7 +53,30 @@ async function isApprovedIdentity(email: string) {
       .limit(1)
       .maybeSingle())),
   ])
-  return [...rosterMatches, ...userMatches].some(({ data }) => Boolean(data))
+  if ([...rosterMatches, ...userMatches].some(({ data }) => Boolean(data))) return true
+
+  // Also check if this email is a college email format (e.g. 26mx217@psgtech.ac.in)
+  // that matches a registered student's reg_no in the whitelist (e.g. 26MX217)
+  const regNo = registerNumberFromCollegeEmail(email)
+  if (regNo) {
+    const { data: regMatch } = await supabaseAdmin
+      .from('whitelist')
+      .select('email, personal_email, college_email')
+      .eq('reg_no', regNo)
+      .limit(1)
+      .maybeSingle()
+    if (regMatch) {
+      if (!regMatch.college_email) {
+        await supabaseAdmin
+          .from('whitelist')
+          .update({ college_email: email })
+          .eq('email', regMatch.email)
+      }
+      return true
+    }
+  }
+
+  return false
 }
 
 async function ensureAuthIdentity(email: string) {
@@ -54,11 +90,11 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => null) as { email?: unknown } | null
     const email = normalizeEmail(body?.email)
-    if (!email) return NextResponse.json({ error: 'Enter a valid email address.' }, { status: 400 })
+    if (!email) return NextResponse.json({ error: 'Enter a valid email address.' }, { status: 400, headers: corsHeaders })
 
     const rate = checkRateLimit(`otp:${requestIp(request)}:${email}`)
     if (!rate.success) {
-      return NextResponse.json({ error: 'Too many attempts. Wait one minute and try again.' }, { status: 429 })
+      return NextResponse.json({ error: 'Too many attempts. Wait one minute and try again.' }, { status: 429, headers: corsHeaders })
     }
 
     const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString()
@@ -69,7 +105,7 @@ export async function POST(request: NextRequest) {
       .gte('sent_at', tenMinutesAgo)
     if (rateError) throw rateError
     if ((recentSends ?? 0) >= 5) {
-      return NextResponse.json({ error: 'Too many codes requested. Wait ten minutes and try again.' }, { status: 429 })
+      return NextResponse.json({ error: 'Too many codes requested. Wait ten minutes and try again.' }, { status: 429, headers: corsHeaders })
     }
 
     // The response for an unapproved email must be byte-for-byte
@@ -80,7 +116,7 @@ export async function POST(request: NextRequest) {
     const genericSentResponse = () => NextResponse.json({
       success: true,
       message: 'If this email is eligible, a verification code has been sent.',
-    }, { headers: { 'x-request-id': traceId } })
+    }, { headers: { ...corsHeaders, 'x-request-id': traceId } })
 
     if (isStaffEmail(email)) await provisionStaffByEmail(email)
     if (!(await isApprovedIdentity(email))) {
@@ -148,6 +184,6 @@ export async function POST(request: NextRequest) {
       trace_id: traceId,
       message: error instanceof Error ? error.message : 'unknown',
     })
-    return NextResponse.json({ error: 'Unable to send a verification code. Please try again.' }, { status: 500 })
+    return NextResponse.json({ error: 'Unable to send a verification code. Please try again.' }, { status: 500, headers: corsHeaders })
   }
 }

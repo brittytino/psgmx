@@ -88,6 +88,19 @@ export async function proxy(request: NextRequest) {
   // via getUserFromRequest() (supporting Bearer JWT tokens from mobile and cookie sessions).
   // They must NEVER be redirected to /login (which returns HTML and breaks mobile API clients).
   if (pathname.startsWith('/api/')) {
+    if (request.method === 'OPTIONS') {
+      const origin = request.headers.get('origin') || '*'
+      return new NextResponse(null, {
+        status: 204,
+        headers: {
+          'Access-Control-Allow-Origin': origin,
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-client-info, apikey, x-request-id, X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Date, X-Api-Version',
+          'Access-Control-Allow-Credentials': 'true',
+          'Access-Control-Max-Age': '86400',
+        },
+      })
+    }
     return NextResponse.next({ request })
   }
 

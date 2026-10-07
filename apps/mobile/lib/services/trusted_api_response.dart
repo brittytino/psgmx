@@ -63,6 +63,10 @@ String trustedApiErrorMessage(
   String fallbackMessage = 'This service is temporarily unavailable.',
 }) {
   if (error is TrustedApiException) return error.message;
+  final errStr = error.toString().toLowerCase();
+  if (errStr.contains('load failed') || errStr.contains('xmlhttprequest')) {
+    return 'Network connection failed. Please check your connection or try again.';
+  }
   return fallbackMessage;
 }
 

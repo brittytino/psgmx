@@ -247,6 +247,33 @@ class _InstallGuideBottomSheet extends StatelessWidget {
                 ),
               ),
 
+              // Callout for in-app browsers (WhatsApp, Instagram)
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF3C7),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFFDE68A)),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Color(0xFFB45309), size: 20),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Opening from WhatsApp? Tap the Safari/Compass icon (or Share → Open in Safari) first. In-app browsers do not support Add to Home Screen.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF92400E),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
               // Steps
               Expanded(
                 child: ListView.builder(

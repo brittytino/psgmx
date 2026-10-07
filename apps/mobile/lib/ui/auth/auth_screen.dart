@@ -9,6 +9,7 @@ import '../../providers/user_provider.dart';
 import '../../core/theme/app_theme.dart';
 
 import 'package:pinput/pinput.dart';
+import '../widgets/ios_install_guide.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -493,7 +494,8 @@ class _AuthScreenState extends State<AuthScreen> {
                 ],
               ),
 
-              const SizedBox(height: 32),
+              const IOSInstallGuide(),
+              const SizedBox(height: 16),
 
               // Verify Button
               SizedBox(

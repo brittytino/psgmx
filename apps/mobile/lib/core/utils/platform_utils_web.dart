@@ -27,8 +27,16 @@ class PlatformUtils {
     }
   }
 
+  /// Check if the device is running iOS
+  static bool get isIOS {
+    final userAgent = html.window.navigator.userAgent.toLowerCase();
+    return userAgent.contains('iphone') ||
+        userAgent.contains('ipad') ||
+        userAgent.contains('ipod');
+  }
+
   /// Check if we should show the iOS installation guide
   static bool get shouldShowIOSInstallGuide {
-    return isIOSSafari && !isStandalone;
+    return isIOS && !isStandalone;
   }
 }

@@ -82,6 +82,10 @@ class AuthService {
       throw Exception(e.message);
     } catch (e) {
       debugPrint('[AuthService] Resend OTP error: $e');
+      final errStr = e.toString().toLowerCase();
+      if (errStr.contains('load failed') || errStr.contains('xmlhttprequest')) {
+        throw Exception('Network connection failed. Please check your internet connection or try again.');
+      }
       if (e is Exception) rethrow;
       throw Exception(
           'Could not send verification code via Resend. Please try again.');
