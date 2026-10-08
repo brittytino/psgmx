@@ -159,15 +159,18 @@ class _CommunicationPracticeScreenState
         return;
       }
       await deleteRecordedAudio(_recordedPath);
+      final isSafariWeb = kIsWeb && (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.macOS);
+      final webEncoder = isSafariWeb ? AudioEncoder.aacLc : AudioEncoder.opus;
+      
       final path = kIsWeb
           ? ''
           : '${(await getTemporaryDirectory()).path}/psgmx_answer_${DateTime.now().millisecondsSinceEpoch}.m4a';
       await _recorder.start(
         kIsWeb
-            ? const RecordConfig(
-                encoder: AudioEncoder.opus,
+            ? RecordConfig(
+                encoder: webEncoder,
                 bitRate: 64000,
-                sampleRate: 16000,
+                sampleRate: 44100, // Safe cross-platform sample rate
                 numChannels: 1,
                 autoGain: true,
                 echoCancel: true,
@@ -236,7 +239,8 @@ class _CommunicationPracticeScreenState
     });
     try {
       final bytes = await readRecordedAudio(path);
-      final isBrowserClip = kIsWeb;
+      final isSafariWeb = kIsWeb && (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.macOS);
+      final isWebm = kIsWeb && !isSafariWeb;
       final request = http.MultipartRequest(
         'POST',
         Uri.parse('${SupabaseConfig.appApiUrl}/api/communication/evaluate'),
@@ -247,8 +251,8 @@ class _CommunicationPracticeScreenState
         ..files.add(http.MultipartFile.fromBytes(
           'audio',
           bytes,
-          filename: isBrowserClip ? 'answer.webm' : 'answer.m4a',
-          contentType: isBrowserClip
+          filename: isWebm ? 'answer.webm' : 'answer.m4a',
+          contentType: isWebm
               ? MediaType('audio', 'webm')
               : MediaType('audio', 'mp4'),
         ));
