@@ -58,7 +58,7 @@ export default function LandingPage() {
   const handleSend = (text: string) => {
     if (!text.trim()) return;
     
-    const newMsg: Message = { id: Date.now().toString(), role: 'user', text };
+    const newMsg: Message = { id: crypto.randomUUID(), role: 'user', text };
     setMessages(prev => [...prev, newMsg]);
     setQuery('');
 
@@ -77,7 +77,7 @@ export default function LandingPage() {
         reply = "For iOS users, you can install PSGMX as a Progressive Web App (PWA). Just open app.psgmx.tech in Safari, tap the Share icon, and select 'Add to Home Screen'.";
       }
 
-      setMessages(prev => [...prev, { id: (Date.now()+1).toString(), role: 'bot', text: reply }]);
+      setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'bot', text: reply }]);
     }, 600);
   };
 
