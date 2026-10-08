@@ -37,10 +37,16 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           APP_API_URL: ${{ vars.APP_API_URL }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
           APP_API_URL="${APP_API_URL:-https://www.psgmx.tech}"
           test -n "$SUPABASE_URL"    || { echo "❌ Missing SUPABASE_URL secret"; exit 1; }
           test -n "$SUPABASE_ANON_KEY" || { echo "❌ Missing SUPABASE_ANON_KEY secret"; exit 1; }
+          if [ -z "$OPENROUTER_API_KEY" ]; then
+            echo "⚠️  OPENROUTER_API_KEY not set — AI Mentor direct mode disabled in this build"
+          else
+            echo "✅ OPENROUTER_API_KEY present"
+          fi
           echo "✅ Secrets validated"
 
       - name: Generate Environment File
@@ -48,6 +54,7 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           APP_API_URL: ${{ vars.APP_API_URL }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
           APP_API_URL="${APP_API_URL:-https://www.psgmx.tech}"
           APP_API_URL="${APP_API_URL%/}"
@@ -60,8 +67,10 @@ jobs:
           esac
           echo "🌐 APP_API_URL=$APP_API_URL"
           umask 077
-          printf 'SUPABASE_URL=%s\nSUPABASE_ANON_KEY=%s\nAPP_API_URL=%s\n' \
-            "$SUPABASE_URL" "$SUPABASE_ANON_KEY" "$APP_API_URL" > .env.flutter
+          # OPENROUTER_API_KEY is optional — AI Mentor falls back to backend proxy
+          # when the key is absent (the proxy uses the server-side key in Vercel env).
+          printf 'SUPABASE_URL=%s\nSUPABASE_ANON_KEY=%s\nAPP_API_URL=%s\nOPENROUTER_API_KEY=%s\n' \
+            "$SUPABASE_URL" "$SUPABASE_ANON_KEY" "$APP_API_URL" "${OPENROUTER_API_KEY:-}" > .env.flutter
 
       - name: Analyze
         run: flutter analyze --fatal-warnings

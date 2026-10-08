@@ -34,6 +34,7 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           APP_API_URL: ${{ vars.APP_API_URL }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
           APP_API_URL="${APP_API_URL:-https://www.psgmx.tech}"
           test -n "$SUPABASE_URL" || { echo "Missing SUPABASE_URL secret"; exit 1; }
@@ -44,13 +45,15 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           APP_API_URL: ${{ vars.APP_API_URL }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
           APP_API_URL="${APP_API_URL:-https://www.psgmx.tech}"
           APP_API_URL="${APP_API_URL%/}"
           if [ "$APP_API_URL" = "https://psgmx.tech" ] || [ "$APP_API_URL" = "https://app.psgmx.tech" ] || [ "$APP_API_URL" = "https://psgmxians.web.app" ] || [ "$APP_API_URL" = "https://psgmxians.firebaseapp.com" ]; then APP_API_URL="https://www.psgmx.tech"; fi
           umask 077
-          printf 'SUPABASE_URL=%s\nSUPABASE_ANON_KEY=%s\nAPP_API_URL=%s\n' \
-            "$SUPABASE_URL" "$SUPABASE_ANON_KEY" "$APP_API_URL" > .env.flutter
+          printf 'SUPABASE_URL=%s\nSUPABASE_ANON_KEY=%s\nAPP_API_URL=%s\nOPENROUTER_API_KEY=%s\n' \
+            "$SUPABASE_URL" "$SUPABASE_ANON_KEY" "$APP_API_URL" "${OPENROUTER_API_KEY:-}" > .env.flutter
+
 
       - name: Analyze
         run: flutter analyze --fatal-warnings

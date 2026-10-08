@@ -140,7 +140,22 @@ class _AuthScreenState extends State<AuthScreen> {
             email: _emailController.text.trim(),
             otp: otp,
           );
-      // Navigation handled by router
+      // Primary navigation is handled by GoRouter's refreshListenable which
+      // reacts to UserProvider.notifyListeners(). On iOS Safari / PWA the
+      // event loop can be busy after a large HTTP response and the router
+      // redirect may fire a frame late. The explicit go('/') below is a
+      // safety-net: if the widget is still mounted and still on /login after
+      // a short microtask delay, we push the home route ourselves.
+      if (mounted) {
+        // Give the router one frame to process the refreshListenable event.
+        await Future.microtask(() {});
+        if (mounted && context.mounted) {
+          final currentUri = GoRouterState.of(context).uri.toString();
+          if (currentUri == '/login' || currentUri.startsWith('/login')) {
+            context.go('/');
+          }
+        }
+      }
     } catch (e) {
       final message = e.toString().replaceAll('Exception:', '').trim();
       final lowerMessage = message.toLowerCase();
@@ -170,6 +185,7 @@ class _AuthScreenState extends State<AuthScreen> {
       });
     }
   }
+
 
   @override
   Widget build(BuildContext context) {

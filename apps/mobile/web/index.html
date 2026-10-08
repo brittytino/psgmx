@@ -66,6 +66,16 @@
     <div style="font-size: 13px; color: #94A3B8; margin-top: 4px;">Loading Placement Companion...</div>
   </div>
 
+  <script>
+    // ── CanvasKit memory limits ─────────────────────────────────────────────
+    // iOS Safari enforces a strict per-tab GPU/memory budget. These settings
+    // reduce the number of concurrent CanvasKit surfaces and disable features
+    // that create additional GPU contexts, preventing the blank-screen crash.
+    window.flutterConfiguration = {
+      canvasKitMaximumSurfaces: 2,
+    };
+  </script>
+
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
