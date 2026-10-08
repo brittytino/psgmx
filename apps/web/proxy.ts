@@ -76,13 +76,7 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const userAgent = request.headers.get('user-agent') ?? ''
 
-  // ── Android redirect ──────────────────────────────────────
-  // Android mobile visitors hitting the landing page are sent to the
-  // branded download page first — not directly to the APK.
-  // Deep links (/login, /student, etc.) are unaffected.
-  if (pathname === '/' && isAndroidMobileBrowser(userAgent)) {
-    return NextResponse.redirect(new URL('/download', request.url))
-  }
+  // Removed mobile redirect from landing page so all users can view it
 
   // All /api/* endpoints handle their own authentication and authorization
   // via getUserFromRequest() (supporting Bearer JWT tokens from mobile and cookie sessions).
