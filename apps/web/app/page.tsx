@@ -39,34 +39,34 @@ function generateResponse(text: string): string {
     return "Hello! I am PSGMX Intelligence. I am here to help you navigate our Placement Operating System. You can ask me about features like the AI Mentor, Codebox, or how to install the app. How can I assist you today?";
   }
   
-  // Generic fallback for any other text
   return `I understand you're asking about "${text.length > 30 ? text.substring(0, 30) + '...' : text}".\n\nWhile I am highly specialized in answering questions about the **PSGMX Placement Operating System**, I can tell you that our platform is designed to handle all aspects of your placement journey—from tracking attendance to practicing coding in the Codebox. Is there a specific feature of PSGMX you'd like to explore?`;
 }
 
+function getRelativeTime(timestamp: number) {
+  const diff = Date.now() - timestamp;
+  if (diff < 60000) return 'Just now';
+  if (diff < 3600000) return `${Math.floor(diff/60000)} minutes ago`;
+  if (diff < 86400000) return `${Math.floor(diff/3600000)} hours ago`;
+  return `${Math.floor(diff/86400000)} days ago`;
+}
+
 export default function LandingPage() {
-  // --- State ---
   const [chats, setChats] = useState<ChatSession[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   
-  // Sidebar State
-  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isSidebarMobileOpen, setIsSidebarMobileOpen] = useState(false);
-  
   const [isTyping, setIsTyping] = useState(false);
   
-  // Modals / Dropdowns
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [deleteModal, setDeleteModal] = useState<string | null>(null);
   const [renameModal, setRenameModal] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
 
-  // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const sidebarHoverTimer = useRef<NodeJS.Timeout | null>(null);
 
-  // --- Initialization & Local Storage ---
   useEffect(() => {
     const saved = localStorage.getItem('psgmx_landing_chats');
     if (saved) {
@@ -84,6 +84,9 @@ export default function LandingPage() {
     } else {
       createNewChat();
     }
+    if (window.innerWidth < 768) {
+      setIsSidebarOpen(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -97,7 +100,6 @@ export default function LandingPage() {
   const activeChat = chats.find(c => c.id === activeChatId);
   const messages = activeChat?.messages || [];
 
-  // --- Scroll & Resize ---
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
@@ -107,18 +109,16 @@ export default function LandingPage() {
   const adjustTextareaHeight = () => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`;
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 150)}px`;
     }
   };
 
-  // --- Actions ---
   const createNewChat = () => {
     const newId = crypto.randomUUID();
     const newChat: ChatSession = { id: newId, title: "New Chat", messages: [], updatedAt: Date.now() };
     setChats(prev => [newChat, ...prev]);
     setActiveChatId(newId);
     setIsSidebarMobileOpen(false);
-    setIsSidebarHovered(false);
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
       textareaRef.current.focus();
@@ -196,7 +196,7 @@ export default function LandingPage() {
     setTimeout(() => {
       const response = generateResponse(text);
       simulateStream(response, capturedChatId);
-    }, 1200 + Math.random() * 800);
+    }, 1000 + Math.random() * 500);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -206,7 +206,6 @@ export default function LandingPage() {
     }
   };
 
-  // --- Chat Management ---
   const confirmDelete = () => {
     if (deleteModal) {
       const nextChats = chats.filter(c => c.id !== deleteModal);
@@ -226,113 +225,135 @@ export default function LandingPage() {
     setRenameModal(null);
   };
 
-  // Hover triggers for Desktop Sidebar
-  const handleMouseEnterSidebarArea = () => {
-    if (sidebarHoverTimer.current) clearTimeout(sidebarHoverTimer.current);
-    setIsSidebarHovered(true);
+  // UI Theme Colors matching exactly the provided design
+  const theme = {
+    sidebarBg: '#F8F4EC',
+    mainBg: '#FEFCFA',
+    textPrimary: '#1E1B18',
+    textSecondary: '#78716C',
+    accentOrange: '#F97316',
+    activeChatBg: '#FCEBE1',
   };
-  
-  const handleMouseLeaveSidebar = () => {
-    sidebarHoverTimer.current = setTimeout(() => {
-      setIsSidebarHovered(false);
-      setActiveMenuId(null);
-    }, 300); // 300ms delay to prevent accidental closing
-  };
-
-  const isSidebarVisible = isSidebarHovered || isSidebarMobileOpen;
 
   return (
-    <div className="flex h-[100dvh] w-full bg-[#FBF6EE] text-[#221F1A] font-sans overflow-hidden text-[15px]">
+    <div className="flex h-[100dvh] w-full font-sans overflow-hidden text-[15px]" style={{ backgroundColor: theme.mainBg, color: theme.textPrimary }}>
       
-      {/* --- Desktop Hover Hit Area --- */}
-      <div 
-        className="hidden md:block fixed left-0 top-0 h-full w-8 z-40 bg-transparent"
-        onMouseEnter={handleMouseEnterSidebarArea}
-      />
-
-      {/* --- Modals --- */}
+      {/* Modals */}
       {deleteModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-[24px] p-7 w-full max-w-sm shadow-2xl border border-[#E8DFD1] animate-in zoom-in-95 duration-200">
-            <h3 className="text-xl font-semibold mb-2 text-[#221F1A]">Delete chat?</h3>
-            <p className="text-[15px] text-[#555] mb-8 leading-relaxed">This will permanently delete this chat history. Are you sure you want to proceed?</p>
+            <h3 className="text-xl font-bold mb-2 text-[#1E1B18]">Delete chat?</h3>
+            <p className="text-[15px] text-[#78716C] mb-8 leading-relaxed">This will permanently delete this chat history. Are you sure you want to proceed?</p>
             <div className="flex justify-end gap-3">
-              <button onClick={() => setDeleteModal(null)} className="px-5 py-2.5 rounded-full text-[15px] font-medium hover:bg-[#F5EDE1] transition-colors">Cancel</button>
-              <button onClick={confirmDelete} className="px-5 py-2.5 rounded-full text-[15px] font-medium bg-[#FF5A1F] text-white hover:bg-[#E04810] shadow-sm transition-colors">Delete</button>
+              <button onClick={() => setDeleteModal(null)} className="px-5 py-2.5 rounded-full text-[15px] font-medium hover:bg-[#F8F4EC] transition-colors">Cancel</button>
+              <button onClick={confirmDelete} className="px-5 py-2.5 rounded-full text-[15px] font-medium text-white shadow-sm transition-colors" style={{ backgroundColor: theme.accentOrange }}>Delete</button>
             </div>
           </div>
         </div>
       )}
 
       {renameModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-[24px] p-7 w-full max-w-sm shadow-2xl border border-[#E8DFD1] animate-in zoom-in-95 duration-200">
-            <h3 className="text-xl font-semibold mb-5 text-[#221F1A]">Rename chat</h3>
+            <h3 className="text-xl font-bold mb-5 text-[#1E1B18]">Rename chat</h3>
             <input 
               autoFocus
               value={renameValue} 
               onChange={e => setRenameValue(e.target.value)} 
               onKeyDown={e => { if (e.key === 'Enter') confirmRename(); }}
-              className="w-full px-5 py-3.5 bg-[#FBF6EE] border border-[#E8DFD1] rounded-2xl outline-none focus:ring-2 ring-[#FF5A1F]/30 focus:border-[#FF5A1F] transition-all mb-8 text-[15px]"
+              className="w-full px-5 py-3.5 bg-[#F8F4EC] border border-[#E8DFD1] rounded-2xl outline-none focus:ring-2 focus:ring-[#F97316]/30 transition-all mb-8 text-[15px]"
               placeholder="Enter new name..."
             />
             <div className="flex justify-end gap-3">
-              <button onClick={() => setRenameModal(null)} className="px-5 py-2.5 rounded-full text-[15px] font-medium hover:bg-[#F5EDE1] transition-colors">Cancel</button>
-              <button onClick={confirmRename} className="px-5 py-2.5 rounded-full text-[15px] font-medium bg-[#221F1A] text-white hover:bg-black shadow-sm transition-colors">Save</button>
+              <button onClick={() => setRenameModal(null)} className="px-5 py-2.5 rounded-full text-[15px] font-medium hover:bg-[#F8F4EC] transition-colors">Cancel</button>
+              <button onClick={confirmRename} className="px-5 py-2.5 rounded-full text-[15px] font-medium bg-[#1E1B18] text-white hover:bg-black shadow-sm transition-colors">Save</button>
             </div>
           </div>
         </div>
       )}
       
-      {/* --- Sidebar Overlay (Mobile) --- */}
+      {/* Sidebar Overlay (Mobile) */}
       <div 
         className={`fixed inset-0 bg-black/40 z-40 md:hidden transition-opacity duration-300 ${isSidebarMobileOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} 
         onClick={() => setIsSidebarMobileOpen(false)}
       />
       
-      {/* --- Sidebar (Floating on Desktop on Hover, Fixed on Mobile) --- */}
+      {/* Sidebar */}
       <div 
-        onMouseEnter={handleMouseEnterSidebarArea}
-        onMouseLeave={handleMouseLeaveSidebar}
-        className={`fixed z-50 h-full bg-[#F5EDE1]/95 backdrop-blur-xl border-r border-[#EAE0D3] flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] shadow-2xl md:shadow-[20px_0_40px_rgba(0,0,0,0.05)] w-[280px]
-          ${isSidebarVisible ? 'translate-x-0' : '-translate-x-full'}
+        className={`fixed md:relative z-50 h-full flex flex-col transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden shrink-0 border-r border-[#EBE5DE]
+          ${isSidebarMobileOpen || isSidebarOpen ? 'translate-x-0 w-[280px]' : '-translate-x-full w-0 md:translate-x-0 md:w-0'}
         `}
+        style={{ backgroundColor: theme.sidebarBg }}
       >
-        <div className="w-[280px] h-full flex flex-col p-4">
+        <div className="w-[280px] h-full flex flex-col">
           
-          <div className="flex items-center justify-between mb-6">
-            <button 
-              onClick={createNewChat}
-              className="flex-1 flex items-center gap-3 bg-white hover:bg-[#FBF6EE] px-4 py-3 rounded-2xl shadow-sm border border-[#EAE0D3] transition-all font-semibold text-[15px] text-[#221F1A]"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14"/></svg>
-              New chat
+          {/* Sidebar Header */}
+          <div className="flex items-center justify-between p-4 pt-5 pb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-white shadow-sm flex items-center justify-center p-1 border border-[#EAE4DD]">
+                <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
+              </div>
+              <div className="flex flex-col">
+                <span className="font-bold text-[16px] leading-tight text-[#1E1B18] tracking-tight">PSGMX</span>
+                <span className="text-[12px] font-medium text-[#78716C] leading-none">Intelligence</span>
+              </div>
+            </div>
+            <button onClick={() => setIsSidebarOpen(false)} className="hidden md:flex items-center justify-center w-8 h-8 rounded-lg hover:bg-white border border-transparent hover:border-[#EBE5DE] text-[#78716C] transition-colors">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
             </button>
-            <button onClick={() => setIsSidebarMobileOpen(false)} className="p-2 ml-2 text-[#4A4A4C] hover:bg-white rounded-xl md:hidden">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            <button onClick={() => setIsSidebarMobileOpen(false)} className="md:hidden p-2 text-[#78716C] hover:bg-white rounded-lg">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
             </button>
           </div>
           
-          <div className="flex-1 overflow-y-auto px-1 -mx-1" onClick={() => { if(activeMenuId) setActiveMenuId(null); }}>
-            <div className="text-xs font-bold text-[#8B8C8E] mb-3 px-3 uppercase tracking-wider">Recent History</div>
+          {/* New Chat Button */}
+          <div className="px-4 pb-4">
+            <button 
+              onClick={createNewChat}
+              className="w-full flex items-center justify-between bg-white hover:bg-[#FEFCFA] px-4 py-3 rounded-[16px] shadow-sm border border-[#EBE5DE] transition-all font-semibold text-[14.5px] text-[#1E1B18]"
+            >
+              <div className="flex items-center gap-3">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                New chat
+              </div>
+              <span className="text-[11px] font-medium text-[#A8A29D] border border-[#EBE5DE] px-1.5 py-0.5 rounded-md hidden md:block">Ctrl K</span>
+            </button>
+          </div>
+          
+          {/* Chat List */}
+          <div className="flex-1 overflow-y-auto px-2" onClick={() => { if(activeMenuId) setActiveMenuId(null); }}>
+            <div className="flex items-center justify-between px-3 mb-2">
+              <span className="text-[12px] font-bold text-[#A8A29D] uppercase tracking-wider">Recent chats</span>
+              <button className="text-[#A8A29D] hover:text-[#1E1B18]"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></button>
+            </div>
             
             <div className="space-y-1">
               {chats.map(chat => (
                 <div key={chat.id} className="relative group">
                   <button 
-                    onClick={() => { setActiveChatId(chat.id); setIsSidebarMobileOpen(false); setIsSidebarHovered(false); }} 
-                    className={`w-full text-left px-4 py-3 text-[15px] rounded-xl truncate transition-all pr-10
-                      ${activeChatId === chat.id ? 'bg-[#EAE0D3] font-medium text-[#221F1A] shadow-sm' : 'text-[#4A4A4C] hover:bg-white/50'}
+                    onClick={() => { setActiveChatId(chat.id); setIsSidebarMobileOpen(false); }} 
+                    className={`w-full text-left px-3 py-2.5 rounded-[16px] transition-all flex items-start gap-3
+                      ${activeChatId === chat.id ? 'bg-[#FCEBE1] border border-[#F97316]/10' : 'hover:bg-[#F0EBE3] border border-transparent'}
                     `}
                   >
-                    {chat.title}
+                    <div className={`mt-0.5 shrink-0 ${activeChatId === chat.id ? 'text-[#1E1B18]' : 'text-[#78716C]'}`}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                    </div>
+                    <div className="flex flex-col flex-1 min-w-0 pr-6">
+                      <span className={`text-[14px] truncate ${activeChatId === chat.id ? 'font-bold text-[#1E1B18]' : 'font-semibold text-[#1E1B18]'}`}>
+                        {chat.title}
+                      </span>
+                      <span className={`text-[11px] font-medium truncate mt-0.5 ${activeChatId === chat.id ? 'text-[#78716C]' : 'text-[#A8A29D]'}`}>
+                        {getRelativeTime(chat.updatedAt)}
+                      </span>
+                    </div>
                   </button>
                   
                   <button 
                     onClick={(e) => { e.stopPropagation(); setActiveMenuId(activeMenuId === chat.id ? null : chat.id); }}
-                    className={`absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg text-[#8B8C8E] hover:text-[#221F1A] hover:bg-white transition-all shadow-sm
-                      ${activeMenuId === chat.id ? 'opacity-100 bg-white' : 'opacity-0 md:group-hover:opacity-100'}
-                      ${activeChatId === chat.id && !activeMenuId ? 'opacity-100' : ''}
+                    className={`absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg text-[#78716C] hover:text-[#1E1B18] transition-all
+                      ${activeMenuId === chat.id ? 'opacity-100' : 'opacity-0 md:group-hover:opacity-100'}
+                      ${activeChatId === chat.id && !activeMenuId ? 'opacity-100 hover:bg-[#F97316]/10' : 'hover:bg-white'}
                     `}
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
@@ -340,20 +361,20 @@ export default function LandingPage() {
 
                   {/* Dropdown Menu */}
                   {activeMenuId === chat.id && (
-                    <div className="absolute right-2 top-12 w-40 bg-white border border-[#EAE0D3] shadow-xl rounded-[16px] overflow-hidden z-[100] animate-in fade-in zoom-in-95 duration-100">
+                    <div className="absolute right-2 top-10 w-44 bg-white border border-[#EAE4DD] shadow-xl rounded-[16px] overflow-hidden z-[100] animate-in fade-in zoom-in-95 duration-100">
                       <button 
                         onClick={(e) => { e.stopPropagation(); setRenameValue(chat.title); setRenameModal(chat.id); setActiveMenuId(null); }}
-                        className="w-full text-left px-4 py-3 text-[14px] font-medium hover:bg-[#F5EDE1] flex items-center gap-2.5 transition-colors"
+                        className="w-full text-left px-4 py-3 text-[14px] font-semibold text-[#1E1B18] hover:bg-[#F8F4EC] flex items-center gap-3 transition-colors"
                       >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                         Rename
                       </button>
-                      <div className="h-[1px] bg-[#EAE0D3]/50 w-full"></div>
+                      <div className="h-[1px] bg-[#EAE4DD]/60 w-full"></div>
                       <button 
                         onClick={(e) => { e.stopPropagation(); setDeleteModal(chat.id); setActiveMenuId(null); }}
-                        className="w-full text-left px-4 py-3 text-[14px] font-medium hover:bg-[#FFF0F0] text-red-600 flex items-center gap-2.5 transition-colors"
+                        className="w-full text-left px-4 py-3 text-[14px] font-semibold hover:bg-[#FFF0F0] text-red-600 flex items-center gap-3 transition-colors"
                       >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>
                         Delete
                       </button>
                     </div>
@@ -362,79 +383,105 @@ export default function LandingPage() {
               ))}
             </div>
           </div>
+
+          {/* Sidebar Footer */}
+          <div className="pt-2 px-3 pb-4">
+             <a href="https://github.com/brittytino/psgmx/releases" target="_blank" className="flex items-center justify-between px-3 py-3 hover:bg-[#F0EBE3] rounded-[16px] transition-all group">
+                <div className="flex items-center gap-3">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" className="text-[#1E1B18]"><path d="M12 2C6.47 2 2 6.48 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.45-1.15-1.11-1.46-1.11-1.46-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0012 2z"/></svg>
+                  <div className="flex flex-col">
+                    <span className="text-[14px] font-bold text-[#1E1B18]">Download App</span>
+                    <span className="text-[11px] font-medium text-[#78716C]">Android APK • Source Code</span>
+                  </div>
+                </div>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[#A8A29D] group-hover:text-[#1E1B18]"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+             </a>
+             <div className="h-[1px] bg-[#EBE5DE] my-1 mx-3"></div>
+             <Link href="/login" className="flex items-center justify-between px-3 py-3 hover:bg-[#F0EBE3] rounded-[16px] transition-all group">
+                <div className="flex items-center gap-3">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[#1E1B18]"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  <span className="text-[14px] font-bold text-[#1E1B18]">Log in</span>
+                </div>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[#A8A29D] group-hover:text-[#1E1B18]"><path d="M9 18l6-6-6-6"/></svg>
+             </Link>
+          </div>
         </div>
       </div>
 
-      {/* --- Main Chat Area --- */}
+      {/* Main Chat Area */}
       <div className="flex-1 flex flex-col relative z-10 w-full min-w-0" onClick={() => { if(activeMenuId) setActiveMenuId(null); }}>
         
         {/* Navbar */}
-        <div className="flex items-center justify-between p-4 sticky top-0 z-20 shrink-0 h-[72px] bg-gradient-to-b from-[#FBF6EE] to-[#FBF6EE]/80 backdrop-blur-md">
+        <div className="flex items-center justify-between p-4 px-5 sticky top-0 z-20 shrink-0 h-[72px]">
           <div className="flex items-center">
-            {/* Mobile Hamburger */}
+            {!isSidebarOpen && (
+              <button 
+                onClick={(e) => { e.stopPropagation(); setIsSidebarOpen(true); }} 
+                className="hidden md:flex p-2 mr-3 text-[#78716C] hover:bg-[#F0EBE3] rounded-lg transition-colors border border-transparent hover:border-[#EBE5DE]"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+              </button>
+            )}
             <button 
               onClick={(e) => { e.stopPropagation(); setIsSidebarMobileOpen(true); }} 
-              className="p-2 mr-3 text-[#221F1A] hover:bg-[#EAE0D3]/80 rounded-xl transition-colors md:hidden"
+              className="p-2 mr-3 text-[#1E1B18] hover:bg-[#F0EBE3] rounded-lg transition-colors md:hidden"
             >
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
             </button>
             
-            {/* Desktop Hover Hint (Only visible when sidebar is closed) */}
-            <div className="hidden md:flex items-center text-[#8B8C8E] text-[13px] font-medium mr-4 px-3 py-1.5 rounded-full border border-[#EAE0D3] bg-white/50 opacity-50 hover:opacity-100 transition-opacity">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-1.5"><path d="M9 18l6-6-6-6"/></svg>
-              Hover left for history
-            </div>
-
-            <div className="font-bold text-[19px] flex items-center gap-2 text-[#221F1A]">
+            <div className="font-bold text-[17px] flex items-center gap-2.5 text-[#1E1B18]">
+              <div className="w-6 h-6 rounded-full bg-white shadow-sm flex items-center justify-center border border-[#EAE4DD]">
+                <img src="/logo.png" alt="Logo" className="w-4 h-4 object-contain" />
+              </div>
               PSGMX Intelligence
-              <span className="bg-[#EAE0D3] text-[#4A4A4C] text-[11px] px-2 py-0.5 rounded-md uppercase tracking-wide">Core</span>
+              <span className="bg-[#FDE8D8] text-[#F97316] text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">Core</span>
             </div>
           </div>
           
-          {/* Top Right Curved Login Button */}
-          <Link href="/login" className="px-5 py-2.5 bg-[#221F1A] text-white rounded-[20px] font-medium text-[14px] hover:bg-black shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center gap-2">
+          <Link href="/login" className="px-5 py-2.5 bg-[#1E1B18] text-white rounded-full font-semibold text-[14px] hover:bg-black shadow-md hover:shadow-lg transition-all flex items-center gap-2">
             Dashboard
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </Link>
         </div>
 
         {/* Chat Content */}
-        <div className="flex-1 overflow-y-auto px-4 md:px-0 scroll-smooth min-h-0 relative flex flex-col">
+        <div className="flex-1 overflow-y-auto px-4 md:px-0 scroll-smooth min-h-0 relative flex flex-col pt-4">
           {messages.length === 0 ? (
-            <div className="flex-1 flex flex-col items-center justify-center max-w-2xl mx-auto text-center px-4 animate-in fade-in duration-700">
-              <div className="w-[80px] h-[80px] bg-white rounded-[28px] shadow-lg shadow-[#FF5A1F]/10 border border-[#EAE0D3] flex items-center justify-center mb-8 transform hover:scale-105 transition-transform duration-500">
-                 <img src="/logo.png" alt="PSGMX" className="w-[44px] h-[44px] object-contain" />
+            <div className="flex-1 flex flex-col items-center justify-center max-w-2xl mx-auto text-center px-4 animate-in fade-in duration-700 pb-20">
+              <div className="w-[100px] h-[100px] bg-gradient-to-br from-white to-[#F8F4EC] rounded-[28px] shadow-lg shadow-[#F97316]/10 border border-[#EAE4DD] flex items-center justify-center mb-8 relative overflow-hidden">
+                 <img src="/logo.png" alt="PSGMX Mascot" className="w-[70px] h-[70px] object-contain drop-shadow-md z-10" />
+                 <div className="absolute inset-0 bg-gradient-to-t from-[#F97316]/10 to-transparent"></div>
               </div>
-              <h1 className="text-[34px] md:text-[40px] font-bold mb-4 text-[#221F1A] tracking-tight">How can I help you today?</h1>
-              <p className="text-[#8B8C8E] text-[16px] max-w-md mx-auto">I'm your intelligent assistant for the PSGMX Placement OS. Ask me anything about our features.</p>
+              <h1 className="text-[36px] md:text-[44px] font-extrabold mb-4 text-[#1E1B18] tracking-tight">How can I help you today?</h1>
+              <p className="text-[#78716C] text-[16px] md:text-[17px] font-medium max-w-md mx-auto leading-relaxed">
+                I'm your intelligent assistant for the PSGMX Placement OS.<br/>Ask me anything about our features.
+              </p>
             </div>
           ) : (
-            <div className="max-w-3xl mx-auto flex flex-col w-full pb-8 pt-4 md:px-8">
+            <div className="max-w-3xl mx-auto flex flex-col w-full pb-8 pt-2 md:px-8">
               {messages.map(m => (
                 <div key={m.id} className={`flex w-full mb-8 ${m.role === 'user' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2 fade-in duration-300`}>
                   {m.role === 'user' ? (
-                    <div className="bg-[#EAE0D3] text-[#221F1A] px-5 py-3.5 rounded-[24px] rounded-br-sm max-w-[85%] whitespace-pre-wrap leading-relaxed shadow-sm font-medium text-[16px]">
+                    <div className="bg-white border border-[#EBE5DE] text-[#1E1B18] px-5 py-3.5 rounded-[24px] max-w-[85%] whitespace-pre-wrap leading-relaxed shadow-sm font-medium text-[16px]">
                       {m.text}
                     </div>
                   ) : (
-                    <div className="flex gap-5 w-full max-w-[100%] group">
-                      <div className="w-[36px] h-[36px] rounded-full border border-[#EAE0D3] flex items-center justify-center flex-shrink-0 mt-1 bg-white shadow-sm">
-                        <img src="/logo.png" alt="Bot" className="w-[22px] h-[22px] object-contain" />
+                    <div className="flex gap-4 w-full max-w-[100%] group">
+                      <div className="w-[36px] h-[36px] rounded-full border border-[#EAE4DD] flex items-center justify-center flex-shrink-0 mt-0.5 bg-white shadow-sm">
+                        <img src="/logo.png" alt="Bot" className="w-[20px] h-[20px] object-contain" />
                       </div>
-                      <div className="flex-1 space-y-4">
-                        <div className="text-[#221F1A] leading-relaxed whitespace-pre-wrap pt-1.5 text-[16px]">
-                          {/* Parse markdown bolding */}
+                      <div className="flex-1 space-y-3">
+                        <div className="text-[#1E1B18] leading-relaxed whitespace-pre-wrap pt-1.5 text-[16px] font-medium">
                           {m.text.split('**').map((part, index) => 
-                            index % 2 === 1 ? <strong key={index} className="text-black font-bold">{part}</strong> : part
+                            index % 2 === 1 ? <strong key={index} className="text-black font-extrabold">{part}</strong> : part
                           )}
-                          {m.isStreaming && <span className="inline-block w-2.5 h-4.5 ml-1.5 bg-[#FF5A1F] animate-pulse rounded-sm align-middle"></span>}
+                          {m.isStreaming && <span className="inline-block w-3 h-5 ml-1 bg-[#F97316] animate-pulse rounded-sm align-middle"></span>}
                         </div>
                         
                         {!m.isStreaming && (
-                          <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity mt-2">
-                            <button className="p-1.5 text-[#8B8C8E] hover:text-[#221F1A] hover:bg-[#EAE0D3] rounded-lg transition-colors"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg></button>
-                            <button className="p-1.5 text-[#8B8C8E] hover:text-[#221F1A] hover:bg-[#EAE0D3] rounded-lg transition-colors"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg></button>
-                            <button className="p-1.5 text-[#8B8C8E] hover:text-[#221F1A] hover:bg-[#EAE0D3] rounded-lg transition-colors"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"/></svg></button>
+                          <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity mt-1">
+                            <button className="p-1.5 text-[#A8A29D] hover:text-[#1E1B18] hover:bg-white border border-transparent hover:border-[#EBE5DE] rounded-lg transition-all shadow-sm"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg></button>
+                            <button className="p-1.5 text-[#A8A29D] hover:text-[#1E1B18] hover:bg-white border border-transparent hover:border-[#EBE5DE] rounded-lg transition-all shadow-sm"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg></button>
                           </div>
                         )}
                       </div>
@@ -443,18 +490,16 @@ export default function LandingPage() {
                 </div>
               ))}
               
-              {/* Thinking Indicator */}
               {isTyping && (
-                <div className="flex gap-5 w-full max-w-[100%] animate-in fade-in duration-300 md:px-8">
-                  <div className="w-[36px] h-[36px] rounded-full border border-[#EAE0D3] flex items-center justify-center flex-shrink-0 mt-1 bg-white relative overflow-hidden shadow-sm">
-                     <img src="/logo.png" alt="Bot" className="w-[22px] h-[22px] object-contain animate-pulse" />
-                     <div className="absolute inset-0 bg-transparent animate-[spin_1.5s_linear_infinite] rounded-full" style={{ borderTop: '2px solid #FF5A1F' }}></div>
+                <div className="flex gap-4 w-full max-w-[100%] animate-in fade-in duration-300 md:px-8">
+                  <div className="w-[36px] h-[36px] rounded-full border border-[#EAE4DD] flex items-center justify-center flex-shrink-0 mt-0.5 bg-white relative overflow-hidden shadow-sm">
+                     <img src="/logo.png" alt="Bot" className="w-[20px] h-[20px] object-contain animate-pulse" />
                   </div>
-                  <div className="pt-3.5">
+                  <div className="pt-3">
                      <div className="flex gap-1.5">
-                       <div className="w-2.5 h-2.5 rounded-full bg-[#FF5A1F]/40 animate-bounce"></div>
-                       <div className="w-2.5 h-2.5 rounded-full bg-[#FF5A1F]/70 animate-bounce" style={{ animationDelay: '0.15s' }}></div>
-                       <div className="w-2.5 h-2.5 rounded-full bg-[#FF5A1F] animate-bounce" style={{ animationDelay: '0.3s' }}></div>
+                       <div className="w-2.5 h-2.5 rounded-full bg-[#F97316]/40 animate-bounce"></div>
+                       <div className="w-2.5 h-2.5 rounded-full bg-[#F97316]/70 animate-bounce" style={{ animationDelay: '0.15s' }}></div>
+                       <div className="w-2.5 h-2.5 rounded-full bg-[#F97316] animate-bounce" style={{ animationDelay: '0.3s' }}></div>
                      </div>
                   </div>
                 </div>
@@ -466,17 +511,17 @@ export default function LandingPage() {
         </div>
 
         {/* --- Input Area --- */}
-        <div className="px-4 pb-6 md:pb-8 pt-2 shrink-0 relative z-20 bg-gradient-to-t from-[#FBF6EE] via-[#FBF6EE] to-transparent">
+        <div className="px-4 pb-6 md:pb-10 pt-2 shrink-0 relative z-20">
+          <div className="absolute inset-0 bg-gradient-to-t from-[#FEFCFA] via-[#FEFCFA] to-transparent pointer-events-none"></div>
           <div className="max-w-3xl mx-auto relative flex flex-col gap-4 md:px-8">
             
-            {/* Suggestions (Only show a few tightly curated ones) */}
             {messages.length > 0 && !isTyping && (
-              <div className="flex gap-2.5 overflow-x-auto pb-2 scrollbar-hide snap-x animate-in slide-in-from-bottom-2 fade-in">
+              <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide snap-x animate-in slide-in-from-bottom-2 fade-in">
                 {SUGGESTIONS.map((s, i) => (
                   <button 
                     key={i} 
                     onClick={() => handleSend(s)}
-                    className="whitespace-nowrap px-4 py-2.5 bg-white border border-[#EAE0D3] rounded-full text-[14px] font-semibold text-[#4A4A4C] hover:bg-[#F5EDE1] hover:text-[#221F1A] transition-all shadow-sm hover:shadow-md snap-start"
+                    className="whitespace-nowrap px-4 py-2 bg-white border border-[#EBE5DE] rounded-full text-[13.5px] font-bold text-[#78716C] hover:bg-[#F8F4EC] hover:text-[#1E1B18] transition-all shadow-sm hover:shadow-md snap-start"
                   >
                     {s}
                   </button>
@@ -486,11 +531,12 @@ export default function LandingPage() {
 
             <form 
               onSubmit={(e) => { e.preventDefault(); handleSend(query); }} 
-              className="relative flex items-end bg-white border border-[#EAE0D3] rounded-[28px] shadow-lg shadow-black/5 focus-within:ring-2 ring-[#FF5A1F]/20 focus-within:border-[#FF5A1F]/40 transition-all"
+              className="relative flex items-end bg-white border border-[#EAE4DD] rounded-[32px] shadow-lg shadow-black/5 focus-within:shadow-xl focus-within:border-[#F97316]/30 transition-all p-1.5"
             >
-              <button type="button" className="p-3.5 m-1.5 text-[#8B8C8E] hover:bg-[#F5EDE1] hover:text-[#221F1A] rounded-full transition-colors shrink-0">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+              <button type="button" className="p-3 mx-1 text-[#A8A29D] hover:bg-[#F8F4EC] hover:text-[#1E1B18] rounded-full transition-colors shrink-0 mb-0.5">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
               </button>
+              
               <textarea
                 ref={textareaRef}
                 value={query}
@@ -500,24 +546,22 @@ export default function LandingPage() {
                 }}
                 onKeyDown={handleKeyDown}
                 placeholder="Ask PSGMX Intelligence..."
-                className="flex-1 bg-transparent py-[20px] outline-none text-[#221F1A] placeholder-[#8B8C8E] resize-none min-h-[64px] h-[64px] max-h-[200px] text-[16px] leading-relaxed overflow-y-auto"
+                className="flex-1 bg-transparent py-[14px] outline-none text-[#1E1B18] font-medium placeholder-[#A8A29D] resize-none min-h-[50px] h-[50px] max-h-[150px] text-[15.5px] leading-relaxed overflow-y-auto"
               />
-              {query.trim() ? (
+              
+              <div className="flex items-center gap-1 mb-0.5 shrink-0">
+                <button type="button" className="p-3 text-[#A8A29D] hover:bg-[#F8F4EC] hover:text-[#1E1B18] rounded-full transition-colors hidden sm:block">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/></svg>
+                </button>
                 <button 
                   type="submit" 
-                  className="p-3 m-2 rounded-full shrink-0 transition-all bg-[#FF5A1F] text-white hover:bg-[#E04810] shadow-md transform hover:scale-105"
+                  disabled={!query.trim()}
+                  className={`p-3 mr-1 rounded-full transition-all flex items-center justify-center w-[44px] h-[44px] shadow-sm ${query.trim() ? 'bg-[#F97316] text-white hover:bg-[#EA580C] hover:shadow-md transform hover:-translate-y-0.5' : 'bg-[#F0EBE3] text-[#A8A29D]'}`}
                 >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z"/></svg>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
                 </button>
-              ) : (
-                <button type="button" className="p-3.5 m-1.5 text-[#8B8C8E] hover:bg-[#F5EDE1] hover:text-[#221F1A] rounded-full transition-colors shrink-0">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/></svg>
-                </button>
-              )}
+              </div>
             </form>
-            <div className="text-center text-[12px] font-medium text-[#8B8C8E] tracking-wide">
-              PSGMX Intelligence acts as an interactive landing page to help you discover the product.
-            </div>
           </div>
         </div>
       </div>
