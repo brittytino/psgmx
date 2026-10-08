@@ -9,7 +9,7 @@ import { supabaseAdmin } from '@/lib/supabase/admin'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-client-info, apikey, x-request-id',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-client-info, apikey, x-request-id, x-psgmx-client, X-Psgmx-Client',
 }
 
 export async function OPTIONS() {

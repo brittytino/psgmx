@@ -95,7 +95,7 @@ export async function proxy(request: NextRequest) {
         headers: {
           'Access-Control-Allow-Origin': origin,
           'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-client-info, apikey, x-request-id, X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Date, X-Api-Version',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-client-info, apikey, x-request-id, X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Date, X-Api-Version, x-psgmx-client, X-Psgmx-Client',
           'Access-Control-Allow-Credentials': 'true',
           'Access-Control-Max-Age': '86400',
         },
