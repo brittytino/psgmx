@@ -6,18 +6,9 @@ import { dashboardPath, isStaticStaffOtp } from '@/lib/staff-auth'
 import { readOtpChallenge } from '@/lib/auth/otp-challenge'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-client-info, apikey, x-request-id, x-psgmx-client, X-Psgmx-Client',
-}
 
-export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 204,
-    headers: corsHeaders,
-  })
-}
+
+
 
 type CookieToSet = { name: string; value: string; options: Record<string, unknown> }
 
@@ -26,7 +17,7 @@ export async function POST(request: NextRequest) {
   const email = normalizeEmail(body?.email)
   const token = typeof body?.token === 'string' ? body.token.trim() : ''
   if (!email || !/^\d{6}$/.test(token)) {
-    return NextResponse.json({ error: 'Enter the email and six-digit code.' }, { status: 400, headers: corsHeaders })
+    return NextResponse.json({ error: 'Enter the email and six-digit code.' }, { status: 400 })
   }
 
   const now = Date.now()
@@ -37,7 +28,7 @@ export async function POST(request: NextRequest) {
     .maybeSingle()
   if (attemptReadError) {
     console.error('[POST /api/auth/verify] Lockout read failed:', attemptReadError)
-    return NextResponse.json({ error: 'Verification is temporarily unavailable.' }, { status: 503, headers: corsHeaders })
+    return NextResponse.json({ error: 'Verification is temporarily unavailable.' }, { status: 503 })
   }
   const lockedUntil = attemptState?.locked_until ? new Date(attemptState.locked_until).getTime() : 0
   if (lockedUntil > now) {
@@ -46,7 +37,7 @@ export async function POST(request: NextRequest) {
         error: 'Too many invalid codes. Try again after the 15-minute lockout.',
         lockedUntil: new Date(lockedUntil).toISOString(),
       },
-      { status: 429, headers: corsHeaders },
+      { status: 429 },
     )
   }
 
@@ -88,7 +79,7 @@ export async function POST(request: NextRequest) {
         error: lock ? 'Too many invalid codes. Sign-in is locked for 15 minutes.' : 'Invalid or expired code. Request a new code and try again.',
         ...(lock ? { lockedUntil: lock } : {}),
       },
-      { status: lock ? 429 : 401, headers: corsHeaders },
+      { status: lock ? 429 : 401 },
     )
   }
 
@@ -98,7 +89,7 @@ export async function POST(request: NextRequest) {
   const profile = Array.isArray(rows) ? rows[0] : rows
   if (profileError || !profile) {
     await supabase.auth.signOut()
-    return NextResponse.json({ error: 'This verified identity is not linked to a PSGMX profile.' }, { status: 403, headers: corsHeaders })
+    return NextResponse.json({ error: 'This verified identity is not linked to a PSGMX profile.' }, { status: 403 })
   }
 
   const isMobileClient = request.headers.get('x-psgmx-client') === 'mobile'
@@ -117,7 +108,7 @@ export async function POST(request: NextRequest) {
         refresh_token: verification.data.session.refresh_token,
       },
     } : {}),
-  }, { headers: corsHeaders })
+  })
 
   cookiesToSet.forEach(({ name, value, options }) => {
     response.cookies.set(name, value, options as Parameters<typeof response.cookies.set>[2])

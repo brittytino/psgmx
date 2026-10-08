@@ -8,18 +8,9 @@ import { logEvent, requestId } from '@/lib/observability'
 import { sendOtpEmail } from '@/lib/email/resend'
 import { signOtpChallenge } from '@/lib/auth/otp-challenge'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-client-info, apikey, x-request-id, x-psgmx-client, X-Psgmx-Client',
-}
 
-export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 204,
-    headers: corsHeaders,
-  })
-}
+
+
 
 function requestIp(request: NextRequest) {
   return request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
@@ -90,11 +81,11 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => null) as { email?: unknown } | null
     const email = normalizeEmail(body?.email)
-    if (!email) return NextResponse.json({ error: 'Enter a valid email address.' }, { status: 400, headers: corsHeaders })
+    if (!email) return NextResponse.json({ error: 'Enter a valid email address.' }, { status: 400 })
 
     const rate = checkRateLimit(`otp:${requestIp(request)}:${email}`)
     if (!rate.success) {
-      return NextResponse.json({ error: 'Too many attempts. Wait one minute and try again.' }, { status: 429, headers: corsHeaders })
+      return NextResponse.json({ error: 'Too many attempts. Wait one minute and try again.' }, { status: 429 })
     }
 
     const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString()
@@ -105,7 +96,7 @@ export async function POST(request: NextRequest) {
       .gte('sent_at', tenMinutesAgo)
     if (rateError) throw rateError
     if ((recentSends ?? 0) >= 5) {
-      return NextResponse.json({ error: 'Too many codes requested. Wait ten minutes and try again.' }, { status: 429, headers: corsHeaders })
+      return NextResponse.json({ error: 'Too many codes requested. Wait ten minutes and try again.' }, { status: 429 })
     }
 
     // The response for an unapproved email must be byte-for-byte
@@ -116,7 +107,7 @@ export async function POST(request: NextRequest) {
     const genericSentResponse = () => NextResponse.json({
       success: true,
       message: 'If this email is eligible, a verification code has been sent.',
-    }, { headers: { ...corsHeaders, 'x-request-id': traceId } })
+    }, { headers: { 'x-request-id': traceId } })
 
     if (isStaffEmail(email)) await provisionStaffByEmail(email)
     if (!(await isApprovedIdentity(email))) {
@@ -184,6 +175,6 @@ export async function POST(request: NextRequest) {
       trace_id: traceId,
       message: error instanceof Error ? error.message : 'unknown',
     })
-    return NextResponse.json({ error: 'Unable to send a verification code. Please try again.' }, { status: 500, headers: corsHeaders })
+    return NextResponse.json({ error: 'Unable to send a verification code. Please try again.' }, { status: 500 })
   }
 }
