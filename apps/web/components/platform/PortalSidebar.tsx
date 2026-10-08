@@ -71,7 +71,7 @@ export default function PortalSidebar({
     try {
       const saved = localStorage.getItem('psgmx_sidebar_pinned');
       if (saved !== null) {
-        setIsPinned(saved === 'true');
+        setTimeout(() => setIsPinned(saved === 'true'), 0);
       }
     } catch {
       // ignore

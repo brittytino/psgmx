@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+export const maxDuration = 60;
 import { getUserFromRequest } from '@/lib/auth'
 import {
   FREE_MODELS_CATALOG,

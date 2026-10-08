@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+export const maxDuration = 60;
 import { getUserFromRequest, isStudent } from '@/lib/auth'
 import { checkRateLimit } from '@/lib/limiter'
 import { supabaseAdmin } from '@/lib/supabase/admin'

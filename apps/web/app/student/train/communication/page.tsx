@@ -198,18 +198,16 @@ export default function CommunicationPracticePage() {
         <div className="flex items-center justify-between gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-xs font-bold text-red-800">
           <span>{actionError}</span>
           <div className="flex shrink-0 items-center gap-3">
-            {retryRef.current && (
-              <button
-                onClick={() => {
-                  const retry = retryRef.current;
-                  dismissActionError();
-                  retry?.();
-                }}
-                className="underline"
-              >
-                Retry
-              </button>
-            )}
+            <button
+              onClick={() => {
+                const retry = retryRef.current;
+                dismissActionError();
+                retry?.();
+              }}
+              className="underline"
+            >
+              Retry
+            </button>
             <button onClick={dismissActionError} className="underline text-[11px]">
               Dismiss
             </button>

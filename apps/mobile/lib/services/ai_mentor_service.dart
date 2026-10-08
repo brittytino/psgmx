@@ -76,7 +76,7 @@ class AiMentorService {
                 'temperature': 0.7,
               }),
             )
-            .timeout(const Duration(seconds: 15));
+            .timeout(const Duration(seconds: 60));
 
         if (response.statusCode == 200) {
           final data = jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
@@ -123,7 +123,7 @@ class AiMentorService {
               'max_tokens': maxTokens
             }),
           )
-          .timeout(const Duration(seconds: 18));
+          .timeout(const Duration(seconds: 60));
       final data = decodeTrustedJson(response,
           fallbackMessage: 'AI Senior is temporarily unavailable.');
       return (data['answer'] as String?)?.trim();
@@ -269,7 +269,7 @@ Dedicate your next 20-minute practice block exclusively to $weakTopic fundamenta
                 if (_conversationId != null) 'conversation_id': _conversationId,
               }),
             )
-            .timeout(const Duration(seconds: 20));
+            .timeout(const Duration(seconds: 60));
         final data = decodeTrustedJson(response,
             fallbackMessage: 'AI Senior is temporarily unavailable.');
         final answer = data['answer']?.toString().trim();

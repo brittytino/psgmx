@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+export const maxDuration = 60;
 import { getUserFromRequest } from '@/lib/auth'
 import { checkRateLimit } from '@/lib/limiter'
 import { buildRAGContext, formatRAGContextForPrompt } from '@/lib/ai/rag'

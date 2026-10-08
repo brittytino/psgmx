@@ -88,8 +88,8 @@ export async function proxy(request: NextRequest) {
   // via getUserFromRequest() (supporting Bearer JWT tokens from mobile and cookie sessions).
   // They must NEVER be redirected to /login (which returns HTML and breaks mobile API clients).
   if (pathname.startsWith('/api/')) {
+    const origin = request.headers.get('origin') || '*'
     if (request.method === 'OPTIONS') {
-      const origin = request.headers.get('origin') || '*'
       return new NextResponse(null, {
         status: 204,
         headers: {
@@ -101,7 +101,12 @@ export async function proxy(request: NextRequest) {
         },
       })
     }
-    return NextResponse.next({ request })
+    const response = NextResponse.next({ request })
+    response.headers.set('Access-Control-Allow-Origin', origin)
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS')
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-client-info, apikey, x-request-id, X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Date, X-Api-Version, x-psgmx-client, X-Psgmx-Client')
+    response.headers.set('Access-Control-Allow-Credentials', 'true')
+    return response
   }
 
   let supabaseResponse = NextResponse.next({ request })
