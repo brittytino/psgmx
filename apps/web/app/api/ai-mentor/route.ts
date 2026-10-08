@@ -11,15 +11,28 @@ const intentPrompts: Record<string, string> = {
   resume_feedback: 'You are an experienced technical reviewer. Give specific, constructive feedback on evidence, clarity and impact. Never invent achievements.',
 }
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-client-info, apikey, x-request-id, x-psgmx-client, X-Psgmx-Client',
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: corsHeaders,
+  })
+}
+
 export async function POST(request: NextRequest) {
   const traceId = requestId(request.headers)
   const user = await getUserFromRequest(request)
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  if (!checkRateLimit(`ai-mentor:${user.id}`).success) return NextResponse.json({ error: 'Please wait before asking again.' }, { status: 429 })
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders })
+  if (!checkRateLimit(`ai-mentor:${user.id}`).success) return NextResponse.json({ error: 'Please wait before asking again.' }, { status: 429, headers: corsHeaders })
   const body = await request.json().catch(() => null) as { intent?: unknown; message?: unknown; max_tokens?: unknown } | null
-  if (!body || typeof body.message !== 'string' || !body.message.trim() || body.message.length > 1800) return NextResponse.json({ error: 'A message up to 1800 characters is required.' }, { status: 400 })
+  if (!body || typeof body.message !== 'string' || !body.message.trim() || body.message.length > 1800) return NextResponse.json({ error: 'A message up to 1800 characters is required.' }, { status: 400, headers: corsHeaders })
   const intent = typeof body.intent === 'string' ? body.intent : 'companion_chat'
-  if (intent !== 'companion_chat' && !intentPrompts[intent]) return NextResponse.json({ error: 'Unsupported mentor intent.' }, { status: 400 })
+  if (intent !== 'companion_chat' && !intentPrompts[intent]) return NextResponse.json({ error: 'Unsupported mentor intent.' }, { status: 400, headers: corsHeaders })
   const maxTokens = Math.max(100, Math.min(Number(body.max_tokens) || 300, 500))
   try {
     let system = intentPrompts[intent]
@@ -33,9 +46,9 @@ export async function POST(request: NextRequest) {
     }
     const result = await executeOpenRouterPrompt(userMessage, 'general', system, maxTokens)
     logEvent('info', 'ai_mentor_completed', { trace_id: traceId, user_id: user.id, model: result.modelUsed })
-    return NextResponse.json({ answer: result.text, sources_count: sourcesCount, model_used: result.modelUsed }, { headers: { 'x-request-id': traceId } })
+    return NextResponse.json({ answer: result.text, sources_count: sourcesCount, model_used: result.modelUsed }, { headers: { ...corsHeaders, 'x-request-id': traceId } })
   } catch (error) {
     logEvent('error', 'ai_mentor_failed', { trace_id: traceId, user_id: user.id, message: String(error) })
-    return NextResponse.json({ error: 'AI mentor is temporarily unavailable.' }, { status: 503 })
+    return NextResponse.json({ error: 'AI mentor is temporarily unavailable.' }, { status: 503, headers: corsHeaders })
   }
 }

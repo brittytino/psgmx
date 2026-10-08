@@ -10,6 +10,19 @@ const SYSTEM_PROMPT = `You are AI Senior, the continuing placement-preparation c
 Ground claims in the supplied Knowledge Brain and current student evidence. NEO PAT is the only source for official drives, eligibility, shortlists, and package information; PSGMX prepares students and preserves clearly labelled historical interview evidence.
 Give practical next actions at the student's current level. State uncertainty when evidence is missing or old. Never invent company facts, scores, attendance, or alumni experiences. Do not reveal hidden chain-of-thought; provide a concise rationale and answer.`
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-client-info, apikey, x-request-id, x-psgmx-client, X-Psgmx-Client',
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: corsHeaders,
+  })
+}
+
 async function ownedConversation(conversationId: string, userId: string) {
   if (!/^[0-9a-f-]{36}$/i.test(conversationId)) return null
   const { data } = await db.from('ai_conversations').select('*').eq('id', conversationId).eq('user_id', userId).maybeSingle()
@@ -18,7 +31,7 @@ async function ownedConversation(conversationId: string, userId: string) {
 
 export async function GET(req: NextRequest) {
   const user = await getUserFromRequest(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders })
 
   const requested = req.nextUrl.searchParams.get('conversation_id') || ''
   const conversation = requested ? await ownedConversation(requested, user.id) : null
@@ -46,33 +59,33 @@ export async function GET(req: NextRequest) {
       interview_patterns: patternCount || 0,
       alumni_contributors: alumniCount || 0,
     },
-  })
+  }, { headers: corsHeaders })
 }
 
 export async function POST(req: NextRequest) {
   const user = await getUserFromRequest(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: corsHeaders })
   if (!checkRateLimit(`ai-senior:${user.id}`).success) {
-    return NextResponse.json({ error: 'Please wait before asking again.' }, { status: 429 })
+    return NextResponse.json({ error: 'Please wait before asking again.' }, { status: 429, headers: corsHeaders })
   }
 
   const body = await req.json().catch(() => null) as { query?: unknown; conversation_id?: unknown } | null
   const query = typeof body?.query === 'string' ? body.query.trim() : ''
   if (!query || query.length > 2000) {
-    return NextResponse.json({ error: 'Enter a question of at most 2,000 characters.' }, { status: 400 })
+    return NextResponse.json({ error: 'Enter a question of at most 2,000 characters.' }, { status: 400, headers: corsHeaders })
   }
 
   const requestedId = typeof body?.conversation_id === 'string' ? body.conversation_id : ''
   let conversation = requestedId ? await ownedConversation(requestedId, user.id) : null
   if (requestedId && !conversation) {
-    return NextResponse.json({ error: 'Conversation not found.' }, { status: 404 })
+    return NextResponse.json({ error: 'Conversation not found.' }, { status: 404, headers: corsHeaders })
   }
   if (!conversation) {
     const { data, error } = await db.from('ai_conversations').insert({
       user_id: user.id,
       title: query.slice(0, 80),
     }).select('*').single()
-    if (error || !data) return NextResponse.json({ error: 'Could not create a conversation.' }, { status: 500 })
+    if (error || !data) return NextResponse.json({ error: 'Could not create a conversation.' }, { status: 500, headers: corsHeaders })
     conversation = data
   }
 
@@ -125,7 +138,7 @@ export async function POST(req: NextRequest) {
       model_used: ai.modelUsed,
       used_fallback_model: ai.isFallback,
       sources: ragContext.articles.map((article) => article.title),
-    })
+    }, { headers: corsHeaders })
   } catch (error) {
     const status = error instanceof AIUnavailableError ? 503 : 500
     return NextResponse.json({
@@ -133,6 +146,6 @@ export async function POST(req: NextRequest) {
         ? 'All free AI models are currently busy. Your question was not answered or stored; please retry shortly.'
         : 'The response could not be stored safely. Please retry.',
       conversation_id: conversation.id,
-    }, { status })
+    }, { status, headers: corsHeaders })
   }
 }

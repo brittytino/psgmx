@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:dicebear_core/dicebear_core.dart';
-import 'package:dicebear_styles/lorelei.dart';
-import 'package:dicebear_styles/micah.dart';
+import 'package:dicebear_styles/clay.dart';
 
 class AvatarWidget extends StatefulWidget {
   final String? avatarUrl;
@@ -36,8 +35,8 @@ class _AvatarWidgetState extends State<AvatarWidget> {
   }
 
   Widget _buildIdenticon(BuildContext context) {
-    final isMale = widget.gender?.toLowerCase() == 'male';
-    final style = Style.parse(isMale ? micah : lorelei);
+    // Sync with web app: Use 'clay' style for all avatars
+    final style = Style.parse(clay);
 
     final avatar = Avatar(style, {
       'seed': widget.name.isNotEmpty ? widget.name : 'User',
