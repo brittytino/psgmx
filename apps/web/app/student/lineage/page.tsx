@@ -18,6 +18,9 @@ import { createClient } from '@/lib/supabase/client'
 import { getCurrentProfile } from '@/lib/current-profile'
 import { InitialsAvatar } from '@/components/basic/InitialsAvatar'
 import { useUI } from '@/components/providers/ui-provider'
+import { Button, buttonVariants } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
 
 type Senior = {
   id: string
@@ -318,18 +321,18 @@ export default function LineagePage() {
                 href={senior.linkedin_url}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl bg-primary-purple px-5 py-3 text-xs font-black text-white hover:bg-deep-violet transition-colors"
+                className={buttonVariants({ className: 'rounded-xl bg-primary-purple px-5 py-2.5 text-xs font-black text-white hover:bg-deep-violet shadow-sm' })}
               >
-                <Linkedin className="h-4 w-4" />
+                <Linkedin className="mr-2 h-4 w-4" />
                 Connect on LinkedIn
               </a>
             )}
             {senior.mentorship_open && senior.email && (
               <a
                 href={`mailto:${senior.email}`}
-                className="inline-flex items-center gap-2 rounded-xl border border-border-light bg-white px-5 py-3 text-xs font-black text-text-main hover:bg-page-bg transition-colors"
+                className={buttonVariants({ variant: 'outline', className: 'rounded-xl border-border-light bg-white px-5 py-2.5 text-xs font-black text-text-main hover:bg-page-bg shadow-sm' })}
               >
-                <Mail className="h-4 w-4" />
+                <Mail className="mr-2 h-4 w-4" />
                 Send email
               </a>
             )}
@@ -343,30 +346,30 @@ export default function LineagePage() {
           {/* PRD Ch. 14.2: send a topic + question request to the assigned senior */}
           <div className="border-t border-border-light pt-5">
             {!askOpen ? (
-              <button
+              <Button
                 onClick={() => setAskOpen(true)}
                 disabled={!senior.mentorship_open}
-                className="inline-flex items-center gap-2 rounded-xl bg-primary-purple px-5 py-3 text-xs font-black text-white hover:bg-deep-violet disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
+                className="rounded-xl bg-primary-purple px-5 py-2.5 text-xs font-black text-white hover:bg-deep-violet disabled:cursor-not-allowed disabled:opacity-40 shadow-sm"
               >
-                <MessageCircle className="h-4 w-4" /> Ask a specific question
-              </button>
+                <MessageCircle className="mr-2 h-4 w-4" /> Ask a specific question
+              </Button>
             ) : (
-              <div className="space-y-3 rounded-2xl border border-border-light bg-page-bg p-5">
+              <div className="space-y-4 rounded-2xl border border-border-light bg-page-bg p-5">
                 <p className="text-xs font-bold text-text-muted">
                   A focused question is easier to answer well than a general chat request.
                 </p>
                 <div>
-                  <label className="mb-1 block text-[11px] font-black uppercase tracking-wide text-text-muted">Topic</label>
-                  <input
+                  <label className="mb-1.5 block text-[11px] font-black uppercase tracking-wide text-text-muted">Topic</label>
+                  <Input
                     value={askTopic}
                     onChange={(e) => setAskTopic(e.target.value)}
                     maxLength={120}
                     placeholder="System design interviews"
-                    className="w-full rounded-xl border border-border-light bg-white px-4 py-2.5 text-sm outline-none focus:border-primary-purple"
+                    className="w-full rounded-xl border-border-light bg-white px-4 py-2.5 text-sm outline-none focus-visible:ring-primary-purple shadow-sm"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-[11px] font-black uppercase tracking-wide text-text-muted">
+                  <label className="mb-1.5 block text-[11px] font-black uppercase tracking-wide text-text-muted">
                     Your specific question
                   </label>
                   <textarea
@@ -375,29 +378,30 @@ export default function LineagePage() {
                     maxLength={1000}
                     rows={4}
                     placeholder="What's actually on your mind about this topic?"
-                    className="w-full rounded-xl border border-border-light bg-white px-4 py-2.5 text-sm outline-none focus:border-primary-purple"
+                    className="w-full rounded-xl border border-border-light bg-white px-4 py-2.5 text-sm outline-none focus:border-primary-purple focus:ring-1 focus:ring-primary-purple shadow-sm"
                   />
                 </div>
                 <div className="flex items-center gap-3">
-                  <button
+                  <Button
                     onClick={() => void sendRequest()}
                     disabled={sending}
-                    className="inline-flex items-center gap-2 rounded-xl bg-primary-purple px-5 py-2.5 text-xs font-black text-white hover:bg-deep-violet disabled:opacity-50 transition-colors"
+                    className="rounded-xl bg-primary-purple px-5 py-2 text-xs font-black text-white hover:bg-deep-violet disabled:opacity-50 shadow-sm"
                   >
-                    {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                    {sending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                     Review and send
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="ghost"
                     onClick={() => {
                       setAskOpen(false)
                       setAskTopic('')
                       setAskQuestion('')
                     }}
                     disabled={sending}
-                    className="text-xs font-bold text-text-muted hover:text-text-main"
+                    className="rounded-xl text-xs font-bold text-text-muted hover:text-text-main"
                   >
                     Cancel
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
@@ -439,7 +443,9 @@ export default function LineagePage() {
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="font-black text-text-main text-base">Juniors Assigned to You ({juniors.length})</h2>
-          <span className="text-xs font-bold text-text-muted">Same Register Suffix</span>
+          <Badge variant="secondary" className="px-2.5 py-0.5 text-xs font-bold text-text-muted border-border-light">
+            Same Register Suffix
+          </Badge>
         </div>
         <div className="space-y-3">
           {juniors.map((person) => (
@@ -508,9 +514,9 @@ function PersonCard({ person, contacts }: { person: Person; contacts: boolean })
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
             <h3 className="font-black text-text-main text-sm truncate">{person.name}</h3>
-            <span className="rounded-full bg-page-bg px-2.5 py-0.5 text-[10px] font-bold text-text-muted">
+            <Badge variant="outline" className="font-mono text-[11px] font-bold border-border-light bg-page-bg/80 text-text-muted">
               {person.reg_no}
-            </span>
+            </Badge>
           </div>
 
           {(person.current_role_title || person.current_company) && (
@@ -526,17 +532,17 @@ function PersonCard({ person, contacts }: { person: Person; contacts: boolean })
                   href={person.linkedin_url}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex items-center gap-1.5 rounded-xl bg-violet-50 px-3 py-1.5 text-xs font-bold text-primary-purple hover:bg-violet-100 transition-colors"
+                  className={buttonVariants({ variant: 'outline', size: 'sm', className: 'h-8 rounded-xl border-violet-200 bg-violet-50/60 text-xs font-bold text-primary-purple hover:bg-violet-100 hover:text-primary-purple shadow-none' })}
                 >
-                  <Linkedin className="h-3.5 w-3.5" /> LinkedIn
+                  <Linkedin className="mr-1.5 h-3.5 w-3.5" /> LinkedIn
                 </a>
               )}
               {person.email && (
                 <a
                   href={`mailto:${person.email}`}
-                  className="flex items-center gap-1.5 rounded-xl bg-page-bg px-3 py-1.5 text-xs font-bold text-text-main hover:bg-border-light transition-colors"
+                  className={buttonVariants({ variant: 'outline', size: 'sm', className: 'h-8 rounded-xl border-border-light bg-page-bg text-xs font-bold text-text-main hover:bg-border-light/40 shadow-none' })}
                 >
-                  <Mail className="h-3.5 w-3.5" /> Email
+                  <Mail className="mr-1.5 h-3.5 w-3.5" /> Email
                 </a>
               )}
             </div>
@@ -557,15 +563,15 @@ function Empty({ text }: { text: string }) {
 
 function StatusChip({ status }: { status: LineageRequestStatus }) {
   const styles: Record<LineageRequestStatus, string> = {
-    pending: 'bg-amber-50 text-amber-700',
-    accepted: 'bg-emerald-50 text-emerald-700',
-    declined: 'bg-slate-100 text-slate-600',
-    redirected: 'bg-blue-50 text-blue-700',
+    pending: 'bg-amber-50 text-amber-700 border-amber-200',
+    accepted: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    declined: 'bg-slate-100 text-slate-600 border-slate-200',
+    redirected: 'bg-blue-50 text-blue-700 border-blue-200',
   }
   return (
-    <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wide ${styles[status]}`}>
+    <Badge variant="outline" className={`shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wide border ${styles[status]}`}>
       {status}
-    </span>
+    </Badge>
   )
 }
 
@@ -627,29 +633,34 @@ function IncomingRequestCard({
       {isPending &&
         (responding ? (
           <div className="mt-3 flex items-center gap-2 text-xs font-bold text-text-muted">
-            <Loader2 className="h-4 w-4 animate-spin" /> Updating…
+            <Loader2 className="h-4 w-4 animate-spin text-primary-purple" /> Updating…
           </div>
         ) : (
           <div className="mt-3 space-y-2">
             <div className="flex flex-wrap items-center gap-2">
-              <button
+              <Button
+                size="sm"
                 onClick={onAccept}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-primary-purple px-4 py-2 text-xs font-black text-white hover:bg-deep-violet transition-colors"
+                className="h-8 rounded-xl bg-primary-purple px-4 text-xs font-black text-white hover:bg-deep-violet shadow-none"
               >
-                <CheckCircle2 className="h-3.5 w-3.5" /> Accept
-              </button>
-              <button
+                <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" /> Accept
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
                 onClick={onDecline}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-border-light bg-white px-4 py-2 text-xs font-black text-text-main hover:bg-page-bg transition-colors"
+                className="h-8 rounded-xl border-border-light bg-white px-4 text-xs font-black text-text-main hover:bg-page-bg shadow-none"
               >
-                <X className="h-3.5 w-3.5" /> Decline
-              </button>
-              <button
+                <X className="mr-1.5 h-3.5 w-3.5" /> Decline
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
                 onClick={onToggleRedirect}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-border-light bg-white px-4 py-2 text-xs font-black text-text-main hover:bg-page-bg transition-colors"
+                className="h-8 rounded-xl border-border-light bg-white px-4 text-xs font-black text-text-main hover:bg-page-bg shadow-none"
               >
-                <CornerUpRight className="h-3.5 w-3.5" /> Redirect
-              </button>
+                <CornerUpRight className="mr-1.5 h-3.5 w-3.5" /> Redirect
+              </Button>
             </div>
             {redirectOpen && (
               <div className="space-y-2 rounded-xl border border-dashed border-border-light bg-white p-3">

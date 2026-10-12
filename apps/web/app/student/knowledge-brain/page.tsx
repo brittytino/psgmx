@@ -5,6 +5,12 @@ import { useSearchParams } from 'next/navigation'
 import { BookOpen, Building2, Calendar, Copy, Loader2, PenLine, Search, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { SubmitArticleModal } from '@/components/brain/SubmitArticleModal'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 
 type Article = {
   id: string
@@ -17,6 +23,74 @@ type Article = {
   view_count: number
   created_at: string
   author_id: string | null
+}
+
+function TagCombobox({ tags, value, onChange }: { tags: string[], value: string | null, onChange: (val: string | null) => void }) {
+  const [open, setOpen] = React.useState(false)
+  const [search, setSearch] = React.useState('')
+  const ref = React.useRef<HTMLDivElement>(null)
+
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const filtered = tags.filter(t => t.toLowerCase().includes(search.toLowerCase()))
+
+  return (
+    <div className="relative w-full sm:w-72" ref={ref}>
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex w-full items-center justify-between rounded-xl border border-border-light bg-white px-4 py-2.5 text-sm font-medium text-text-main shadow-sm transition-all hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary-purple/20"
+      >
+        <span className="truncate">{value || 'All topics & companies'}</span>
+        <svg className={`h-4 w-4 text-text-muted transition-transform ${open ? 'rotate-180' : ''}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+
+      {open && (
+        <div className="absolute z-10 mt-2 w-full overflow-hidden rounded-xl border border-border-light bg-white shadow-xl animate-in fade-in zoom-in-95 duration-100">
+          <div className="border-b border-border-light p-2">
+            <div className="flex items-center rounded-lg bg-slate-100 px-3 py-1.5">
+              <Search className="h-4 w-4 text-text-muted shrink-0" />
+              <input
+                type="text"
+                className="ml-2 w-full bg-transparent text-sm outline-none placeholder:text-text-muted"
+                placeholder="Search tags..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                autoFocus
+              />
+            </div>
+          </div>
+          <div className="max-h-60 overflow-y-auto p-1 custom-scrollbar">
+            <button
+              onClick={() => { onChange(null); setOpen(false) }}
+              className={`flex w-full items-center rounded-lg px-3 py-2 text-sm transition-colors ${!value ? 'bg-primary-purple/10 text-primary-purple font-bold' : 'text-text-main hover:bg-slate-100'}`}
+            >
+              All topics & companies
+            </button>
+            {filtered.map(tag => (
+              <button
+                key={tag}
+                onClick={() => { onChange(tag); setOpen(false) }}
+                className={`flex w-full items-center rounded-lg px-3 py-2 text-sm transition-colors ${value === tag ? 'bg-primary-purple/10 text-primary-purple font-bold' : 'text-text-main hover:bg-slate-100'}`}
+              >
+                {tag}
+              </button>
+            ))}
+            {filtered.length === 0 && (
+              <div className="py-6 text-center text-sm text-text-muted">No tags found.</div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
 }
 
 function KnowledgeBrainContent() {
@@ -117,13 +191,13 @@ function KnowledgeBrainContent() {
             {articles.length} verified guides, interview patterns, and departmental resources.
           </p>
         </div>
-        <button
+        <Button
           onClick={() => setSubmitOpen(true)}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary-purple px-5 py-3 text-xs font-black text-white shadow-sm hover:bg-deep-violet transition-colors"
+          className="rounded-xl bg-primary-purple px-5 py-3 text-xs font-black text-white hover:bg-deep-violet transition-colors h-auto shadow-sm"
         >
-          <PenLine className="h-4 w-4" />
+          <PenLine className="h-4 w-4 mr-2" />
           Submit an article
-        </button>
+        </Button>
       </header>
 
       {error && (
@@ -137,11 +211,11 @@ function KnowledgeBrainContent() {
 
       {/* In-page live search bar */}
       <div className="relative">
-        <Search className="absolute left-4 top-3.5 h-4 w-4 text-text-muted" />
-        <input
+        <Search className="absolute left-4 top-3 h-4 w-4 text-text-muted" />
+        <Input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          className="w-full rounded-2xl border border-border-light bg-white py-3 pl-11 pr-10 text-sm outline-none focus:border-primary-purple shadow-sm transition-colors"
+          className="w-full rounded-2xl border-border-light bg-white py-6 pl-11 pr-10 text-sm focus-visible:ring-primary-purple shadow-sm"
           placeholder="Search approved knowledge by topic, company, or concept…"
         />
         {query && (
@@ -156,28 +230,8 @@ function KnowledgeBrainContent() {
       </div>
 
       {/* Filter Tags */}
-      <div className="flex flex-wrap gap-2">
-        <button
-          onClick={() => setTag(null)}
-          className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all ${
-            !tag ? 'bg-primary-purple text-white shadow-sm' : 'border border-border-light bg-white text-text-muted hover:text-text-main'
-          }`}
-        >
-          All
-        </button>
-        {tags.map((value) => (
-          <button
-            key={value}
-            onClick={() => setTag(value)}
-            className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all ${
-              tag === value
-                ? 'bg-primary-purple text-white shadow-sm'
-                : 'border border-border-light bg-white text-text-muted hover:text-text-main'
-            }`}
-          >
-            {value}
-          </button>
-        ))}
+      <div className="flex items-center gap-3">
+        <TagCombobox tags={tags} value={tag} onChange={setTag} />
       </div>
 
       {/* Articles Grid */}
@@ -191,20 +245,20 @@ function KnowledgeBrainContent() {
             <div>
               <div className="flex flex-wrap gap-2">
                 {article.company_name && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-2.5 py-1 text-[10px] font-black text-primary-purple">
-                    <Building2 className="h-3 w-3" />
+                  <Badge variant="secondary" className="bg-violet-50 text-primary-purple hover:bg-violet-100 rounded-full px-2.5 font-black text-[10px]">
+                    <Building2 className="h-3 w-3 mr-1" />
                     {article.company_name}
-                  </span>
+                  </Badge>
                 )}
                 {article.batch_year && (
-                  <span className="rounded-full bg-page-bg px-2.5 py-1 text-[10px] font-black text-text-muted">
+                  <Badge variant="outline" className="rounded-full bg-page-bg px-2.5 text-[10px] font-black text-text-muted border-border-light">
                     {article.batch_year}
-                  </span>
+                  </Badge>
                 )}
               </div>
               <h2 className="mt-3 text-base font-black leading-6 text-text-main">{article.title}</h2>
               <p className="mt-2 line-clamp-3 text-xs leading-5 text-text-muted">
-                {article.summary || article.content}
+                {article.summary || article.content.replace(/[#*`_>-]/g, '').replace(/\s+/g, ' ').trim()}
               </p>
             </div>
             <p className="mt-4 text-[11px] font-bold text-text-muted">
@@ -221,32 +275,74 @@ function KnowledgeBrainContent() {
       </div>
 
       {/* Modal: View Article */}
-      {active && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/50 p-4 sm:p-8 backdrop-blur-sm">
-          <article className="mx-auto max-w-3xl rounded-3xl bg-white p-6 shadow-2xl sm:p-9">
-            <div className="flex justify-between gap-4">
+      <Dialog open={!!active} onOpenChange={(open) => !open && setActive(null)}>
+        <DialogContent className="max-w-3xl rounded-3xl p-6 sm:p-9 bg-white border-border-light max-h-[90vh] flex flex-col">
+          <DialogHeader className="hidden">
+            <DialogTitle>View Article</DialogTitle>
+            <DialogDescription>Read the detailed article content.</DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col flex-1 overflow-hidden">
+            <div className="flex justify-between gap-4 shrink-0">
               <div>
-                <h2 className="text-2xl font-black text-text-main">{active.title}</h2>
+                <h2 className="text-2xl font-black text-text-main">{active?.title}</h2>
                 <p className="mt-2 flex items-center gap-1 text-xs text-text-muted">
                   <Calendar className="h-3.5 w-3.5" />
-                  {new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium' }).format(new Date(active.created_at))}
+                  {active && new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium' }).format(new Date(active.created_at))}
                 </p>
               </div>
-              <button onClick={() => setActive(null)} aria-label="Close">
-                <X className="h-5 w-5" />
-              </button>
             </div>
-            <div className="mt-6 whitespace-pre-wrap text-sm leading-7 text-text-main">{active.content}</div>
-            <button
-              onClick={() => void navigator.clipboard.writeText(`${window.location.origin}/student/knowledge-brain?id=${active.id}`)}
-              className="mt-7 inline-flex items-center gap-2 rounded-xl border border-border-light px-4 py-2 text-xs font-black hover:bg-page-bg transition"
+            <div className="mt-6 text-sm leading-7 text-text-main overflow-y-auto pr-2 custom-scrollbar">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  h1: ({ ...props }) => <h1 className="text-3xl font-black mt-8 mb-4 text-slate-900" {...props} />,
+                  h2: ({ ...props }) => <h2 className="text-2xl font-black mt-8 mb-4 text-slate-900 border-b pb-2" {...props} />,
+                  h3: ({ ...props }) => <h3 className="text-lg font-bold mt-6 mb-3 text-slate-800" {...props} />,
+                  p: ({ ...props }) => <p className="mb-4 text-slate-600 leading-relaxed" {...props} />,
+                  ul: ({ ...props }) => <ul className="mb-4 ml-6 list-disc text-slate-600 marker:text-slate-400 space-y-1" {...props} />,
+                  ol: ({ ...props }) => <ol className="mb-4 ml-6 list-decimal text-slate-600 marker:text-slate-400 space-y-1" {...props} />,
+                  li: ({ ...props }) => <li className="" {...props} />,
+                  strong: ({ ...props }) => <strong className="font-bold text-slate-900" {...props} />,
+                  blockquote: ({ ...props }) => <blockquote className="border-l-4 border-primary-purple pl-4 italic text-slate-500 bg-slate-50 py-2 my-4 rounded-r-lg" {...props} />,
+                  a: ({ ...props }) => <a className="text-primary-purple font-medium hover:underline" {...props} />,
+                  table: ({ ...props }) => <div className="overflow-x-auto mb-6 border rounded-xl"><table className="w-full text-left border-collapse" {...props} /></div>,
+                  th: ({ ...props }) => <th className="bg-slate-50 px-4 py-3 font-semibold text-slate-900 border-b" {...props} />,
+                  td: ({ ...props }) => <td className="px-4 py-3 border-b text-slate-600" {...props} />,
+                  code: ({ className, children, ...props }: any) => {
+                    const match = /language-(\w+)/.exec(className || '')
+                    return match ? (
+                      <div className="overflow-hidden rounded-xl bg-slate-900 my-4 shadow-sm">
+                        <div className="flex px-4 py-2 bg-slate-800/80 text-slate-400 text-xs font-mono font-medium border-b border-slate-700/50">
+                          {match[1]}
+                        </div>
+                        <pre className="p-4 overflow-x-auto text-slate-50 text-sm font-mono leading-relaxed">
+                          <code className={className} {...props}>
+                            {children}
+                          </code>
+                        </pre>
+                      </div>
+                    ) : (
+                      <code className="bg-slate-100 text-primary-purple px-1.5 py-0.5 rounded-md text-[13px] font-mono font-medium border border-slate-200" {...props}>
+                        {children}
+                      </code>
+                    )
+                  }
+                }}
+              >
+                {active?.content}
+              </ReactMarkdown>
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => void navigator.clipboard.writeText(`${window.location.origin}/student/knowledge-brain?id=${active?.id}`)}
+              className="mt-7 self-start rounded-xl text-xs font-black shadow-sm"
             >
-              <Copy className="h-4 w-4" />
-              Copy link
-            </button>
-          </article>
-        </div>
-      )}
+              <Copy className="h-3.5 w-3.5 mr-2" />
+              Copy share link
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <SubmitArticleModal isOpen={submitOpen} onClose={() => setSubmitOpen(false)} onSuccess={() => void load()} />
     </div>

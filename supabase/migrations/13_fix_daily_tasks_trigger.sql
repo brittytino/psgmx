@@ -17,7 +17,10 @@ ALTER TABLE IF EXISTS public.daily_tasks
   ADD COLUMN IF NOT EXISTS completed BOOLEAN DEFAULT FALSE,
   ADD COLUMN IF NOT EXISTS batch_id UUID REFERENCES public.batches(id);
 
--- 3. Drop all rogue triggers on daily_five_attempts & daily_five_streaks
+ALTER TABLE IF EXISTS public.mock_exam_results 
+  ADD COLUMN IF NOT EXISTS completed BOOLEAN DEFAULT FALSE;
+
+-- 3. Drop all rogue triggers on daily_five_attempts, daily_five_streaks & mock_exam_results
 -- (The canonical engine handles streak updates inside RPC functions, not triggers)
 DO $$
 DECLARE
@@ -27,7 +30,7 @@ BEGIN
     SELECT trigger_name, event_object_table 
     FROM information_schema.triggers 
     WHERE event_object_schema = 'public'
-      AND event_object_table IN ('daily_five_attempts', 'daily_five_streaks', 'daily_tasks')
+      AND event_object_table IN ('daily_five_attempts', 'daily_five_streaks', 'daily_tasks', 'mock_exam_results')
   ) LOOP
     BEGIN
       EXECUTE 'DROP TRIGGER IF EXISTS ' || quote_ident(r.trigger_name) || ' ON public.' || quote_ident(r.event_object_table) || ' CASCADE;';

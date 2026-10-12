@@ -466,7 +466,7 @@ BEGIN
           (
             SELECT jsonb_agg(
               jsonb_build_object(
-                'id', COALESCE(u.id::text, w.id::text),
+                'id', COALESCE(u.id::text, w.reg_no, w.email),
                 'name', COALESCE(u.name, w.name),
                 'roll_no', COALESCE(u.reg_no, w.reg_no),
                 'is_leader', (
@@ -482,7 +482,7 @@ BEGIN
             )
             FROM public.whitelist w
             LEFT JOIN public.users u ON u.reg_no = w.reg_no
-            WHERE w.team_uuid = t.id OR w.team_id = t.team_code
+            WHERE w.team_uuid = t.id OR (w.team_id = t.team_code AND w.batch_id = v_batch_id)
           ),
           '[]'::jsonb
         )

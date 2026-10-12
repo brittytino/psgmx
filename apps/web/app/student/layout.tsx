@@ -157,12 +157,6 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
               )}
             </button>
 
-            <NotificationDrawer
-              isOpen={notificationsOpen}
-              onClose={() => setNotificationsOpen(false)}
-              onUnreadCountChange={setUnreadNotifications}
-            />
-
             {/* Profile Avatar Pill with DiceBear Clay Avatar */}
             <div className="flex items-center gap-2.5 pl-2">
               <DiceBearAvatar
@@ -190,6 +184,12 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
           </div>
         </div>
       </main>
+
+      <NotificationDrawer
+        isOpen={notificationsOpen}
+        onClose={() => setNotificationsOpen(false)}
+        onUnreadCountChange={setUnreadNotifications}
+      />
     </div>
   );
 }

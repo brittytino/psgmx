@@ -143,12 +143,31 @@ class PlacementTeamsRepository {
               final roles = u['roles'] as Map?;
               membersByTeamUuid.putIfAbsent(teamUuid, () => []).add(
                 PlacementTeamMember(
-                  sNo: (membersByTeamUuid[teamUuid]?.length ?? 0) + 1,
+                  sNo: 1,
                   id: u['id']?.toString() ?? '',
                   rollNo: u['reg_no']?.toString() ?? '',
                   name: u['name']?.toString() ?? '',
                   isLeader: roles?['isTeamLeader'] == true,
                 ),
+              );
+            }
+          }
+
+          // Sort members in each team: leader first, then by roll number, and assign sNo 1..N
+          for (final entry in membersByTeamUuid.entries) {
+            entry.value.sort((a, b) {
+              if (a.isLeader && !b.isLeader) return -1;
+              if (!a.isLeader && b.isLeader) return 1;
+              return a.rollNo.compareTo(b.rollNo);
+            });
+            for (var i = 0; i < entry.value.length; i++) {
+              final m = entry.value[i];
+              entry.value[i] = PlacementTeamMember(
+                sNo: i + 1,
+                id: m.id,
+                rollNo: m.rollNo,
+                name: m.name,
+                isLeader: m.isLeader,
               );
             }
           }

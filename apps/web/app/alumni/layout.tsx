@@ -121,12 +121,6 @@ export default function AlumniLayout({ children }: { children: React.ReactNode }
               )}
             </button>
 
-            <AlumniNotificationDrawer
-              isOpen={notificationsOpen}
-              onClose={() => setNotificationsOpen(false)}
-              onUnreadCountChange={setUnreadNotifications}
-            />
-
             <div className="flex items-center gap-2.5 pl-2">
               <DiceBearAvatar
                 name={identity.name}
@@ -152,6 +146,12 @@ export default function AlumniLayout({ children }: { children: React.ReactNode }
           </div>
         </div>
       </main>
+
+      <AlumniNotificationDrawer
+        isOpen={notificationsOpen}
+        onClose={() => setNotificationsOpen(false)}
+        onUnreadCountChange={setUnreadNotifications}
+      />
     </div>
   );
 }

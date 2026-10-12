@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, BrainCircuit, Send, Loader2 } from 'lucide-react';
+import { BrainCircuit, Send, Loader2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 interface SubmitArticleModalProps {
   isOpen: boolean;
@@ -17,8 +19,6 @@ export function SubmitArticleModal({ isOpen, onClose, onSuccess }: SubmitArticle
   const [category, setCategory] = useState('survival_guide');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
-  if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,87 +53,73 @@ export function SubmitArticleModal({ isOpen, onClose, onSuccess }: SubmitArticle
   };
 
   return (
-    <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <motion.div
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          className="absolute inset-0 bg-slate-950/50 backdrop-blur-sm"
-          onClick={onClose}
-        />
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative z-10 w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-2xl"
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between border-b border-border-light bg-page-bg p-6">
-            <div className="flex items-center gap-3">
-              <div className="rounded-xl bg-primary-purple p-2">
-                <BrainCircuit className="w-5 h-5 text-white" />
-              </div>
-              <h2 className="text-xl font-black tracking-tight text-text-main">Contribute to Knowledge Brain</h2>
-            </div>
-            <button onClick={onClose} aria-label="Close" className="text-text-muted transition-colors hover:text-text-main">
-              <X className="w-5 h-5" />
-            </button>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-2xl rounded-3xl p-0 overflow-hidden bg-white border-border-light">
+        <DialogHeader className="flex flex-row items-center gap-3 border-b border-border-light bg-page-bg p-6 m-0 space-y-0">
+          <div className="rounded-xl bg-primary-purple p-2">
+            <BrainCircuit className="w-5 h-5 text-white" />
+          </div>
+          <DialogTitle className="text-xl font-black tracking-tight text-text-main">
+            Contribute to Knowledge Brain
+          </DialogTitle>
+          <DialogDescription className="hidden">Submit a new article to the knowledge brain.</DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          {error && <p className="rounded-xl bg-red-50 p-3 text-sm font-bold text-red-700">{error}</p>}
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wider text-text-muted">Title</label>
+            <Input
+              required value={title} onChange={e => setTitle(e.target.value)}
+              className="w-full rounded-xl border-border-light bg-white px-4 py-6 text-sm outline-none focus-visible:ring-primary-purple"
+              placeholder="e.g., Zoho Interview Experience 2026"
+            />
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="p-6 space-y-5">
-            {error && <p className="rounded-xl bg-red-50 p-3 text-sm font-bold text-red-700">{error}</p>}
-
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wider text-text-muted">Title</label>
-              <input
-                required value={title} onChange={e => setTitle(e.target.value)}
-                className="w-full rounded-xl border border-border-light bg-white px-4 py-3 text-text-main placeholder-text-muted outline-none transition-colors focus:border-primary-purple"
-                placeholder="e.g., Zoho Interview Experience 2026"
+              <label className="text-xs font-bold uppercase tracking-wider text-text-muted">Category</label>
+              <select
+                value={category} onChange={e => setCategory(e.target.value)}
+                className="w-full rounded-xl border border-border-light bg-white px-4 py-3 text-sm text-text-main outline-none focus:border-primary-purple shadow-sm transition-colors"
+              >
+                <option value="survival_guide">Arrear Survival Guide</option>
+                <option value="interview_exp">Interview Experience</option>
+                <option value="project_arch">Project Architecture</option>
+                <option value="general">General Knowledge</option>
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase tracking-wider text-text-muted">Tags (comma separated)</label>
+              <Input
+                value={tags} onChange={e => setTags(e.target.value)}
+                className="w-full rounded-xl border-border-light bg-white px-4 py-6 text-sm outline-none focus-visible:ring-primary-purple"
+                placeholder="zoho, c++, pointers"
               />
             </div>
+          </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase tracking-wider text-text-muted">Category</label>
-                <select
-                  value={category} onChange={e => setCategory(e.target.value)}
-                  className="w-full rounded-xl border border-border-light bg-white px-4 py-3 text-text-main outline-none transition-colors focus:border-primary-purple"
-                >
-                  <option value="survival_guide">Arrear Survival Guide</option>
-                  <option value="interview_exp">Interview Experience</option>
-                  <option value="project_arch">Project Architecture</option>
-                  <option value="general">General Knowledge</option>
-                </select>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold uppercase tracking-wider text-text-muted">Tags (comma separated)</label>
-                <input
-                  value={tags} onChange={e => setTags(e.target.value)}
-                  className="w-full rounded-xl border border-border-light bg-white px-4 py-3 text-text-main placeholder-text-muted outline-none transition-colors focus:border-primary-purple"
-                  placeholder="zoho, c++, pointers"
-                />
-              </div>
-            </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold uppercase tracking-wider text-text-muted">Knowledge Content</label>
+            <textarea
+              required value={content} onChange={e => setContent(e.target.value)}
+              className="h-40 w-full resize-none rounded-xl border border-border-light bg-white px-4 py-3 text-sm text-text-main placeholder-text-muted outline-none transition-colors focus:border-primary-purple shadow-sm"
+              placeholder="Write your experience, guide, or tutorial here..."
+            />
+          </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wider text-text-muted">Knowledge Content</label>
-              <textarea
-                required value={content} onChange={e => setContent(e.target.value)}
-                className="h-40 w-full resize-none rounded-xl border border-border-light bg-white px-4 py-3 text-text-main placeholder-text-muted outline-none transition-colors focus:border-primary-purple"
-                placeholder="Write your experience, guide, or tutorial here..."
-              />
-            </div>
-
-            <div className="flex justify-end gap-3 border-t border-border-light pt-4">
-              <button type="button" onClick={onClose} className="rounded-xl px-5 py-2.5 font-medium text-text-muted transition-colors hover:text-text-main">
-                Cancel
-              </button>
-              <button disabled={loading} type="submit" className="flex items-center gap-2 rounded-xl bg-primary-purple px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-deep-violet disabled:opacity-50">
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                {loading ? 'Submitting...' : 'Submit article'}
-              </button>
-            </div>
-          </form>
-        </motion.div>
-      </div>
-    </AnimatePresence>
+          <div className="flex justify-end gap-3 border-t border-border-light pt-4">
+            <Button type="button" variant="ghost" onClick={onClose} className="rounded-xl font-bold">
+              Cancel
+            </Button>
+            <Button disabled={loading} type="submit" className="rounded-xl bg-primary-purple px-5 py-2 text-sm font-bold text-white hover:bg-deep-violet">
+              {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
+              {loading ? 'Submitting...' : 'Submit article'}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

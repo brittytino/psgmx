@@ -8,6 +8,10 @@ import { Suspense } from "react";
 import { UIProvider } from "@/components/providers/ui-provider";
 import IOSInstallModal from "@/components/platform/IOSInstallModal";
 import DesktopOnlyRouteGuard from "@/components/platform/DesktopOnlyRouteGuard";
+import { Geist } from "next/font/google";
+import { cn } from "@/lib/utils";
+
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://psgmx.tech"),
@@ -40,7 +44,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={cn("font-sans", geist.variable)}>
       <body className="antialiased bg-page-bg text-text-main font-sans">
         <UIProvider>
           <Suspense fallback={null}>
