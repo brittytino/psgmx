@@ -365,6 +365,51 @@ class DailyFiveService {
     };
   }
 
+  /// Fetches the completed Daily Five session for today, including the questions,
+  /// the student's selected options, and the revealed correct options.
+  /// Powers the full Q&A review screen when the user revisits later in the day.
+  Future<DailyFiveSession?> fetchCompletedTodaysSession(String userId) async {
+    try {
+      final res = await _supabase
+          .rpc('get_daily_five_completed_review', params: {'p_user_id': userId});
+      if (res != null && res is Map) {
+        final qList = res['questions'] as List?;
+        if (qList != null && qList.isNotEmpty) {
+          final questions = <DailyFiveQuestion>[];
+          final selected = <int?>[];
+          for (final raw in qList) {
+            final m = Map<String, dynamic>.from(raw as Map);
+            final rawOptions = m['options'];
+            List<String> opts;
+            if (rawOptions is List) {
+              opts = rawOptions.map((e) => e.toString()).toList();
+            } else {
+              opts = ['A', 'B', 'C', 'D'];
+            }
+            questions.add(DailyFiveQuestion(
+              id: m['id'] as String,
+              questionText: m['question_text'] as String,
+              options: opts,
+              correctOption: m['correct_option'] as int?,
+              topic: m['topic'] as String? ?? 'GENERAL',
+              difficulty: m['difficulty'] as String? ?? 'medium',
+            ));
+            selected.add(m['selected_option'] as int?);
+          }
+          return DailyFiveSession(
+            questions: questions,
+            selectedAnswers: selected,
+            isComplete: true,
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('[DailyFiveService] fetchCompletedTodaysSession error: $e');
+    }
+    return null;
+  }
+
+
   /// Terminates the exam due to a proctoring violation.
   /// Marks the user as participated (0% accuracy) so they can't re-take it today,
   /// but forcefully resets their current streak to 0 as a penalty.

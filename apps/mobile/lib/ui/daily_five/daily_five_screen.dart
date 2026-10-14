@@ -46,7 +46,7 @@ class _DailyFiveScreenState extends State<DailyFiveScreen>
     final provider = context.read<DailyFiveProvider>();
     final user = context.read<UserProvider>().currentUser;
     if (user == null) return;
-    if (provider.session == null && !provider.completedToday) {
+    if (provider.session == null) {
       await provider.loadState(user.uid);
     }
     if (mounted) _startTimerForCurrentQuestion();
@@ -695,6 +695,210 @@ class _DailyFiveScreenState extends State<DailyFiveScreen>
                               ]),
                             ),
                             const SizedBox(height: 16),
+                          ],
+
+                          // ── Q&A Review Section ────────────────────────
+                          if (provider.session != null) ...[
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                'Review Your Answers',
+                                style: GoogleFonts.sora(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppTheme.headingText,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            ...List.generate(
+                              provider.session!.questions.length,
+                              (qIdx) {
+                                final q = provider.session!.questions[qIdx];
+                                final selected =
+                                    provider.session!.selectedAnswers[qIdx];
+                                final correct = q.correctOption;
+                                final optionLetters = ['A', 'B', 'C', 'D', 'E'];
+
+                                return Container(
+                                  margin: const EdgeInsets.only(bottom: 14),
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(16),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black
+                                            .withValues(alpha: 0.04),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      // Question number + topic
+                                      Row(children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 8, vertical: 3),
+                                          decoration: BoxDecoration(
+                                            color: AppTheme.accentCoral
+                                                .withValues(alpha: 0.1),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                          ),
+                                          child: Text(
+                                            'Q${qIdx + 1}',
+                                            style: GoogleFonts.sora(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.bold,
+                                              color: AppTheme.accentCoral,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            q.topic.toUpperCase(),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: GoogleFonts.inter(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w600,
+                                              color: AppTheme.mutedText,
+                                            ),
+                                          ),
+                                        ),
+                                      ]),
+                                      const SizedBox(height: 10),
+                                      // Question text
+                                      Text(
+                                        q.questionText,
+                                        style: GoogleFonts.inter(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w700,
+                                          height: 1.4,
+                                          color: AppTheme.headingText,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      // Options
+                                      ...List.generate(
+                                          q.options.length, (optIdx) {
+                                        final letter = optionLetters[optIdx];
+                                        final isSelected =
+                                            selected == optIdx;
+                                        final isCorrect =
+                                            correct != null &&
+                                                correct == optIdx;
+                                        final isWrong =
+                                            isSelected && !isCorrect;
+
+                                        Color bg = const Color(0xFFF8FAFC);
+                                        Color border =
+                                            const Color(0xFFE2E8F0);
+                                        Color textColor =
+                                            const Color(0xFF334155);
+
+                                        if (correct != null) {
+                                          if (isCorrect) {
+                                            bg = const Color(0xFFDCFCE7);
+                                            border = const Color(0xFF86EFAC);
+                                            textColor =
+                                                const Color(0xFF166534);
+                                          } else if (isWrong) {
+                                            bg = const Color(0xFFFEE2E2);
+                                            border = const Color(0xFFFCA5A5);
+                                            textColor =
+                                                const Color(0xFF991B1B);
+                                          }
+                                        } else if (isSelected) {
+                                          bg = AppTheme.accentCoral
+                                              .withValues(alpha: 0.08);
+                                          border = AppTheme.accentCoral
+                                              .withValues(alpha: 0.4);
+                                        }
+
+                                        return Container(
+                                          margin: const EdgeInsets.only(
+                                              bottom: 7),
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 12, vertical: 10),
+                                          decoration: BoxDecoration(
+                                            color: bg,
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                            border: Border.all(
+                                                color: border, width: 1.5),
+                                          ),
+                                          child: Row(children: [
+                                            Container(
+                                              width: 24,
+                                              height: 24,
+                                              decoration: BoxDecoration(
+                                                color: (isCorrect || isWrong)
+                                                    ? Colors.white
+                                                    : const Color(0xFFE2E8F0),
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: Center(
+                                                child: Text(
+                                                  letter,
+                                                  style: GoogleFonts.sora(
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: textColor,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 10),
+                                            Expanded(
+                                              child: Text(
+                                                q.options[optIdx],
+                                                style: GoogleFonts.inter(
+                                                  fontSize: 12,
+                                                  fontWeight: isSelected ||
+                                                          isCorrect
+                                                      ? FontWeight.w600
+                                                      : FontWeight.normal,
+                                                  color: textColor,
+                                                ),
+                                              ),
+                                            ),
+                                            if (isCorrect)
+                                              const Icon(
+                                                  LucideIcons.checkCircle,
+                                                  size: 16,
+                                                  color: Color(0xFF16A34A)),
+                                            if (isWrong)
+                                              const Icon(LucideIcons.xCircle,
+                                                  size: 16,
+                                                  color: Color(0xFFDC2626)),
+                                          ]),
+                                        );
+                                      }),
+                                      // Pending sync note
+                                      if (correct == null) ...[
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          'Correct answer will show after sync',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 10,
+                                            color: AppTheme.mutedText,
+                                            fontStyle: FontStyle.italic,
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 8),
                           ],
 
                           // Consistency Banner

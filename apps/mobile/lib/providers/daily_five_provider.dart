@@ -61,7 +61,8 @@ class DailyFiveProvider with ChangeNotifier, SafeChangeNotifier {
           _session = fallback;
         }
       } else {
-        _session = null; // Already done
+        // User already completed today's quiz — load full Q&A review
+        _session = await _service.fetchCompletedTodaysSession(userId);
       }
     } catch (e) {
       debugPrint('[DailyFiveProvider] loadState error: $e');

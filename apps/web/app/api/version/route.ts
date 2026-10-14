@@ -35,10 +35,10 @@ export async function GET() {
     if (!res.ok) {
       // Fallback version if GitHub API rate limit is reached
       return NextResponse.json({
-        latest_version: '5.0.0',
-        min_supported_version: '4.0.0',
+        latest_version: '5.1.0',
+        min_supported_version: '5.0.0',
         download_url: 'https://psgmx.tech/download',
-        release_notes: 'Regular performance and readiness tracking updates.',
+        release_notes: 'Daily 5 full Q&A review and 50+ unique company placement guides.',
         published_at: new Date().toISOString(),
       })
     }
@@ -48,12 +48,12 @@ export async function GET() {
       a.name.toLowerCase().endsWith('.apk')
     )
 
-    const rawTag = release.tag_name || 'v5.0.0'
+    const rawTag = release.tag_name || 'v5.1.0'
     const cleanVersion = rawTag.startsWith('v') ? rawTag.slice(1) : rawTag
 
     return NextResponse.json({
       latest_version: cleanVersion,
-      min_supported_version: '4.0.0', // Enforces minimum supported version
+      min_supported_version: '5.0.0', // Enforces minimum supported version
       download_url: apkAsset?.browser_download_url || 'https://psgmx.tech/download',
       release_name: release.name,
       release_notes: release.body || 'New features and readiness improvements.',
@@ -63,8 +63,8 @@ export async function GET() {
     console.error('Error fetching latest release version:', err)
     return NextResponse.json(
       {
-        latest_version: '5.0.0',
-        min_supported_version: '4.0.0',
+        latest_version: '5.1.0',
+        min_supported_version: '5.0.0',
         download_url: 'https://psgmx.tech/download',
         release_notes: 'Performance improvements and bug fixes.',
       },
