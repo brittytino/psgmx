@@ -229,7 +229,7 @@ class _InstallGuideBottomSheet extends StatelessWidget {
                       ),
                       child: ClipOval(
                         child: Image.asset(
-                          'assets/images/psgmx_logo_transparent.png',
+                          'assets/images/logo.png',
                           fit: BoxFit.cover,
                         ),
                       ),

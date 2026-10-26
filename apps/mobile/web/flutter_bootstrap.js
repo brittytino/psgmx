@@ -32,11 +32,8 @@
     serviceWorkerSettings: null,
     onEntrypointLoaded: async function (engineInitializer) {
       try {
-        // Enforce strict WebGL/CanvasKit overlay limits on mobile WebKit to
-        // prevent exceeding iOS Safari's GPU texture and memory quotas.
         var engineConfig = {
           useColorEmoji: true,
-          canvasKitMaximumSurfaces: isIOS ? 1 : 2,
           canvasKitVariant: 'auto',
         };
 
@@ -52,12 +49,11 @@
         await appRunner.runApp();
       } catch (err) {
         console.error('[PSGMX Engine Initialization Error]', err);
-        // Fallback: try basic single-surface CPU or minimal memory initialization
+        // Fallback: try basic CPU-only initialization if WebGL context failed
         if (engineInitializer && !window.__psgmx_fallback_attempted) {
           window.__psgmx_fallback_attempted = true;
           const fallbackRunner = await engineInitializer.initializeEngine({
-            canvasKitMaximumSurfaces: 1,
-            canvasKitForceCpuOnly: isIOS,
+            canvasKitForceCpuOnly: true,
           });
           await fallbackRunner.runApp();
         }
