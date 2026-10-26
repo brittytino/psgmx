@@ -175,6 +175,9 @@ class UpdateService extends ChangeNotifier {
   }
 
   UpdateStatus _determineUpdateStatus() {
+    if (kIsWeb) {
+      return UpdateStatus.upToDate;
+    }
     if (_config == null || _currentVersion == null) {
       return UpdateStatus.upToDate;
     }

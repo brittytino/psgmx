@@ -57,12 +57,19 @@ export async function provisionStaffAccount(member: StaffMember) {
     throw created.error ?? new Error(`Could not provision auth user for ${member.email}`)
   }
 
+  const { data: defaultBatch } = await supabaseAdmin
+    .from('batches')
+    .select('id')
+    .eq('status', 'active_senior')
+    .maybeSingle()
+
   if (existing) {
     const { error } = await supabaseAdmin.from('users').update({
       name: member.name,
       college_email: member.email,
       role_label: member.role,
       roles: STAFF_ROLES,
+      batch_id: defaultBatch?.id || undefined,
       onboarding_complete: true,
     }).eq('id', existing.id)
     if (error) throw error
@@ -76,6 +83,7 @@ export async function provisionStaffAccount(member: StaffMember) {
     name: member.name,
     reg_no: member.regNo,
     batch: 'G1',
+    batch_id: defaultBatch?.id || null,
     role_label: member.role,
     roles: STAFF_ROLES,
     onboarding_complete: true,
@@ -84,7 +92,8 @@ export async function provisionStaffAccount(member: StaffMember) {
 }
 
 export async function provisionStaffByEmail(email: string) {
-  const member = STAFF_ROSTER.find((row) => row.email === email)
+  const normalized = email.toLowerCase()
+  const member = STAFF_ROSTER.find((row) => row.email.toLowerCase() === normalized)
   if (!member) return
   await provisionStaffAccount(member)
 }

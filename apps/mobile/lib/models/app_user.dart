@@ -149,10 +149,8 @@ class AppUser {
 
   factory AppUser.fromMap(Map<String, dynamic> data) {
     var rolesData = data['roles'];
-    rolesData ??= const UserRoles().toJson();
-
-    final roles = rolesData is Map<String, dynamic>
-        ? UserRoles.fromJson(rolesData)
+    final roles = rolesData is Map
+        ? UserRoles.fromJson(Map<String, dynamic>.from(rolesData))
         : const UserRoles();
 
     // Parse permission flags if they were joined into the response
@@ -169,9 +167,9 @@ class AppUser {
     }
 
     return AppUser(
-      uid: data['id'] ?? '',
-      email: data['email'] ?? '',
-      regNo: data['reg_no'] ?? '',
+      uid: data['id']?.toString() ?? '',
+      email: data['email']?.toString() ?? '',
+      regNo: data['reg_no']?.toString() ?? '',
       name: data['name'] as String? ?? 'Unknown',
       avatarUrl: data['avatar_url'] as String?,
       gender: data['gender'] as String?,
@@ -184,10 +182,10 @@ class AppUser {
       isGraduatedBatch: data['batches']?['status'] == 'graduated',
       batchStatus: data['batches']?['status'] as String?,
       createdAt: data['created_at'] != null
-          ? DateTime.parse(data['created_at'])
+          ? DateTime.tryParse(data['created_at'].toString())
           : null,
       updatedAt: data['updated_at'] != null
-          ? DateTime.parse(data['updated_at'])
+          ? DateTime.tryParse(data['updated_at'].toString())
           : null,
       leetcodeUsername: data['leetcode_username'],
       githubUrl: data['github_url'] as String?,

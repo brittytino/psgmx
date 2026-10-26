@@ -28,6 +28,8 @@ const STAFF = [
   ['Mrs. Rajeswari N', 'nrj.mca@psgtech.ac.in', 'Faculty', 'FAC-NRJ'],
   ['Mr. Sundar C', 'csc.mca@psgtech.ac.in', 'Faculty', 'FAC-CSC'],
   ['Mr. Shankar S', 'sss.mca@psgtech.ac.in', 'Faculty', 'FAC-SSS'],
+  ['Test Account', 'brittytino08@gmail.com', 'HOD', 'FAC-TEST'],
+  ['Test Account', 'brittytinoo@gmail.com', 'HOD', 'FAC-TEST'],
 ]
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL

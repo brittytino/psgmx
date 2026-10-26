@@ -21,23 +21,30 @@
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 
   <title>PSGMX - Placement Readiness Companion</title>
   <link rel="manifest" href="manifest.json">
 
   <style>
-    body {
+    html, body {
       background-color: #FBF6EE;
       margin: 0;
       padding: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      width: 100%;
+      height: 100%;
       min-height: 100vh;
       min-height: 100dvh;
       color: #221F1A;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
     .loading-container {
       text-align: center;
@@ -67,6 +74,27 @@
   </div>
 
   <script>
+    // ── Standalone / PWA detection helper for iOS & all modern browsers ────────
+    window.isAppStandalone = function() {
+      try {
+        var isIosStandalone = Boolean(window.navigator && window.navigator.standalone === true);
+        var isMediaStandalone = Boolean(window.matchMedia && (
+          window.matchMedia('(display-mode: standalone)').matches ||
+          window.matchMedia('(display-mode: fullscreen)').matches ||
+          window.matchMedia('(display-mode: minimal-ui)').matches
+        ));
+        var hasPwaQuery = Boolean(
+          window.location && (
+            window.location.search.indexOf('source=pwa') !== -1 ||
+            window.location.search.indexOf('mode=standalone') !== -1
+          )
+        );
+        return isIosStandalone || isMediaStandalone || hasPwaQuery;
+      } catch (e) {
+        return false;
+      }
+    };
+
     // ── CanvasKit memory limits ─────────────────────────────────────────────
     // iOS Safari enforces a strict per-tab GPU/memory budget. These settings
     // reduce the number of concurrent CanvasKit surfaces and disable features

@@ -1,8 +1,8 @@
 {
     "name": "PSGMX",
     "short_name": "PSGMX",
-    "id": "/",
-    "start_url": "/",
+    "id": "/?source=pwa",
+    "start_url": "/?source=pwa",
     "scope": "/",
     "display": "standalone",
     "background_color": "#FFFBF7",

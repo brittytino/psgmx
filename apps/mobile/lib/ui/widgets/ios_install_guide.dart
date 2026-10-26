@@ -125,9 +125,17 @@ class _IOSInstallGuideState extends State<IOSInstallGuide> {
                     ],
                   ),
                 ),
-                Icon(
-                  Icons.chevron_right,
-                  color: Theme.of(context).colorScheme.primary,
+                IconButton(
+                  icon: Icon(
+                    Icons.close,
+                    size: 18,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurfaceVariant
+                        .withValues(alpha: 0.7),
+                  ),
+                  tooltip: 'Dismiss guide',
+                  onPressed: _dismissGuide,
                 ),
               ],
             ),
@@ -297,6 +305,7 @@ class _InstallGuideBottomSheet extends StatelessWidget {
                     FilledButton.icon(
                       onPressed: () {
                         Navigator.pop(context);
+                        onDismiss();
                       },
                       icon: const Icon(Icons.done),
                       label: const Text('Got it!'),

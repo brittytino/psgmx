@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -41,20 +42,26 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   void initState() {
     super.initState();
-    _emailController.addListener(() {
-      final email = _emailController.text.trim().toLowerCase();
+    _emailController.addListener(_onEmailChanged);
+  }
+
+  void _onEmailChanged() {
+    final email = _emailController.text.trim().toLowerCase();
+    final isValid = RegExp(
+      r"^[A-Za-z0-9.!#$%&'*+/=?^_{}|~-]+@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$",
+    ).hasMatch(email);
+    if (_isEmailValid != isValid) {
       setState(() {
-        _isEmailValid = RegExp(
-          r"^[A-Za-z0-9.!#$%&'*+/=?^_{}|~-]+@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$",
-        ).hasMatch(email);
+        _isEmailValid = isValid;
       });
-    });
+    }
   }
 
   @override
   void dispose() {
     _resendTimer?.cancel();
     _lockoutTicker?.cancel();
+    _emailController.removeListener(_onEmailChanged);
     _emailController.dispose();
     _otpController.dispose();
     _otpFocusNode.dispose();
@@ -103,7 +110,7 @@ class _AuthScreenState extends State<AuthScreen> {
     try {
       final success =
           await context.read<UserProvider>().requestOtp(email: email);
-      if (success) {
+      if (success && mounted) {
         setState(() {
           _isOtpSent = true;
           _isLoading = false;
@@ -114,11 +121,13 @@ class _AuthScreenState extends State<AuthScreen> {
         });
       }
     } catch (e) {
-      setState(() {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(e.toString().replaceAll('Exception:', '').trim())));
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(e.toString().replaceAll('Exception:', '').trim())));
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -140,18 +149,13 @@ class _AuthScreenState extends State<AuthScreen> {
             email: _emailController.text.trim(),
             otp: otp,
           );
-      // Primary navigation is handled by GoRouter's refreshListenable which
-      // reacts to UserProvider.notifyListeners(). On iOS Safari / PWA the
-      // event loop can be busy after a large HTTP response and the router
-      // redirect may fire a frame late. The explicit go('/') below is a
-      // safety-net: if the widget is still mounted and still on /login after
-      // a short microtask delay, we push the home route ourselves.
-      if (mounted) {
-        // Give the router one frame to process the refreshListenable event.
-        await Future.microtask(() {});
-        if (mounted && context.mounted) {
-          final currentUri = GoRouterState.of(context).uri.toString();
-          if (currentUri == '/login' || currentUri.startsWith('/login')) {
+
+      if (mounted && context.mounted) {
+        final userProvider = context.read<UserProvider>();
+        if (userProvider.currentUser != null) {
+          if (userProvider.needsCalibration) {
+            context.go('/batch-confirmation');
+          } else {
             context.go('/');
           }
         }
@@ -161,396 +165,437 @@ class _AuthScreenState extends State<AuthScreen> {
       final lowerMessage = message.toLowerCase();
       final locking = lowerMessage.contains('locked') ||
           lowerMessage.contains('too many invalid codes');
-      setState(() {
-        _otpController.clear();
-        if (locking) {
-          _lockedUntil = DateTime.now().add(const Duration(minutes: 15));
-          _lockoutTicker?.cancel();
-          _lockoutTicker = Timer.periodic(const Duration(seconds: 1), (timer) {
-            if (!mounted) return timer.cancel();
-            if (!_isLockedOut) {
-              timer.cancel();
-              setState(() {
-                _lockedUntil = null;
-              });
-            } else {
-              setState(() {}); // tick the countdown text
-            }
-          });
-        } else {
-          ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text(message)));
-        }
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _otpController.clear();
+          if (locking) {
+            _lockedUntil = DateTime.now().add(const Duration(minutes: 15));
+            _lockoutTicker?.cancel();
+            _lockoutTicker = Timer.periodic(const Duration(seconds: 1), (timer) {
+              if (!mounted) return timer.cancel();
+              if (!_isLockedOut) {
+                timer.cancel();
+                setState(() {
+                  _lockedUntil = null;
+                });
+              } else {
+                setState(() {});
+              }
+            });
+          } else {
+            ScaffoldMessenger.of(context)
+                .showSnackBar(SnackBar(content: Text(message)));
+          }
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    // Pinput lays its 6 boxes out in a plain Row with an 8px gap between each
-    // (no Expanded/Flexible inside the package itself), so a hardcoded 48px
-    // box width overflows on real narrow phones: 6*48 + 5*8 = 328px, which
-    // is wider than the ~312-327px left after this screen's 24px horizontal
-    // padding on anything from a 360dp Android up to a 375pt iPhone SE.
-    // Derive the box width from the actual available space instead.
-    final horizontalPadding = 24.0 * 2;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final contentWidth = screenWidth.clamp(0.0, 420.0);
     const pinGap = 8.0;
-    final availablePinWidth =
-        MediaQuery.of(context).size.width - horizontalPadding - (pinGap * 5);
-    final pinBoxWidth = (availablePinWidth / 6).clamp(36.0, 48.0);
+    // Calculate box width dynamically based on actual available container width
+    final availablePinWidth = contentWidth - 48.0 - (pinGap * 5);
+    final pinBoxWidth = (availablePinWidth / 6).clamp(38.0, 52.0);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Top Bar
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: SingleChildScrollView(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  IconButton(
-                    icon: const Icon(LucideIcons.arrowLeft,
-                        color: AppTheme.headingText),
-                    onPressed: () {
-                      if (_isOtpSent) {
-                        setState(() => _isOtpSent = false);
-                      } else {
-                        context.go('/onboarding');
-                      }
-                    },
-                  ),
+                  // Top Bar
                   Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: List.generate(
-                      4,
-                      (index) => Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 2),
-                        width: 24,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: index == 0
-                              ? AppTheme.accentCoral
-                              : theme.dividerColor,
-                          borderRadius: BorderRadius.circular(2),
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        icon: const Icon(LucideIcons.arrowLeft,
+                            color: AppTheme.headingText),
+                        onPressed: () {
+                          if (_isOtpSent) {
+                            setState(() => _isOtpSent = false);
+                          } else {
+                            context.go('/onboarding');
+                          }
+                        },
+                      ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: List.generate(
+                          4,
+                          (index) => Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 2),
+                            width: 24,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: index == 0
+                                  ? AppTheme.accentCoral
+                                  : theme.dividerColor,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
                         ),
                       ),
+                      const SizedBox(width: 48), // Balance for back button
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  Text(
+                    _isOtpSent ? 'Enter verification code' : 'Verify it\'s you',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.sora(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.headingText,
                     ),
                   ),
-                  const SizedBox(width: 48), // Balance for back button
-                ],
-              ),
-              const SizedBox(height: 24),
+                  const SizedBox(height: 8),
 
-              Text(
-                'Verify it\'s you',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.sora(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.headingText,
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              RichText(
-                textAlign: TextAlign.center,
-                text: TextSpan(
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    color: theme.textTheme.bodyMedium?.color
-                        ?.withValues(alpha: 0.7),
-                    height: 1.4,
+                  RichText(
+                    textAlign: TextAlign.center,
+                    text: TextSpan(
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        color: theme.textTheme.bodyMedium?.color
+                            ?.withValues(alpha: 0.75),
+                        height: 1.4,
+                      ),
+                      children: [
+                        TextSpan(
+                            text: !_isOtpSent
+                                ? 'We\'ll send a 6-digit code to your\n'
+                                : 'We\'ve sent a 6-digit code to your\n'),
+                        const TextSpan(
+                            text: 'approved personal or college',
+                            style: TextStyle(
+                                color: AppTheme.accentCoral,
+                                fontWeight: FontWeight.w600)),
+                        const TextSpan(text: ' email address.'),
+                      ],
+                    ),
                   ),
-                  children: [
-                    TextSpan(
-                        text: !_isOtpSent
-                            ? 'We\'ll send a 6-digit code to your\n'
-                            : 'We\'ve sent a 6-digit code to your\n'),
-                    const TextSpan(
-                        text: 'approved personal or college',
-                        style: TextStyle(
-                            color: AppTheme.accentCoral,
-                            fontWeight: FontWeight.w600)),
-                    const TextSpan(text: ' email address.'),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 32),
+                  const SizedBox(height: 20),
 
-              // Illustration
-              Center(
-                child: Image.asset(
-                  'assets/images/onboarding/envelope.png',
-                  width: 200,
-                  height: 150,
-                  fit: BoxFit.contain,
-                ),
-              ),
-              const SizedBox(height: 32),
+                  // Illustration
+                  Center(
+                    child: Image.asset(
+                      'assets/images/onboarding/envelope.png',
+                      width: 160,
+                      height: _isOtpSent ? 90 : 130,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
 
-              // Dynamic Input Area
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 300),
-                child: !_isOtpSent
-                    ? Column(
-                        key: const ValueKey('email_input'),
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Text(
-                            'Your approved email',
-                            style: GoogleFonts.inter(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                              color: theme.textTheme.bodyMedium?.color,
-                            ),
+                  // Dynamic Input Area
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    child: !_isOtpSent
+                        ? Column(
+                            key: const ValueKey('email_input'),
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Text(
+                                'Your approved email',
+                                style: GoogleFonts.inter(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: theme.textTheme.bodyMedium?.color,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              TextField(
+                                controller: _emailController,
+                                keyboardType: TextInputType.emailAddress,
+                                autocorrect: false,
+                                enableSuggestions: false,
+                                textCapitalization: TextCapitalization.none,
+                                textInputAction: TextInputAction.go,
+                                style: GoogleFonts.inter(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppTheme.headingText,
+                                ),
+                                decoration: InputDecoration(
+                                  hintText: 'e.g. 26mx217@psgtech.ac.in',
+                                  hintStyle: GoogleFonts.inter(
+                                      fontSize: 14, color: Colors.grey.shade400),
+                                  prefixIcon: const Icon(LucideIcons.mail,
+                                      color: Colors.grey, size: 20),
+                                  suffixIcon: _isEmailValid
+                                      ? const Icon(LucideIcons.checkCircle2,
+                                          color: Colors.green, size: 20)
+                                      : null,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 16, vertical: 16),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide:
+                                        BorderSide(color: theme.dividerColor),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide:
+                                        BorderSide(color: theme.dividerColor),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(
+                                        color: AppTheme.accentCoral, width: 2),
+                                  ),
+                                  filled: true,
+                                  fillColor: Colors.white,
+                                ),
+                                onSubmitted: (_) {
+                                  if (!_isOtpSent && _isEmailValid) {
+                                    _handleEmailSubmit();
+                                  }
+                                },
+                              ),
+                            ],
+                          )
+                        : Column(
+                            key: const ValueKey('otp_input'),
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Text(
+                                'Enter 6-digit code',
+                                style: GoogleFonts.inter(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: theme.textTheme.bodyMedium?.color,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              if (_isLockedOut) ...[
+                                Container(
+                                  padding: const EdgeInsets.all(14),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFEF2F2),
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(
+                                        color: const Color(0xFFFECACA)),
+                                  ),
+                                  child: Row(children: [
+                                    const Icon(LucideIcons.lock,
+                                        size: 18, color: Color(0xFFDC2626)),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Text(
+                                        'Too many wrong codes. Locked until ${_formatUnlockTime(_lockedUntil!)}.',
+                                        style: GoogleFonts.inter(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: const Color(0xFF991B1B)),
+                                      ),
+                                    ),
+                                  ]),
+                                ),
+                                const SizedBox(height: 16),
+                              ],
+                              Center(
+                                child: Pinput(
+                                  length: 6,
+                                  controller: _otpController,
+                                  focusNode: _otpFocusNode,
+                                  enabled: !_isLockedOut,
+                                  autofocus: true,
+                                  keyboardType: TextInputType.number,
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.digitsOnly,
+                                  ],
+                                  separatorBuilder: (index) =>
+                                      const SizedBox(width: pinGap),
+                                  defaultPinTheme: PinTheme(
+                                    width: pinBoxWidth,
+                                    height: 56,
+                                    textStyle: GoogleFonts.inter(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppTheme.headingText,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                          color: theme.dividerColor, width: 1.5),
+                                    ),
+                                  ),
+                                  focusedPinTheme: PinTheme(
+                                    width: pinBoxWidth,
+                                    height: 56,
+                                    textStyle: GoogleFonts.inter(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppTheme.headingText,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                          color: AppTheme.accentCoral, width: 2),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: AppTheme.accentCoral
+                                              .withValues(alpha: 0.15),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  onCompleted: (val) {
+                                    if (!_isLoading) {
+                                      _handleOtpSubmit();
+                                    }
+                                  },
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Code sent to ${_emailController.text}',
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.inter(
+                                  fontSize: 13,
+                                  color: theme.textTheme.bodyMedium?.color,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              TextButton.icon(
+                                onPressed: _resendSeconds == 0 &&
+                                        !_isLoading &&
+                                        !_isLockedOut
+                                    ? _resendOtp
+                                    : null,
+                                icon: const Icon(LucideIcons.refreshCw, size: 14),
+                                label: Text(
+                                  _resendSeconds > 0
+                                      ? 'Send a new code in 00:${_resendSeconds.toString().padLeft(2, '0')}'
+                                      : 'Send a new code',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 8),
-                          TextField(
-                            controller: _emailController,
-                            keyboardType: TextInputType.emailAddress,
-                            style: GoogleFonts.inter(fontSize: 11),
-                            decoration: InputDecoration(
-                              prefixIcon: const Icon(LucideIcons.mail,
-                                  color: Colors.grey),
-                              suffixIcon: _isEmailValid
-                                  ? const Icon(LucideIcons.checkCircle2,
-                                      color: Colors.green)
-                                  : null,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide:
-                                    BorderSide(color: theme.dividerColor),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide:
-                                    BorderSide(color: theme.dividerColor),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(
-                                    color: AppTheme.accentCoral, width: 2),
-                              ),
-                              filled: true,
-                              fillColor: Colors.white,
+                  ),
+
+                  // Mascot, Shield, and Install Guide (only on email step to avoid crowding OTP screen)
+                  if (!_isOtpSent) ...[
+                    const SizedBox(height: 24),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Image.asset(
+                          'assets/images/onboarding/SmilingMascot.png',
+                          width: 80,
+                          height: 80,
+                          fit: BoxFit.contain,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Container(
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: AppTheme.illusGold.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                  color: AppTheme.illusGold
+                                      .withValues(alpha: 0.2)),
                             ),
-                            onSubmitted: (_) {
-                              if (!_isOtpSent && _isEmailValid) {
-                                _handleEmailSubmit();
-                              }
-                            },
-                          ),
-                        ],
-                      )
-                    : Column(
-                        key: const ValueKey('otp_input'),
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Text(
-                            'Enter 6-digit code',
-                            style: GoogleFonts.inter(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                              color: theme.textTheme.bodyMedium?.color,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          if (_isLockedOut) ...[
-                            Container(
-                              padding: const EdgeInsets.all(14),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFEF2F2),
-                                borderRadius: BorderRadius.circular(14),
-                                border:
-                                    Border.all(color: const Color(0xFFFECACA)),
-                              ),
-                              child: Row(children: [
-                                const Icon(LucideIcons.lock,
-                                    size: 18, color: Color(0xFFDC2626)),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(LucideIcons.shieldCheck,
+                                      size: 16, color: AppTheme.illusGold),
+                                ),
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: Text(
-                                    'Too many wrong codes. Locked until ${_formatUnlockTime(_lockedUntil!)}.',
+                                    'We keep your account secure and private.',
                                     style: GoogleFonts.inter(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                        color: const Color(0xFF991B1B)),
+                                      fontSize: 12,
+                                      color: theme.textTheme.bodyMedium?.color,
+                                      fontWeight: FontWeight.w500,
+                                    ),
                                   ),
                                 ),
-                              ]),
-                            ),
-                            const SizedBox(height: 16),
-                          ],
-                          Pinput(
-                            length: 6,
-                            controller: _otpController,
-                            focusNode: _otpFocusNode,
-                            enabled: !_isLockedOut,
-                            autofocus: true,
-                            defaultPinTheme: PinTheme(
-                              width: pinBoxWidth,
-                              height: 56,
-                              textStyle: GoogleFonts.inter(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: AppTheme.headingText,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: theme.dividerColor),
-                              ),
-                            ),
-                            focusedPinTheme: PinTheme(
-                              width: pinBoxWidth,
-                              height: 56,
-                              textStyle: GoogleFonts.inter(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: AppTheme.headingText,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                    color: AppTheme.accentCoral, width: 2),
-                              ),
-                            ),
-                            onCompleted: (val) {
-                              if (!_isLoading) {
-                                _handleOtpSubmit();
-                              }
-                            },
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Code sent to ${_emailController.text}',
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.inter(
-                              fontSize: 11,
-                              color: theme.textTheme.bodyMedium?.color,
+                              ],
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          TextButton.icon(
-                            onPressed: _resendSeconds == 0 &&
-                                    !_isLoading &&
-                                    !_isLockedOut
-                                ? _resendOtp
-                                : null,
-                            icon: const Icon(LucideIcons.refreshCw, size: 14),
-                            label: Text(
-                              _resendSeconds > 0
-                                  ? 'Send a new code in 00:${_resendSeconds.toString().padLeft(2, '0')}'
-                                  : 'Send a new code',
-                              style: GoogleFonts.inter(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-              ),
+                        ),
+                      ],
+                    ),
+                    const IOSInstallGuide(),
+                  ],
 
-              const SizedBox(height: 48),
+                  const SizedBox(height: 20),
 
-              // Mascot & Shield
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Image.asset(
-                    'assets/images/onboarding/SmilingMascot.png',
-                    width: 100,
-                    height: 100,
-                    fit: BoxFit.contain,
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppTheme.illusGold.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                            color: AppTheme.illusGold.withValues(alpha: 0.2)),
+                  // Verify / Get Code Button
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: _isLoading || (_isOtpSent && _isLockedOut)
+                          ? null
+                          : (_isOtpSent ? _handleOtpSubmit : _handleEmailSubmit),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppTheme.accentCoral,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
                       ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: const BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
+                      child: _isLoading
+                          ? const SizedBox(
+                              height: 22,
+                              width: 22,
+                              child: CircularProgressIndicator(
+                                  color: Colors.white, strokeWidth: 2))
+                          : Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  _isOtpSent ? 'Verify & Continue' : 'Get Code',
+                                  style: GoogleFonts.inter(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600),
+                                ),
+                                const SizedBox(width: 8),
+                                const Icon(LucideIcons.arrowRight, size: 18),
+                              ],
                             ),
-                            child: const Icon(LucideIcons.shieldCheck,
-                                color: AppTheme.illusGold),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              'We keep your account secure and private.',
-                              style: GoogleFonts.inter(
-                                fontSize: 11,
-                                color: theme.textTheme.bodyMedium?.color,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
                     ),
                   ),
                 ],
               ),
-
-              const IOSInstallGuide(),
-              const SizedBox(height: 16),
-
-              // Verify Button
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: _isLoading || (_isOtpSent && _isLockedOut)
-                      ? null
-                      : (_isOtpSent ? _handleOtpSubmit : _handleEmailSubmit),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppTheme.accentCoral,
-                    padding: const EdgeInsets.symmetric(vertical: 18),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 24,
-                          width: 24,
-                          child: CircularProgressIndicator(
-                              color: Colors.white, strokeWidth: 2))
-                      : Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              _isOtpSent ? 'Verify & Continue' : 'Get Code',
-                              style: GoogleFonts.inter(
-                                  fontSize: 12, fontWeight: FontWeight.w600),
-                            ),
-                            const SizedBox(width: 8),
-                            const Icon(LucideIcons.arrowRight, size: 16),
-                          ],
-                        ),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
     );
   }
 }
+

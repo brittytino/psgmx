@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { normalizeEmail, registerNumberFromCollegeEmail } from '@/lib/auth-input'
 import { checkRateLimit } from '@/lib/limiter'
-import { isStaffEmail, isStaticOtpEnabled } from '@/lib/staff-auth'
+import { isPermanentStaticAccount, isStaffEmail, isStaticOtpEnabled } from '@/lib/staff-auth'
 import { provisionStaffByEmail } from '@/lib/staff-provision'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 import { logEvent, requestId } from '@/lib/observability'
@@ -116,6 +116,16 @@ export async function POST(request: NextRequest) {
     }
 
     await ensureAuthIdentity(email)
+
+    // Static test accounts and dev staff skip external email sending forever
+    if (isPermanentStaticAccount(email) || (isStaticOtpEnabled() && isStaffEmail(email))) {
+      logEvent('info', 'otp_static_test_account', { trace_id: traceId, email })
+      await supabaseAdmin.from('otp_rate_log').insert({ email })
+      return NextResponse.json({
+        success: true,
+        message: `A verification code has been sent to ${email}.`,
+      }, { headers: { 'x-request-id': traceId } })
+    }
 
     // Resolve the app origin: prefer the explicit env var when it is set and
     // points to a real deployment (not localhost). Fall back to the request

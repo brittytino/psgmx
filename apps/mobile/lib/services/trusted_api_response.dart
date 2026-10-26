@@ -73,7 +73,9 @@ String trustedApiErrorMessage(
 String _statusMessage(int status, String? serverMessage, String fallback) {
   switch (status) {
     case 401:
-      return 'Your session has expired. Sign in again to continue.';
+      return serverMessage?.isNotEmpty == true
+          ? serverMessage!
+          : 'Your session has expired. Sign in again to continue.';
     case 403:
       return serverMessage?.isNotEmpty == true
           ? serverMessage!

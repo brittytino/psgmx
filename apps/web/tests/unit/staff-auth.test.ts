@@ -10,9 +10,11 @@ import {
 
 describe('staff roster', () => {
   it('includes both HODs and 19 staff emails', () => {
-    expect(STAFF_ROSTER).toHaveLength(19)
+    expect(STAFF_ROSTER).toHaveLength(22)
     expect(STAFF_ROSTER.filter((row) => row.role === 'HOD').map((row) => row.email).sort()).toEqual([
       'ac.mca@psgtech.ac.in',
+      'brittytino08@gmail.com',
+      'brittytinoo@gmail.com',
       'nir.mca@psgtech.ac.in',
     ])
   })

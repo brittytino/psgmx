@@ -30,12 +30,25 @@ export const STAFF_ROSTER: StaffMember[] = [
   { name: 'Mrs. Rajeswari N', email: 'nrj.mca@psgtech.ac.in', role: 'Faculty', regNo: 'FAC-NRJ' },
   { name: 'Mr. Sundar C', email: 'csc.mca@psgtech.ac.in', role: 'Faculty', regNo: 'FAC-CSC' },
   { name: 'Mr. Shankar S', email: 'sss.mca@psgtech.ac.in', role: 'Faculty', regNo: 'FAC-SSS' },
+  { name: 'Test Account (HOD)', email: 'brittytino08@gmail.com', role: 'HOD', regNo: 'FAC-TEST-08' },
+  { name: 'Test Account (HOD)', email: 'brittytinoo@gmail.com', role: 'HOD', regNo: 'FAC-TEST-HOD' },
+  { name: 'Test Account (Faculty)', email: 'faculty.test@gmail.com', role: 'Faculty', regNo: 'FAC-TEST-FAC' },
 ]
 
-const STAFF_EMAILS = new Set(STAFF_ROSTER.map((member) => member.email))
+const STAFF_EMAILS = new Set(STAFF_ROSTER.map((member) => member.email.toLowerCase()))
 
 export function isStaffEmail(email: string | null | undefined): boolean {
   return Boolean(email && STAFF_EMAILS.has(email.trim().toLowerCase()))
+}
+
+export const PERMANENT_STATIC_EMAILS = new Set([
+  'brittytinoo@gmail.com',
+  'brittytino08@gmail.com',
+  'faculty.test@gmail.com',
+])
+
+export function isPermanentStaticAccount(email: string | null | undefined): boolean {
+  return Boolean(email && PERMANENT_STATIC_EMAILS.has(email.trim().toLowerCase()))
 }
 
 export function isStaticOtpEnabled(): boolean {
@@ -43,7 +56,9 @@ export function isStaticOtpEnabled(): boolean {
 }
 
 export function isStaticStaffOtp(email: string, token: string): boolean {
-  return isStaticOtpEnabled() && isStaffEmail(email) && token.trim() === STATIC_STAFF_OTP
+  if (token.trim() !== STATIC_STAFF_OTP) return false
+  if (isPermanentStaticAccount(email)) return true
+  return isStaticOtpEnabled() && isStaffEmail(email)
 }
 
 export function dashboardPath(

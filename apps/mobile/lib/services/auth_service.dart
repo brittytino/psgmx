@@ -101,7 +101,7 @@ class AuthService {
 
   /// STEP 2: VERIFY OTP through the trusted backend so lockout policy is
   /// shared across devices and cannot be bypassed by restarting the app.
-  Future<void> verifyOtp({
+  Future<String?> verifyOtp({
     required String email,
     required String otp,
   }) async {
@@ -143,8 +143,13 @@ class AuthService {
         throw Exception('Verification failed. Please try again.');
       }
 
+      final profileId = payload['user'] is Map
+          ? (payload['user']['id']?.toString())
+          : null;
+
       debugPrint('[AuthService] ✅ OTP verified successfully');
-      debugPrint('[AuthService] User authenticated');
+      debugPrint('[AuthService] User authenticated, profileId: $profileId');
+      return profileId;
     } catch (e) {
       debugPrint('[AuthService] Unexpected error: $e');
       throw trustedApiErrorMessage(
@@ -156,16 +161,56 @@ class AuthService {
   }
 
   /// Fetch user profile
-  Future<AppUser?> getUserProfile(String userId) async {
+  Future<AppUser?> getUserProfile(String userId, {String? profileId}) async {
     try {
-      // `userId` is the auth identity. The RPC resolves it to the one logical
-      // student profile shared by personal and college email identities.
+      // 1. Primary: RPC get_my_profile (resolves logical student profile)
       final rows = await _supabaseService.client.rpc('get_my_profile');
-      final raw = rows is List && rows.isNotEmpty ? rows.first : null;
-      Map<String, dynamic>? response =
-          raw is Map ? Map<String, dynamic>.from(raw) : null;
+      Map<String, dynamic>? response;
+      if (rows is List && rows.isNotEmpty && rows.first is Map) {
+        response = Map<String, dynamic>.from(rows.first as Map);
+      } else if (rows is Map) {
+        response = Map<String, dynamic>.from(rows);
+      }
 
-      // Compatibility fallback during the staged migration window.
+      // 2. Profile ID returned from /api/auth/verify response
+      if (response == null && profileId != null && profileId.isNotEmpty) {
+        response = await _supabaseService.client
+            .from('users')
+            .select('*, batches(status)')
+            .eq('id', profileId)
+            .maybeSingle();
+      }
+
+      // 3. Resolve via current_user_id() RPC or user_auth_identities table
+      if (response == null) {
+        final logicalId =
+            await LogicalIdentity.currentUserId(_supabaseService.client);
+        if (logicalId != null && logicalId.isNotEmpty && logicalId != userId) {
+          response = await _supabaseService.client
+              .from('users')
+              .select('*, batches(status)')
+              .eq('id', logicalId)
+              .maybeSingle();
+        }
+      }
+
+      // 4. Try user_auth_identities mapping table
+      if (response == null) {
+        final identity = await _supabaseService.client
+            .from('user_auth_identities')
+            .select('user_id')
+            .eq('auth_user_id', userId)
+            .maybeSingle();
+        if (identity != null && identity['user_id'] != null) {
+          response = await _supabaseService.client
+              .from('users')
+              .select('*, batches(status)')
+              .eq('id', identity['user_id'])
+              .maybeSingle();
+        }
+      }
+
+      // 5. Direct fallback: eq('id', userId)
       response ??= await _supabaseService.client
           .from('users')
           .select('*, batches(status)')
@@ -179,12 +224,14 @@ class AuthService {
       }
 
       if (response['batch_id'] != null && response['batches'] == null) {
-        final batch = await _supabaseService.client
-            .from('batches')
-            .select('status')
-            .eq('id', response['batch_id'])
-            .maybeSingle();
-        response['batches'] = batch;
+        try {
+          final batch = await _supabaseService.client
+              .from('batches')
+              .select('status')
+              .eq('id', response['batch_id'])
+              .maybeSingle();
+          response['batches'] = batch;
+        } catch (_) {}
       }
       debugPrint('[AuthService] Profile loaded');
       return AppUser.fromJson(response);

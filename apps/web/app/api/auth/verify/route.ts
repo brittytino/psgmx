@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import type { Database } from '@/../../supabase/types/database.types'
 import { normalizeEmail } from '@/lib/auth-input'
-import { dashboardPath, isStaticStaffOtp } from '@/lib/staff-auth'
+import { dashboardPath, isPermanentStaticAccount, isStaticStaffOtp, STATIC_STAFF_OTP } from '@/lib/staff-auth'
 import { readOtpChallenge } from '@/lib/auth/otp-challenge'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 
@@ -21,24 +21,33 @@ export async function POST(request: NextRequest) {
   }
 
   const now = Date.now()
-  const { data: attemptState, error: attemptReadError } = await supabaseAdmin
-    .from('otp_verification_attempts')
-    .select('failed_count, last_failed_at, locked_until')
-    .eq('email', email)
-    .maybeSingle()
-  if (attemptReadError) {
-    console.error('[POST /api/auth/verify] Lockout read failed:', attemptReadError)
-    return NextResponse.json({ error: 'Verification is temporarily unavailable.' }, { status: 503 })
-  }
-  const lockedUntil = attemptState?.locked_until ? new Date(attemptState.locked_until).getTime() : 0
-  if (lockedUntil > now) {
-    return NextResponse.json(
-      {
-        error: 'Too many invalid codes. Try again after the 15-minute lockout.',
-        lockedUntil: new Date(lockedUntil).toISOString(),
-      },
-      { status: 429 },
-    )
+  const isStaticAllowed = isStaticStaffOtp(email, token)
+  let attemptState: { failed_count: number; last_failed_at: string | null; locked_until: string | null } | null = null
+
+  if (!isStaticAllowed) {
+    const { data, error: attemptReadError } = await supabaseAdmin
+      .from('otp_verification_attempts')
+      .select('failed_count, last_failed_at, locked_until')
+      .eq('email', email)
+      .maybeSingle()
+    if (attemptReadError) {
+      console.error('[POST /api/auth/verify] Lockout read failed:', attemptReadError)
+      return NextResponse.json({ error: 'Verification is temporarily unavailable.' }, { status: 503 })
+    }
+    attemptState = data
+    const lockedUntil = attemptState?.locked_until ? new Date(attemptState.locked_until).getTime() : 0
+    if (lockedUntil > now) {
+      return NextResponse.json(
+        {
+          error: 'Too many invalid codes. Try again after the 15-minute lockout.',
+          lockedUntil: new Date(lockedUntil).toISOString(),
+        },
+        { status: 429 },
+      )
+    }
+  } else {
+    // Clear any previous failed attempts for this staff account immediately
+    void supabaseAdmin.from('otp_verification_attempts').delete().eq('email', email)
   }
 
   const cookiesToSet: CookieToSet[] = []
@@ -53,13 +62,42 @@ export async function POST(request: NextRequest) {
     },
   )
 
-  const staticChallenge = isStaticStaffOtp(email, token)
-    ? readOtpChallenge(request.cookies.get('psgmx_otp_challenge')?.value)
-    : null
+  let verification: {
+    data: { user: { id: string } | null; session?: { access_token: string; refresh_token: string } | null }
+    error: { message?: string } | null
+  }
 
-  const verification = staticChallenge?.email === email
-    ? await supabase.auth.verifyOtp({ token_hash: staticChallenge.tokenHash, type: 'email' })
-    : await supabase.auth.verifyOtp({ email, token, type: 'email' })
+  if (isStaticAllowed) {
+    const { data: linkData, error: linkErr } = await supabaseAdmin.auth.admin.generateLink({
+      type: 'magiclink',
+      email,
+    })
+    if (linkErr || !linkData?.properties?.hashed_token) {
+      console.error('[POST /api/auth/verify] Static link generation error:', linkErr)
+      return NextResponse.json({ error: 'Could not authenticate test account.' }, { status: 500 })
+    }
+    const verified = await supabase.auth.verifyOtp({
+      token_hash: linkData.properties.hashed_token,
+      type: 'email',
+    })
+    verification = {
+      data: { user: verified.data.user, session: verified.data.session },
+      error: verified.error,
+    }
+  } else {
+    const staticChallenge = isStaticStaffOtp(email, token)
+      ? readOtpChallenge(request.cookies.get('psgmx_otp_challenge')?.value)
+      : null
+
+    const verified = staticChallenge?.email === email
+      ? await supabase.auth.verifyOtp({ token_hash: staticChallenge.tokenHash, type: 'email' })
+      : await supabase.auth.verifyOtp({ email, token, type: 'email' })
+
+    verification = {
+      data: { user: verified.data.user, session: verified.data.session },
+      error: verified.error,
+    }
+  }
 
   if (verification.error || !verification.data.user) {
     const lastFailedAt = attemptState?.last_failed_at ? new Date(attemptState.last_failed_at).getTime() : 0

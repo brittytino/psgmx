@@ -139,8 +139,8 @@ class UserProvider with ChangeNotifier, SafeChangeNotifier {
   ///
   /// If the user has no [batchId] yet (first login), parses the batch from
   /// their roll number and assigns it automatically.
-  Future<AppUser?> _loadFullProfile(String userId) async {
-    AppUser? user = await _authService.getUserProfile(userId);
+  Future<AppUser?> _loadFullProfile(String userId, {String? profileId}) async {
+    AppUser? user = await _authService.getUserProfile(userId, profileId: profileId);
     if (user == null) return null;
 
     // Auto-assign batch on first login (batchId is null)
@@ -294,18 +294,28 @@ class UserProvider with ChangeNotifier, SafeChangeNotifier {
     required String otp,
   }) async {
     try {
-      await _authService.verifyOtp(email: email, otp: otp);
+      _isLoading = true;
+      notifyListeners();
+
+      final profileId = await _authService.verifyOtp(email: email, otp: otp);
       final supabaseUser = _authService.currentUser;
-      if (supabaseUser != null && _currentUser == null) {
-        _currentUser = await _loadFullProfile(supabaseUser.id);
+      if (supabaseUser != null) {
+        _currentUser = await _loadFullProfile(supabaseUser.id, profileId: profileId);
         if (_currentUser != null) {
           await _checkSpecialStates();
           _scheduleBirthdayNotificationIfNeeded();
+        } else {
+          throw Exception(
+              'Could not load your profile. Please check your connection and try again.');
         }
+      } else {
+        throw Exception('Authentication failed. Please try again.');
       }
-      notifyListeners();
     } catch (e) {
       rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
   }
 
