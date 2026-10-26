@@ -32,7 +32,7 @@ function parseEvaluation(text: string) {
   }
 }
 
-import { spawnSync } from 'node:child_process'
+import { executeLocal } from '../localRunner'
 
 async function executeCase(code: string, language: string, version: string, test: TestCase) {
   const started = Date.now()
@@ -70,40 +70,11 @@ async function executeCase(code: string, language: string, version: string, test
 
   // Local fallback if remote did not produce clean exit
   if (exitCode !== 0 && !stdout) {
-    const lang = language.toLowerCase()
-    if (lang === 'python' || lang === 'py') {
-      for (const cmd of ['python', 'python3']) {
-        try {
-          const res = spawnSync(cmd, ['-c', code], {
-            input: test.stdin || '',
-            encoding: 'utf-8',
-            timeout: 5000,
-            maxBuffer: 512 * 1024,
-          })
-          if (!res.error || (res.status !== null && res.status !== undefined)) {
-            stdout = normalizeOutput(res.stdout)
-            stderr = normalizeOutput(res.stderr || (res.error ? res.error.message : ''))
-            exitCode = res.status ?? (res.error ? 1 : 0)
-            break
-          }
-        } catch {
-          // continue
-        }
-      }
-    } else if (lang === 'javascript' || lang === 'js') {
-      try {
-        const res = spawnSync(process.execPath, ['-e', code], {
-          input: test.stdin || '',
-          encoding: 'utf-8',
-          timeout: 5000,
-          maxBuffer: 512 * 1024,
-        })
-        stdout = normalizeOutput(res.stdout)
-        stderr = normalizeOutput(res.stderr || (res.error ? res.error.message : ''))
-        exitCode = res.status ?? (res.error ? 1 : 0)
-      } catch {
-        // ignore
-      }
+    const local = executeLocal(language, code, test.stdin || '', 5000)
+    if (local) {
+      stdout = normalizeOutput(local.stdout)
+      stderr = normalizeOutput(local.stderr)
+      exitCode = local.code
     }
   }
 

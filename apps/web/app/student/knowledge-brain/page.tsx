@@ -104,6 +104,7 @@ function KnowledgeBrainContent() {
   const [tag, setTag] = React.useState<string | null>(null)
   const [active, setActive] = React.useState<Article | null>(null)
   const [submitOpen, setSubmitOpen] = React.useState(false)
+  const [copied, setCopied] = React.useState(false)
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState('')
 
@@ -276,70 +277,111 @@ function KnowledgeBrainContent() {
 
       {/* Modal: View Article */}
       <Dialog open={!!active} onOpenChange={(open) => !open && setActive(null)}>
-        <DialogContent className="max-w-3xl rounded-3xl p-6 sm:p-9 bg-white border-border-light max-h-[90vh] flex flex-col">
+        <DialogContent className="w-[94vw] sm:max-w-4xl md:max-w-5xl lg:max-w-6xl max-h-[92vh] rounded-3xl p-6 sm:p-9 md:p-11 bg-white border-border-light flex flex-col shadow-2xl">
           <DialogHeader className="hidden">
-            <DialogTitle>View Article</DialogTitle>
+            <DialogTitle>{active?.title || 'View Article'}</DialogTitle>
             <DialogDescription>Read the detailed article content.</DialogDescription>
           </DialogHeader>
           <div className="flex flex-col flex-1 overflow-hidden">
-            <div className="flex justify-between gap-4 shrink-0">
-              <div>
-                <h2 className="text-2xl font-black text-text-main">{active?.title}</h2>
-                <p className="mt-2 flex items-center gap-1 text-xs text-text-muted">
-                  <Calendar className="h-3.5 w-3.5" />
-                  {active && new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium' }).format(new Date(active.created_at))}
-                </p>
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 shrink-0 pb-6 border-b border-border-light">
+              <div className="space-y-3 max-w-3xl">
+                <div className="flex flex-wrap items-center gap-2">
+                  {active?.company_name && (
+                    <Badge className="bg-primary-purple/10 text-primary-purple font-black hover:bg-primary-purple/20 border-0 px-3 py-1 text-xs">
+                      <Building2 className="h-3.5 w-3.5 mr-1" />
+                      {active.company_name}
+                    </Badge>
+                  )}
+                  {active?.batch_year && (
+                    <Badge variant="outline" className="rounded-full bg-slate-50 px-3 py-1 text-xs font-bold text-slate-600 border-border-light">
+                      {active.batch_year}
+                    </Badge>
+                  )}
+                  {active?.tags?.map((t) => (
+                    <span key={t} className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold text-slate-600">
+                      #{t}
+                    </span>
+                  ))}
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-snug">
+                  {active?.title}
+                </h2>
+                <div className="flex flex-wrap items-center gap-3 text-xs text-text-muted">
+                  <span className="font-semibold text-slate-700">
+                    {active?.author_id ? authors.get(active.author_id) || 'Verified contributor' : 'PSGMX archive'}
+                  </span>
+                  <span>•</span>
+                  <span className="flex items-center gap-1">
+                    <Calendar className="h-3.5 w-3.5" />
+                    {active && new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium' }).format(new Date(active.created_at))}
+                  </span>
+                  {active && active.view_count > 0 && (
+                    <>
+                      <span>•</span>
+                      <span>{active.view_count} views</span>
+                    </>
+                  )}
+                </div>
+              </div>
+              <div className="shrink-0 flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    void navigator.clipboard.writeText(`${window.location.origin}/student/knowledge-brain?id=${active?.id}`)
+                    setCopied(true)
+                    setTimeout(() => setCopied(false), 2000)
+                  }}
+                  className="rounded-xl text-xs font-black shadow-sm hover:border-primary-purple hover:text-primary-purple"
+                >
+                  <Copy className="h-3.5 w-3.5 mr-1.5" />
+                  {copied ? 'Copied link!' : 'Copy link'}
+                </Button>
               </div>
             </div>
-            <div className="mt-6 text-sm leading-7 text-text-main overflow-y-auto pr-2 custom-scrollbar">
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                components={{
-                  h1: ({ ...props }) => <h1 className="text-3xl font-black mt-8 mb-4 text-slate-900" {...props} />,
-                  h2: ({ ...props }) => <h2 className="text-2xl font-black mt-8 mb-4 text-slate-900 border-b pb-2" {...props} />,
-                  h3: ({ ...props }) => <h3 className="text-lg font-bold mt-6 mb-3 text-slate-800" {...props} />,
-                  p: ({ ...props }) => <p className="mb-4 text-slate-600 leading-relaxed" {...props} />,
-                  ul: ({ ...props }) => <ul className="mb-4 ml-6 list-disc text-slate-600 marker:text-slate-400 space-y-1" {...props} />,
-                  ol: ({ ...props }) => <ol className="mb-4 ml-6 list-decimal text-slate-600 marker:text-slate-400 space-y-1" {...props} />,
-                  li: ({ ...props }) => <li className="" {...props} />,
-                  strong: ({ ...props }) => <strong className="font-bold text-slate-900" {...props} />,
-                  blockquote: ({ ...props }) => <blockquote className="border-l-4 border-primary-purple pl-4 italic text-slate-500 bg-slate-50 py-2 my-4 rounded-r-lg" {...props} />,
-                  a: ({ ...props }) => <a className="text-primary-purple font-medium hover:underline" {...props} />,
-                  table: ({ ...props }) => <div className="overflow-x-auto mb-6 border rounded-xl"><table className="w-full text-left border-collapse" {...props} /></div>,
-                  th: ({ ...props }) => <th className="bg-slate-50 px-4 py-3 font-semibold text-slate-900 border-b" {...props} />,
-                  td: ({ ...props }) => <td className="px-4 py-3 border-b text-slate-600" {...props} />,
-                  code: ({ className, children, ...props }: any) => {
-                    const match = /language-(\w+)/.exec(className || '')
-                    return match ? (
-                      <div className="overflow-hidden rounded-xl bg-slate-900 my-4 shadow-sm">
-                        <div className="flex px-4 py-2 bg-slate-800/80 text-slate-400 text-xs font-mono font-medium border-b border-slate-700/50">
-                          {match[1]}
+
+            <div className="mt-6 flex-1 overflow-y-auto pr-3 custom-scrollbar">
+              <div className="max-w-4xl mx-auto space-y-4">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    h1: ({ ...props }) => <h1 className="text-3xl font-black mt-8 mb-4 text-slate-900" {...props} />,
+                    h2: ({ ...props }) => <h2 className="text-2xl font-black mt-8 mb-4 text-slate-900 border-b pb-2" {...props} />,
+                    h3: ({ ...props }) => <h3 className="text-lg font-bold mt-6 mb-3 text-slate-800" {...props} />,
+                    p: ({ ...props }) => <p className="mb-4 text-slate-600 leading-relaxed text-sm sm:text-base" {...props} />,
+                    ul: ({ ...props }) => <ul className="mb-4 ml-6 list-disc text-slate-600 marker:text-slate-400 space-y-1.5 text-sm sm:text-base" {...props} />,
+                    ol: ({ ...props }) => <ol className="mb-4 ml-6 list-decimal text-slate-600 marker:text-slate-400 space-y-1.5 text-sm sm:text-base" {...props} />,
+                    li: ({ ...props }) => <li className="" {...props} />,
+                    strong: ({ ...props }) => <strong className="font-bold text-slate-900" {...props} />,
+                    blockquote: ({ ...props }) => <blockquote className="border-l-4 border-primary-purple pl-4 italic text-slate-600 bg-violet-50/50 py-3 my-4 rounded-r-xl text-sm sm:text-base" {...props} />,
+                    a: ({ ...props }) => <a className="text-primary-purple font-medium hover:underline" {...props} />,
+                    table: ({ ...props }) => <div className="overflow-x-auto my-6 border rounded-xl shadow-xs"><table className="w-full text-left border-collapse" {...props} /></div>,
+                    th: ({ ...props }) => <th className="bg-slate-50 px-4 py-3 font-semibold text-slate-900 border-b text-xs sm:text-sm" {...props} />,
+                    td: ({ ...props }) => <td className="px-4 py-3 border-b text-slate-600 text-xs sm:text-sm" {...props} />,
+                    code: ({ className, children, ...props }: any) => {
+                      const match = /language-(\w+)/.exec(className || '')
+                      return match ? (
+                        <div className="overflow-hidden rounded-2xl bg-slate-950 my-5 shadow-md border border-slate-800">
+                          <div className="flex px-4 py-2 bg-slate-900 text-slate-400 text-xs font-mono font-medium border-b border-slate-800">
+                            {match[1]}
+                          </div>
+                          <pre className="p-4 sm:p-5 overflow-x-auto text-slate-50 text-xs sm:text-sm font-mono leading-relaxed">
+                            <code className={className} {...props}>
+                              {children}
+                            </code>
+                          </pre>
                         </div>
-                        <pre className="p-4 overflow-x-auto text-slate-50 text-sm font-mono leading-relaxed">
-                          <code className={className} {...props}>
-                            {children}
-                          </code>
-                        </pre>
-                      </div>
-                    ) : (
-                      <code className="bg-slate-100 text-primary-purple px-1.5 py-0.5 rounded-md text-[13px] font-mono font-medium border border-slate-200" {...props}>
-                        {children}
-                      </code>
-                    )
-                  }
-                }}
-              >
-                {active?.content}
-              </ReactMarkdown>
+                      ) : (
+                        <code className="bg-slate-100 text-primary-purple px-1.5 py-0.5 rounded-md text-[13px] font-mono font-medium border border-slate-200" {...props}>
+                          {children}
+                        </code>
+                      )
+                    }
+                  }}
+                >
+                  {active?.content}
+                </ReactMarkdown>
+              </div>
             </div>
-            <Button
-              variant="outline"
-              onClick={() => void navigator.clipboard.writeText(`${window.location.origin}/student/knowledge-brain?id=${active?.id}`)}
-              className="mt-7 self-start rounded-xl text-xs font-black shadow-sm"
-            >
-              <Copy className="h-3.5 w-3.5 mr-2" />
-              Copy share link
-            </Button>
           </div>
         </DialogContent>
       </Dialog>

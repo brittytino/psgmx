@@ -56,53 +56,7 @@ async function executePiston(
   }
 }
 
-function executeLocalFallback(language: string, code: string, stdin: string) {
-  const lang = language.toLowerCase()
-  if (lang === 'python' || lang === 'py') {
-    // Try python / python3
-    for (const cmd of ['python', 'python3']) {
-      try {
-        const res = spawnSync(cmd, ['-c', code], {
-          input: stdin || '',
-          encoding: 'utf-8',
-          timeout: 6000,
-          maxBuffer: 512 * 1024,
-        })
-        if (!res.error || (res.status !== null && res.status !== undefined)) {
-          return {
-            stdout: res.stdout || '',
-            stderr: res.stderr || (res.error ? res.error.message : ''),
-            code: res.status ?? (res.error ? 1 : 0),
-            signal: res.signal ?? null,
-          }
-        }
-      } catch {
-        // try next
-      }
-    }
-  }
-
-  if (lang === 'javascript' || lang === 'js') {
-    try {
-      const res = spawnSync(process.execPath, ['-e', code], {
-        input: stdin || '',
-        encoding: 'utf-8',
-        timeout: 6000,
-        maxBuffer: 512 * 1024,
-      })
-      return {
-        stdout: res.stdout || '',
-        stderr: res.stderr || (res.error ? res.error.message : ''),
-        code: res.status ?? (res.error ? 1 : 0),
-        signal: res.signal ?? null,
-      }
-    } catch {
-      // ignore
-    }
-  }
-
-  return null
-}
+import { executeLocal } from '../localRunner'
 
 export async function POST(req: NextRequest) {
   const user = await getUserFromRequest(req)
@@ -142,7 +96,7 @@ export async function POST(req: NextRequest) {
   }
 
   // 2. Fall back to local runtime execution (Python, JS)
-  const localRes = executeLocalFallback(language, code, stdin)
+  const localRes = executeLocal(language, code, stdin)
   if (localRes) {
     return NextResponse.json(localRes)
   }
