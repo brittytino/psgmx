@@ -299,6 +299,7 @@ class _AuthScreenState extends State<AuthScreen> {
                       width: 160,
                       height: _isOtpSent ? 90 : 130,
                       fit: BoxFit.contain,
+                      cacheWidth: 320,
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -509,6 +510,7 @@ class _AuthScreenState extends State<AuthScreen> {
                           width: 80,
                           height: 80,
                           fit: BoxFit.contain,
+                          cacheWidth: 160,
                         ),
                         const SizedBox(width: 12),
                         Expanded(

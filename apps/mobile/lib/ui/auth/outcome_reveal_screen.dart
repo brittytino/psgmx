@@ -416,6 +416,7 @@ class _OutcomeRevealScreenState extends State<OutcomeRevealScreen>
                                     width: 150,
                                     height: 150,
                                     fit: BoxFit.contain,
+                                    cacheWidth: 300,
                                   ),
                                 );
                               },

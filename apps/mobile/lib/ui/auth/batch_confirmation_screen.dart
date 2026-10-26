@@ -111,6 +111,7 @@ class _BatchConfirmationScreenState extends State<BatchConfirmationScreen> {
                       width: double.infinity,
                       height: 200,
                       fit: BoxFit.contain,
+                      cacheWidth: 400,
                     ),
                     const SizedBox(height: 24),
 
@@ -211,6 +212,7 @@ class _BatchConfirmationScreenState extends State<BatchConfirmationScreen> {
                       width: double.infinity,
                       height: 220,
                       fit: BoxFit.contain,
+                      cacheWidth: 400,
                     ),
 
                     const SizedBox(height: 32),

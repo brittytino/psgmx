@@ -1,6 +1,6 @@
-// ignore_for_file: deprecated_member_use, avoid_web_libraries_in_flutter, uri_does_not_exist
+// ignore_for_file: deprecated_member_use, avoid_web_libraries_in_flutter
 import 'dart:html' as html show window;
-import 'dart:js_util' as js_util;
+import 'dart:js' as js;
 
 /// Utility class for detecting platform-specific features (Web implementation)
 class PlatformUtils {
@@ -19,19 +19,18 @@ class PlatformUtils {
 
   /// Check if the app is running in standalone mode (already installed as PWA)
   static bool get isStandalone {
-    // 1. Check window.isAppStandalone helper from index.html
+    // 1. Call window.isAppStandalone helper from index.html
     try {
-      if (js_util.hasProperty(html.window, 'isAppStandalone')) {
-        final result = js_util.callMethod(html.window, 'isAppStandalone', const []);
+      if (js.context.hasProperty('isAppStandalone')) {
+        final result = js.context.callMethod('isAppStandalone', const []);
         if (result == true) return true;
       }
     } catch (_) {}
 
     // 2. Direct property lookup on raw JS navigator (iOS Safari standalone mode)
     try {
-      final nav = html.window.navigator;
-      final standalone = js_util.getProperty(nav, 'standalone');
-      if (standalone == true) return true;
+      final nav = js.context['navigator'];
+      if (nav != null && nav['standalone'] == true) return true;
     } catch (_) {}
 
     // 3. CSS display-mode media queries

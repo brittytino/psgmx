@@ -55,6 +55,10 @@ void main() async {
   // Android/iOS and let Flutter render /splash on web.
   if (!kIsWeb) {
     FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+  } else {
+    // Bound image cache memory to prevent WebGL/CanvasKit texture exhaustion on iOS Safari
+    PaintingBinding.instance.imageCache.maximumSizeBytes = 25 * 1024 * 1024; // 25 MB max
+    PaintingBinding.instance.imageCache.maximumSize = 50; // max 50 images in memory
   }
 
   // Initialize Global Error Handling

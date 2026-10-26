@@ -365,6 +365,7 @@ class _StoryPage extends StatelessWidget {
               child: Image.asset(
                 imagePath,
                 fit: BoxFit.contain,
+                cacheWidth: 600,
               ),
             ),
           ),

@@ -50,6 +50,7 @@ class _SplashScreenState extends State<SplashScreen>
             child: Image.asset(
               'assets/images/splash/splash2.png',
               fit: BoxFit.cover,
+              cacheWidth: 800,
             ),
           ),
 
@@ -61,6 +62,7 @@ class _SplashScreenState extends State<SplashScreen>
                 Image.asset(
                   'assets/images/splash/splash1.png',
                   width: 300,
+                  cacheWidth: 600,
                 ),
               ],
             ),

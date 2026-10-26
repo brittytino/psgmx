@@ -365,7 +365,7 @@ class _CalibrationQuizScreenState extends State<CalibrationQuizScreen> {
             bottom: -24,
             child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
               Image.asset('assets/images/onboarding/SmilingMascot.png',
-                  width: 110, height: 110, fit: BoxFit.contain),
+                  width: 110, height: 110, fit: BoxFit.contain, cacheWidth: 200),
               if (mascotLine != null) ...[
                 const SizedBox(width: 8),
                 Container(
