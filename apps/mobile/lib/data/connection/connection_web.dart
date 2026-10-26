@@ -4,18 +4,11 @@ import 'package:drift/wasm.dart';
 import 'package:flutter/foundation.dart';
 import 'package:sqlite3/wasm.dart';
 
+import '../../core/utils/platform_utils.dart';
+
 /// Returns true when the browser is running on an iOS device (iPhone/iPad/iPod).
-///
-/// iOS Safari (WebKit) has a strict per-tab memory ceiling (~120–150 MB).
-/// Loading sqlite3.wasm (748 KB) + drift_worker.js (354 KB) together pushes
-/// the tab past that limit, triggering "A problem repeatedly occurred" — the
-/// app crashes before any Flutter code runs, so OTP redirect never fires.
-///
-/// The Drift database only provides optional offline caching (Daily Five
-/// questions, offline streaks). Bypassing it on iOS lets the app boot cleanly
-/// and complete authentication. Supabase handles all authoritative data.
 bool _isIOSWebKit() {
-  return defaultTargetPlatform == TargetPlatform.iOS;
+  return PlatformUtils.isIOS || defaultTargetPlatform == TargetPlatform.iOS;
 }
 
 QueryExecutor openConnection() {

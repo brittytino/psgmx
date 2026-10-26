@@ -84,6 +84,22 @@ jobs:
           flutter build web \
             --release \
             --dart-define-from-file=.env.flutter
+          # Replace default unregistering service worker with one that NEVER triggers client.navigate
+          cat << 'EOF' > build/web/flutter_service_worker.js
+'use strict';
+self.addEventListener('install', () => {
+  self.skipWaiting();
+});
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    (async () => {
+      try {
+        await self.registration.unregister();
+      } catch (e) {}
+    })()
+  );
+});
+EOF
           echo "✅ Web build complete — $(du -sh build/web | cut -f1)"
 
       - name: Deploy to Firebase Hosting

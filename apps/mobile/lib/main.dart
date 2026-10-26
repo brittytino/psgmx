@@ -106,9 +106,10 @@ Future<void> _initializeBackgroundServices() async {
       'BirthdayNotificationService',
       BirthdayNotificationService().init,
     ),
-    _initializeOptionalService('SyncService', () async {
-      SyncService(Supabase.instance.client, localDb);
-    }),
+    if (!kIsWeb)
+      _initializeOptionalService('SyncService', () async {
+        SyncService(Supabase.instance.client, localDb);
+      }),
   ]);
 }
 
