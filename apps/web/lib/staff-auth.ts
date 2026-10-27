@@ -29,7 +29,7 @@ export const STAFF_ROSTER: StaffMember[] = [
   { name: 'Mrs. Manoranjitham A', email: 'amr.mca@psgtech.ac.in', role: 'Faculty', regNo: 'FAC-AMR' },
   { name: 'Mrs. Rajeswari N', email: 'nrj.mca@psgtech.ac.in', role: 'Faculty', regNo: 'FAC-NRJ' },
   { name: 'Mr. Sundar C', email: 'csc.mca@psgtech.ac.in', role: 'Faculty', regNo: 'FAC-CSC' },
-  { name: 'Mr. Shankar S', email: 'sss.mca@psgtech.ac.in', role: 'Faculty', regNo: 'FAC-SSS' },
+  { name: 'Mr. Sankar A', email: 'dras.mca@psgtech.ac.in', role: 'Faculty', regNo: 'FAC-DRS' },
   { name: 'Test Account (HOD)', email: 'brittytino08@gmail.com', role: 'HOD', regNo: 'FAC-TEST-08' },
   { name: 'Test Account (HOD)', email: 'brittytinoo@gmail.com', role: 'HOD', regNo: 'FAC-TEST-HOD' },
   { name: 'Test Account (Faculty)', email: 'faculty.test@gmail.com', role: 'Faculty', regNo: 'FAC-TEST-FAC' },
