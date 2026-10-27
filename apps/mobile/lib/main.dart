@@ -102,14 +102,15 @@ Future<void> _initializeBackgroundServices() async {
     NotificationService().init,
   );
   await Future.wait([
-    _initializeOptionalService(
-      'BirthdayNotificationService',
-      BirthdayNotificationService().init,
-    ),
-    if (!kIsWeb)
+    if (!kIsWeb) ...[
+      _initializeOptionalService(
+        'BirthdayNotificationService',
+        BirthdayNotificationService().init,
+      ),
       _initializeOptionalService('SyncService', () async {
         SyncService(Supabase.instance.client, localDb);
       }),
+    ],
   ]);
 }
 

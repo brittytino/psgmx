@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -116,9 +117,11 @@ class _AuthScreenState extends State<AuthScreen> {
           _isLoading = false;
         });
         _startResendCountdown();
-        Future.delayed(const Duration(milliseconds: 350), () {
-          if (mounted) _otpFocusNode.requestFocus();
-        });
+        if (!kIsWeb) {
+          Future.delayed(const Duration(milliseconds: 350), () {
+            if (mounted) _otpFocusNode.requestFocus();
+          });
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -416,7 +419,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                   controller: _otpController,
                                   focusNode: _otpFocusNode,
                                   enabled: !_isLockedOut,
-                                  autofocus: true,
+                                  autofocus: !kIsWeb,
                                   keyboardType: TextInputType.number,
                                   inputFormatters: [
                                     FilteringTextInputFormatter.digitsOnly,

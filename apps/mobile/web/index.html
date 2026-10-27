@@ -95,27 +95,40 @@
       }
     };
 
-    // ── Immediate Service Worker & Cache cleanup ───────────────────────────
-    // Preemptively purge active service workers and CacheStorage to prevent
-    // WebKit WebContent process termination and crash loops on iOS.
+    // ── Early CanvasKit & WebKit Engine Configuration ──────────────────────
+    var userAgent = (navigator && navigator.userAgent) ? navigator.userAgent : '';
+    var isIOSDevice = /iPad|iPhone|iPod/.test(userAgent) ||
+      (userAgent.indexOf('Macintosh') !== -1 && navigator.maxTouchPoints > 1);
+
+    window.flutterConfiguration = {
+      canvasKitForceCpuOnly: isIOSDevice,
+      canvasKitMaximumSurfaces: isIOSDevice ? 1 : 2,
+      canvasKitVariant: 'auto',
+    };
+
+    // ── Safe one-time legacy Service Worker & Cache cleanup ─────────────────
     try {
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(function (registrations) {
-          for (var i = 0; i < registrations.length; i++) {
-            registrations[i].unregister();
-          }
-        });
-      }
-      if ('caches' in window) {
-        caches.keys().then(function (names) {
-          for (var i = 0; i < names.length; i++) {
-            caches.delete(names[i]);
-          }
-        });
+      var CLEANUP_KEY = 'psgmx_cleanup_v20261027';
+      if (!localStorage.getItem(CLEANUP_KEY)) {
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function (registrations) {
+            for (var i = 0; i < registrations.length; i++) {
+              registrations[i].unregister();
+            }
+          });
+        }
+        if ('caches' in window) {
+          caches.keys().then(function (names) {
+            for (var i = 0; i < names.length; i++) {
+              caches.delete(names[i]);
+            }
+          });
+        }
+        localStorage.setItem(CLEANUP_KEY, 'true');
       }
     } catch (e) {}
   </script>
 
-  <script src="flutter_bootstrap.js?v=20261026" async></script>
+  <script src="flutter_bootstrap.js?v=20261027_1" async></script>
 </body>
 </html>
